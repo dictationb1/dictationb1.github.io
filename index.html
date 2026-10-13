@@ -498,15 +498,19 @@ body[data-perf="lite"] .scrim { animation: none; }
 
 /* modal card */
 .modal { position: fixed; z-index: 80; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
+  width: 92vw; max-width: 420px; width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
   background: var(--glass-solid); border-radius: var(--r3); border: 1px solid var(--line);
   box-shadow: var(--shadow2); padding: 18px; animation: pop 200ms var(--ease) both; }
 @keyframes pop { from { opacity: 0; transform: translate(-50%,-46%) scale(.96); } to { opacity: 1; transform: translate(-50%,-50%); } }
+/* Flex-centred cards must not use the translated modal animation. */
+.modal.flex-card { position: relative; top: auto; left: auto; transform: none;
+  width: 100%; max-width: 440px; animation: pop-flex 200ms var(--ease) both; }
+@keyframes pop-flex { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 body[data-perf="lite"] .modal { animation: none; }
 
 #toasts { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: calc(96px + var(--safe-b));
   display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
-.toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: min(100%, 460px);
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 460px; width: min(100%, 460px);
   padding: 12px 14px; border-radius: var(--r2); background: var(--glass-solid);
   border: 1px solid var(--line); box-shadow: var(--shadow2); font-size: .9rem;
   animation: toastIn 200ms var(--ease) both; }
@@ -524,7 +528,7 @@ body[data-perf="lite"] .toast { animation: none; }
    8. PLAYER
    ============================================================ */
 .playerwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-.wordcard { width: min(100%, 520px); padding: 22px 18px; border-radius: var(--r4); }
+.wordcard { width: 100%; max-width: 520px; width: min(100%, 520px); padding: 22px 18px; border-radius: var(--r4); }
 .wordbig { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .wordhint { font-size: .82rem; color: var(--ink-2); }
 .countdown { width: 88px; height: 88px; position: relative; flex: 0 0 auto; }
@@ -623,6 +627,22 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
   #printview .lines { margin: 6pt 0 12pt 0; }
   #printview .lines i { display: block; border-bottom: 1px solid #666; height: 22pt; }
 }
+
+/* Device safety overrides: old Safari ignores min(), gap and :focus-visible. */
+input, textarea, select { font-size: 16px; }
+:root[data-size="l"] input, :root[data-size="l"] textarea, :root[data-size="l"] select { font-size: 18px; }
+:root[data-size="xl"] input, :root[data-size="xl"] textarea, :root[data-size="xl"] select { font-size: 20.5px; }
+.btn.sm, button.chip, .seg button { min-height: 44px; }
+.seg:not(.scroll) button { flex: 1 1 0; min-width: 0; white-space: normal; padding: 8px; }
+.btn.icon { min-width: 44px; min-height: 44px; }
+.row > *, .btn-row > * { margin: 2px; }
+input[type="checkbox"] { width: 24px; min-width: 24px; height: 24px; }
+button:focus, a:focus, input:focus, textarea:focus, select:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
+table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after { animation: none !important; transition: none !important; }
 </style>
 </head>
 <body data-perf="auto">
@@ -848,6 +868,7 @@ function handleGet(e) {
 function handlePost(e) {
   var body = {};
   try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { body = {}; }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
   var action = String(body.action || '');
   var cid = clip(String(body.cid || ''), 60);
 
@@ -863,6 +884,7 @@ function handlePost(e) {
   var lock = LockService.getScriptLock();
   try { lock.waitLock(20000); } catch (err2) { return { ok: false, err: 'busy' }; }
   try {
+    if (action === 'readInbox') return { ok: true, inbox: readInbox(true), comments: readComments(false), results: readResults() };
     if (action === 'publish') return publish(body);
     if (action === 'announce') return setAnnouncement(body);
     if (action === 'moderate') return moderate(body);
@@ -912,7 +934,7 @@ function rows(name) {
 
 function append(name, headers, values) {
   var s = sheet(name, headers);
-  s.appendRow(values);
+  s.appendRow(values.map(function (value) { return typeof value === 'string' && /^[=+\-@]/.test(value) ? "'" + value : value; }));
   return s.getLastRow();
 }
 
@@ -979,7 +1001,7 @@ function adminLogin(body) {
   }
   if (pin !== expected) {
     fails = fails + 1;
-    if (fails >= 5) { cachePut('adminFails', 0, 3600); cachePut('adminUntil', Date.now() + 600000, 3600); }
+    if (fails >= 5) { cachePut('adminFails', 0, 3600); cachePut('adminUntil', Date.now() + 300000, 3600); }
     else { cachePut('adminFails', fails, 3600); }
     return { ok: false, err: 'bad_pin', triesLeft: Math.max(0, 5 - fails) };
   }
@@ -1008,12 +1030,20 @@ function readState() {
   if (cached) {
     try { return JSON.parse(cached); } catch (err) {}
   }
-  var lists = [];
+  var lists = [], activeVersions = Object.create(null);
   var lr = rows(TAB.Lists);
   for (var i = 0; i < lr.length; i++) {
     var items = [];
     try { items = JSON.parse(String(lr[i][2] || '[]')); } catch (err2) { items = []; }
-    lists.push({ id: String(lr[i][0]), name: String(lr[i][1]), version: Number(lr[i][3] || 1), words: items });
+    if (!Array.isArray(items)) items = [];
+    var listKey = String(lr[i][0]);
+    if (!Object.prototype.hasOwnProperty.call(activeVersions, listKey)) activeVersions[listKey] = getCfg('listVer:' + listKey);
+    var committed = activeVersions[listKey];
+    if (committed !== '' && Number(lr[i][3] || 1) !== Number(committed)) continue;
+    var existing = null;
+    for (var li = 0; li < lists.length; li++) if (lists[li].id === String(lr[i][0])) existing = lists[li];
+    if (existing) existing.words = existing.words.concat(items);
+    else lists.push({ id: String(lr[i][0]), name: String(lr[i][1]), version: Number(lr[i][3] || 1), words: items });
   }
   var plan = [];
   var pr = rows(TAB.Plan);
@@ -1022,19 +1052,20 @@ function readState() {
   }
   var out = {
     ok: true, ver: Number(getCfg('ver') || 0), lists: lists, plan: plan,
-    session: currentSession(), announcement: currentAnnouncement(), sessions: lastSessions(10)
+    session: currentSession(), announcement: currentAnnouncement(), sessions: lastSessions(10), contact: readJsonCfg('contact'), defaults: readJsonCfg('defaults')
   };
   cachePut('state', JSON.stringify(out), 10);
   return out;
 }
 
+function readJsonCfg(key) { try { var obj = JSON.parse(getCfg(key) || '{}'); return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {}; } catch (err) { return {}; } }
 function currentSession() {
   var r = rows(TAB.Sessions);
   if (!r.length) return null;
   var last = r[r.length - 1];
   return {
     no: String(last[0] || ''), day: String(last[1] || ''), date: String(last[2] || ''),
-    title: String(last[3] || ''), listId: String(last[4] || '')
+    title: String(last[3] || ''), listId: String(last[4] || ''), ready: readJsonCfg('sessionExtras').ready, praise: readJsonCfg('sessionExtras').praise
   };
 }
 
@@ -1055,7 +1086,8 @@ function currentAnnouncement() {
   if (!a) return null;
   try {
     var o = JSON.parse(a);
-    if (o.expires && new Date(o.expires).getTime() < Date.now()) return null;
+    if (!o || typeof o !== 'object') return null;
+    if (o.expires && new Date(o.expires + 'T23:59:59').getTime() < Date.now()) return null;
     return o;
   } catch (err) { return null; }
 }
@@ -1086,7 +1118,7 @@ function readInbox(allRows) {
     out.push({
       id: String(r[i][0]), ts: Number(r[i][1] || 0), name: String(r[i][2] || ''), cat: String(r[i][3] || ''),
       text: String(r[i][4] || ''), contact: String(r[i][5] || ''), read: String(r[i][6]) === 'yes',
-      meta: String(r[i][7] || '')
+      meta: String(r[i][7] || ''), reply: String(r[i][8] || '')
     });
   }
   return out;
@@ -1160,23 +1192,27 @@ function seen(cid) {
   return false;
 }
 
+function cleanPublic(text, n) {
+  return clip(text, n).replace(/(https?:\/\/|www\.)[^\s]+/gi, '[link removed]').replace(/[^\s@]+@[^\s@]+\.[a-z]{2,}/gi, '[e-mail removed]').replace(/\d[\d\s\-()]{4,}\d/g, '[number removed]');
+}
+
 function addComment(body, cid) {
-  if (rateLimited(cid, 'c', 30, 5)) return { ok: false, err: 'rate' };
-  if (seen(cid)) return { ok: true, dup: true };
+  var old = rows(TAB.Comments); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
+  if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
   var status = String(body.status || 'comment');
   if (['finished', 'problem', 'notdone', 'comment'].indexOf(status) < 0) status = 'comment';
-  var id = 'c' + Date.now() + Math.floor(Math.random() * 1000);
+  var id = cid || 'c' + Date.now() + Math.floor(Math.random() * 1000);
   append(TAB.Comments, ['id', 'ts', 'name', 'status', 'text', 'meta', 'pinned', 'reported', 'hidden', 'reply'],
-    [id, Date.now(), clip(body.name, 24), status, clip(body.text, 280), clip(body.meta, 200), 'no', 'no', 'no', '']);
+    [id, Date.now(), cleanPublic(body.name, 24), status, cleanPublic(body.text, 280), clip(body.meta, 200), 'no', 'no', 'no', '']);
   return { ok: true, id: id };
 }
 
 function addMessage(body, cid) {
-  if (rateLimited(cid, 'm', 30, 10)) return { ok: false, err: 'rate' };
-  if (seen(cid)) return { ok: true, dup: true };
-  var id = 'm' + Date.now() + Math.floor(Math.random() * 1000);
+  var old = rows(TAB.Inbox); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
+  if (rateLimited(clip(body.deviceId || cid, 60), 'm', 30, 5)) return { ok: false, err: 'rate' };
+  var id = cid || 'm' + Date.now() + Math.floor(Math.random() * 1000);
   append(TAB.Inbox, ['id', 'ts', 'name', 'cat', 'text', 'contact', 'read', 'meta'],
-    [id, Date.now(), clip(body.name, 24), clip(body.cat, 20), clip(body.text, 600), clip(body.contact, 120), 'no', clip(body.meta, 200)]);
+    [id, Date.now(), cleanPublic(body.name, 24), clip(body.cat, 20), clip(body.text, 600), clip(body.contact, 120), 'no', clip(body.meta, 200)]);
   return { ok: true, id: id };
 }
 
@@ -1196,28 +1232,35 @@ function publish(body) {
   var name = clip(body.name, 80);
   var words = body.words;
   if (!listId || !name || !words || !words.length) return { ok: false, err: 'bad payload' };
-  if (words.length > 500) return { ok: false, err: 'too many words' };
+  if (!Array.isArray(words)) return { ok: false, err: 'bad words' };
   var payload = [];
   for (var i = 0; i < words.length; i++) {
     var w = words[i] || {};
     payload.push({ w: clip(w.w, 60), s: clip(w.s, 200), m: clip(w.m, 120) });
   }
   var s = sheet(TAB.Lists, ['id', 'name', 'wordsJson', 'version']);
-  var last = s.getLastRow();
-  var version = 1;
-  var found = false;
-  if (last >= 2) {
-    var data = s.getRange(2, 1, last - 1, 4).getValues();
-    for (var j = 0; j < data.length; j++) {
-      if (String(data[j][0]) === listId) {
-        version = Number(data[j][3] || 1) + 1;
-        s.getRange(j + 2, 2, 1, 3).setValues([[name, JSON.stringify(payload), version]]);
-        found = true;
-        break;
-      }
-    }
+  var last = s.getLastRow(), activeValue = getCfg('listVer:' + listId), active = 0, data = [];
+  if (last >= 2) data = s.getRange(2, 1, last - 1, 4).getValues();
+  if (activeValue !== '') active = Number(activeValue) || 0;
+  else {
+    for (var j = 0; j < data.length; j++) if (String(data[j][0]) === listId) active = Math.max(active, Number(data[j][3] || 1));
+    setCfg('listVer:' + listId, active);
   }
-  if (!found) s.appendRow([listId, name, JSON.stringify(payload), version]);
+  var version = active + 1;
+  /* Remove only an incomplete retry version. Never delete the committed list first. */
+  for (var del = data.length - 1; del >= 0; del--) if (String(data[del][0]) === listId && Number(data[del][3]) === version) s.deleteRow(del + 2);
+  var chunk = [], size = 2;
+  for (var item = 0; item < payload.length; item++) {
+    var itemSize = JSON.stringify(payload[item]).length + 1;
+    if (chunk.length && size + itemSize > 40000) { s.appendRow([listId, name, JSON.stringify(chunk), version]); chunk = []; size = 2; }
+    chunk.push(payload[item]); size += itemSize;
+  }
+  if (chunk.length) s.appendRow([listId, name, JSON.stringify(chunk), version]);
+  /* All word chunks exist before moving the pointer; old versions remain recoverable. */
+  setCfg('listVer:' + listId, version);
+  if (body.contact) setCfg('contact', JSON.stringify(body.contact));
+  if (body.defaults) setCfg('defaults', JSON.stringify(body.defaults));
+  if (body.session) setCfg('sessionExtras', JSON.stringify({ready:body.session.ready,praise:body.session.praise}));
 
   if (body.session) {
     var se = body.session;
@@ -1247,7 +1290,7 @@ function setAnnouncement(body) {
 }
 
 function moderate(body) {
-  var id = clip(body.id, 40);
+  var id = clip(body.id, 60);
   var what = String(body.op || '');
   var s = ss().getSheetByName(TAB.Comments);
   if (!s || !id || s.getLastRow() < 2) return { ok: false, err: 'not found' };
@@ -1257,7 +1300,7 @@ function moderate(body) {
     var row = i + 2;
     if (what === 'hide') s.getRange(row, 9).setValue('yes');
     else if (what === 'unhide') s.getRange(row, 9).setValue('no');
-    else if (what === 'pin') s.getRange(row, 7).setValue(String(data[i][6]) === 'yes' ? 'no' : 'yes');
+    else if (what === 'pin') s.getRange(row, 7).setValue(typeof body.pinned === 'boolean' ? (body.pinned ? 'yes' : 'no') : (String(data[i][6]) === 'yes' ? 'no' : 'yes'));
     else if (what === 'report') s.getRange(row, 8).setValue('yes');
     else if (what === 'reply') s.getRange(row, 10).setValue(clip(body.text, 500));
     else if (what === 'delete') s.deleteRow(row);
@@ -1277,10 +1320,10 @@ function reportComment(body, cid) {
 }
 
 function inboxAction(body) {
-  var id = clip(body.id, 40);
+  var id = clip(body.id, 60);
   var what = String(body.op || '');
   var s = ss().getSheetByName(TAB.Inbox);
-  if (!s || !id) return { ok: false, err: 'not found' };
+  if (!s || s.getLastRow() < 2 || !id) return { ok: false, err: 'not found' };
   var data = s.getRange(2, 1, s.getLastRow() - 1, 8).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]) !== id) continue;
@@ -1288,6 +1331,7 @@ function inboxAction(body) {
     if (what === 'read') s.getRange(row, 7).setValue('yes');
     else if (what === 'unread') s.getRange(row, 7).setValue('no');
     else if (what === 'delete') s.deleteRow(row);
+    else if (what === 'reply') s.getRange(row, 9).setValue(clip(body.text, 600));
     else return { ok: false, err: 'unknown op' };
     return { ok: true };
   }
@@ -1297,8 +1341,17 @@ function inboxAction(body) {
 </script>
 <script>
 /* ==========================================================================
-   Smart Dictation Player  v1.0.0
-   Changelog: 1.0.0 - first release: dictation engine, UK voice handling,
+   Smart Dictation Player  v1.3.0
+   Changelog: 1.3.0 - strict UK speech, Text mode, immediate finish saving,
+   typed feedback and autosave, UK-only dictionary audio, private backup filtering
+   and device fallbacks.
+   1.2.0 - guided cloud setup, student and offline-list links,
+   contact hand-off, accurate sync status and automatic outbox retries.
+   1.1.0 - lecturer PIN seed, guarded edits, richer paste/import,
+   preview table, planner calendar, session controls and private reply support.
+   1.0.1 - Phase 1: safe class tokens, non-blocking error log,
+   two-step reset, rolling recovery copy, centred fatal card, no injected script.
+   1.0.0 - first release: dictation engine, UK voice handling,
    results + auto-save, dictionary, community + private messages,
    lecturer panel with local/cloud PIN, optional Google Sheets cloud sync,
    device diagnostics, Liquid Glass UI with Lite performance mode.
@@ -1310,7 +1363,7 @@ function inboxAction(body) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.0.0";
+var APP_VERSION = "1.3.0";
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
    Leave it empty for local-only mode (everything still works on one device). */
@@ -1366,7 +1419,7 @@ var S = {
   imReady: "I'm ready",
   voiceFound: "UK voice found",
   noVoice: "No UK English voice found on this device",
-  volumeTip: "Turn your volume up and put your headphones on if you like.",
+  volumeTip: "Check media volume and the silent switch. Try headphones if you cannot hear the voice.",
   listening: "Listening\u2026",
   yourTurn: "Your turn \u2013 write it",
   nextIn: "Next word in",
@@ -1422,7 +1475,7 @@ var S = {
   cloudNotSet: "Cloud is not set up on this device, so this stays in your outbox until the lecturer adds a cloud link.",
   storageBlocked: "This browser is blocking storage, so your data is kept in memory only. It will be lost when you close the page \u2013 please use a normal (not private) window.",
   somethingWrong: "Something went wrong",
-  somethingWrongSub: "The app stopped working. You can reload it, or download a backup and reset the app data.",
+  somethingWrongSub: "The app could not open fully. Your saved data has not been deleted. Try Continue, Reload or Restore. Save a backup before any reset.",
   reload: "Reload",
   backupAndReset: "Download backup, then reset",
   downloadBackup: "Download backup",
@@ -1458,6 +1511,52 @@ var S = {
    ============================================================ */
 var U = {};
 
+/* Small failures do not take away access to saved work. No payload is logged. */
+var Errors = {
+  items: [], reporting: false,
+  text: function () { return JSON.stringify(this.items, null, 2); },
+  report: function (err, where) {
+    if (this.reporting) return;
+    this.reporting = true;
+    try {
+      var message = err && err.message ? String(err.message) : String(err || "Unknown error");
+      this.items.push({ time: new Date().toISOString(), where: String(where || "background"),
+        message: message.slice(0, 500), stack: String(err && err.stack || "").slice(0, 2000) });
+      if (this.items.length > 50) this.items.splice(0, this.items.length - 50);
+      if (typeof UI !== "undefined" && UI && (!this.lastToast || Date.now() - this.lastToast > 3000)) { this.lastToast = Date.now(); UI.toast("Something small went wrong. Your data is safe.", { icon: "i-alert" }); }
+    } catch (ignored) {} finally { this.reporting = false; }
+  }
+};
+
+U.safe = function (fn, where) {
+  return function () {
+    try {
+      var result = fn.apply(this, arguments);
+      if (result && typeof result.then === "function") {
+        return Promise.resolve(result).then(function (value) { return value; }, function (err) { Errors.report(err, where); });
+      }
+      return result;
+    } catch (err) { Errors.report(err, where); }
+  };
+};
+
+/* Explicit add/remove works on old WebViews; never pass an empty token. */
+U.setCls = function (el, name, on) {
+  if (!el || !el.classList || typeof name !== "string") return;
+  name = name.trim();
+  if (!name || /\s/.test(name)) return;
+  if (on) el.classList.add(name);
+  else el.classList.remove(name);
+};
+U.once = function (fn) {
+  var called = false;
+  return U.safe(function () { if (called) return; called = true; if (fn) return fn.apply(this, arguments); }, "network callback");
+};
+U.nav = function (key, fallback) {
+  try { var value = navigator[key]; return value === undefined ? fallback : value; }
+  catch (err) { return fallback; }
+};
+
 U.$ = function (sel, root) { return (root || document).querySelector(sel); };
 U.$$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
@@ -1492,7 +1591,16 @@ U.on = function (node, type, fn, opts) {
   if (!node) return;
   var o = opts || {};
   if (o.passive === undefined && (type === "touchstart" || type === "touchmove" || type === "scroll")) o.passive = true;
-  node.addEventListener(type, fn, o);
+  var adminOnly = typeof Admin !== "undefined" && Admin && Admin.context;
+  var handler = U.safe(function () {
+    if (adminOnly && !Admin.unlocked) { UI.toast("Unlock lecturer mode first.", { icon: "i-lock" }); return; }
+    var before = typeof Admin !== "undefined" && Admin ? Admin.context : false;
+    if (adminOnly) Admin.context = true;
+    try { return fn.apply(this, arguments); }
+    finally { if (typeof Admin !== "undefined" && Admin) Admin.context = before; }
+  }, "event: " + type);
+  node.addEventListener(type, handler, o);
+  return handler;
 };
 
 /* event delegation helper: fn runs for the closest element matching sel */
@@ -1524,20 +1632,24 @@ U.uid = function (p) {
   return (p || "id") + "_" + Date.now().toString(36) + "_" + r;
 };
 
+U.validDate = function (value) {
+  var d = value instanceof Date ? value : new Date(value === undefined || value === null || value === "" ? Date.now() : value);
+  return isFinite(d.getTime()) ? d : new Date();
+};
 U.fmtDate = function (ts) {
-  var d = (ts instanceof Date) ? ts : new Date(Number(ts) || Date.now());
+  var d = U.validDate(ts);
   return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear();
 };
 U.fmtTime = function (ts) {
-  var d = (ts instanceof Date) ? ts : new Date(Number(ts) || Date.now());
+  var d = U.validDate(ts);
   return U.pad2(d.getHours()) + ":" + U.pad2(d.getMinutes());
 };
 U.dateKey = function (d) {
-  d = d || new Date();
+  d = U.validDate(d);
   return d.getFullYear() + "-" + U.pad2(d.getMonth() + 1) + "-" + U.pad2(d.getDate());
 };
 /* Monday = 0 */
-U.weekdayIndex = function (d) { return (new Date(d).getDay() + 6) % 7; };
+U.weekdayIndex = function (d) { return (U.validDate(d).getDay() + 6) % 7; };
 
 U.relTime = function (ts) {
   var diff = Math.max(0, Date.now() - Number(ts || 0));
@@ -1559,11 +1671,11 @@ U.dur = function (secs) {
 };
 
 U.debounce = function (fn, ms) {
-  var t = null;
+  var t = null, adminOnly = !!(typeof Admin !== "undefined" && Admin && Admin.context);
   return function () {
     var args = arguments, self = this;
     if (t) clearTimeout(t);
-    t = setTimeout(function () { t = null; fn.apply(self, args); }, ms || 250);
+    t = setTimeout(U.safe(function () { t = null; if (adminOnly && !Admin.unlocked) return; fn.apply(self, args); }, "delayed input"), ms || 250);
   };
 };
 
@@ -1647,7 +1759,7 @@ U.selectForCopy = function (text) {
 U.share = function (title, text) {
   try {
     if (navigator.share) {
-      navigator.share({ title: title, text: text }).catch(function () {});
+      navigator.share({ title: title, text: text }).catch(function () { UI.toast("Share was not sent. You can use Copy instead.", {icon:"i-info"}); });
       return true;
     }
   } catch (e) {}
@@ -1655,14 +1767,14 @@ U.share = function (title, text) {
 };
 
 U.deviceType = function () {
-  var ua = navigator.userAgent || "";
+  var ua = U.nav("userAgent", "") || "";
   if (/iPad|iPhone|iPod/.test(ua)) return "iPhone";
   if (/Android/.test(ua)) return "Android";
   if (/Mac OS X|Macintosh/.test(ua)) return "Mac";
   if (/Windows/.test(ua)) return "Windows";
   return "Other";
 };
-U.isIOS = function () { var ua = navigator.userAgent || ""; return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1); };
+U.isIOS = function () { var ua = U.nav("userAgent", "") || ""; return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && U.nav("maxTouchPoints", 0) > 1); };
 
 U.live = function (msg) {
   var n = U.$("#live");
@@ -1760,7 +1872,7 @@ function defaultData() {
     lists: [sample],
     plan: plan,
     session: {
-      no: "1", day: "Saturday", date: U.dateKey(new Date()), title: "",
+      no: "1", day: DAYS[U.weekdayIndex(new Date())], autoDay: true, date: U.dateKey(new Date()), title: "",
       ready: [
         "Are you ready? Let's begin.",
         "Pen and paper ready? Here we go!",
@@ -1779,8 +1891,11 @@ function defaultData() {
       ]
     },
     announcement: null,
+    sharedParts: {},
+    lecturerContact: { whatsapp: "", email: "" },
     comments: [],
     inbox: [],
+    sentMessages: [],
     sessions: [],
     results: [],
     history: [],
@@ -1804,20 +1919,49 @@ var DB = {
     if (raw) {
       try { d = JSON.parse(raw); } catch (e) { d = null; }
     }
-    if (!d || typeof d !== "object") d = defaultData();
+    if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) {
+      if (raw) Store.set(CONFIG.key + ".recovery", raw);
+      var automatic = Store.get(CONFIG.key + ".bak");
+      try { d = automatic ? JSON.parse(automatic) : null; } catch (err) { d = null; }
+      if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
+    }
     d = DB.migrate(d);
     this.data = d;
+    if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
+    /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
+    if (!this.data.admin.pinHash) {
+      var salt = Admin.makeSalt();
+      this.data.admin.pinSalt = salt;
+      this.data.admin.pinHash = Sha.hex("sdp.v1:" + salt + ":7898");
+      this.saveNow();
+    }
     return d;
   },
   migrate: function (d) {
     var base = defaultData();
     var k;
+    if (!d || typeof d !== "object" || Array.isArray(d)) d = base;
+    Object.keys(base).forEach(function (key) {
+      if (Array.isArray(base[key])) {
+        if (!Array.isArray(d[key])) d[key] = base[key];
+      } else if (base[key] && typeof base[key] === "object") {
+        if (!d[key] || typeof d[key] !== "object" || Array.isArray(d[key])) d[key] = base[key];
+      }
+    });
+    ["lists", "comments", "inbox", "sessions", "results", "history", "outbox"].forEach(function (key) {
+      d[key] = d[key].filter(function (item) { return item && typeof item === "object" && !Array.isArray(item); });
+    });
+    if (!Array.isArray(d.plan.weekdays)) d.plan.weekdays = base.plan.weekdays;
+    if (!d.plan.dates || typeof d.plan.dates !== "object" || Array.isArray(d.plan.dates)) d.plan.dates = {};
+    if (!Array.isArray(d.session.ready)) d.session.ready = base.session.ready;
+    if (!Array.isArray(d.session.praise)) d.session.praise = base.session.praise;
     if (!d.v) d.v = 1;
     /* future migrations go here: if (d.v < 2) { ...; d.v = 2; } */
     for (k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
     for (k in base.settings) { if (d.settings[k] === undefined) d.settings[k] = base.settings[k]; }
     for (k in base.plan) { if (d.plan[k] === undefined) d.plan[k] = base.plan[k]; }
+    if (d.session.autoDay === undefined) d.session.autoDay = false;
     for (k in base.session) { if (d.session[k] === undefined) d.session[k] = base.session[k]; }
     for (k in base.profile) { if (d.profile[k] === undefined) d.profile[k] = base.profile[k]; }
     for (k in base.admin) { if (d.admin[k] === undefined) d.admin[k] = base.admin[k]; }
@@ -1825,9 +1969,18 @@ var DB = {
     if (!d.lists.length) d.lists.push(base.lists[0]);
     d.lists.forEach(function (l) {
       if (!l.id) l.id = U.uid("list");
-      if (!l.words) l.words = [];
+      if (!Array.isArray(l.words)) l.words = [];
+      l.words = l.words.filter(function (item) { return item && typeof item === "object" && typeof item.w === "string" && U.trim(item.w); }).map(function (item) {
+        return { w: U.clip(item.w, CONFIG.maxWordChars), s: U.clip(item.s, 500), m: U.clip(item.m, 500) };
+      });
+      l.name = U.clip(l.name || "Word list", 120);
+      if (typeof l.id !== "string") l.id = U.uid("list");
       if (!l.version) l.version = 1;
       if (l.draft === undefined) l.draft = false;
+      if (l.published && !Array.isArray(l.publishedWords)) {
+        l.publishedWords = l.words.map(function (x) { return { w: x.w, s: x.s, m: x.m }; });
+        l.publishedName = l.name; l.publishedVersion = l.version;
+      }
     });
     if (!d.plan.defaultList || !DB.findList(d, d.plan.defaultList)) d.plan.defaultList = d.lists[0].id;
     if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
@@ -1847,30 +2000,57 @@ var DB = {
     if (this.saveTimer) return;
     this.saveTimer = setTimeout(function () {
       self.saveTimer = null;
-      try { Store.set(CONFIG.key, JSON.stringify(self.data)); }
-      catch (e) { UI.warnStorage(); }
+      self.saveNow();
     }, 120);
   },
   saveNow: function () {
     if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
-    try { Store.set(CONFIG.key, JSON.stringify(this.data)); } catch (e) { UI.warnStorage(); }
+    try {
+      var text = JSON.stringify(this.data);
+      Store.set(CONFIG.key, text);
+      Store.set(CONFIG.key + ".bak", text);
+    } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
   },
   reset: function () {
-    try { Store.del(CONFIG.key); } catch (e) {}
+    /* Keep both recovery copies. Reset is possible only after a separate confirmation. */
+    if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
+    Store.set(CONFIG.key + ".beforeReset", JSON.stringify(this.data));
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
-    this.saveNow();
+    this.data.admin.pinSalt = Admin.makeSalt();
+    this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898");
+    Store.set(CONFIG.key, JSON.stringify(this.data));
   },
-  exportAll: function () {
-    return JSON.stringify({ app: "smart-dictation-player", version: APP_VERSION, exportedAt: new Date().toISOString(), data: this.data }, null, 1);
+  exportAll: function (emergency) {
+    var full = emergency === true || Admin.unlocked;
+    var data = this.data;
+    if (!full && data) {
+      data = JSON.parse(JSON.stringify(data));
+      data.lists = data.lists.filter(function (list) { return list.published; }).map(function (list) { return Lib.studentList(list); });
+      data.inbox = data.inbox.filter(function (message) { return message.mine; });
+      data.comments = data.comments.filter(function (comment) { return !comment.hidden; });
+      data.outbox = data.outbox.filter(function (job) { return ["publish","announce","moderate","inbox"].indexOf(job.action) < 0; });
+      data.results = []; data.admin = {};
+    }
+    return JSON.stringify({ app: "smart-dictation-player", version: APP_VERSION, scope: full ? "full" : "personal", exportedAt: new Date().toISOString(), data: data }, null, 1);
   },
   importAll: function (text) {
     var obj;
     try { obj = JSON.parse(text); } catch (e) { return { ok: false, err: "This file is not valid JSON." }; }
     if (!obj || typeof obj !== "object") return { ok: false, err: "This file is not a backup." };
     var d = obj.data && typeof obj.data === "object" ? obj.data : (obj.lists ? obj : null);
-    if (!d || !d.lists) return { ok: false, err: "This backup has no word lists inside." };
+    if (obj.scope === "personal" && d && !Array.isArray(d)) {
+      var restored = this.migrate(d), current = this.data;
+      function merge(a, b) { var seen = Object.create(null), out = []; a.concat(b).forEach(function (item) { var key = item.id || item.w || JSON.stringify(item); if (!seen[key]) { seen[key]=true; out.push(item); } }); return out; }
+      current.history = merge(current.history,restored.history).slice(0,CONFIG.maxHistory);
+      current.mywords = merge(current.mywords,restored.mywords); current.mistakes = merge(current.mistakes,restored.mistakes);
+      ["theme","size","hc","perf","voiceName","rate","volume","mode","showWord","haptics"].forEach(function (key) { current.settings[key]=restored.settings[key]; });
+      current.inbox = merge(current.inbox,restored.inbox.filter(function (message) { return message.mine; }));
+      this.saveNow(); return {ok:true,lists:current.lists.length,results:current.history.length};
+    }
+    if (!d || Array.isArray(d) || !Array.isArray(d.lists) || !d.lists.length) return { ok: false, err: "This backup has no word lists inside." };
     this.data = this.migrate(d);
+    if (!this.data.admin.pinHash) { this.data.admin.pinSalt = Admin.makeSalt(); this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898"); }
     this.saveNow();
     return { ok: true, lists: this.data.lists.length, results: this.data.history.length };
   }
@@ -1954,7 +2134,7 @@ var UI = {
   applyTheme: function () {
     var t = DB.data.settings.theme || "auto";
     document.documentElement.setAttribute("data-theme", t);
-    var dark = t === "dark" || (t === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var dark = t === "dark" || (t === "auto" && UI.prefers("(prefers-color-scheme: dark)"));
     var meta = U.$("meta[name=theme-color]");
     if (meta) meta.setAttribute("content", dark ? "#080a11" : "#eaf0fb");
   },
@@ -1967,8 +2147,8 @@ var UI = {
   autoPerf: function () {
     if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
     if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return "lite";
-    if (navigator.deviceMemory && navigator.deviceMemory <= 2) return "lite";
+    if (U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
+    if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 2) return "lite";
     try {
       var conn = navigator.connection || navigator.webkitConnection;
       if (conn && conn.saveData) return "lite";
@@ -2109,7 +2289,7 @@ var UI = {
     sh.appendChild(head);
     var body = U.el("div", "sbody", null);
     sh.appendChild(body);
-    if (o.body) { try { o.body(body, sh); } catch (e) {} }
+    if (o.body) U.safe(o.body, "sheet: " + (o.title || ""))(body, sh);
     if (o.actions && o.actions.length) {
       var foot = U.el("div", "sfoot btn-row", null);
       o.actions.forEach(function (b) { foot.appendChild(b); });
@@ -2132,7 +2312,7 @@ var UI = {
     if (top.node.parentNode) top.node.parentNode.removeChild(top.node);
     if (top.scrim.parentNode) top.scrim.parentNode.removeChild(top.scrim);
     if (top.unt) top.unt();
-    if (top.onClose) { try { top.onClose(); } catch (e) {} }
+    if (top.onClose) U.safe(top.onClose, "close screen")();
     if (this.lastFocus && this.lastFocus.focus) { try { this.lastFocus.focus(); } catch (e) {} }
   },
 
@@ -2154,7 +2334,7 @@ var UI = {
     var foot = U.el("div", "lfoot", null);
     L.appendChild(head); L.appendChild(body);
     if (o.foot) L.appendChild(foot);
-    if (o.body) { try { o.body(body, L, foot, rightSlot); } catch (e) {} }
+    if (o.body) U.safe(o.body, "layer: " + (o.title || ""))(body, L, foot, rightSlot);
     U.$("#layers").appendChild(L);
     var unt = this.trap(L);
     this.stack.push({ type: "layer", node: L, unt: unt, onClose: o.onClose });
@@ -2166,7 +2346,7 @@ var UI = {
         var top = this.stack.splice(i, 1)[0];
         if (top.node.parentNode) top.node.parentNode.removeChild(top.node);
         if (top.unt) top.unt();
-        if (top.onClose) { try { top.onClose(); } catch (e) {} }
+        if (top.onClose) U.safe(top.onClose, "close screen")();
         return;
       }
     }
@@ -2192,7 +2372,7 @@ var UI = {
     m.setAttribute("aria-modal", "true");
     m.appendChild(U.el("h2", null, o.title || "Are you sure?"));
     if (o.text) m.appendChild(U.el("p", "muted small", o.text));
-    if (o.body) { try { o.body(m); } catch (e) {} }
+    if (o.body) U.safe(o.body, "confirm: " + (o.title || ""))(m);
     var row = U.el("div", "btn-row", null);
     row.style.marginTop = "16px";
     var cancel = U.btn(o.cancelLabel || S.cancel, null, "ghost");
@@ -2275,18 +2455,28 @@ var Lib = {
     for (var i = 0; i < DB.data.lists.length; i++) if (DB.data.lists[i].published) out.push(DB.data.lists[i]);
     return out;
   },
+  studentList: function (l) {
+    if (!l) return null;
+    return { id: l.id, name: l.publishedName || l.name, words: l.publishedWords || l.words,
+      version: l.publishedVersion || l.version, published: l.published };
+  },
+  forDate: function (date) {
+    var p = DB.data.plan, d = U.validDate(date);
+    var l = Lib.byId(p.pinned) || Lib.byId(p.dates[U.dateKey(d)]) || Lib.byId(p.weekdays[U.weekdayIndex(d)]) || Lib.byId(p.defaultList);
+    return l && l.published ? Lib.studentList(l) : null;
+  },
   current: function () {
     var p = DB.data.plan;
     var l;
-    if (p.pinned) { l = this.byId(p.pinned); if (l && l.published) return l; }
+    if (p.pinned) { l = this.byId(p.pinned); if (l && l.published) return this.studentList(l); }
     var key = U.dateKey(new Date());
-    if (p.dates && p.dates[key]) { l = this.byId(p.dates[key]); if (l && l.published) return l; }
+    if (p.dates && p.dates[key]) { l = this.byId(p.dates[key]); if (l && l.published) return this.studentList(l); }
     var wi = U.weekdayIndex(new Date());
-    if (p.weekdays && p.weekdays[wi]) { l = this.byId(p.weekdays[wi]); if (l && l.published) return l; }
+    if (p.weekdays && p.weekdays[wi]) { l = this.byId(p.weekdays[wi]); if (l && l.published) return this.studentList(l); }
     l = this.byId(p.defaultList);
-    if (l && l.published) return l;
+    if (l && l.published) return this.studentList(l);
     var pub = this.published();
-    return pub.length ? pub[0] : DB.data.lists[0];
+    return pub.length ? this.studentList(pub[0]) : null;
   },
   estSeconds: function (list) {
     if (!list || !list.words) return 0;
@@ -2352,7 +2542,7 @@ var US_UK = {
   analyze: "analyse", practicing: "practising", practice: "practise",
   program: "programme", dialog: "dialogue", gray: "grey", jewelry: "jewellery",
   defense: "defence", license: "licence", airplane: "aeroplane", tire: "tyre",
-  storey: "story", mom: "mum", elevator: "lift", vacation: "holiday"
+  mom: "mum", elevator: "lift", vacation: "holiday"
 };
 
 /* ============================================================
@@ -2408,13 +2598,13 @@ var Screens = {
     var snap = d.snapshot;
     var rc = U.$("#homeResume");
     if (snap && snap.words && snap.words.length && snap.index < snap.words.length) {
-      rc.classList.remove("hidden");
+      U.setCls(rc, "hidden", false);
       U.$("#resumeText").textContent = S.welcomeBack + " \u2013 " + S.resumeFrom + " " + (snap.index + 1) + " " + S.of + " " + snap.words.length + "?";
       U.$("#resumeSub").textContent = (snap.listName || "Practise list") + " \u00b7 saved " + U.relTime(snap.savedAt || Date.now());
       U.$("#btnResumeYes").textContent = S.resume;
       U.$("#btnResumeNo").textContent = S.startAgain;
     } else {
-      rc.classList.add("hidden");
+      U.setCls(rc, "hidden", true);
       if (d.snapshot) { delete d.snapshot; DB.save(); }
     }
 
@@ -2503,7 +2693,7 @@ var Screens = {
       body: function (b) {
         var ipa = U.el("p", "muted", "");
         var cache = DB.data.dictCache[U.norm(w)] || {};
-        ipa.textContent = cache.ipa ? "/" + cache.ipa + "/" : "Looking up pronunciation\u2026";
+        ipa.textContent = cache.ukSource && cache.ipa ? "/" + cache.ipa + "/" : "Looking up pronunciation\u2026";
         b.appendChild(ipa);
         var mean = U.el("p", "small", "");
         mean.style.marginTop = "6px";
@@ -2514,7 +2704,10 @@ var Screens = {
           ex.style.marginTop = "6px";
           b.appendChild(ex);
         }
-        var note = U.el("p", "tiny muted", "UK voice from your device. For the official Cambridge recording, tap Open in Cambridge Dictionary.");
+        var note = U.el("p", "tiny muted", cache.audio && /-uk\.mp3/.test(cache.audio) ? "UK dictionary audio" : "UK voice on this device");
+        var details = U.el("p", "tiny muted", ""); b.appendChild(details);
+        var ukNote = US_UK[U.norm(w)] ? "UK spelling: " + US_UK[U.norm(w)] : "UK English. For spelling and meaning, check Cambridge.";
+        b.appendChild(U.el("p", "tiny muted", ukNote));
         note.style.marginTop = "10px";
         b.appendChild(note);
 
@@ -2547,9 +2740,10 @@ var Screens = {
 
         Dict.lookup(w, function (res) {
           if (!res) { ipa.textContent = "Pronunciation not available offline."; return; }
-          ipa.textContent = res.ipa ? "/" + res.ipa + "/" : "No IPA available for this word.";
+          ipa.textContent = res.ukSource && res.ipa ? "/" + res.ipa + "/" : "Confirmed UK IPA is not available. Try Cambridge.";
           if (!mean.textContent && res.meaning) mean.textContent = res.meaning;
-          if (res.audio) Dict.ukAudio = res.audio;
+          details.textContent = (res.pos || "") + (res.example && !(item && item.s) ? " — " + res.example : "");
+          note.textContent = res.audio ? "UK dictionary audio" : "UK voice on this device";
         });
       },
       actions: [U.btn("Done", null, "primary block")]
@@ -2591,15 +2785,15 @@ var Screens = {
     var badge = U.$("#commBadge");
     var unread = d.inbox.filter(function (m) { return !m.read; }).length;
     if (badge) {
-      if (unread) { badge.textContent = String(unread); badge.classList.remove("hidden"); }
-      else badge.classList.add("hidden");
+      if (unread) { badge.textContent = String(unread); U.setCls(badge, "hidden", false); }
+      else U.setCls(badge, "hidden", true);
     }
 
     /* optional fallback contact buttons (lecturer can set these) */
     var fb = U.$("#msgFallback");
     fb.textContent = "";
     if (d.contactEmail || d.contactPhone) {
-      fb.classList.remove("hidden");
+      U.setCls(fb, "hidden", false);
       fb.appendChild(U.el("p", "tiny muted", "You can also reach the lecturer directly:"));
       var row = U.el("div", "btn-row tight", null);
       row.style.marginTop = "6px";
@@ -2619,7 +2813,7 @@ var Screens = {
       }
       fb.appendChild(row);
     } else {
-      fb.classList.add("hidden");
+      U.setCls(fb, "hidden", true);
     }
   },
 
@@ -2742,7 +2936,7 @@ var Screens = {
     v.appendChild(lbl);
     var vrow = U.el("div", "btn-row tight", null);
     vrow.style.marginTop = "8px";
-    var test = U.btn("Play test sound", "i-vol", "soft");
+    var test = U.btn("Test voice", "i-vol", "soft");
     U.on(test, "click", function () { Speech.say(["This is your UK English dictation voice."], {}, function () {}); });
     var diag = U.btn("Check my device", "i-target", "soft");
     U.on(diag, "click", function () { Diag.open(); });
@@ -2793,9 +2987,9 @@ var Screens = {
 
     /* ---- My data ---- */
     var md = card("My data");
-    md.appendChild(actionRow("Download backup", "A JSON file with everything on this device", "i-down", function () {
+    md.appendChild(actionRow("Download backup", "Your results and published words. Unlock lecturer mode for a full backup.", "i-down", function () {
       var ok = U.download("dictation-backup-" + U.dateKey(new Date()) + ".json", DB.exportAll(), "application/json");
-      UI.toast(ok ? "Backup downloaded" : "Download blocked \u2013 use Copy instead", { icon: ok ? "i-check" : "i-alert" });
+      UI.toast(ok ? "Download opened. Please check the file was saved." : "Download blocked \u2013 use Copy instead", { icon: ok ? "i-info" : "i-alert" });
       if (!ok) U.selectForCopy(DB.exportAll());
     }));
     md.appendChild(actionRow("Copy backup as text", "For phones that block downloads", "i-copy", function () {
@@ -2821,11 +3015,14 @@ var Screens = {
 
 /* chunked rendering: 50 rows per frame so long lists stay smooth */
 function renderChunked(host, items, build) {
-  var i = 0;
+  var i = 0, adminOnly = !!(Admin && Admin.context);
   function step() {
     var end = Math.min(items.length, i + 50);
     for (; i < end; i++) {
-      try { build(items[i], i); } catch (e) {}
+      if (adminOnly && !Admin.unlocked) return;
+      var before = Admin.context; if (adminOnly) Admin.context = true;
+      try { build(items[i], i); } catch (e) { Errors.report(e, "list row"); }
+      finally { Admin.context = before; }
     }
     if (i < items.length) {
       if (window.requestAnimationFrame) window.requestAnimationFrame(step);
@@ -2927,6 +3124,9 @@ var DataTools = {
           var ta = sh ? sh.querySelector(".sbody textarea") : null;
           var text = ta ? ta.value : "";
           if (!U.trim(text)) { UI.toast("Paste the backup text first", { icon: "i-info" }); return; }
+          var backup;
+          try { backup = JSON.parse(text); } catch (err) { UI.toast("This file is not valid JSON."); return; }
+          if ((!backup || backup.scope !== "personal") && !Admin.unlocked) { UI.toast("Full backups need lecturer mode. Unlock, then open Restore again."); Admin.open(); return; }
           var r = DB.importAll(text);
           if (!r.ok) { UI.toast(r.err, { icon: "i-alert", ms: 6000 }); return; }
           UI.closeSheet();
@@ -2938,21 +3138,66 @@ var DataTools = {
       })()]
     });
   },
-  reset: function () {
-    UI.confirm({
-      title: S.resetAll + "?",
-      text: S.resetQ,
-      okLabel: "Download backup and reset",
-      danger: true,
-      onOk: function () {
-        try { U.download("dictation-backup-before-reset.json", DB.exportAll(), "application/json"); } catch (e) {}
-        DB.reset();
-        UI.applyTheme(); UI.applySize(); UI.applyHc(); UI.applyPerf();
-        UI.setTab("home");
-        UI.toast("App data reset", { icon: "i-check" });
-      }
+  backup: function (next, emergency) {
+    var text = DB.exportAll(emergency);
+    var actions = [];
+    var download = U.btn("Download", "i-down", "soft");
+    U.on(download, "click", function () {
+      var offered = U.download("dictation-backup.json", text, "application/json");
+      UI.toast(offered ? "Download opened. Check that the file is saved before you continue." : "Download did not open. Use Share or Copy text.", { icon: "i-info", ms: 6000 });
     });
+    var share = U.btn("Share", "i-share", "soft");
+    U.on(share, "click", function () { if (!U.share("Dictation backup", text)) U.selectForCopy(text); });
+    var copy = U.btn("Copy text", "i-copy", "soft");
+    U.on(copy, "click", function () { U.copy(text).then(function (ok) { if (ok) UI.toast(S.copied); else U.selectForCopy(text); }); });
+    actions.push(download, share, copy);
+    if (next) {
+      var continueButton = U.btn("Next: confirm reset", null, "danger");
+      U.on(continueButton, "click", function () { UI.closeSheet(); DataTools.confirmReset(); });
+      actions.push(continueButton);
+    }
+    UI.sheet({ title: "Step 1: save your backup", body: function (b) {
+      b.appendChild(U.el("p", "small muted", "Your data will not be deleted here. Save this backup outside the app. A download can fail on a phone, so check the saved file."));
+      var ta = U.el("textarea", null, text); ta.readOnly = true;
+      ta.setAttribute("aria-label", "Full backup text"); ta.style.minHeight = "160px"; b.appendChild(ta);
+    }, actions: actions });
+  },
+  reset: function (emergency) { DataTools.backup(true, emergency); },
+  confirmReset: function () {
+    if (!Admin.unlocked) { UI.toast("Unlock lecturer mode, then open Reset again."); Admin.open(); return; }
+    UI.sheet({ title: "Step 2: confirm reset", body: function (b) {
+      b.appendChild(U.el("p", "small muted", "This removes words, results and messages from this device. It does not remove data from the lecturer's cloud."));
+      var label = U.el("label", "row", null);
+      var tick = U.el("input", null, null); tick.type = "checkbox"; tick.id = "resetSaved";
+      label.appendChild(tick); label.appendChild(U.el("span", null, "I saved my backup")); b.appendChild(label);
+      var typed = U.el("input", null, null); typed.type = "text"; typed.id = "resetTyped";
+      typed.placeholder = "Type RESET"; typed.setAttribute("aria-label", "Type RESET to confirm"); b.appendChild(typed);
+      var confirm = U.btn("Reset this device", "i-trash", "danger block"); confirm.id = "resetConfirm"; confirm.disabled = true;
+      function validate() { confirm.disabled = !(tick.checked && typed.value === "RESET"); }
+      U.on(tick, "change", validate); U.on(typed, "input", validate);
+      U.on(confirm, "click", function () {
+        if (!tick.checked || typed.value !== "RESET") return;
+        Eng.stop(true); Admin.lock(); DB.reset(); UI.closeSheet();
+        UI.applyTheme(); UI.applySize(); UI.applyHc(); UI.applyPerf(); UI.setTab("home");
+        UI.toast("App data reset. The last recovery copy is still on this device.", { icon: "i-check" });
+      }); b.appendChild(confirm);
+    }});
+  },
+  restoreAutomatic: function () {
+    var text = Store.get(CONFIG.key + ".bak");
+    var data;
+    try { data = text ? JSON.parse(text) : null; } catch (err) {}
+    if (!data || !Array.isArray(data.lists) || !data.lists.length) {
+      UI.toast("No automatic backup is available. Try Restore from backup in Settings.", { icon: "i-info" }); return;
+    }
+    UI.confirm({ title: "Restore last automatic backup?", text: "This replaces the current data on this device. A copy of the current data will be kept for recovery.", okLabel: "Restore", onOk: function () {
+      Store.set(CONFIG.key + ".recovery", Store.get(CONFIG.key) || "");
+      var result = DB.importAll(text);
+      if (!result.ok) { UI.toast(result.err); return; }
+      window.location.reload();
+    }});
   }
+
 };
 /* ============================================================
    SECTION 11 - SPEECH (UK English only, defensive)
@@ -2962,7 +3207,8 @@ var Speech = {
   voices: [],
   ukVoices: [],
   chosen: null,
-  allowNonUK: false,
+  allowNonUK: false, /* retained for old saved code; non-UK speech is never used */
+  textOnly: false,
   token: 0,
   activeUtter: null,
   watchdog: null,
@@ -2975,7 +3221,7 @@ var Speech = {
   },
 
   init: function () {
-    this.supported = !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+    try { this.supported = !!(window.speechSynthesis && window.SpeechSynthesisUtterance); } catch (err) { this.supported = false; }
     var self = this;
     if (!this.supported) return;
     this.readVoices();
@@ -2991,7 +3237,7 @@ var Speech = {
   },
 
   normLang: function (l) { return String(l || "").replace(/_/g, "-").toLowerCase(); },
-  isUK: function (v) { return this.normLang(v.lang) === "en-gb"; },
+  isUK: function (v) { return !!v && this.normLang(v.lang) === "en-gb"; },
 
   readVoices: function () {
     if (!this.supported) return;
@@ -3010,22 +3256,21 @@ var Speech = {
   pick: function () {
     var st = DB.data ? DB.data.settings : { voiceName: "" };
     var i;
-    if (!this.ukVoices.length) {
-      if (this.allowNonUK) {
-        var en = [];
-        for (i = 0; i < this.voices.length; i++) if (/^en/.test(this.normLang(this.voices[i].lang))) en.push(this.voices[i]);
-        this.chosen = en.length ? en[0] : (this.voices[0] || null);
-      } else {
-        this.chosen = null;
-      }
-      return this.chosen;
-    }
+    if (!this.ukVoices.length) { this.chosen = null; return null; }
+    this.textOnly = false;
     if (st.voiceName) {
       for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === st.voiceName) { this.chosen = this.ukVoices[i]; return this.chosen; }
     }
     var good = ["Daniel", "Kate", "Serena", "Martha", "Oliver", "Google UK English Female", "Google UK English Male",
       "Microsoft Sonia", "Microsoft Ryan", "Microsoft Libby", "Microsoft Hazel", "Microsoft George", "Microsoft Susan"];
-    var offline = (navigator.onLine === false);
+    var localRanked = this.ukVoices.filter(function (voice) { return voice.localService; });
+    if (localRanked.length) {
+      for (var rank = 0; rank < good.length; rank++) {
+        for (var li = 0; li < localRanked.length; li++) if (String(localRanked[li].name).indexOf(good[rank]) === 0) { this.chosen = localRanked[li]; return this.chosen; }
+      }
+      this.chosen = localRanked[0]; return this.chosen;
+    }
+    var offline = (U.nav("onLine", true) === false);
     /* offline: local voices first */
     if (offline) {
       for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].localService) { this.chosen = this.ukVoices[i]; return this.chosen; }
@@ -3045,7 +3290,7 @@ var Speech = {
 
   /* must be called synchronously inside a user gesture on iOS / Chrome */
   unlock: function () {
-    if (!this.supported) return;
+    if (!this.supported || this.textOnly || !this.isUkVoice()) return;
     try {
       var u = new SpeechSynthesisUtterance(" ");
       u.volume = 0;
@@ -3081,8 +3326,9 @@ var Speech = {
     var self = this;
     var o = opts || {};
     var token = ++this.token;
-    if (!this.supported) { cb && cb({ ok: false, err: "unsupported" }); return token; }
+    if (!this.supported || this.textOnly) { cb && cb({ ok: false, err: "text mode" }); return token; }
     if (!this.chosen) this.pick();
+    if (!this.chosen || !this.isUK(this.chosen)) { UI.toast("No UK voice. Add one in Settings or use Text mode."); cb && cb({ok:false,err:"no UK voice"}); return token; }
     var queue = [];
     for (var i = 0; i < parts.length; i++) {
       var sp = this.splitLong(parts[i]);
@@ -3177,7 +3423,7 @@ var NoVoice = {
     var self = this;
     var dev = U.deviceType();
     var steps = {
-      iPhone: "Settings \u203a Accessibility \u203a Spoken Content \u203a Voices \u203a English \u203a United Kingdom \u203a download a voice.",
+      iPhone: "Settings \u203a Accessibility \u203a Spoken Content \u203a Voices \u203a English \u203a United Kingdom \u203a download a voice. On iOS 12: Settings › General › Accessibility › Speech › Voices.",
       Android: "Settings \u203a search \u201cText-to-speech\u201d \u203a install the English (United Kingdom) voice data.",
       Windows: "Settings \u203a Time & language \u203a Speech \u203a Add voices \u203a English (United Kingdom).",
       Mac: "System Settings \u203a Accessibility \u203a Spoken Content \u203a System voice \u203a Manage voices \u203a English (United Kingdom)."
@@ -3191,13 +3437,12 @@ var NoVoice = {
         box.appendChild(U.el("b", "small", dev + " steps"));
         box.appendChild(U.el("p", "small muted", steps[dev] || steps.Android));
         b.appendChild(box);
-        var other = U.btn("Continue with another English voice (not UK)", null, "soft block");
+        var other = U.btn("Continue in Text mode", null, "soft block");
         other.style.marginTop = "12px";
         U.on(other, "click", function () {
-          Speech.allowNonUK = true;
-          Speech.pick();
+          Speech.textOnly = true; Speech.allowNonUK = false;
           self.close();
-          UI.toast("Using a non-UK English voice. This is recorded in your result.", { icon: "i-info", ms: 6000 });
+          UI.toast("Text mode: the word is shown. Tap Next when you are ready.", { icon: "i-info", ms: 6000 });
           if (onOther) onOther();
         });
         b.appendChild(other);
@@ -3288,8 +3533,8 @@ var Eng = {
     }
     if (!Speech.supported) {
       UI.toast("This browser cannot speak. Use Text mode: the word is shown and you tap Next.", { icon: "i-alert", ms: 8000 });
-    } else if (!Speech.ukVoices.length && !Speech.allowNonUK) {
-      NoVoice.open();
+    } else if (!Speech.ukVoices.length && !Speech.textOnly) {
+      var self = this; NoVoice.open(function () { self.start(o); }, function () { self.start(o); });
       return;
     }
     this.stop(true);
@@ -3299,16 +3544,18 @@ var Eng = {
     this.listVersion = list.version || 1;
     this.sessionNo = o.sessionNo !== undefined ? o.sessionNo : (DB.data.session.no || "");
     this.sessionDay = o.sessionDay !== undefined ? o.sessionDay : (DB.data.session.day || "");
+    this.sessionDate = DB.data.session.date || U.dateKey(new Date()); this.sessionTitle = DB.data.session.title || "";
     this.mode = o.mode || DB.data.settings.mode || "paper";
     this.answers = [];
     this.hard = [];
     this.idx = 0;
     this.startedAt = Date.now();
-    this.showWord = !!DB.data.settings.showWord;
+    this.showWord = !!DB.data.settings.showWord || !Speech.supported || Speech.textOnly;
     var seed = Math.floor(Math.random() * 100000) + 1;
     this.seed = seed;
     this.order = DB.data.settings.shuffle ? Lib.shuffleSeeded(this.words.length, seed) : this.words.map(function (_, i) { return i; });
     this.st = "ready";
+    this.saveSnapshot();
     this.openPlayer();
     this.readyScreen();
   },
@@ -3322,6 +3569,7 @@ var Eng = {
     this.listVersion = snap.listVersion || 1;
     this.sessionNo = snap.sessionNo || "";
     this.sessionDay = snap.sessionDay || "";
+    this.sessionDate = snap.sessionDate || DB.data.session.date; this.sessionTitle = snap.sessionTitle || "";
     this.mode = snap.mode || "paper";
     this.answers = snap.answers || [];
     this.hard = snap.hard || [];
@@ -3329,7 +3577,7 @@ var Eng = {
     this.idx = U.clamp(snap.index || 0, 0, this.words.length - 1);
     this.startedAt = snap.startedAt || Date.now();
     this.seed = snap.seed || 1;
-    this.showWord = !!snap.showWord;
+    this.showWord = !!snap.showWord || !Speech.supported || Speech.textOnly;
     this.st = "ready";
     this.openPlayer();
     this.runItem(this.idx);
@@ -3341,11 +3589,11 @@ var Eng = {
       listId: this.listId, listName: this.listName, listVersion: this.listVersion,
       words: this.words.slice(0), index: this.idx, order: this.order.slice(0),
       answers: this.answers.slice(0), hard: this.hard.slice(0), mode: this.mode,
-      sessionNo: this.sessionNo, sessionDay: this.sessionDay,
+      sessionNo: this.sessionNo, sessionDay: this.sessionDay, sessionDate: this.sessionDate, sessionTitle: this.sessionTitle,
       startedAt: this.startedAt, savedAt: Date.now(), seed: this.seed, showWord: this.showWord,
       settingsAtStart: JSON.parse(JSON.stringify(DB.data.settings))
     };
-    DB.save();
+    DB.saveNow();
   },
 
   /* ---------- the scheduler ---------- */
@@ -3388,7 +3636,7 @@ var Eng = {
       var total = U.clamp(b.secs, 3, 60);
       var left = total;
       this.startCountdown(total, left);
-      if (DB.data.settings.advance === "auto") {
+      if (DB.data.settings.advance === "auto" && Speech.supported && !Speech.textOnly) {
         this.countdown.t = setInterval(function () {
           if (stale()) { clearInterval(self.countdown ? self.countdown.t : null); return; }
           left--;
@@ -3539,7 +3787,7 @@ var Eng = {
       title: S.restart + "?",
       text: S.restartQ,
       okLabel: S.restart,
-      onOk: function () { self.runItem(0); }
+      onOk: function () { self.answers = []; self.hard = []; self.startedAt = Date.now(); self.runItem(0); }
     });
   },
   finishEarly: function () {
@@ -3560,6 +3808,7 @@ var Eng = {
     this.releaseWake();
     if (!silent && this.layer) UI.closeLayer(this.layer);
     this.layer = null;
+    if (Cloud.pendingState) { Cloud.releasePending(); DB.saveNow(); }
   },
 
   vibrate: function (ms) {
@@ -3572,8 +3821,8 @@ var Eng = {
   requestWake: function () {
     var self = this;
     try {
-      if (navigator.wakeLock && navigator.wakeLock.request) {
-        navigator.wakeLock.request("screen").then(function (lock) {
+      if (U.nav("wakeLock", null) && U.nav("wakeLock", null).request) {
+        U.nav("wakeLock", null).request("screen").then(function (lock) {
           self.wakeLock = lock;
           try {
             lock.addEventListener("release", function () { self.wakeLock = null; });
@@ -3594,7 +3843,7 @@ var Eng = {
     var n = U.$("#plWake", this.layer);
     if (!n) return;
     n.textContent = ok ? S.wakeOk : S.autoLock;
-    n.classList.remove("hidden");
+    U.setCls(n, "hidden", false);
   }
 };
 /* ============================================================
@@ -3604,7 +3853,7 @@ Eng.openPlayer = function () {
   var self = this;
   if (this.layer) UI.closeLayer(this.layer);
   this.layer = UI.layer({
-    title: "Dictation",
+    title: Lib.sessionLabel() + (DB.data.session.title ? " — " + DB.data.session.title : ""),
     backLabel: "Exit",
     body: function (body, L, foot, rightSlot) {
       /* header right: show word + flag */
@@ -3720,7 +3969,12 @@ Eng.openPlayer = function () {
         inp.setAttribute("spellcheck", "false");
         inp.setAttribute("autocomplete", "off");
         inp.setAttribute("aria-label", "Your answer");
-        U.on(inp, "input", function () { self.answers[self.idx] = inp.value; });
+        var feedback = U.el("p", "tiny muted", ""); feedback.setAttribute("role", "status");
+        U.on(inp, "input", function () {
+          self.answers[self.idx] = U.clip(inp.value, 100); self.saveSnapshot();
+          var answer = U.norm(inp.value), target = U.norm(self.currentWord().w);
+          feedback.textContent = !answer ? "" : answer === target ? "Correct" : US_UK[answer] === target ? "American spelling — UK: " + target : "Keep trying";
+        }); top.appendChild(feedback);
         U.on(inp, "keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); self.next(); } });
         top.appendChild(inp);
       }
@@ -3936,7 +4190,7 @@ var Results = {
       date: U.dateKey(new Date()),
       ts: Date.now(),
       sessionNo: meta.sessionNo,
-      sessionDay: meta.sessionDay,
+      sessionDay: meta.sessionDay, sessionDate: meta.sessionDate, sessionTitle: meta.sessionTitle,
       listName: meta.listName,
       listId: meta.listId,
       mode: meta.mode,
@@ -4012,7 +4266,7 @@ var Results = {
             : (rec.percent >= 50 ? "Good effort. The words below will help."
               : "Keep going \u2013 try these words again tomorrow."));
         body.appendChild(msg);
-        var metaLine = U.el("p", "center tiny muted", "Session " + (rec.sessionNo || "\u2013") + " \u00b7 " + (rec.listName || "") +
+        var metaLine = U.el("p", "center tiny muted", "Session " + (rec.sessionNo || "\u2013") + " \u00b7 " + (rec.sessionDay || "") + " \u00b7 " + (rec.sessionDate || rec.date || "") + (rec.sessionTitle ? " — " + rec.sessionTitle : "") + " \u00b7 " + (rec.listName || "") +
           " \u00b7 " + U.dur(rec.durationSec) + " \u00b7 " + (rec.ukVoice ? "UK voice" : "non-UK voice") + (rec.selfScored ? " \u00b7 self-scored" : ""));
         body.appendChild(metaLine);
 
@@ -4222,22 +4476,16 @@ Eng.finish = function (early) {
   var order = this.order.slice(0);
   var meta = {
     listId: this.listId, listName: this.listName, sessionNo: this.sessionNo, sessionDay: this.sessionDay,
-    mode: this.mode, startedAt: this.startedAt
+    mode: this.mode, startedAt: this.startedAt, sessionDate: this.sessionDate, sessionTitle: this.sessionTitle
   };
   var praise = DB.data.session.praise || [];
   var line = praise.length ? praise[Math.floor(Math.random() * praise.length)] : S.wellDone;
 
+  var res = meta.mode === "type" ? Results.scoreTypeMode(words, order, self.answers) : {rows:[],correct:0,half:0,total:words.length};
+  var rec = Results.finish(words, order, res, meta);
   var built = false;
   function build() {
-    if (built) return;
-    built = true;
-    var res;
-    if (meta.mode === "type") {
-      res = Results.scoreTypeMode(words, order, self.answers);
-    } else {
-      res = { rows: [], correct: 0, half: 0, total: words.length };
-    }
-    var rec = Results.finish(words, order, res, meta);
+    if (built) return; built = true;
     if (self.layer) { UI.closeLayer(self.layer); self.layer = null; }
     self.stop(true);
     Results.open(rec, words, order);
@@ -4263,10 +4511,10 @@ var Dict = {
     var key = U.norm(word);
     if (!key) { cb && cb(null); return; }
     var cache = DB.data.dictCache[key];
-    var fresh = cache && cache.ts && (Date.now() - cache.ts < 7 * 86400000);
+    var fresh = cache && cache.ukSource !== undefined && cache.ts && (Date.now() - cache.ts < 7 * 86400000);
     if (fresh) { cb && cb(cache); return; }
     if (!window.fetch) { cb && cb(cache || null); return; }
-    if (navigator.onLine === false) { cb && cb(cache || null); return; }
+    if (U.nav("onLine", true) === false) { cb && cb(cache || null); return; }
     var token = U.uid("dk");
     var done = false;
     var ctrl = null;
@@ -4311,21 +4559,24 @@ var Dict = {
       var i;
       var ph = e.phonetics || [];
       for (i = 0; i < ph.length; i++) {
-        if (!ipa && ph[i] && ph[i].text) ipa = String(ph[i].text).replace(/^\//, "").replace(/\/$/, "");
-        if (!audio && ph[i] && ph[i].audio && String(ph[i].audio).indexOf("-uk.mp3") > -1) audio = ph[i].audio;
+        if (!audio && ph[i] && typeof ph[i].audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(ph[i].audio)) {
+          audio = ph[i].audio;
+          ipa = ph[i].text ? String(ph[i].text).replace(/^\//, "").replace(/\/$/, "") : "";
+        }
       }
-      if (!audio) {
-        for (i = 0; i < ph.length; i++) if (ph[i] && ph[i].audio) { audio = ph[i].audio; break; }
-      }
-      var meaning = "";
+      if (audio && !/^https:\/\//i.test(audio)) audio = "";
+      var meaning = "", example = "", pos = "";
       var ms = e.meanings || [];
       for (i = 0; i < ms.length && !meaning; i++) {
         var defs = (ms[i] && ms[i].definitions) || [];
-        if (defs.length && defs[0].definition) meaning = String(defs[0].definition);
+        if (defs.length && defs[0].definition) {
+          meaning = String(defs[0].definition); pos = U.clip(ms[i].partOfSpeech,40);
+          example = U.clip(defs[0].example,200);
+        }
       }
       if (meaning.length > 160) meaning = meaning.slice(0, 157) + "\u2026";
       if (!ipa && !meaning && !audio) return null;
-      return { ipa: ipa, meaning: meaning, audio: audio };
+      return { ipa: audio ? ipa : "", meaning: meaning, audio: audio, example: example, pos: pos, ukSource: !!audio };
     } catch (err) { return null; }
   },
 
@@ -4334,7 +4585,7 @@ var Dict = {
     var self = this;
     var key = U.norm(word);
     var cache = DB.data.dictCache[key];
-    if (cache && cache.audio) {
+    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
       try {
         if (!this.audioEl) {
           this.audioEl = new Audio();
@@ -4396,7 +4647,7 @@ var Comm = {
     var s = DB.data.session;
     return [
       "Session " + (s.no || "\u2013"),
-      s.day || "",
+      s.day || "", s.date || "", s.title || "",
       (Lib.current() ? Lib.current().name : ""),
       U.fmtDate(new Date()),
       U.deviceType(),
@@ -4444,6 +4695,7 @@ var Comm = {
       UI.toast("Thanks \u2013 your lecturer has been told about this comment.", { icon: "i-check" });
     });
     box.appendChild(rep2);
+    if (!Cloud.mode && c.mine) { var send = U.btn("Send to lecturer", "i-share", "sm soft"); U.on(send,"click",function () { Links.contact(c.name + ": " + c.text + "\n" + c.meta); }); box.appendChild(send); }
     return box;
   },
 
@@ -4453,6 +4705,10 @@ var Comm = {
     UI.sheet({
       title: S.newComment,
       body: function (b) {
+        var nickname = U.el("input", null, null); nickname.value = DB.data.profile.nickname; nickname.maxLength = 24;
+        nickname.setAttribute("aria-label", "Friendly nickname (not your real name)");
+        U.on(nickname, "change", function () { DB.data.profile.nickname = Comm.sanitize(nickname.value, 24) || UI.makeNickname(); DB.saveNow(); });
+        b.appendChild(nickname);
         b.appendChild(U.el("p", "small muted", "You are posting as " + DB.data.profile.nickname + ". No name, e-mail or phone number is needed."));
         var seg = U.el("div", "seg scroll", null);
         seg.style.margin = "10px 0";
@@ -4509,7 +4765,7 @@ var Comm = {
           if (!Comm.rateCheck()) { UI.toast(S.rateLimit, { icon: "i-clock", ms: 5000 }); return; }
           var c = {
             id: U.uid("c"), ts: Date.now(), name: DB.data.profile.nickname, status: status,
-            text: text, meta: Comm.meta(), pinned: false, hidden: false, reply: "", pending: true, sent: false
+            text: text, meta: Comm.meta(), pinned: false, hidden: false, reply: "", pending: true, sent: false, mine: true
           };
           DB.data.comments.unshift(c);
           if (DB.data.comments.length > CONFIG.maxComments) DB.data.comments.length = CONFIG.maxComments;
@@ -4558,10 +4814,10 @@ var Comm = {
 
         var lbl3 = U.el("label", "field", null);
         lbl3.style.marginTop = "10px";
-        lbl3.appendChild(U.el("span", "lbl", "How can the lecturer reach you? (optional)"));
+        lbl3.appendChild(U.el("span", "lbl", "Seat or group (optional)"));
         var inp = U.el("input", null, null);
         inp.type = "text";
-        inp.placeholder = "For example: row 3, or a first name";
+        inp.placeholder = "For example: row 3";
         inp.maxLength = 120;
         inp.setAttribute("aria-label", "Contact details (optional)");
         lbl3.appendChild(inp);
@@ -4584,17 +4840,19 @@ var Comm = {
           var inp = sh ? sh.querySelector('.sbody input[type="text"]') : null;
           var text = ta ? U.clip(ta.value, CONFIG.messageLen) : "";
           if (!U.trim(text)) { UI.toast("Please write your message first.", { icon: "i-info" }); return; }
+          if (!Comm.rateCheck()) { UI.toast(S.rateLimit); return; }
           var m = {
             id: U.uid("m"), ts: Date.now(), name: DB.data.profile.nickname,
             cat: sel ? sel.value : "Question", text: text, contact: inp ? U.clip(inp.value, 120) : "",
-            read: false, meta: Comm.meta(), pending: true
+            read: false, meta: Comm.meta(), pending: true, mine: true
           };
           DB.data.inbox.unshift(m);
           if (DB.data.inbox.length > CONFIG.maxInbox) DB.data.inbox.length = CONFIG.maxInbox;
           DB.saveNow();
           Cloud.queue({ action: "message", cid: m.id, name: m.name, cat: m.cat, text: m.text, contact: m.contact, meta: m.meta });
           UI.closeSheet();
-          UI.toast(Cloud.mode ? "Sending to your lecturer\u2026" : "Saved for your lecturer on this device.", { icon: "i-check", ms: 5000 });
+          UI.toast(Cloud.mode ? "Sending to your lecturer\u2026" : "Saved on this device. Choose how to send it to the lecturer.", { icon: "i-check", ms: 5000 });
+          if (!Cloud.mode) Links.contact(m.text + "\n" + m.meta);
           Screens.comm();
         });
         return btn;
@@ -4613,6 +4871,7 @@ var Admin = {
   bgSince: 0,
   draft: {},
   editListId: "",
+  context: false,
 
   /* ---------- PIN hashing ---------- */
   toBytes: function (s) {
@@ -4627,7 +4886,8 @@ var Admin = {
   },
   hashPin: function (pin, salt, cb) {
     var text = "sdp.v1:" + salt + ":" + pin;
-    var subtle = window.crypto && window.crypto.subtle ? window.crypto.subtle : null;
+    var subtle = null;
+    try { subtle = window.crypto && window.crypto.subtle ? window.crypto.subtle : null; } catch (err) {}
     if (subtle && subtle.digest) {
       try {
         subtle.digest("SHA-256", this.toBytes(text)).then(function (buf) {
@@ -4651,7 +4911,7 @@ var Admin = {
       return;
     }
     if (Cloud.mode) {
-      if (navigator.onLine === false) {
+      if (U.nav("onLine", true) === false) {
         UI.toast("Cloud mode needs the internet. The PIN is checked on the server, so it cannot be unlocked offline.", { icon: "i-cloud", ms: 6000 });
         return;
       }
@@ -4659,19 +4919,20 @@ var Admin = {
     } else if (a.pinHash) {
       this.pad("local", null);
     } else {
-      this.pad("create", null);
+      this.pad("local", null);
     }
   },
 
   pad: function (mode, confirmPin) {
     var self = this;
     var entry = "";
+    var authRun = (this.authRun || 0) + 1; this.authRun = authRun;
     var sh = UI.sheet({
       title: mode === "create" ? S.createPin : (mode === "confirm" ? S.confirmPin : (Cloud.mode ? "Lecturer PIN (checked on the server)" : S.enterPin)),
       body: function (b) {
         if (mode === "create") b.appendChild(U.el("p", "small muted", S.createPinSub));
         else if (mode === "confirm") b.appendChild(U.el("p", "small muted", "Type the same PIN again to be sure."));
-        else b.appendChild(U.el("p", "small muted", Cloud.mode ? "Your PIN never leaves the server check. It is kept in memory only while the panel is open." : "This PIN only locks the lecturer panel on this device."));
+        else b.appendChild(U.el("p", "small muted", Cloud.mode ? "The server checks your PIN. It is sent over HTTPS and kept in memory only while the panel is open." : "This PIN locks this device only."));
         var dots = U.el("div", "dots", null);
         dots.id = "pinDots";
         for (var i = 0; i < 8; i++) dots.appendChild(U.el("i", null, null));
@@ -4709,9 +4970,9 @@ var Admin = {
         function shake() {
           var p = U.$("#pinPad");
           if (!p) return;
-          p.classList.remove("shake");
+          U.setCls(p, "shake", false);
           void p.offsetWidth;
-          p.classList.add("shake");
+          U.setCls(p, "shake", true);
         }
         function setMsg(t) { var m = U.$("#pinMsg"); if (m) m.textContent = t; }
         paint();
@@ -4723,15 +4984,13 @@ var Admin = {
           if (entry.length >= CONFIG.maxPin) return;
           entry += k;
           paint();
-          var minLen = mode === "cloud" ? CONFIG.minPin : CONFIG.minPin;
-          if (entry.length < minLen) return;
-          /* submit automatically at 4+ digits for a smooth flow */
-          if (entry.length < CONFIG.minPin) return;
-          var pin = entry;
-          entry = "";
-          paint();
-          submit(pin);
         });
+        var enter = U.btn("Unlock", "i-lock", "primary block"); enter.id = "pinSubmit";
+        U.on(enter, "click", function () {
+          if (DB.data.admin.lockUntil > Date.now()) return;
+          if (!/^[0-9]{4,8}$/.test(entry)) { setMsg("Use 4 to 8 digits, then tap Unlock."); return; }
+          var pin = entry; entry = ""; paint(); submit(pin);
+        }); b.appendChild(enter);
 
         function submit(pin) {
           if (mode === "create") {
@@ -4757,6 +5016,7 @@ var Admin = {
           if (mode === "cloud") {
             setMsg("Checking\u2026");
             Cloud.adminLogin(pin, function (res) {
+              if (self.authRun !== authRun || !sh.parentNode) return;
               if (res && res.ok) {
                 self.pin = pin;
                 UI.closeSheet();
@@ -4772,6 +5032,7 @@ var Admin = {
           /* local verify */
           var a = DB.data.admin;
           self.hashPin(pin, a.pinSalt, function (hash) {
+            if (self.authRun !== authRun || !sh.parentNode) return;
             if (hash === a.pinHash) {
               a.fails = 0;
               DB.save();
@@ -4800,13 +5061,22 @@ var Admin = {
 
   unlock: function () {
     this.unlocked = true;
+    if (Cloud.mode && this.pin) {
+      Cloud.post({ action: "readInbox", pin: this.pin }, function (res) {
+        if (!Admin.unlocked || !res || !res.ok || !Array.isArray(res.inbox)) return;
+        DB.data.inbox = res.inbox; if (Array.isArray(res.comments)) DB.data.comments = DB.data.comments.filter(function (c) { return c.pending; }).concat(res.comments); if (Array.isArray(res.results)) DB.data.results=res.results; DB.saveNow(); Admin.renderTab();
+      });
+    }
     this.lastActive = Date.now();
     this.panel();
     this.startIdleWatch();
+    if (Cloud.mode) Cloud.flush();
   },
   lock: function () {
     this.unlocked = false;
+    this.authRun = (this.authRun || 0) + 1;
     this.pin = "";
+    while (UI.closeTop()) {}
     if (this.idleTimer) { clearInterval(this.idleTimer); this.idleTimer = null; }
     var L = this.layer;
     if (L) UI.closeLayer(L);
@@ -4832,17 +5102,31 @@ var Admin = {
   },
 
   /* ---------- messy text parser ---------- */
+  splitRow: function (line) {
+    if (line.indexOf("|") >= 0) return line.split("|");
+    if (line.indexOf("\t") >= 0) return line.split("\t");
+    var cells = [], cell = "", quoted = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      if (ch === '"') {
+        if (quoted && line.charAt(i + 1) === '"') { cell += '"'; i++; }
+        else quoted = !quoted;
+      } else if (ch === "," && !quoted) { cells.push(cell); cell = ""; }
+      else cell += ch;
+    }
+    cells.push(cell); return cells;
+  },
   parseWords: function (text) {
     var lines = String(text || "").split(/\r?\n/);
-    var out = [], problems = [], dupes = 0, seen = {};
+    var out = [], problems = [], dupes = 0, seen = Object.create(null);
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
       line = line.replace(/^\s*[\u2022\u25cf\u25aa\u25cb\*\-\u2013\u2014\uf0b7]\s*/, "");
       line = line.replace(/^\s*\d+\s*[\.\)\:\-]\s*/, "");
-      line = line.replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, "");
+      /* CSV quotes are handled by splitRow, not stripped from the whole row. */
       line = U.trim(line);
-      if (!line) continue;
-      var bits = line.split("|");
+      if (!line) { if (i < lines.length - 1) problems.push("Line " + (i + 1) + ": blank line ignored"); continue; }
+      var bits = this.splitRow(line);
       var w = U.trim(bits[0]).replace(/[,;]+$/, "");
       var s = bits[1] ? U.clip(bits[1], 200) : "";
       var m = bits[2] ? U.clip(bits[2], 120) : "";
@@ -4851,7 +5135,9 @@ var Admin = {
       if (/[0-9]/.test(w)) { problems.push("\u201c" + w + "\u201d has a number in it"); continue; }
       if (!/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) { problems.push("\u201c" + w + "\u201d has unusual symbols"); continue; }
       var key = w.toLowerCase();
-      if (seen[key]) { dupes++; continue; }
+      if (seen[key]) { dupes++; problems.push("Line " + (i + 1) + ": duplicate word removed: " + w); continue; }
+      if (!s) problems.push("Line " + (i + 1) + ": add an example sentence for " + w);
+      if (US_UK[key]) problems.push("Line " + (i + 1) + ": American spelling. UK: " + US_UK[key]);
       seen[key] = true;
       out.push({ w: w, s: s, m: m });
     }
@@ -4864,7 +5150,7 @@ var Admin = {
   panel: function () {
     var self = this;
     this.touch();
-    if (this.layer) UI.closeLayer(this.layer);
+    if (this.layer) { var pin = this.pin; UI.closeLayer(this.layer); this.unlocked = true; this.pin = pin; }
     var L = UI.layer({
       title: S.lecturerMode,
       backLabel: "Close",
@@ -4906,7 +5192,7 @@ var Admin = {
         UI.segInit(seg, function (val) { self.tab = val; self.renderTab(host); });
         self.renderTab(host);
       },
-      onClose: function () { self.layer = null; }
+      onClose: function () { self.layer = null; self.unlocked = false; self.pin = ""; }
     });
     this.layer = L;
     return L;
@@ -4996,20 +5282,22 @@ Admin.tabWords = function (host) {
     libBox.appendChild(add);
   }
   paintLib();
+  var sample = U.btn("Add sample B1 list (30 words)", "i-plus", "sm soft");
+  U.on(sample,"click",function () { var l = {id:U.uid("list"),name:"Sample B1 list (30 words)",words:SAMPLE_WORDS.map(function (x) { return {w:x.w,s:x.s,m:x.m}; }),version:1,published:false,draft:true}; d.lists.push(l); self.editListId=l.id; DB.saveNow(); self.renderTab(); }); libBox.appendChild(sample);
 
   /* --- editor --- */
   var list = this.editListId ? Lib.byId(this.editListId) : d.lists[0];
   if (!list) return;
   this.editListId = list.id;
   var ed = this.card(host, "Editor: " + list.name);
-  var hint = U.el("p", "tiny muted", "One word per line. Optional format: word | example sentence | short meaning. Numbering such as \u201c1.\u201d and bullets are removed automatically.");
+  var hint = U.el("p", "tiny muted", "Paste one word per line, or word | sentence | meaning. Tabs and CSV commas work too. Check the preview, save a draft, then publish.");
   ed.appendChild(hint);
   var ta = U.el("textarea", null, null);
   ta.setAttribute("aria-label", "Word list text");
   ta.style.minHeight = "180px";
   ta.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
-  ta.style.fontSize = "15px";
-  ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.words.map(function (x) {
+  ta.style.fontSize = "16px";
+  ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : list.words.map(function (x) {
     return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w;
   }).join("\n");
   ed.appendChild(ta);
@@ -5021,7 +5309,7 @@ Admin.tabWords = function (host) {
 
   function refresh() {
     var r = self.parseWords(ta.value);
-    self.draft[list.id] = ta.value;
+    self.draft[list.id] = ta.value; list.draftText = ta.value; DB.save();
     info.textContent = r.items.length + " words \u00b7 " + r.dupes + " duplicate" + (r.dupes === 1 ? "" : "s") + " removed \u00b7 " + r.problems.length + " problem" + (r.problems.length === 1 ? "" : "s");
     preview.textContent = "";
     if (r.problems.length) {
@@ -5030,10 +5318,15 @@ Admin.tabWords = function (host) {
       preview.appendChild(p);
     }
     if (r.items.length) {
-      var pv = U.el("div", "tiny muted", "Preview: " + r.items.slice(0, 8).map(function (x) { return x.w; }).join(", ") + (r.items.length > 8 ? " \u2026" : ""));
-      preview.appendChild(pv);
+      var scroll = U.el("div", null, null); scroll.style.maxHeight = "220px"; scroll.style.overflow = "auto";
+      var table = U.el("table", "tiny", null); table.style.width = "100%";
+      var head = U.el("tr", null, null);
+      ["Word", "Sentence", "Meaning"].forEach(function (label) { head.appendChild(U.el("th", null, label)); }); table.appendChild(head);
+      r.items.forEach(function (x) { var row = U.el("tr", null, null); [x.w, x.s || "Add a sentence", x.m || "Optional"].forEach(function (value) { row.appendChild(U.el("td", null, value)); }); table.appendChild(row); });
+      scroll.appendChild(table); preview.appendChild(scroll);
     }
   }
+  U.on(ta, "input", function () { self.draft[list.id] = ta.value; list.draftText = ta.value; DB.saveNow(); });
   U.on(ta, "input", U.debounce(refresh, 220));
   refresh();
 
@@ -5054,12 +5347,12 @@ Admin.tabWords = function (host) {
       icon: "i-check",
       undo: function () { list.words = old; DB.saveNow(); self.renderTab(); }
     });
-    self.renderTab();
+    delete self.draft[list.id]; delete list.draftText; self.renderTab();
   }
 
   var brow = U.el("div", "btn-row tight", null);
   brow.style.marginTop = "10px";
-  var bReplace = U.btn("Replace full list", "i-refresh", "soft");
+  var bReplace = U.btn("Save draft (replace list)", "i-refresh", "soft");
   U.on(bReplace, "click", function () {
     UI.confirm({
       title: "Replace the whole list?",
@@ -5075,10 +5368,10 @@ Admin.tabWords = function (host) {
 
   var brow2 = U.el("div", "btn-row tight", null);
   brow2.style.marginTop = "8px";
-  var bImp = U.btn("Import .txt / .csv", "i-up", "soft");
+  var bImp = U.btn("Import .txt / .csv / .json", "i-up", "soft");
   var fi = U.el("input", null, null);
   fi.type = "file";
-  fi.accept = ".txt,.csv,text/plain,text/csv";
+  fi.accept = ".txt,.csv,.json,text/plain,text/csv,application/json";
   fi.style.display = "none";
   U.on(fi, "change", function () {
     var f = fi.files && fi.files[0];
@@ -5086,7 +5379,16 @@ Admin.tabWords = function (host) {
     try {
       var fr = new FileReader();
       fr.onload = function () {
-        ta.value = U.trim(ta.value) ? (ta.value + "\n" + String(fr.result || "")) : String(fr.result || "");
+        if (!self.unlocked) return;
+        var text = String(fr.result || "");
+        if (/\.json$/i.test(f.name)) {
+          var parsed;
+          try { parsed = JSON.parse(text); } catch (err) { UI.toast("This JSON file could not be read."); return; }
+          var words = Array.isArray(parsed) ? parsed : parsed && parsed.words;
+          if (!Array.isArray(words)) { UI.toast("This file needs an array of words."); return; }
+          text = words.filter(function (x) { return x && typeof x.w === "string"; }).map(function (x) { return U.csvCell(x.w) + "," + U.csvCell(x.s || "") + "," + U.csvCell(x.m || ""); }).join("\n");
+        }
+        ta.value = text;
         refresh();
         UI.toast("Imported " + f.name + " \u2013 check the preview, then Append or Replace.", { icon: "i-check", ms: 5000 });
       };
@@ -5100,26 +5402,31 @@ Admin.tabWords = function (host) {
     var txt = list.words.map(function (x) { return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w; }).join("\n");
     if (!U.download(list.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".txt", txt)) U.selectForCopy(txt);
   });
-  brow2.appendChild(bImp); brow2.appendChild(fi); brow2.appendChild(bExp);
+  var csv = U.btn("Export CSV", "i-down", "soft");
+  U.on(csv, "click", function () { var text = U.csv(list.words.map(function (x) { return [x.w, x.s, x.m]; })); if (!U.download("word-list.csv", text, "text/csv")) U.selectForCopy(text); });
+  var json = U.btn("Export JSON", "i-down", "soft");
+  U.on(json, "click", function () { var text = JSON.stringify({ name: list.name, words: list.words }, null, 2); if (!U.download("word-list.json", text, "application/json")) U.selectForCopy(text); });
+  brow2.appendChild(bImp); brow2.appendChild(fi); brow2.appendChild(bExp); brow2.appendChild(csv); brow2.appendChild(json);
   ed.appendChild(brow2);
 
   /* auto-fill meanings + IPA (online, small batches) */
   var brow3 = U.el("div", "btn-row tight", null);
   brow3.style.marginTop = "8px";
-  var bFill = U.btn("Auto-fill meanings (online)", "i-cloud", "soft");
+  var bFill = U.btn("Fill missing meaning / sentence (online)", "i-cloud", "soft");
   var prog = U.el("span", "tiny muted", "");
   var cancel = { stop: false };
   U.on(bFill, "click", function () {
     cancel.stop = false;
-    var todo = list.words.filter(function (x) { return !x.m; });
+    var todo = list.words.filter(function (x) { return !x.m || !x.s; });
     if (!todo.length) { UI.toast("Every word already has a meaning.", { icon: "i-check" }); return; }
-    if (navigator.onLine === false) { UI.toast("This needs the internet.", { icon: "i-alert" }); return; }
+    if (U.nav("onLine", true) === false) { UI.toast("This needs the internet.", { icon: "i-alert" }); return; }
     var i = 0;
     bFill.disabled = true;
     var cancelBtn = U.btn("Cancel", null, "sm ghost");
     U.on(cancelBtn, "click", function () { cancel.stop = true; });
     brow3.appendChild(cancelBtn);
     (function stepFn() {
+      if (!self.unlocked) { cancel.stop = true; bFill.disabled = false; return; }
       if (cancel.stop || i >= todo.length) {
         bFill.disabled = false;
         prog.textContent = cancel.stop ? "Stopped." : "Done. " + todo.length + " words checked.";
@@ -5131,7 +5438,9 @@ Admin.tabWords = function (host) {
       var w = todo[i++];
       prog.textContent = "Looking up " + i + " of " + todo.length + "\u2026";
       Dict.lookup(w.w, function (res) {
+        if (!self.unlocked) return;
         if (res && res.meaning && !w.m) w.m = U.clip(res.meaning, 120);
+        if (res && res.example && !w.s && res.example.split(/\s+/).length >= 8 && res.example.split(/\s+/).length <= 14) w.s = U.clip(res.example, 200);
         list.draft = true;
         setTimeout(stepFn, 120);
       });
@@ -5146,6 +5455,16 @@ Admin.tabWords = function (host) {
   wbox.appendChild(wl);
   renderChunked(wl, list.words, function (x, i) {
     var row = U.el("div", "listrow", null);
+    row.draggable = true;
+    U.on(row, "dragstart", function (ev) { if (ev.dataTransfer) ev.dataTransfer.setData("text/plain", String(i)); });
+    U.on(row, "dragover", function (ev) { ev.preventDefault(); });
+    U.on(row, "drop", function (ev) {
+      ev.preventDefault(); if (!ev.dataTransfer) return;
+      var from = Number(ev.dataTransfer.getData("text/plain"));
+      if (!isFinite(from) || from < 0 || from >= list.words.length || from === i) return;
+      var moved = list.words.splice(from, 1)[0]; list.words.splice(i, 0, moved);
+      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
+    });
     row.appendChild(U.el("div", "n", String(i + 1)));
     var w = U.el("div", "w", null);
     w.appendChild(U.el("b", null, x.w));
@@ -5161,15 +5480,16 @@ Admin.tabWords = function (host) {
     dn.disabled = i === list.words.length - 1;
     U.on(up, "click", function () {
       var t = list.words[i]; list.words[i] = list.words[i - 1]; list.words[i - 1] = t;
-      list.draft = true; DB.save(); self.renderTab();
+      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
     });
     U.on(dn, "click", function () {
       var t = list.words[i]; list.words[i] = list.words[i + 1]; list.words[i + 1] = t;
-      list.draft = true; DB.save(); self.renderTab();
+      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
     });
     U.on(del, "click", function () {
       var copy = list.words.slice(0);
       list.words.splice(i, 1);
+      delete list.draftText; delete self.draft[list.id];
       list.draft = true;
       DB.saveNow();
       UI.toast("\u201c" + x.w + "\u201d removed", { icon: "i-trash", undo: function () { list.words = copy; DB.saveNow(); self.renderTab(); } });
@@ -5218,12 +5538,12 @@ Admin.tabWords = function (host) {
       title: "Delete this list?", text: list.name + " and its " + list.words.length + " words will be removed.",
       okLabel: "Delete", danger: true,
       onOk: function () {
-        var copy = d.lists.slice(0);
+        var copy = d.lists.slice(0), oldDefault = d.plan.defaultList;
         var idx = d.lists.indexOf(list);
         if (idx > -1) d.lists.splice(idx, 1);
         if (d.plan.defaultList === list.id) d.plan.defaultList = d.lists[0].id;
         DB.saveNow();
-        UI.toast("List deleted", { icon: "i-trash", undo: function () { d.lists = copy; DB.saveNow(); self.renderTab(); } });
+        UI.toast("List deleted", { icon: "i-trash", undo: function () { d.lists = copy; d.plan.defaultList = oldDefault; DB.saveNow(); self.renderTab(); } });
         self.editListId = d.lists[0].id;
         self.renderTab();
       }
@@ -5307,7 +5627,11 @@ Admin.tabWords = function (host) {
   prow.style.marginTop = "8px";
   var copyWeek = U.btn("Copy last week", "i-copy", "sm soft");
   U.on(copyWeek, "click", function () {
-    if (!d.plan.lastWeek || !d.plan.lastWeek.length) { UI.toast("Nothing saved from last week yet.", { icon: "i-info" }); return; }
+    if (!d.plan.lastWeek || !d.plan.lastWeek.length) {
+      var monday = new Date(); monday.setDate(monday.getDate() - U.weekdayIndex(monday));
+      for (var day=0;day<7;day++) { var last = new Date(monday.getTime()); last.setDate(last.getDate()-7+day); var previous=Lib.forDate(last); var date=new Date(monday.getTime()); date.setDate(date.getDate()+day); if (previous) d.plan.dates[U.dateKey(date)]=previous.id; }
+      DB.saveNow(); self.renderTab(); UI.toast("Last week's day choices copied to this week."); return;
+    }
     d.plan.weekdays = d.plan.lastWeek.slice(0);
     DB.saveNow(); self.renderTab();
   });
@@ -5325,6 +5649,24 @@ Admin.tabWords = function (host) {
   pl.appendChild(prow);
 
   /* --- publish --- */
+  var targetRow = U.el("div", "planrow", null);
+  targetRow.appendChild(U.el("span", "small", "Publish for"));
+  var target = U.el("select", null, null); target.id = "publishTarget";
+  [["today", "Today"], ["w5", "Saturday every week"], ["w6", "Sunday every week"], ["date", "A specific date"], ["pinned", "Pin now"]].concat(DAYS.map(function (day, i) { return ["w" + i, day + " every week"]; })).forEach(function (item) {
+    var option = U.el("option", null, item[1]); option.value = item[0]; target.appendChild(option);
+  }); targetRow.appendChild(target);
+  var targetDate = U.el("input", null, null); targetDate.type = "date"; targetDate.value = U.dateKey(new Date()); targetDate.setAttribute("aria-label", "Publish date"); targetRow.appendChild(targetDate); pl.appendChild(targetRow);
+  var calendar = U.el("div", null, null); calendar.style.overflowX = "auto";
+  var grid = U.el("table", "tiny", null); var heading = U.el("tr", null, null);
+  DAYS_S.forEach(function (day) { heading.appendChild(U.el("th", null, day)); }); grid.appendChild(heading);
+  var monday = new Date(); monday.setDate(monday.getDate() - U.weekdayIndex(monday));
+  for (var week = 0; week < 8; week++) {
+    var weekRow = U.el("tr", null, null);
+    for (var day = 0; day < 7; day++) {
+      var date = new Date(monday.getTime()); date.setDate(date.getDate() + week * 7 + day);
+      var planned = Lib.forDate(date); weekRow.appendChild(U.el("td", null, U.dateKey(date) + " — " + (planned ? planned.name : "No list")));
+    } grid.appendChild(weekRow);
+  } calendar.appendChild(grid); pl.appendChild(U.el("h3", null, "Next 8 weeks")); pl.appendChild(calendar);
   var pub = this.card(host, null);
   var status = U.el("p", "small", null);
   if (list.published && !list.draft) status.textContent = S.published + ", v" + list.version + (list.updatedAt ? " \u00b7 " + U.relTime(list.updatedAt) : "");
@@ -5336,7 +5678,13 @@ Admin.tabWords = function (host) {
       title: S.publish + "?",
       text: "Students will see \u201c" + list.name + "\u201d with " + list.words.length + " words. A session record is saved too.",
       okLabel: "Publish now",
-      onOk: function () { self.publish(list); }
+      onOk: function () {
+        if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
+        else if (target.value === "date") { if (!targetDate.value) { UI.toast("Choose a date first."); return; } d.plan.dates[targetDate.value] = list.id; }
+        else if (target.value === "pinned") d.plan.pinned = list.id;
+        else d.plan.weekdays[Number(target.value.slice(1))] = list.id;
+        self.publish(list);
+      }
     });
   });
   pub.appendChild(pubBtn);
@@ -5349,6 +5697,9 @@ Admin.publish = function (list) {
   list.draft = false;
   list.version = (list.version || 1) + 1;
   list.updatedAt = Date.now();
+  list.publishedWords = list.words.map(function (x) { return { w: x.w, s: x.s, m: x.m }; });
+  list.publishedName = list.name; list.publishedVersion = list.version;
+  delete list.draftText; delete this.draft[list.id];
   var s = DB.data.session;
   DB.data.sessions.unshift({
     no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "",
@@ -5358,17 +5709,19 @@ Admin.publish = function (list) {
   if (DB.data.sessions.length > 10) DB.data.sessions.length = 10;
   DB.saveNow();
   Cloud.queue({
-    action: "publish", listId: list.id, name: list.name,
+    action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: {pauseWord:DB.data.settings.pauseWord,pauseSent:DB.data.settings.pauseSent,writeFixed:DB.data.settings.writeFixed,repeats:DB.data.settings.repeats,sentence:DB.data.settings.sentence,numbers:DB.data.settings.numbers,writeMode:DB.data.settings.writeMode,advance:DB.data.settings.advance},
     words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }),
-    session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "" },
+    session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "", ready:s.ready, praise:s.praise },
     plan: (function () {
       var out = [];
       for (var i = 0; i < 7; i++) out.push({ key: "w" + i, listId: DB.data.plan.weekdays[i] || "", pinned: false });
-      if (DB.data.plan.pinned) out.push({ key: "pinned", listId: DB.data.plan.pinned, pinned: true });
+      out.push({ key: "pinned", listId: DB.data.plan.pinned || "", pinned: true });
+      out.push({ key: "default", listId: DB.data.plan.defaultList || list.id, pinned: false });
+      Object.keys(DB.data.plan.dates).forEach(function (key) { out.push({ key: "d" + key, listId: DB.data.plan.dates[key], pinned: false }); });
       return out;
     })()
   });
-  UI.toast(S.published + " v" + list.version + (Cloud.mode ? " \u00b7 pushed to the cloud" : " \u00b7 on this device"), { icon: "i-check", ms: 5000 });
+  UI.toast(S.published + " v" + list.version + (Cloud.mode ? " \u00b7 saved, waiting to sync" : " \u00b7 on this device"), { icon: "i-check", ms: 5000 });
   this.renderTab();
 };
 
@@ -5381,9 +5734,9 @@ Admin.tabSession = function (host) {
   var l1 = U.el("label", "field", null);
   l1.appendChild(U.el("span", "lbl", "Session number (for example 12 or 12B)"));
   var noIn = U.el("input", null, null);
-  noIn.type = "text"; noIn.value = s.no || ""; noIn.maxLength = 16;
+  noIn.type = "text"; noIn.value = s.no || ""; noIn.maxLength = 16; noIn.style.fontSize = "32px";
   noIn.setAttribute("aria-label", "Session number");
-  U.on(noIn, "input", U.debounce(function () { s.no = U.clip(noIn.value, 16); DB.save(); }, 250));
+  U.on(noIn, "input", function () { s.no = U.clip(noIn.value, 16); numVal.textContent = s.no; DB.saveNow(); Screens.home(); });
   l1.appendChild(noIn);
   c1.appendChild(l1);
 
@@ -5401,7 +5754,7 @@ Admin.tabSession = function (host) {
     s.no = String(n) + suffix;
     noIn.value = s.no;
     numVal.textContent = s.no;
-    DB.save();
+    DB.saveNow(); Screens.home();
   }
   U.on(minus, "click", function () { bump(-1); });
   U.on(plus, "click", function () { bump(1); });
@@ -5416,7 +5769,7 @@ Admin.tabSession = function (host) {
   var dayIn = U.el("input", null, null);
   dayIn.type = "text"; dayIn.value = s.day || ""; dayIn.maxLength = 24;
   dayIn.setAttribute("aria-label", "Session day");
-  U.on(dayIn, "input", U.debounce(function () { s.day = U.clip(dayIn.value, 24); DB.save(); }, 250));
+  U.on(dayIn, "input", U.debounce(function () { s.day = U.clip(dayIn.value, 24); s.autoDay = false; DB.saveNow(); Screens.home(); }, 250));
   l2.appendChild(dayIn);
   c1.appendChild(l2);
   var chips = U.el("div", "wrap", null);
@@ -5424,18 +5777,19 @@ Admin.tabSession = function (host) {
   DAYS_S.forEach(function (dn, i) {
     var b = U.el("button", "chip", dn);
     b.type = "button";
-    U.on(b, "click", function () { s.day = DAYS[i]; dayIn.value = s.day; DB.save(); });
+    U.on(b, "click", function () { s.day = DAYS[i]; s.autoDay = false; dayIn.value = s.day; DB.saveNow(); Screens.home(); });
     chips.appendChild(b);
   });
   for (var dd = 1; dd <= 7; dd++) {
     (function (n) {
       var b = U.el("button", "chip", "Day " + n);
       b.type = "button";
-      U.on(b, "click", function () { s.day = "Day " + n; dayIn.value = s.day; DB.save(); });
+      U.on(b, "click", function () { s.day = "Day " + n; dayIn.value = s.day; DB.saveNow(); Screens.home(); });
       chips.appendChild(b);
     })(dd);
   }
   c1.appendChild(chips);
+  var autoDay = U.btn("Use today's day", "i-cal", "soft"); U.on(autoDay,"click",function () { s.autoDay=true; s.day=DAYS[U.weekdayIndex(new Date())]; dayIn.value=s.day; DB.saveNow(); Screens.home(); }); c1.appendChild(autoDay);
 
   var l3 = U.el("label", "field", null);
   l3.style.marginTop = "12px";
@@ -5444,7 +5798,7 @@ Admin.tabSession = function (host) {
   dateIn.type = "date";
   dateIn.value = s.date || U.dateKey(new Date());
   dateIn.setAttribute("aria-label", "Session date");
-  U.on(dateIn, "change", function () { s.date = dateIn.value || U.dateKey(new Date()); DB.save(); });
+  U.on(dateIn, "change", function () { s.date = dateIn.value || U.dateKey(new Date()); DB.saveNow(); Screens.home(); });
   l3.appendChild(dateIn);
   c1.appendChild(l3);
 
@@ -5455,7 +5809,7 @@ Admin.tabSession = function (host) {
   tIn.type = "text"; tIn.value = s.title || ""; tIn.maxLength = 80;
   tIn.placeholder = "For example: Unit 5 vocabulary";
   tIn.setAttribute("aria-label", "Session title");
-  U.on(tIn, "input", U.debounce(function () { s.title = U.clip(tIn.value, 80); DB.save(); }, 250));
+  U.on(tIn, "input", U.debounce(function () { s.title = U.clip(tIn.value, 80); DB.saveNow(); Screens.home(); }, 250));
   l4.appendChild(tIn);
   c1.appendChild(l4);
 
@@ -5509,6 +5863,12 @@ Admin.tabSession = function (host) {
   phraseBox("\u201cAre you ready?\u201d phrases", "ready");
   phraseBox("Praise phrases (end of dictation)", "praise");
 
+  var timing = self.card(host, "Player timing");
+  [["pauseWord", "Pause after word (seconds)", 0, 10, 0.1], ["pauseSent", "Pause after sentence (seconds)", 0, 15, 0.1], ["writeFixed", "Fixed writing time (seconds)", 3, 60, 1]].forEach(function (item) {
+    var label = U.el("label", "field", null); label.appendChild(U.el("span", "lbl", item[1]));
+    var input = U.el("input", null, null); input.type = "number"; input.min = item[2]; input.max = item[3]; input.step = item[4]; input.value = DB.data.settings[item[0]];
+    U.on(input, "change", function () { DB.data.settings[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
+  });
   /* default student settings */
   var c3 = this.card(host, "Default student settings");
   var st = DB.data.settings;
@@ -5693,9 +6053,9 @@ Admin.tabAnnounce = function (host) {
   var exp2 = U.btn("Export inbox as CSV", "i-down", "sm soft");
   exp2.style.marginTop = "8px";
   U.on(exp2, "click", function () {
-    var rows = [["id", "date", "nickname", "category", "message", "contact", "read", "meta"]];
+    var rows = [["id", "date", "nickname", "category", "message", "contact", "read", "meta", "reply"]];
     d.inbox.forEach(function (m) {
-      rows.push([m.id, U.fmtDate(m.ts) + " " + U.fmtTime(m.ts), m.name, m.cat, m.text, m.contact, m.read ? "read" : "unread", m.meta]);
+      rows.push([m.id, U.fmtDate(m.ts) + " " + U.fmtTime(m.ts), m.name, m.cat, m.text, m.contact, m.read ? "read" : "unread", m.meta, m.reply || ""]);
     });
     U.download("lecturer-inbox.csv", U.csv(rows), "text/csv");
   });
@@ -5724,7 +6084,7 @@ Admin.tabAnnounce = function (host) {
       var acts = U.el("div", "btn-row tight", null);
       acts.style.marginTop = "8px";
       var rd = U.btn(m.read ? "Mark unread" : "Mark read", "i-check", "sm ghost");
-      U.on(rd, "click", function () { m.read = !m.read; DB.saveNow(); paintInbox(onlyUnread); });
+      U.on(rd, "click", function () { m.read = !m.read; DB.saveNow(); Cloud.queue({ action: "inbox", op: m.read ? "read" : "unread", id: m.id }); paintInbox(onlyUnread); });
       var cp = U.btn("Copy", "i-copy", "sm ghost");
       U.on(cp, "click", function () {
         U.copy((m.name || "") + ": " + m.text).then(function (ok) { if (ok) UI.toast(S.copied, { icon: "i-check" }); });
@@ -5739,7 +6099,17 @@ Admin.tabAnnounce = function (host) {
         UI.toast("Message deleted", { icon: "i-trash", undo: function () { d.inbox = copy; DB.saveNow(); paintInbox(onlyUnread); } });
         paintInbox(onlyUnread);
       });
-      acts.appendChild(rd); acts.appendChild(cp); acts.appendChild(del);
+      var reply = U.btn("Reply", "i-mail", "sm soft");
+      U.on(reply, "click", function () {
+        UI.sheet({ title: "Private reply", body: function (b) {
+          b.appendChild(U.el("p", "small muted", "This reply is kept in the lecturer inbox, never in public comments. Share it privately with the student."));
+          var ta = U.el("textarea", null, m.reply || ""); ta.maxLength = 600; ta.setAttribute("aria-label", "Private reply"); b.appendChild(ta);
+          var save = U.btn("Save reply and share", "i-share", "primary");
+          U.on(save, "click", function () { m.reply = U.clip(ta.value, 600); DB.saveNow(); Cloud.queue({action: "inbox", op: "reply", id: m.id, text: m.reply}); if (!U.share("Lecturer reply", m.reply)) U.selectForCopy(m.reply); }); b.appendChild(save);
+        }});
+      });
+      if (m.reply) box.appendChild(U.el("p", "small", "Your reply: " + m.reply));
+      acts.appendChild(rd); acts.appendChild(cp); acts.appendChild(reply); acts.appendChild(del);
       box.appendChild(acts);
       mbox.appendChild(box);
     });
@@ -5812,7 +6182,7 @@ Admin.tabComments = function (host) {
       U.on(pin, "click", function () {
         c.pinned = !c.pinned;
         DB.saveNow();
-        Cloud.queue({ action: "moderate", op: "pin", id: c.id });
+        Cloud.queue({ action: "moderate", op: "pin", id: c.id, pinned: c.pinned });
         paint(mode);
       });
       var reply = U.btn("Reply", "i-chat", "sm ghost");
@@ -5864,6 +6234,11 @@ Admin.tabComments = function (host) {
 /* ---------- TAB 5: CLASS STATS ---------- */
 Admin.tabStats = function (host) {
   var d = DB.data;
+  if (Cloud.mode && d.results.length) {
+    var cloudStats = this.card(host, "Cloud class results");
+    cloudStats.appendChild(U.el("p", "small", d.results.length + " student results received."));
+    var exportCloud = U.btn("Export class results", "i-down", "soft"); U.on(exportCloud,"click",function () { var text=JSON.stringify(d.results,null,2); if (!U.download("class-results.json",text,"application/json")) U.selectForCopy(text); }); cloudStats.appendChild(exportCloud);
+  }
   var box = this.card(host, "Class overview");
   var counts = { finished: 0, problem: 0, notdone: 0, comment: 0 };
   d.comments.forEach(function (c) { if (counts[c.status] !== undefined) counts[c.status]++; });
@@ -5940,35 +6315,14 @@ Admin.tabTools = function (host) {
   var d = DB.data;
 
   /* cloud setup */
-  var c0 = this.card(host, "Cloud setup");
-  var stateLine = U.el("p", "small", Cloud.mode ? "Cloud link is set in CLOUD_URL." : "Local mode \u2013 no cloud link in this file yet.");
-  c0.appendChild(stateLine);
-  var testRow = U.el("div", "btn-row tight", null);
-  testRow.style.marginTop = "8px";
-  var testBtn = U.btn("Test connection", "i-cloud", "soft");
-  var testOut = U.el("span", "tiny muted", "");
-  U.on(testBtn, "click", function () {
-    testOut.textContent = "Testing\u2026";
-    Cloud.ping(function (res) {
-      testOut.textContent = res && res.ok ? ("Connected in " + (res.ms || 0) + " ms") : ("Failed: " + (res && res.err ? res.err : "no response"));
-    });
+  var c0 = this.card(host, "Share data between phones"); Cloud.wizard(c0);
+  var contactBox = this.card(host, "No-cloud contact");
+  contactBox.appendChild(U.el("p", "small muted", "Students can send their saved comment or message privately with WhatsApp, Email or Share."));
+  ["whatsapp", "email"].forEach(function (key) {
+    var label = U.el("label", "field", null); label.appendChild(U.el("span", "lbl", key === "whatsapp" ? "Lecturer WhatsApp number (country code, digits only)" : "Lecturer email"));
+    var input = U.el("input", null, null); input.type = key === "email" ? "email" : "tel"; input.value = d.lecturerContact[key] || "";
+    U.on(input, "change", function () { d.lecturerContact[key] = U.clip(input.value, 120); DB.saveNow(); }); label.appendChild(input); contactBox.appendChild(label);
   });
-  testRow.appendChild(testBtn); testRow.appendChild(testOut);
-  c0.appendChild(testRow);
-  var urlRow = U.el("div", "btn-row tight", null);
-  urlRow.style.marginTop = "8px";
-  var urlBtn = U.btn(Cloud.mode ? "Show the cloud URL" : "Paste a cloud URL (this device)", "i-link", "soft");
-  U.on(urlBtn, "click", function () { Cloud.urlSheet(); });
-  urlRow.appendChild(urlBtn);
-  c0.appendChild(urlRow);
-  var codeBtn = U.btn("Show the Apps Script code", "i-list", "soft block");
-  codeBtn.style.marginTop = "8px";
-  U.on(codeBtn, "click", function () { Cloud.gasSheet(); });
-  c0.appendChild(codeBtn);
-  var flushBtn = U.btn("Send the outbox now (" + d.outbox.length + " waiting)", "i-send", "soft block");
-  flushBtn.style.marginTop = "8px";
-  U.on(flushBtn, "click", function () { Cloud.flush(); });
-  c0.appendChild(flushBtn);
 
   /* PIN */
   var c1 = this.card(host, "Lecturer PIN");
@@ -6007,9 +6361,11 @@ Admin.tabTools = function (host) {
             var c = ins[0] ? ins[0].value : "", a = ins[1] ? ins[1].value : "", bb = ins[2] ? ins[2].value : "";
             if (!/^[0-9]{4,8}$/.test(a) || a !== bb) { UI.toast("The new PINs must match and use 4 to 8 digits.", { icon: "i-alert" }); return; }
             Admin.hashPin(c, d.admin.pinSalt, function (h) {
+              if (!Admin.unlocked) return;
               if (h !== d.admin.pinHash) { UI.toast("The current PIN is wrong.", { icon: "i-alert" }); return; }
               var salt = Admin.makeSalt();
               Admin.hashPin(a, salt, function (h2) {
+                if (!Admin.unlocked) return;
                 d.admin.pinHash = h2;
                 d.admin.pinSalt = salt;
                 DB.saveNow();
@@ -6119,14 +6475,14 @@ var Cloud = {
   pendingState: null,
 
   valid: function (u) {
-    return typeof u === "string" && u.indexOf(CONFIG.gasPrefix) === 0 && u.slice(-5) === CONFIG.gasSuffix;
+    return typeof u === "string" && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,200}\/exec$/.test(u);
   },
   init: function () {
     var fileUrl = U.trim(CLOUD_URL);
     var stored = "";
     try { stored = U.trim(Store.get("sdp.cloudurl") || ""); } catch (e) {}
-    if (this.valid(fileUrl)) this.url = fileUrl;
-    else if (this.valid(stored)) this.url = stored;
+    if (this.valid(stored)) this.url = stored;
+    else if (this.valid(fileUrl)) this.url = fileUrl;
     else this.url = "";
     this.mode = !!this.url;
     this.remoteVer = DB.data.remoteVer || 0;
@@ -6148,6 +6504,7 @@ var Cloud = {
 
   /* POST as text/plain (simple request, no CORS preflight) with an 8 s timeout */
   post: function (obj, cb) {
+    cb = U.once(cb);
     var self = this;
     if (!this.mode) { cb && cb({ ok: false, err: "no cloud link" }); return; }
     var body = "";
@@ -6179,6 +6536,7 @@ var Cloud = {
     } catch (e) { cb && cb({ ok: false, err: "blocked" }); }
   },
   get: function (params, cb) {
+    cb = U.once(cb);
     var self = this;
     if (!this.mode) { cb && cb({ ok: false, err: "no cloud link" }); return; }
     var qs = [];
@@ -6191,11 +6549,12 @@ var Cloud = {
       x.onreadystatechange = function () {
         if (x.readyState !== 4) return;
         if (x.status >= 200 && x.status < 300) {
+          self.fails = 0;
           var res = null;
           try { res = JSON.parse(x.responseText || "{}"); } catch (e) { res = { ok: false, err: "bad json" }; }
           self.lastMs = Date.now() - t0;
           cb && cb(res || { ok: false, err: "bad json" });
-        } else cb && cb({ ok: false, err: "http " + x.status });
+        } else { self.fails++; UI.renderNet(); cb && cb({ ok: false, err: "http " + x.status }); }
       };
       x.ontimeout = function () { cb && cb({ ok: false, err: "timeout" }); };
       x.onerror = function () { cb && cb({ ok: false, err: "network" }); };
@@ -6217,10 +6576,10 @@ var Cloud = {
 
   queue: function (payload) {
     if (!payload) return;
+    payload.deviceId = DB.data.profile.deviceId;
     DB.data.outbox.push(payload);
-    if (DB.data.outbox.length > 200) DB.data.outbox.shift();
     DB.save();
-    if (this.mode && navigator.onLine !== false) this.flush();
+    if (this.mode && U.nav("onLine", true) !== false) this.flush();
     else this.scheduleFlush();
   },
   scheduleFlush: function () {
@@ -6236,7 +6595,7 @@ var Cloud = {
     var self = this;
     if (!this.mode || this.flushing) return;
     if (!DB.data.outbox.length) { UI.renderNet(); return; }
-    if (navigator.onLine === false) return;
+    if (U.nav("onLine", true) === false) return;
     this.flushing = true;
     (function stepFn() {
       if (!DB.data.outbox.length) {
@@ -6245,10 +6604,18 @@ var Cloud = {
         if (UI.tab === "comm") Screens.comm();
         return;
       }
-      var item = DB.data.outbox[0];
-      self.post(item, function (res) {
+      var index = -1;
+      for (var j = 0; j < DB.data.outbox.length; j++) {
+        var candidate = DB.data.outbox[j];
+        if (["publish", "announce", "moderate", "inbox"].indexOf(candidate.action) < 0 || (Admin.unlocked && Admin.pin)) { index = j; break; }
+      }
+      if (index < 0) { self.flushing = false; UI.renderNet(); return; }
+      var item = DB.data.outbox[index], request = {};
+      Object.keys(item).forEach(function (key) { if (key !== "pin") request[key] = item[key]; });
+      if (["publish", "announce", "moderate", "inbox"].indexOf(item.action) >= 0) request.pin = Admin.pin;
+      self.post(request, function (res) {
         if (res && res.ok) {
-          DB.data.outbox.shift();
+          var sentIndex = DB.data.outbox.indexOf(item); if (sentIndex >= 0) DB.data.outbox.splice(sentIndex, 1);
           if (item.action === "comment" && res.id) {
             for (var i = 0; i < DB.data.comments.length; i++) {
               if (DB.data.comments[i].id === item.cid) { DB.data.comments[i].pending = false; DB.data.comments[i].sent = true; DB.data.comments[i].serverId = res.id; break; }
@@ -6272,10 +6639,10 @@ var Cloud = {
     var jitter = Math.floor(Math.random() * 4000);
     this.pollTimer = setTimeout(function () {
       self.pollTimer = null;
-      if (document.hidden || navigator.onLine === false || !self.mode) { self.poll(); return; }
+      if (document.hidden || U.nav("onLine", true) === false || !self.mode) { self.poll(); return; }
       self.get({ action: "ver" }, function (res) {
         if (res && res.ok && Number(res.ver) > self.remoteVer) self.pullState();
-        self.pullComments();
+        self.pullComments(); self.flush();
         self.poll();
       });
     }, CONFIG.pollMs + jitter);
@@ -6287,6 +6654,7 @@ var Cloud = {
       self.remoteVer = Number(res.ver) || self.remoteVer;
       DB.data.remoteVer = self.remoteVer;
       self.applyState(res);
+      self.updatedAt = Date.now(); self.fails = 0;
       DB.save();
       UI.renderNet();
       if (UI.tab === "home") Screens.home();
@@ -6294,13 +6662,13 @@ var Cloud = {
   },
   pullComments: function () {
     this.get({ action: "comments" }, function (res) {
-      if (!res || !res.ok || !res.comments) return;
-      var pending = DB.data.comments.filter(function (c) { return c.pending; });
+      if (!res || !res.ok || !Array.isArray(res.comments)) return;
+      var pending = DB.data.comments.filter(function (c) { return c.pending || (Admin.unlocked && c.hidden); });
       var mine = {};
       DB.data.comments.forEach(function (c) { mine[c.serverId || c.id] = c; });
       var merged = res.comments.map(function (c) {
         var old = mine[c.id];
-        if (old) { c.mine = true; }
+        if (old && old.mine) { c.mine = true; }
         return c;
       });
       DB.data.comments = pending.concat(merged).slice(0, CONFIG.maxComments);
@@ -6311,32 +6679,36 @@ var Cloud = {
   applyState: function (st) {
     var d = DB.data;
     var busy = (Eng.st === "speaking" || Eng.st === "waiting" || Eng.st === "paused" || Eng.st === "ready");
-    if (st.lists && st.lists.length) {
+    if (!st || typeof st !== "object") return;
+    if (Array.isArray(st.lists) && st.lists.length) {
       if (busy) {
         this.pendingState = st;
         UI.toast(S.newListQueued, { icon: "i-cloud", ms: 6000 });
         return;
       }
       st.lists.forEach(function (rl) {
-        if (!rl || !rl.id || !rl.words) return;
+        if (!rl || typeof rl.id !== "string" || !Array.isArray(rl.words)) return;
+        rl.words = rl.words.filter(function (x) { return x && typeof x.w === "string"; }).map(function (x) { return {w: U.clip(x.w, 40), s: U.clip(x.s, 500), m: U.clip(x.m, 500)}; });
         var local = Lib.byId(rl.id);
         if (!local) {
           d.lists.push({ id: rl.id, name: rl.name || "Cloud list", words: rl.words, version: rl.version || 1, published: true, draft: false, updatedAt: Date.now() });
-        } else if ((rl.version || 1) >= (local.version || 1)) {
+        } else if (!DB.data.outbox.some(function (item) { return item.action === "publish" && item.listId === rl.id; })) {
           local.name = rl.name || local.name;
-          local.words = rl.words;
+          if (!(Admin.unlocked && local.draft)) local.words = rl.words;
+          local.publishedWords = rl.words; local.publishedName = rl.name || local.name; local.publishedVersion = rl.version || 1;
           local.version = rl.version || local.version;
           local.published = true;
-          local.draft = false;
+          if (!Admin.unlocked) local.draft = false;
           local.updatedAt = Date.now();
         }
       });
     }
-    if (st.plan && st.plan.length) {
+    if (Array.isArray(st.plan) && st.plan.length) {
       var weekdays = ["", "", "", "", "", "", ""], pinned = "", dates = {};
       st.plan.forEach(function (p) {
-        if (!p || !p.key) return;
+        if (!p || typeof p.key !== "string") return;
         if (p.key === "pinned") pinned = p.listId || "";
+        else if (p.key === "default") d.plan.defaultList = p.listId || d.plan.defaultList;
         else if (p.key.charAt(0) === "w") {
           var i = parseInt(p.key.slice(1), 10);
           if (i >= 0 && i < 7) weekdays[i] = p.listId || "";
@@ -6347,20 +6719,28 @@ var Cloud = {
       d.plan.weekdays = weekdays;
       d.plan.dates = dates;
       d.plan.pinned = pinned;
-      var cur = Lib.current();
-      if (cur) d.plan.defaultList = cur.id;
+      if (!Lib.byId(d.plan.defaultList) && d.lists.length) d.plan.defaultList = d.lists[0].id;
     }
     if (st.session && st.session.no) {
       d.session.no = st.session.no;
-      d.session.day = st.session.day || d.session.day;
+      d.session.day = st.session.day || d.session.day; d.session.autoDay = false;
       if (st.session.date) d.session.date = st.session.date;
       if (st.session.title !== undefined) d.session.title = st.session.title;
     }
+    if (st.session) ["ready","praise"].forEach(function (key) { if (Array.isArray(st.session[key]) && st.session[key].length) d.session[key]=st.session[key].filter(function (x) { return typeof x === "string"; }).map(function (x) { return U.clip(x,160); }); });
+    if (st.contact && typeof st.contact === "object") d.lecturerContact={whatsapp:U.clip(st.contact.whatsapp,30),email:U.clip(st.contact.email,120)};
+    if (st.defaults && typeof st.defaults === "object") {
+      ["pauseWord","pauseSent","writeFixed","repeats"].forEach(function (key) { if (st.defaults[key] !== undefined) d.settings[key]=U.clamp(st.defaults[key],key === "writeFixed" ? 3 : key === "repeats" ? 1 : 0,key === "writeFixed" ? 60 : key === "repeats" ? 3 : 15); });
+      ["sentence","numbers"].forEach(function (key) { if (typeof st.defaults[key] === "boolean") d.settings[key]=st.defaults[key]; });
+      if (["auto","fixed"].indexOf(st.defaults.writeMode)>=0) d.settings.writeMode=st.defaults.writeMode;
+      if (["auto","manual"].indexOf(st.defaults.advance)>=0) d.settings.advance=st.defaults.advance;
+    }
     d.announcement = st.announcement && st.announcement.title ? st.announcement : null;
-    if (st.sessions && st.sessions.length) {
+    if (Array.isArray(st.sessions) && st.sessions.length) {
       var map = {};
       d.sessions.forEach(function (s) { map[(s.no || "") + "|" + (s.date || "")] = s; });
       st.sessions.forEach(function (s) {
+        if (!s || typeof s !== "object") return;
         var key = (s.no || "") + "|" + (s.date || "");
         var existing = map[key];
         var list = Lib.byId(s.listId);
@@ -6388,7 +6768,7 @@ var Cloud = {
     UI.sheet({
       title: "Cloud link",
       body: function (b) {
-        b.appendChild(U.el("p", "small muted", "For students, the link belongs in CLOUD_URL at the top of index.html so it works on every phone. The box below sets it on this device only, which is handy for testing."));
+        b.appendChild(U.el("p", "small muted", "Save the web app link here. Use Student link to connect other phones without editing this file."));
         var inp = U.el("input", null, Cloud.url || "");
         inp.type = "text";
         inp.placeholder = "https://script.google.com/macros/s/\u2026/exec";
@@ -6477,12 +6857,163 @@ var Cloud = {
   }
 };
 
+/* Sharing tools: compact plain base64url fallback works on older devices. */
+Cloud.wizard = function (host) {
+  if (!Admin.unlocked) return;
+  function step(title, text) {
+    var card = U.el("div", "glass card pad-s r2", null); card.style.marginBottom = "10px";
+    card.appendChild(U.el("h3", null, title)); card.appendChild(U.el("p", "small muted", text)); host.appendChild(card); return card;
+  }
+  var first = step("1. Copy the script", "Use your own Google Sheet. Students never need your PIN.");
+  var copy = U.btn("Copy script", "i-copy", "soft");
+  U.on(copy, "click", function () { var source = U.$("#gas-source").textContent; U.copy(source).then(function (ok) { if (ok) UI.toast(S.copied); else U.selectForCopy(source); }); }); first.appendChild(copy);
+  step("2. Set up Google Sheets", "Create a Google Sheet. Open Extensions → Apps Script. Replace Code.gs with the copied script. Project Settings → Script properties: set ADMIN_PIN to your lecturer PIN. Deploy → New deployment → Web app. Execute as Me; access Anyone. Authorise it, then copy the /exec link. Change the starting PIN later in Script properties. Redeploy after script changes.");
+  var third = step("3. Save the link", "Paste the web app link. Student link connects the class without a source edit.");
+  var url = U.el("input", null, null); url.value = Cloud.url; url.placeholder = CONFIG.gasPrefix + "script-id/exec"; url.setAttribute("aria-label", "Google Apps Script web app link"); third.appendChild(url);
+  var save = U.btn("Save link", "i-check", "soft"); U.on(save, "click", function () { var result = Cloud.setUrl(url.value); UI.toast(result.ok ? "Link saved. Now test it." : result.err); UI.renderNet(); }); third.appendChild(save);
+  var fourth = step("4. Test connection", "Then publish and check the Student link on another phone.");
+  var test = U.btn("Test connection", "i-cloud", "primary"); var output = U.el("p", "small", "Not tested yet"); output.setAttribute("role", "status");
+  U.on(test, "click", function () {
+    var result = Cloud.setUrl(url.value); if (!result.ok || !Cloud.mode) { output.textContent = result.err || "Paste the /exec link first."; output.className = "small no"; return; }
+    output.textContent = "Testing…"; test.disabled = true;
+    Cloud.ping(function (res) { test.disabled = false; output.className = "small " + (res && res.ok ? "ok" : "no"); output.textContent = res && res.ok ? "Connected. Your Google Sheet answered." : "Could not connect. Check internet, the /exec link, and access Anyone."; if (res && res.ok) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); Cloud.poll(); } });
+  }); fourth.appendChild(test); fourth.appendChild(output);
+  var student = U.btn("Student link", "i-share", "soft"); U.on(student, "click", function () { Links.student(); }); host.appendChild(student);
+  var list = U.btn("Share this list (no server)", "i-share", "soft"); U.on(list, "click", function () { Links.shareList(Lib.byId(Admin.editListId) || Lib.current()); }); host.appendChild(list);
+};
+var Links = {
+  importPending: false,
+  base: function () { return window.location.href.split("#")[0]; },
+  encode: function (obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); },
+  compress: function (text) {
+    if (!window.CompressionStream || !window.DecompressionStream) return Promise.resolve(text);
+    try {
+      var bytes = new Uint8Array(atob(text.replace(/-/g,"+").replace(/_/g,"/")).split("").map(function (ch) { return ch.charCodeAt(0); }));
+      var stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"));
+      return new Response(stream).arrayBuffer().then(function (buffer) {
+        var array = new Uint8Array(buffer), binary = "";
+        for (var i=0;i<array.length;i++) binary += String.fromCharCode(array[i]);
+        var short = "z." + btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+        return short.length < text.length ? short : text;
+      }, function () { return text; });
+    } catch (err) { return Promise.resolve(text); }
+  },
+  decodeAsync: function (text) {
+    if (text.indexOf("z.") !== 0) { try { return Promise.resolve(Links.decode(text)); } catch (err) { return Promise.reject(err); } }
+    if (!window.DecompressionStream || !/^[A-Za-z0-9_-]{1,100000}$/.test(text.slice(2))) return Promise.reject(new Error("Ask for the original link for this phone."));
+    try {
+      var bytes = new Uint8Array(atob(text.slice(2).replace(/-/g,"+").replace(/_/g,"/")).split("").map(function (ch) { return ch.charCodeAt(0); }));
+      var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
+      var reader = stream.getReader(), total = 0, chunks = [];
+      function read() { return reader.read().then(function (part) {
+        if (part.done) { return new Blob(chunks).text().then(function (json) { return JSON.parse(json); }); }
+        total += part.value.length;
+        if (total > 100000) { reader.cancel(); throw new Error("Link is too large"); }
+        chunks.push(part.value); return read();
+      }); } return read();
+    } catch (err) { return Promise.reject(err); }
+  },
+  decode: function (text) {
+    if (!/^[A-Za-z0-9_-]{1,100000}$/.test(text)) throw new Error("Invalid list link");
+    var b = text.replace(/-/g, "+").replace(/_/g, "/"); while (b.length % 4) b += "=";
+    return JSON.parse(decodeURIComponent(escape(atob(b))));
+  },
+  show: function (title, links) {
+    UI.sheet({title: title, body: function (b) {
+      b.appendChild(U.el("p", "small muted", links.length > 1 ? "Send every part. The student taps Add on each link; the full list opens when all parts are saved." : "Copy or share this link. It does not include the lecturer PIN."));
+      if (links.length && links[0].indexOf("#list=") >= 0 && links[0].indexOf("#list=z.") < 0 && window.CompressionStream && window.DecompressionStream) {
+        var shorten = U.btn("Shorter links (newer phones)", "i-share", "soft");
+        U.on(shorten,"click",function () {
+          shorten.disabled = true;
+          Promise.all(links.map(function (link) { var pair=link.split("#list="); return Links.compress(pair[1]).then(function (text) { return pair[0]+"#list="+text; }); })).then(function (short) {
+            shorten.disabled=false; if (short.join("")===links.join("")) UI.toast("These links are already short. Use the original links."); else Links.show("Shorter links — use originals for older phones",short);
+          },function () { shorten.disabled=false; UI.toast("Use the original links below."); });
+        }); b.appendChild(shorten);
+      }
+      links.forEach(function (link, i) {
+        var field = U.el("textarea", null, link); field.readOnly = true; field.setAttribute("aria-label", "Link " + (i + 1)); b.appendChild(field);
+        var row = U.el("div", "btn-row", null), copy = U.btn("Copy " + (i + 1), "i-copy", "soft"), share = U.btn("Share " + (i + 1), "i-share", "soft");
+        U.on(copy, "click", function () { U.copy(link).then(function (ok) { if (ok) UI.toast(S.copied); else U.selectForCopy(link); }); });
+        U.on(share, "click", function () { if (!U.share(title, link)) U.selectForCopy(link); }); row.appendChild(copy); row.appendChild(share); b.appendChild(row);
+      });
+    }});
+  },
+  student: function () {
+    if (!Cloud.mode) { UI.toast("Save and test your cloud link first."); return; }
+    var id = Cloud.url.slice(CONFIG.gasPrefix.length, -CONFIG.gasSuffix.length);
+    Links.show("Student link", [Links.base() + "#cloud=" + id]);
+  },
+  listLinks: function (list) {
+    if (!list || !Array.isArray(list.words) || !list.words.length) return [];
+    var session = DB.data.session, parts = [], words = [], batch = U.uid("share");
+    function payload(items, part, count) { return {v: 1, b: batch, p: part, c: count, n: session.no, d: session.day, t: session.title, a: DB.data.announcement, k: DB.data.lecturerContact, w: items}; }
+    list.words.forEach(function (word) {
+      var row = [U.clip(word.w, 40), U.clip(word.s, 200), U.clip(word.m, 120)];
+      if (words.length && Links.base().length + Links.encode(payload(words.concat([row]), 99, 99)).length > 1800) { parts.push(words); words = []; }
+      words.push(row);
+    }); if (words.length) parts.push(words);
+    return parts.map(function (items, i) { return Links.base() + "#list=" + Links.encode(payload(items, i + 1, parts.length)); });
+  },
+  shareList: function (list) { var links = Links.listLinks(list); if (!links.length) UI.toast("Add words first."); else Links.show("Share this list", links); },
+  readHash: function () {
+    var hash = window.location.hash;
+    if (hash.indexOf("#cloud=") !== 0 && hash.indexOf("#list=") !== 0) return;
+    try { window.history.replaceState(null, "", Links.base()); } catch (err) { window.location.hash = ""; }
+    if (hash.indexOf("#cloud=") === 0) {
+      var id = hash.slice(7); var res = Cloud.setUrl(CONFIG.gasPrefix + id + CONFIG.gasSuffix);
+      UI.toast(res.ok ? "Connected to your class. Tap to start syncing." : "This class link is not valid."); return;
+    }
+    function preview(data) {
+      if (!data || data.v !== 1 || !/^[A-Za-z0-9_-]{1,100}$/.test(data.b) || !Array.isArray(data.w) || !data.w.length || data.w.length > 500 || data.p < 1 || data.p > data.c || data.c > 500 || data.c !== Math.floor(data.c) || data.p !== Math.floor(data.p)) throw new Error("Bad shared list");
+      data.w = data.w.map(function (x) { if (!Array.isArray(x) || typeof x[0] !== "string" || !U.trim(x[0])) throw new Error("Bad word"); return {w: U.clip(x[0],40), s: U.clip(x[1],200), m: U.clip(x[2],120)}; });
+      Links.importPending = true;
+      setTimeout(function () { UI.sheet({ title: "Add shared list?", body: function (b) {
+        b.appendChild(U.el("p", "small", "Session " + U.clip(data.n,16) + " · " + U.clip(data.d,24) + " · part " + data.p + " of " + data.c));
+        b.appendChild(U.el("p", "small muted", "Only add links from your lecturer. This does not change your results or PIN."));
+        data.w.forEach(function (x) { b.appendChild(U.el("div", "tiny", x.w + " — " + x.s)); });
+        var add = U.btn("Add", "i-plus", "primary block"); U.on(add, "click", function () { Links.add(data); UI.closeSheet(); }); b.appendChild(add);
+      }}); }, 100);
+    }
+    /* Plain links stay synchronous on iOS 12; compressed links are an optional upgrade. */
+    if (hash.slice(6).indexOf("z.") !== 0) {
+      try { preview(Links.decode(hash.slice(6))); } catch (err) { UI.toast("This list link could not be read. Ask for a new link.", {icon:"i-alert"}); }
+    } else {
+      Links.importPending = true;
+      Links.decodeAsync(hash.slice(6)).then(preview).catch(function () { UI.toast("This shorter link could not be read. Ask for the original link.", {icon:"i-alert"}); });
+    }
+  },
+  add: function (data) {
+    var parts = DB.data.sharedParts[data.b] || { count: data.c, parts: {} };
+    if (parts.count !== data.c) { UI.toast("These parts do not match."); return; }
+    parts.parts[data.p] = data.w; DB.data.sharedParts[data.b] = parts; DB.saveNow();
+    if (Object.keys(parts.parts).length !== data.c) { UI.toast("Part saved. Open the other links to complete the list."); return; }
+    var words = []; for (var i = 1; i <= data.c; i++) { if (!parts.parts[i]) return; words = words.concat(parts.parts[i]); }
+    var id = "shared_" + data.b, existing = Lib.byId(id);
+    var list = {id: id, name: "Shared session " + U.clip(data.n,16), words: words, published: true, version: 1, draft: false};
+    if (!existing) DB.data.lists.push(list);
+    var announcement = data.a && typeof data.a === "object" ? {title: U.clip(data.a.title,80), text: U.clip(data.a.text,500), expires: U.clip(data.a.expires,10), priority: "info"} : null;
+    var state = {lists:[list], session:{no:U.clip(data.n,16),day:U.clip(data.d,24),title:U.clip(data.t,80)}, announcement:announcement, contact:data.k, plan:[{key:"pinned",listId:id}]};
+    Cloud.applyState(state); delete DB.data.sharedParts[data.b]; DB.saveNow(); Screens.home(); UI.toast("List added. Your old saved work is still here.");
+  },
+  contact: function (text) {
+    var contact = DB.data.lecturerContact;
+    UI.sheet({title: "Send to your lecturer", body: function (b) {
+      b.appendChild(U.el("p", "small muted", "This is saved on this device, not sent yet. Choose an app and press its Send button. It will not appear in public comments."));
+      var wa = U.el("a", "btn soft", "WhatsApp"), email = U.el("a", "btn soft", "Email");
+      var digits = String(contact.whatsapp || "").replace(/\D/g, ""); wa.href = "https://wa.me/" + digits + "?text=" + encodeURIComponent(text); wa.target = "_blank"; wa.rel = "noopener noreferrer";
+      email.href = "mailto:" + (/^[^\s@?&]+@[^\s@?&]+\.[^\s@?&]+$/.test(contact.email || "") ? contact.email : "") + "?body=" + encodeURIComponent(text);
+      b.appendChild(wa); b.appendChild(email);
+      var share = U.btn("Share sheet", "i-share", "soft"); U.on(share,"click",function () { if (!U.share("Message to lecturer",text)) U.selectForCopy(text); }); b.appendChild(share);
+    }});
+  }
+};
+
 /* ============================================================
    SECTION 19 - DIAGNOSTICS
    ============================================================ */
 var Diag = {
   browser: function () {
-    var ua = navigator.userAgent || "";
+    var ua = U.nav("userAgent", "") || "";
     var name = "Browser";
     if (/Edg\//.test(ua)) name = "Edge";
     else if (/OPR\//.test(ua)) name = "Opera";
@@ -6506,10 +7037,10 @@ var Diag = {
       else add("mid", "Voices not loaded yet", "Wait a few seconds and open this again, or restart the browser.");
     }
     add(!Store.blocked ? "ok" : "no", "Storage", Store.blocked ? "Blocked (private window?). Data is kept in memory only." : "Working. Your progress is saved on this device.");
-    add(navigator.onLine !== false ? "ok" : "mid", "Internet", navigator.onLine !== false ? "Connected." : "Offline. Everything still works; comments wait in the outbox.");
+    add(U.nav("onLine", true) !== false ? "ok" : "mid", "Internet", U.nav("onLine", true) !== false ? "Connected." : "Offline. Everything still works; comments wait in the outbox.");
     if (Cloud.mode) add("mid", "Cloud", "Checking\u2026");
     else add("mid", "Cloud", "Not configured (local mode). Ask your lecturer if the class uses cloud sync.");
-    add(navigator.wakeLock ? "ok" : "mid", "Screen wake lock", navigator.wakeLock ? "Supported \u2013 the screen stays awake during a session." : "Not supported. Turn off Auto-Lock while you practise.");
+    add(U.nav("wakeLock", null) ? "ok" : "mid", "Screen wake lock", U.nav("wakeLock", null) ? "Supported \u2013 the screen stays awake during a session." : "Not supported. Turn off Auto-Lock while you practise.");
     add("ok", "Performance", UI.perfMode + " mode \u00b7 measured frame " + UI.frameMs + " ms");
     add("ok", "Device", U.deviceType() + " \u00b7 " + this.browser());
     add("ok", "Screen", Math.round(window.innerWidth) + " \u00d7 " + Math.round(window.innerHeight) + " px");
@@ -6531,6 +7062,14 @@ var Diag = {
           row.appendChild(tx);
           host.appendChild(row);
         });
+        b.appendChild(U.el("h3", null, "Error log (last 50)"));
+        var log = U.el("pre", "tiny muted", Errors.items.length ? Errors.text() : "No errors recorded since this page opened.");
+        log.style.whiteSpace = "pre-wrap"; log.style.wordBreak = "break-word"; b.appendChild(log);
+        var copyErrors = U.btn("Copy error log", "i-copy", "soft");
+        U.on(copyErrors, "click", function () {
+          var text = Errors.text();
+          U.copy(text).then(function (ok) { if (ok) UI.toast(S.copied); else U.selectForCopy(text); });
+        }); b.appendChild(copyErrors);
         var testRow = U.el("div", "btn-row tight", null);
         testRow.style.marginTop = "12px";
         var t = U.btn("Play test sound", "i-vol", "soft");
@@ -6579,15 +7118,15 @@ UI.renderNet = function () {
   var chip = U.$("#chipNet");
   var txt = U.$("#chipNetText");
   if (!chip || !txt) return;
-  var online = navigator.onLine !== false;
+  var online = U.nav("onLine", true) !== false;
   var outbox = DB.data ? DB.data.outbox.length : 0;
   var label;
   chip.className = "chip";
-  if (!Cloud.mode) label = S.localMode + (outbox ? " \u00b7 " + outbox + " waiting" : "");
+  if (!Cloud.mode) label = "Local mode - this device only" + (outbox ? " · " + outbox + " waiting" : "");
   else if (!online) label = S.offline + (outbox ? " \u00b7 " + outbox + " waiting" : "");
-  else label = S.online + " \u00b7 " + S.updated + " " + (Cloud.updatedAt ? U.fmtTime(Cloud.updatedAt) : S.never);
+  else label = Cloud.fails ? "Offline - cloud not reachable" + (outbox ? " · " + outbox + " waiting" : "") : "Online - " + (Cloud.updatedAt ? "synced " + U.relTime(Cloud.updatedAt) : "not synced yet") + (outbox ? " · " + outbox + " waiting" : "");
   txt.textContent = label;
-  chip.classList.add(Cloud.mode && online ? "good" : "");
+  if (Cloud.mode && online && Cloud.updatedAt && !Cloud.fails) U.setCls(chip, "good", true);
 };
 
 function makeAppIcon() {
@@ -6634,12 +7173,14 @@ function fatalCard(err) {
   host.className = "";
   host.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,10,17,.55)";
   var card = document.createElement("div");
-  card.className = "modal";
+  card.className = "modal flex-card";
+  card.setAttribute("role", "alertdialog");
+  card.setAttribute("aria-modal", "true");
   card.style.position = "relative";
   card.style.transform = "none";
   card.style.left = "auto";
   card.style.top = "auto";
-  card.style.width = "min(94vw, 440px)";
+  card.style.width = "100%";
   var h = document.createElement("h2");
   h.textContent = S.somethingWrong;
   card.appendChild(h);
@@ -6659,19 +7200,25 @@ function fatalCard(err) {
   row.style.marginTop = "16px";
   var reload = U.btn(S.reload, "i-refresh", "primary");
   U.on(reload, "click", function () { window.location.reload(); });
-  var backup = U.btn(S.backupAndReset, "i-down", "soft");
-  U.on(backup, "click", function () {
-    try {
-      var text = DB.data ? DB.exportAll() : "{}";
-      if (!U.download("dictation-emergency-backup.json", text, "application/json")) U.selectForCopy(text);
-    } catch (e) {}
-    setTimeout(function () {
-      try { Store.del(CONFIG.key); } catch (e2) {}
-      window.location.reload();
-    }, 600);
+  function dismiss() { host.textContent = ""; host.className = "hidden"; host.style.cssText = ""; delete host.dataset.shown; }
+  var proceed = U.btn("Continue anyway", null, "soft");
+  U.on(proceed, "click", function () {
+    dismiss();
+    if (!DB.data) { Store.test(); DB.load(); }
+    UI.setTab("home");
+    UI.toast("You can use the app. If a button does not work, save a backup and reload.", { icon: "i-info", ms: 6000 });
   });
-  row.appendChild(reload);
-  row.appendChild(backup);
+  var details = U.btn("Copy error details", "i-copy", "soft");
+  U.on(details, "click", function () {
+    var text = String(err && (err.stack || err.message) || "Boot failed");
+    U.copy(text).then(function (ok) { if (ok) UI.toast(S.copied); else { dismiss(); U.selectForCopy(text); } });
+  });
+  var restore = U.btn("Restore last automatic backup", "i-up", "soft");
+  U.on(restore, "click", function () { dismiss(); DataTools.restoreAutomatic(); });
+  var backup = U.btn("Save backup / reset", "i-down", "soft");
+  U.on(backup, "click", function () { dismiss(); DataTools.reset(true); });
+  row.appendChild(proceed); row.appendChild(reload); row.appendChild(details);
+  row.appendChild(restore); row.appendChild(backup);
   card.appendChild(row);
   host.appendChild(card);
 }
@@ -6724,6 +7271,8 @@ function boot() {
   UI.applyHc();
   Speech.init();
   Cloud.init();
+  Links.readHash();
+  U.on(window, "hashchange", function () { Links.readHash(); });
   makeAppIcon();
 
   /* tabs */
@@ -6737,11 +7286,10 @@ function boot() {
     Cloud.pullState();
     Cloud.pullComments();
     Cloud.flush();
-    Cloud.updatedAt = Date.now();
     UI.renderNet();
   });
   U.on(U.$("#chipNet"), "click", function () {
-    if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); Cloud.updatedAt = Date.now(); UI.renderNet(); }
+    if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); UI.renderNet(); }
     else UI.toast("Local mode. Your lecturer can add a cloud link to share data between phones.", { icon: "i-cloud", ms: 5000 });
   });
 
@@ -6797,14 +7345,15 @@ function boot() {
     } else {
       UI.pauseAnimations(false);
       Admin.cameForeground();
-      if (Cloud.mode) { Cloud.flush(); Cloud.pullState(); Cloud.pullComments(); Cloud.updatedAt = Date.now(); }
+      if (Cloud.mode && syncStarted) { Cloud.flush(); Cloud.pullState(); Cloud.pullComments(); }
       UI.renderNet();
       if (Eng.showResumeCard && Eng.st === "paused") Eng.offerResume();
       if (Eng.wakeLock === null && (Eng.st === "speaking" || Eng.st === "waiting")) Eng.requestWake();
     }
   });
-  U.on(window, "online", function () { Cloud.flush(); UI.renderNet(); UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" }); });
+  U.on(window, "online", function () { if (syncStarted) Cloud.flush(); UI.renderNet(); UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" }); });
   U.on(window, "offline", function () { UI.renderNet(); });
+  U.on(window, "focus", function () { if (syncStarted && Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); } });
   U.on(window, "resize", U.debounce(function () { U.$$(".seg").forEach(UI.segSync); }, 200));
   U.on(document, "keydown", function (e) {
     if (e.key === "Escape") {
@@ -6830,7 +7379,7 @@ function boot() {
       Eng.offerResume();
     }
   };
-  U.on(window, "pagehide", function () { if (Eng.st === "speaking" || Eng.st === "waiting") Eng.pause(); });
+  U.on(window, "pagehide", function () { if (Eng.st === "speaking" || Eng.st === "waiting") Eng.pause(); DB.saveNow(); });
   if (Speech.supported) {
     try {
       window.speechSynthesis.addEventListener && window.speechSynthesis.addEventListener("voiceschanged", function () { Speech.readVoices(); });
@@ -6841,20 +7390,47 @@ function boot() {
   UI.setTab("home");
   UI.applyPerf();
   UI.frameProbe(function () { UI.applyPerf(); });
-  if (Cloud.mode) { Cloud.poll(); Cloud.flush(); Cloud.pullState(); Cloud.pullComments(); Cloud.updatedAt = Date.now(); UI.renderNet(); }
+  /* Opening the file makes no network requests. Sync begins on the first user tap. */
+  var syncStarted = false;
+  function beginSync() {
+    if (syncStarted || !Cloud.mode) return;
+    syncStarted = true;
+    Cloud.poll(); Cloud.flush(); Cloud.pullState(); Cloud.pullComments();
+  }
+  U.on(document, "click", beginSync);
+  U.on(document, "touchstart", beginSync);
+  U.on(document, "keydown", beginSync);
 
   if (window.location.hash === "#lecturer") {
     setTimeout(function () { Admin.open(); }, 350);
   }
-  setTimeout(firstRunTour, 700);
+  if (!Links.importPending) setTimeout(firstRunTour, 700);
 }
 
 /* global safety nets */
 window.addEventListener("error", function (ev) {
-  try { fatalCard(ev && ev.error ? ev.error : { message: ev && ev.message }); } catch (e) {}
+  Errors.report(ev && ev.error ? ev.error : { message: ev && ev.message }, "window error");
 });
 window.addEventListener("unhandledrejection", function (ev) {
-  try { fatalCard({ message: (ev && ev.reason && ev.reason.message) || "A background task failed." }); } catch (e) {}
+  Errors.report(ev && ev.reason || "A background task failed.", "background promise");
+});
+
+/* Lecturer methods and all their descendant event handlers re-check the lock. */
+["panel", "renderTab", "card", "publish", "tabWords", "tabSession", "tabAnnounce", "tabComments", "tabStats", "tabTools", "printView"].forEach(function (key) {
+  var original = Admin[key];
+  Admin[key] = function () {
+    if (!Admin.unlocked) { UI.toast("Unlock lecturer mode first.", { icon: "i-lock" }); return; }
+    var before = Admin.context; Admin.context = true;
+    try { return original.apply(this, arguments); } finally { Admin.context = before; }
+  };
+});
+
+/* Screen-level containment plus widget-level containment in sheet/layer/confirm. */
+Object.keys(Screens).forEach(function (key) {
+  if (typeof Screens[key] === "function") Screens[key] = U.safe(Screens[key], "screen: " + key);
+});
+[[Eng, ["openPlayer", "paint"]], [Results, ["open"]], [Admin, ["panel", "renderTab"]], [Diag, ["open"]]].forEach(function (entry) {
+  entry[1].forEach(function (key) { if (typeof entry[0][key] === "function") entry[0][key] = U.safe(entry[0][key], "render: " + key); });
 });
 
 try {
@@ -6874,5 +7450,5 @@ window.SDP = {
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4a0229d9cdc5132',t:'MTc5MTkxMzI4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
