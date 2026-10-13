@@ -31,3 +31,20 @@ LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib${LD_LIBRARY_PATH:+:$LD_L
 The scripts exit nonzero on failed assertions. Screenshots go to `SDP_QA_OUTPUT` or the operating system's temporary directory. Test dependencies and local output are ignored by Git.
 
 See `../QA_REPORT.md` for observed results and the real-device checklist. `../qa/automated-results.json` records the tested file's version, byte count and SHA-256.
+
+## Full end-to-end flow (Chromium)
+
+```sh
+LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:e2e --prefix tests
+```
+
+`e2e.cjs` drives the real UI at 390x844, 360x640 and 1280x800 with 4x CPU throttling:
+fresh storage and storage written by the 1.0.0 build, Home render, build stamp in
+Settings, wrong PIN, PIN 7898, Monday list plus session number and day, the
+"Are you ready?" screen and skippable countdown, every word spoken in order with a
+mocked en-GB `speechSynthesis`, auto-save, reload and resume, an anonymous comment
+with its result badge, the 30-second spam limit, a private lecturer message, and an
+offline boot. `SDP_E2E_ONLY=old|offline|iphone|360|1280` runs a subset.
+
+This is Chromium only. WebKit and Firefox are **not** run: the sandbox has no such
+binary and cannot download one, so iPhone Safari and Firefox behaviour is unverified.
