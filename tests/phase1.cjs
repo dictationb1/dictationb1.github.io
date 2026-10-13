@@ -62,10 +62,12 @@ for(const [name, opts] of [
  ['no speechSynthesis', {}], ['no en-GB voice', {voice:'en-US'}], ['restricted navigator getters', {navThrows:true}], ['throwing speech getter', {speechThrows:true}]
 ]) test('Boot: '+name, () => withApp(opts, a => {assert(!a.crash()); assert(a.q.DB.data); assert(a.w.document.querySelector('#homeTitle').textContent.length); assert.equal(a.errors.length,0);}));
 
-test('1.1 all ten class call sites use guarded helper', () => withApp({}, a => {
+test('1.1 all class call sites use guarded helper; blank tokens dropped, words split', () => withApp({}, a => {
  const el=a.w.document.createElement('div');
- for(const name of ['',undefined,null,'two tokens']) a.q.U.setCls(el,name,true);
- a.q.U.setCls(el,'good',true);assert.equal(el.className,'good');a.q.U.setCls(el,'good',false);assert.equal(el.className,'');
+ for(const name of ['',undefined,null,'   ']) a.q.U.setCls(el,name,true);
+ assert.equal(el.className,'');
+ a.q.U.setCls(el,'two tokens',true);assert.equal(el.className,'two tokens');
+ a.q.U.setCls(el,'good',true);assert.equal(el.className,'two tokens good');a.q.U.setCls(el,'good',false);assert.equal(el.className,'two tokens');
  assert.equal((current.match(/\.classList\.(add|remove)\(/g)||[]).length,2);
  assert(!/className\s*\+=/.test(current));
 }));
@@ -285,6 +287,77 @@ test('2.4 locked backups exclude lecturer private inbox, PIN hashes and drafts; 
  a.q.DB.data.lists[0].draftText='Secret draft';const personal=JSON.parse(a.q.DB.exportAll());assert.equal(personal.scope,'personal');assert(!JSON.stringify(personal).includes('Lecturer private inbox'));assert(!JSON.stringify(personal).includes('Secret draft'));assert(!personal.data.admin.pinHash);assert.equal(personal.data.inbox[0].text,'My message');
  const hash=a.q.DB.data.admin.pinHash;a.q.DB.importAll(JSON.stringify(personal));assert.equal(a.q.DB.data.admin.pinHash,hash);a.q.Admin.unlocked=true;assert(JSON.parse(a.q.DB.exportAll()).data.inbox.some(m=>m.text==='Lecturer private inbox'));
 }));
+
+/* ---------- v1.4.0 crash-proofing ---------- */
+test('1.7 empty or blank tokens never throw on any DOMTokenList', () => withApp({}, a => {
+ const d=a.w.document, el=d.createElement('div');
+ /* the exact pattern that crashed the live 1.0.0 build in Firefox */
+ const online=false; el.classList.add(online ? 'good' : '');
+ assert.equal(el.className,''); assert.equal(a.errors.length,0); assert(!a.crash());
+ el.classList.add(''); el.classList.remove(''); el.classList.toggle('', true); el.classList.replace('', 'x');
+ assert.equal(el.className,'');
+ el.classList.add('a', '', 'b'); assert.equal(el.className,'a b');
+ el.classList.toggle('a'); assert.equal(el.className,'b');
+ const link=d.createElement('link'); link.relList.add('', 'stylesheet'); assert(link.relList.contains('stylesheet'));
+ if(el.part) { el.part.add('', 'chip'); assert(el.part.contains('chip')); }
+ assert.equal(el.className,'b'); assert(!a.crash());
+}));
+test('1.7 dynamically built class names are filtered by U.cx and U.el', () => withApp({}, a => {
+ assert.equal(a.q.U.cx('a', '', null, undefined, ' b  c '), 'a b c');
+ const el=a.q.U.el('div', '  x   y  ', null); assert.equal(el.className,'x y');
+ const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
+}));
+test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
+ assert.equal(a.w.SDP.version,'1.4.0'); assert.equal(a.w.SDP.build,'2026-10-13'); assert.equal(a.w.SDP.stamp(),'v1.4.0 (2026-10-13)');
+ a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
+ assert(txt.includes('v1.4.0 (2026-10-13)')); assert(txt.includes('My data'));
+}));
+test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
+ assert(a.crash());
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.4.0 (2026-10-13)'));
+}));
+test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
+ const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
+ a.q.Screens.home();
+ assert(!a.crash());
+ assert(a.w.document.querySelector('#homeTitle').textContent.length>0);
+ assert(a.w.document.querySelector('#homeSessions').children.length>0);
+ assert(a.q.Errors.items.some(i=>i.where==='widget: home-stats'));
+ a.q.UI.statBox=real; a.q.Screens.home();
+ assert.equal(a.w.document.querySelector('#homeStats').children.length,3);
+ assert(!a.crash());
+}));
+test('1.9 every Home widget is wrapped and screens stay isolated', () => {
+ for(const name of ['home-announcement','home-hero','home-resume','home-stats','home-sessions']) {
+  assert(current.includes('U.widget("'+name+'", function ()'), name);
+ }
+});
+test('4.5 ready screen speaks the greeting from the tap and can skip the countdown', () => withApp({voice:'en-GB'}, a => {
+ a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list', sessionNo:'9', sessionDay:'Monday'});
+ clickText(a,'Skip countdown');
+ for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
+ assert.equal(a.q.Eng.st,'waiting'); assert(!a.crash()); assert.equal(a.q.Errors.items.length,0);
+}));
+test('4.5 greeting text and skippable countdown exist in the ready sheet', () => withApp({voice:'en-GB'}, a => {
+ a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list'});
+ const sheet=a.w.document.querySelector('#sheets').textContent;
+ assert(sheet.includes('Get your pen and paper. Tap Start when you are.'));
+ assert(Array.from(a.w.document.querySelectorAll('#sheets button')).some(b=>b.textContent.trim()==='Skip countdown'));
+}));
+test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a => {
+ a.q.Eng.start({words:[{w:'apple',s:'I eat an apple.',m:'a fruit'}], listName:'QA'}); clickText(a,'Skip countdown');
+ for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
+ const btn=Array.from(a.w.document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Test sound');
+ assert(btn, 'Test sound button');
+ const before=a.spoken.length; btn.click(); a.clock.tick(500);
+ assert(a.spoken.length>before); assert(a.spoken.some(s=>s.lang==='en-GB'));
+}));
+test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
+ assert(current.includes('env(safe-area-inset-top, 0px)'));
+ assert(current.includes('env(safe-area-inset-bottom, 0px)'));
+ assert(/--tap:\s*44px/.test(current));
+ assert(current.includes('100dvh'));
+});
 
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;

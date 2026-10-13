@@ -1365,7 +1365,7 @@ function inboxAction(body) {
 "use strict";
 
 /* ============================================================
-   SECTION 0 - HARDENED DOM TOKENS (installed before anything else)
+   GUARD - HARDENED DOM TOKENS (installed before anything else)
    One guarded helper for every class-like token list. It trims, splits on
    whitespace, drops empty tokens and can never throw, so a bad class name
    can never blank a screen again (Firefox: "DOMTokenList.add: The empty
@@ -1391,13 +1391,20 @@ function sdpTokens(args) {
       var native = proto[m];
       if (typeof native !== "function" || native.__sdpGuarded) return;
       var wrapped = function () {
-        var toks = sdpTokens(arguments);
         try {
-          if (!toks.length) return m === "replace" ? false : undefined;
+          /* only the token arguments are filtered - toggle's force flag and
+             replace's second token must never be read as class names */
           if (m === "toggle") {
-            return arguments.length > 1 ? native.call(this, toks[0], !!arguments[1]) : native.call(this, toks[0]);
+            var tok = sdpTokens([arguments[0]]);
+            if (!tok.length) return false;
+            return arguments.length > 1 ? native.call(this, tok[0], !!arguments[1]) : native.call(this, tok[0]);
           }
-          if (m === "replace") return toks.length > 1 ? native.call(this, toks[0], toks[1]) : false;
+          if (m === "replace") {
+            var a1 = sdpTokens([arguments[0]]), a2 = sdpTokens([arguments[1]]);
+            if (!a1.length || !a2.length) return false;
+            return native.call(this, a1[0], a2[0]);
+          }
+          var toks = sdpTokens(arguments);
           /* old WebViews only accept one token per call */
           for (var i = 0; i < toks.length; i++) native.call(this, toks[i]);
           return undefined;

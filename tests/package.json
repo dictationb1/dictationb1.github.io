@@ -3,7 +3,8 @@
   "description": "Development-only tests; no dependencies are loaded by the single-file app.",
   "scripts": {
     "test": "node phase1.cjs && node server.cjs",
-    "test:browser": "node browser.cjs"
+    "test:browser": "node browser.cjs",
+    "test:e2e": "node e2e.cjs"
   },
   "devDependencies": {
     "jsdom": "22.1.0",
