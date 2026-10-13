@@ -1,8 +1,14 @@
 {
   "date": "2026-10-13",
-  "appVersion": "1.3.0",
-  "indexBytes": 356440,
-  "indexSHA256": "5db053fcec283d62b0453061e7f0aabb02a51ce72b6cbf79d5af03fc114d9acc",
+  "appVersion": "1.4.0",
+  "buildDate": "2026-10-13",
+  "indexBytes": 361624,
+  "indexSHA256": "0e5dcedee3db86cd2b64b52ead685106dd4df3e3ce8bc70f277e724af52a8221",
+  "browsers": {
+    "chromium": "run (headed-less via @sparticuz/chromium)",
+    "webkit": "NOT RUN - no binary in this environment",
+    "firefox": "NOT RUN - no binary in this environment"
+  },
   "results": [
     {
       "test": "1.1 before: original Local-mode boot shows crash card",
@@ -65,7 +71,7 @@
       "how": "jsdom + fake timers / Node static checks"
     },
     {
-      "test": "1.1 all ten class call sites use guarded helper",
+      "test": "1.1 all class call sites use guarded helper; blank tokens dropped, words split",
       "status": "PASS",
       "how": "jsdom + fake timers / Node static checks"
     },
@@ -295,164 +301,479 @@
       "how": "jsdom + fake timers / Node static checks"
     },
     {
+      "test": "1.7 empty or blank tokens never throw on any DOMTokenList",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.7 dynamically built class names are filtered by U.cx and U.el",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.8 build stamp is exposed, shown in Settings and on the fatal card",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.8 fatal card names the running build",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.9 one failing Home widget leaves the other widgets on screen",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.9 every Home widget is wrapped and screens stay isolated",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.5 ready screen speaks the greeting from the tap and can skip the countdown",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.5 greeting text and skippable countdown exist in the ready sheet",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.6 player offers a Test sound button",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.7 layout uses real safe-area insets and 44px tap targets",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
       "test": "Apps Script ES2017 syntax",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server PIN: correct PIN succeeds, five wrong tries lock for five minutes",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server 1200-word list stores multiple cells under 40K, reads all words/version/plan/session",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server comments sanitize links/digits/formulas and stable retry ids do not duplicate",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server message stays private; authorised inbox read/reply/mark read/delete work",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Server failed multi-cell publish leaves committed words/version intact and can retry",
       "status": "PASS",
-      "how": "Apps Script with mock Google services"
+      "how": "jsdom + fake timers / Node static checks"
     },
     {
       "test": "Chromium 390px boot and zero load network",
       "status": "PASS",
-      "errors": [],
-      "requests": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 390px PIN unlock and no horizontal page overflow",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 390px session update visible on Home",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 320px boot and zero load network",
       "status": "PASS",
-      "errors": [],
-      "requests": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 320px PIN unlock and no horizontal page overflow",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 320px session update visible on Home",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 768px boot and zero load network",
       "status": "PASS",
-      "errors": [],
-      "requests": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 768px PIN unlock and no horizontal page overflow",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 768px session update visible on Home",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium native CompressionStream creates shorter links and retains original fallback",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium native DecompressionStream preview/Add assembles the full 30-word list",
       "status": "PASS",
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: empty",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: corrupt",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: blocked",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: offline",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: unreachable",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: no-speech",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium boot: no-UK",
       "status": "PASS",
-      "errors": [],
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Original Chromium fatal card is off-screen (before evidence)",
       "status": "PASS",
-      "box": {
-        "x": -163,
-        "y": 161.1328125,
-        "width": 358,
-        "height": 260.859375
-      },
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
     },
     {
       "test": "Chromium 390px Full-mode fatal card centred and within viewport after animation",
       "status": "PASS",
-      "box": {
-        "x": 16,
-        "y": 185.578125,
-        "width": 358,
-        "height": 472.84375
-      },
-      "how": "Chromium 138 through Playwright"
+      "how": "Chromium (@sparticuz/chromium) at 390/320/768 px"
+    },
+    {
+      "test": "old-version storage fixture captured",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: Home renders with no error screen",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: Settings shows the build stamp",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: wrong PIN is refused",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: Monday list, session number and day saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: header shows session number and day; panel locked",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: \"Are you ready?\" screen with skippable countdown",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: greeting is spoken first, in en-GB",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: every word spoken in order, en-GB only, result auto-saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: auto-save survives reload and resumes where the student stopped",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: anonymous comment posted with name and result badge",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: spam rate limit refuses an immediate second post",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: private lecturer message stored, not published",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / fresh storage: zero page errors and zero console errors",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: Home renders with no error screen",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: Settings shows the build stamp",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: wrong PIN is refused",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: Monday list, session number and day saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: header shows session number and day; panel locked",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: \"Are you ready?\" screen with skippable countdown",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: greeting is spoken first, in en-GB",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: every word spoken in order, en-GB only, result auto-saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: auto-save survives reload and resumes where the student stopped",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: anonymous comment posted with name and result badge",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: spam rate limit refuses an immediate second post",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: private lecturer message stored, not published",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "low-end Android 360x640 / fresh storage: zero page errors and zero console errors",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: Home renders with no error screen",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: Settings shows the build stamp",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: wrong PIN is refused",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: Monday list, session number and day saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: header shows session number and day; panel locked",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: \"Are you ready?\" screen with skippable countdown",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: greeting is spoken first, in en-GB",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: every word spoken in order, en-GB only, result auto-saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: auto-save survives reload and resumes where the student stopped",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: anonymous comment posted with name and result badge",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: spam rate limit refuses an immediate second post",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: private lecturer message stored, not published",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "desktop 1280x800 / fresh storage: zero page errors and zero console errors",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: Home renders with no error screen",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: Settings shows the build stamp",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: wrong PIN is refused",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: PIN 7898 unlocks lecturer mode",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: Monday list, session number and day saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: header shows session number and day; panel locked",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: \"Are you ready?\" screen with skippable countdown",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: greeting is spoken first, in en-GB",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: every word spoken in order, en-GB only, result auto-saved",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: auto-save survives reload and resumes where the student stopped",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: anonymous comment posted with name and result badge",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: spam rate limit refuses an immediate second post",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: private lecturer message stored, not published",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "iPhone 390x844 / storage from old build: zero page errors and zero console errors",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
+    },
+    {
+      "test": "offline: app boots, comment kept on device",
+      "status": "PASS",
+      "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     }
   ]
 }
