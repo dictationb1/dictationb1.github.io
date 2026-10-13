@@ -21,7 +21,8 @@
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;
   --r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;
   --tap: 44px;
-  --safe-t: 0px; --safe-b: 0px; --safe-l: 0px; --safe-r: 0px;
+  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
   --fs: 16px;
   --dur: 220ms;
   --ease: cubic-bezier(.22,.75,.28,1);
@@ -1341,8 +1342,11 @@ function inboxAction(body) {
 </script>
 <script>
 /* ==========================================================================
-   Smart Dictation Player  v1.3.0
-   Changelog: 1.3.0 - strict UK speech, Text mode, immediate finish saving,
+   Smart Dictation Player  v1.4.0  (build 2026-10-13)
+   Changelog: 1.4.0 - hardened DOMTokenList guard, per-widget Home rendering,
+   build stamp in Settings and on the fatal card, safe-area insets,
+   Test sound button.
+   1.3.0 - strict UK speech, Text mode, immediate finish saving,
    typed feedback and autosave, UK-only dictionary audio, private backup filtering
    and device fallbacks.
    1.2.0 - guided cloud setup, student and offline-list links,
@@ -1361,9 +1365,61 @@ function inboxAction(body) {
 "use strict";
 
 /* ============================================================
+   SECTION 0 - HARDENED DOM TOKENS (installed before anything else)
+   One guarded helper for every class-like token list. It trims, splits on
+   whitespace, drops empty tokens and can never throw, so a bad class name
+   can never blank a screen again (Firefox: "DOMTokenList.add: The empty
+   string is not a valid token."). classList, relList and part all use
+   DOMTokenList, so patching the prototype covers every call site.
+   ============================================================ */
+function sdpTokens(args) {
+  var out = [];
+  for (var i = 0; i < args.length; i++) {
+    var value = args[i];
+    if (value === null || value === undefined) continue;
+    var bits = String(value).split(/[\s\u0000]+/);
+    for (var j = 0; j < bits.length; j++) if (bits[j]) out.push(bits[j]);
+  }
+  return out;
+}
+(function guardTokenLists() {
+  if (typeof DOMTokenList === "undefined" || !DOMTokenList.prototype) return;
+  var proto = DOMTokenList.prototype;
+  var methods = ["add", "remove", "toggle", "replace"];
+  for (var k = 0; k < methods.length; k++) {
+    (function (m) {
+      var native = proto[m];
+      if (typeof native !== "function" || native.__sdpGuarded) return;
+      var wrapped = function () {
+        var toks = sdpTokens(arguments);
+        try {
+          if (!toks.length) return m === "replace" ? false : undefined;
+          if (m === "toggle") {
+            return arguments.length > 1 ? native.call(this, toks[0], !!arguments[1]) : native.call(this, toks[0]);
+          }
+          if (m === "replace") return toks.length > 1 ? native.call(this, toks[0], toks[1]) : false;
+          /* old WebViews only accept one token per call */
+          for (var i = 0; i < toks.length; i++) native.call(this, toks[i]);
+          return undefined;
+        } catch (err) {
+          if (typeof Errors !== "undefined" && Errors) Errors.report(err, "class token: " + m);
+          return undefined;
+        }
+      };
+      wrapped.__sdpGuarded = true;
+      try { proto[m] = wrapped; } catch (ignored) {}
+    })(methods[k]);
+  }
+})();
+
+/* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.3.0";
+var APP_VERSION = "1.4.0";
+/* Stamped at release time and shown in Settings and on the fatal card, so it
+   is always obvious which build a device is actually running. */
+var BUILD_DATE = "2026-10-13";
+function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
    Leave it empty for local-only mode (everything still works on one device). */
@@ -1540,13 +1596,31 @@ U.safe = function (fn, where) {
   };
 };
 
-/* Explicit add/remove works on old WebViews; never pass an empty token. */
+/* Every class name goes through the same guarded path: trim, split, drop
+   empty tokens, never throw. Works on old WebViews (one token per call). */
 U.setCls = function (el, name, on) {
-  if (!el || !el.classList || typeof name !== "string") return;
-  name = name.trim();
-  if (!name || /\s/.test(name)) return;
-  if (on) el.classList.add(name);
-  else el.classList.remove(name);
+  if (!el || !el.classList) return;
+  var toks = sdpTokens([name]);
+  for (var i = 0; i < toks.length; i++) {
+    try { if (on) el.classList.add(toks[i]); else el.classList.remove(toks[i]); }
+    catch (err) { Errors.report(err, "class set"); }
+  }
+};
+/* Build a class string from any mix of strings, arrays or falsy values. */
+U.cx = function () { return sdpTokens(arguments).join(" "); };
+/* One widget failing must never blank a whole screen. */
+U.widget = function (name, fn) {
+  try { return fn(); }
+  catch (err) {
+    Errors.report(err, "widget: " + name);
+    try {
+      if (typeof UI !== "undefined" && UI && UI.toast && !U.widgetWarned) {
+        U.widgetWarned = true;
+        UI.toast("Part of this screen could not load. Your data is safe.", { icon: "i-alert", ms: 6000 });
+      }
+    } catch (ignored) {}
+    return null;
+  }
 };
 U.once = function (fn) {
   var called = false;
@@ -1562,7 +1636,8 @@ U.$$ = function (sel, root) { return Array.prototype.slice.call((root || documen
 
 U.el = function (tag, cls, txt) {
   var e = document.createElement(tag);
-  if (cls) e.className = cls;
+  /* className is filtered too, so a dynamically built class can never be junk */
+  if (cls) { var c = U.cx(cls); if (c) e.className = c; }
   if (txt !== null && txt !== undefined) e.textContent = String(txt);
   return e;
 };
@@ -1874,6 +1949,7 @@ function defaultData() {
     session: {
       no: "1", day: DAYS[U.weekdayIndex(new Date())], autoDay: true, date: U.dateKey(new Date()), title: "",
       ready: [
+        "Hello! Get your pen and paper. Are you ready? Tap Start when you are.",
         "Are you ready? Let's begin.",
         "Pen and paper ready? Here we go!",
         "Take a deep breath. Are you ready? Let's start.",
@@ -2554,6 +2630,8 @@ var Screens = {
   home: function () {
     var d = DB.data, st = d.settings, list = Lib.current();
 
+    /* Each widget is isolated: if one fails the rest of Home still renders. */
+    U.widget("home-announcement", function () {
     /* announcement */
     var ann = U.$("#homeAnn");
     ann.textContent = "";
@@ -2571,6 +2649,10 @@ var Screens = {
         ann.appendChild(b);
       }
     }
+
+    });
+
+    U.widget("home-hero", function () {
 
     /* hero */
     U.$("#homeKicker").textContent = Lib.sessionLabel() || "Session";
@@ -2594,6 +2676,10 @@ var Screens = {
     c3.appendChild(document.createTextNode("Word \u00d7" + st.repeats));
     meta.appendChild(c3);
 
+    });
+
+    U.widget("home-resume", function () {
+
     /* resume */
     var snap = d.snapshot;
     var rc = U.$("#homeResume");
@@ -2611,6 +2697,10 @@ var Screens = {
     U.$("#btnStartText").textContent = S.startDict;
     UI.segValue(U.$("#segMode"), st.mode);
 
+    });
+
+    U.widget("home-stats", function () {
+
     /* stats */
     var stats = U.$("#homeStats");
     stats.textContent = "";
@@ -2620,6 +2710,10 @@ var Screens = {
     stats.appendChild(UI.statBox("day streak", String(streak), "i-flame"));
     stats.appendChild(UI.statBox("last score", lastScore ? (lastScore.score + "/" + lastScore.wordCount) : "\u2013", "i-target"));
     stats.appendChild(UI.statBox("sessions done", String(d.history.length), "i-check"));
+
+    });
+
+    U.widget("home-sessions", function () {
 
     /* past sessions */
     var host = U.$("#homeSessions");
@@ -2642,6 +2736,7 @@ var Screens = {
         host.appendChild(row);
       });
     }
+    });
   },
 
   /* ---------- DICTIONARY ---------- */
@@ -3001,7 +3096,7 @@ var Screens = {
 
     /* ---- About ---- */
     var ab = card(S.about);
-    ab.appendChild(U.el("p", "small muted", "Smart Dictation Player " + APP_VERSION + ". Everything runs on your device. The only optional network calls are to your lecturer's Google Apps Script link and to the free dictionary lookup (api.dictionaryapi.dev). No analytics, no trackers, no third-party scripts."));
+    ab.appendChild(U.el("p", "small muted", "Smart Dictation Player " + buildStamp() + ". Everything runs on your device. The only optional network calls are to your lecturer's Google Apps Script link and to the free dictionary lookup (api.dictionaryapi.dev). No analytics, no trackers, no third-party scripts."));
     var abRow = U.el("div", "btn-row tight", null);
     abRow.style.marginTop = "8px";
     var privacy = U.btn("Privacy", "i-lock", "sm soft");
@@ -3993,6 +4088,11 @@ Eng.openPlayer = function () {
       mk(S.repeatSentence, "i-list", function () { self.repeatSentence(); });
       mk(S.slower, "i-slow", function () { self.slower(); });
       mk(S.spellIt, "i-spell", function () { self.spellWord(); });
+      mk("Test sound", "i-vol", function () {
+        Speech.say(["Hello. This is your UK English voice."], {}, function (r) {
+          if (r && !r.ok) UI.toast("No UK voice found. Add one in Settings \u203a Voice.", { icon: "i-alert", ms: 6000 });
+        });
+      });
       mk(S.previous, "i-prev", function () { self.prev(); });
       mk(S.next, "i-next", function () { self.next(); }, "primary");
       body.appendChild(grid);
@@ -4100,6 +4200,7 @@ Eng.readyScreen = function () {
       else vline.textContent = "No UK voice selected yet.";
       b.appendChild(vline);
       b.appendChild(U.el("p", "small muted", S.volumeTip));
+      b.appendChild(U.el("p", "small", "Get your pen and paper. Tap Start when you are."));
       var num = U.el("div", "center", null);
       num.style.margin = "18px 0 6px";
       var big = U.el("div", null, "");
@@ -4132,6 +4233,18 @@ Eng.readyScreen = function () {
         });
       });
       return b;
+    })(), (function () {
+      /* the countdown is optional - skipping still starts inside a user tap */
+      var sk = U.btn("Skip countdown", "i-next", "ghost");
+      U.on(sk, "click", function () {
+        Speech.unlock();
+        self.requestWake();
+        self.runId++;
+        UI.closeSheet();
+        self.st = "speaking";
+        self.runItem(0);
+      });
+      return sk;
     })()]
   });
   return sh;
@@ -6437,7 +6550,7 @@ Admin.tabTools = function (host) {
   pr.style.marginTop = "8px";
   U.on(pr, "click", function () { Admin.printView(); });
   c4.appendChild(pr);
-  var perf = U.el("p", "tiny muted", "Performance mode: " + UI.perfMode + " \u00b7 frame " + UI.frameMs + " ms \u00b7 app " + APP_VERSION);
+  var perf = U.el("p", "tiny muted", "Performance mode: " + UI.perfMode + " \u00b7 frame " + UI.frameMs + " ms \u00b7 app " + buildStamp());
   perf.style.marginTop = "10px";
   c4.appendChild(perf);
 };
@@ -7044,7 +7157,7 @@ var Diag = {
     add("ok", "Performance", UI.perfMode + " mode \u00b7 measured frame " + UI.frameMs + " ms");
     add("ok", "Device", U.deviceType() + " \u00b7 " + this.browser());
     add("ok", "Screen", Math.round(window.innerWidth) + " \u00d7 " + Math.round(window.innerHeight) + " px");
-    add("ok", "App version", APP_VERSION);
+    add("ok", "App version", buildStamp());
 
     UI.sheet({
       title: "Check my device",
@@ -7189,6 +7302,11 @@ function fatalCard(err) {
   p.textContent = S.somethingWrongSub;
   p.style.marginTop = "8px";
   card.appendChild(p);
+  var stamp = document.createElement("p");
+  stamp.className = "tiny muted";
+  stamp.textContent = "Build " + buildStamp();
+  stamp.style.marginTop = "6px";
+  card.appendChild(stamp);
   if (err && err.message) {
     var d = document.createElement("p");
     d.className = "tiny muted";
@@ -7443,6 +7561,8 @@ try {
 /* expose a small, documented surface for debugging (no internals required) */
 window.SDP = {
   version: APP_VERSION,
+  build: BUILD_DATE,
+  stamp: buildStamp,
   diag: function () { Diag.open(); },
   exportData: function () { return DB.exportAll(); }
 };
