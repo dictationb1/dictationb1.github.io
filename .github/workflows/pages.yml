@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+# Pages for this repository is set to build_type "workflow", so nothing is
+# published until this workflow runs. Without it, pushes to main change the
+# repository but the live site keeps serving the previous deployment.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the inline app script
+        run: |
+          node -e '
+            const fs=require("fs");
+            const s=fs.readFileSync("index.html","utf8");
+            const m=s.match(/<script(?![^>]*type="text\/plain")[^>]*>([\s\S]*?)<\/script>/g)||[];
+            const body=m[m.length-1].replace(/^<script[^>]*>/,"").replace(/<\/script>$/,"");
+            fs.writeFileSync("/tmp/app.js",body);
+          '
+          node --check /tmp/app.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

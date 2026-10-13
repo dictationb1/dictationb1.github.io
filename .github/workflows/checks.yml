@@ -1,0 +1,36 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tests/phase1.cjs compares against commit 7577968
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix tests
+      - name: Syntax check the single-file app
+        run: |
+          node -e '
+            const fs=require("fs");
+            const s=fs.readFileSync("index.html","utf8");
+            const m=s.match(/<script(?![^>]*type="text\/plain")[^>]*>([\s\S]*?)<\/script>/g)||[];
+            const body=m[m.length-1].replace(/^<script[^>]*>/,"").replace(/<\/script>$/,"");
+            fs.writeFileSync("/tmp/app.js",body);
+          '
+          node --check /tmp/app.js
+      - name: Unit and Apps Script tests (jsdom, fake timers, mocks)
+        run: npm test --prefix tests
+      - name: Chromium UI tests
+        run: |
+          mkdir -p tests/artifacts/chromium-libs
+          node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync("tests/artifacts/al2023.tar",z.brotliDecompressSync(fs.readFileSync("tests/node_modules/@sparticuz/chromium/bin/al2023.tar.br")))'
+          tar -xf tests/artifacts/al2023.tar -C tests/artifacts/chromium-libs
+          LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:browser --prefix tests
