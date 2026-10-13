@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "description": "Development-only tests; no dependencies are loaded by the single-file app.",
+  "scripts": {
+    "test": "node phase1.cjs && node server.cjs",
+    "test:browser": "node browser.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "22.1.0",
+    "acorn": "8.15.0",
+    "@sinonjs/fake-timers": "11.3.1",
+    "playwright-core": "1.56.0",
+    "@sparticuz/chromium": "138.0.2"
+  }
+}

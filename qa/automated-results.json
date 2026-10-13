@@ -1,0 +1,458 @@
+{
+  "date": "2026-10-13",
+  "appVersion": "1.3.0",
+  "indexBytes": 356440,
+  "indexSHA256": "5db053fcec283d62b0453061e7f0aabb02a51ce72b6cbf79d5af03fc114d9acc",
+  "results": [
+    {
+      "test": "1.1 before: original Local-mode boot shows crash card",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.1 after: one-line hotfix alone removes boot crash",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: empty storage",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: corrupt JSON",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: wrong JSON structure",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: storage blocked",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: offline",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: configured unreachable cloud",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: no speechSynthesis",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: no en-GB voice",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: restricted navigator getters",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Boot: throwing speech getter",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.1 all ten class call sites use guarded helper",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.2 after: late error and rejection do not show fatal card",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.2 handler containment, 50-entry limit and Diagnostics",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.2 failed screen does not prevent Settings from rendering",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.2 actual boot failure retains full card and recovery controls",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 before: emergency backup silently fails but deletes storage at 600ms",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 after: failed download and copy fallback never reset or reload",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 second confirmation requires BOTH tick and exact RESET",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 result saves and lecturer changes update rolling backup",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 corrupt primary restores automatic copy and retains corrupt text",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.3 pending save flushed on pagehide",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.4 flex fatal card uses scale-only animation; confirm keeps translate",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.5 injected script removed, gas-source retained, 20 sections kept",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.5 zero network requests on load, including configured cloud",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.6 invalid dates and malformed backup import are guarded",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "1.6 user strings remain literal text, not executable HTML",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Static: node --check, ES2017 parser, no eval, under 450KB",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 seeded salted PIN unlocks; existing changed PIN survives migration",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 five wrong PINs cause five-minute lockout; 8-digit PIN is usable",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 #lecturer and direct render/edit methods reveal nothing without PIN",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 detached editing handlers and delayed list rows cannot edit after Lock now",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.2 paste handles 120 words, pipes, tabs, CSV quotes and warnings",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.2 30-word Saturday assignment, draft isolation and eight-week planner",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.2 cloud list update stays queued throughout active session",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.3 session typing/day chips update Home, player and comment metadata",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.4 private message is absent from public comments, visible only in unlocked inbox",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.5 all four anonymous comment statuses persist with safe text and session metadata",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.1 setup wizard has four cards, saved URL and red/green response",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.2 student hash connects automatically and is cleared without load requests",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.3 Unicode link round-trip, explicit preview/Add and split-part assembly",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.3 malformed linked data is rejected without a fatal card or list changes",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.4 no-cloud contact offers explicit WhatsApp/Email/Share, private content not public",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.5 outbox auth uses memory-only PIN, skips locked admin items and flushes student items",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "3.5 sync time advances only after successful state reply",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.1 no UK voice never invokes speech, Text mode has visible word/manual Next",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.2 full 30-word fake-timer dictation, instant marking, pause/resume, result saved",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.2 reload mid-session offers continuation with answers and same word",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.2 finish saves result before closing speech and queues it while offline",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.3 dictionary keeps lecturer meaning, Cambridge link and UK-labelled fallback",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 Change PIN requires old PIN and new matching PIN; new PIN unlocks",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.1 idle/background locks and privileged sheets disappear",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.2 rename/duplicate/reorder/delete with Undo retain list and planner data",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.4 announcements, expiry and lecturer moderation stay separate from private inbox",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "4.4 automatic Lite mode respects slow/low-memory devices and manual setting",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "2.4 locked backups exclude lecturer private inbox, PIN hashes and drafts; full backup requires unlock",
+      "status": "PASS",
+      "how": "jsdom + fake timers / Node static checks"
+    },
+    {
+      "test": "Apps Script ES2017 syntax",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server PIN: correct PIN succeeds, five wrong tries lock for five minutes",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server 1200-word list stores multiple cells under 40K, reads all words/version/plan/session",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server comments sanitize links/digits/formulas and stable retry ids do not duplicate",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server message stays private; authorised inbox read/reply/mark read/delete work",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Server failed multi-cell publish leaves committed words/version intact and can retry",
+      "status": "PASS",
+      "how": "Apps Script with mock Google services"
+    },
+    {
+      "test": "Chromium 390px boot and zero load network",
+      "status": "PASS",
+      "errors": [],
+      "requests": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 390px PIN unlock and no horizontal page overflow",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 390px session update visible on Home",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 320px boot and zero load network",
+      "status": "PASS",
+      "errors": [],
+      "requests": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 320px PIN unlock and no horizontal page overflow",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 320px session update visible on Home",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 768px boot and zero load network",
+      "status": "PASS",
+      "errors": [],
+      "requests": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 768px PIN unlock and no horizontal page overflow",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 768px session update visible on Home",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium native CompressionStream creates shorter links and retains original fallback",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium native DecompressionStream preview/Add assembles the full 30-word list",
+      "status": "PASS",
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: empty",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: corrupt",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: blocked",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: offline",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: unreachable",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: no-speech",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium boot: no-UK",
+      "status": "PASS",
+      "errors": [],
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Original Chromium fatal card is off-screen (before evidence)",
+      "status": "PASS",
+      "box": {
+        "x": -163,
+        "y": 161.1328125,
+        "width": 358,
+        "height": 260.859375
+      },
+      "how": "Chromium 138 through Playwright"
+    },
+    {
+      "test": "Chromium 390px Full-mode fatal card centred and within viewport after animation",
+      "status": "PASS",
+      "box": {
+        "x": 16,
+        "y": 185.578125,
+        "width": 358,
+        "height": 472.84375
+      },
+      "how": "Chromium 138 through Playwright"
+    }
+  ]
+}
