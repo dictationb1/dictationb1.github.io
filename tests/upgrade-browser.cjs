@@ -33,6 +33,9 @@ async function unlock(page,pin=require('./test-pin.cjs').split('')){
  if(await go.count())await go.click({timeout:1500}).catch(()=>{});
  await page.locator('#adminHost').waitFor();
 }
+/* Every FAIL is also emitted as a GitHub check annotation so the failing case name is
+   visible in the Checks API, not only in the raw step log. */
+function annotate(){for(const r of results)if(r.status==='FAIL'){const detail=String(r.detail||r.errors&&JSON.stringify(r.errors)||'').replace(/\r?\n/g,' | ').slice(0,900);console.log('::error::'+r.test.replace(/%/g,'%25')+' :: '+detail.replace(/%/g,'%25'));}}
 async function check(name,fn){try{await fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 (async()=>{
  const browser=await pw[engine].launch(engine==='chromium'&&!process.env.SDP_BROWSER_STANDARD?{executablePath:await packaged.executablePath(),args:packaged.args.filter(a=>a!=='--single-process')}:{headless:true});
@@ -123,5 +126,5 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
  });
  await browser.close();
  const output=path.join(__dirname,'artifacts');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'upgrade-'+engine+'.json'),JSON.stringify(results,null,2));
- console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
-})().catch(e=>{console.error(e);process.exitCode=1;});
+ console.log(JSON.stringify(results,null,2));annotate();if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
+})().catch(e=>{console.error(e);console.log('::error::'+String(e&&e.stack||e).replace(/\r?\n/g,' | ').replace(/%/g,'%25').slice(0,900));process.exitCode=1;});

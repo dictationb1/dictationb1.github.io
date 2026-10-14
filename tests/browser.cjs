@@ -7,6 +7,9 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.SDP_BROWSER_BIN || await serverChromium.executablePath(),args:serverChromium.args.filter(a=>!["--single-process","--disable-web-security","--allow-running-insecure-content","--disable-site-isolation-trials"].includes(a))});
  const results=[];
+ /* Failing cases are also emitted as GitHub check annotations so the Checks API shows
+    them, not only the raw step log. */
+ function annotate(){for(const r of results)if(r.status==='FAIL')console.log('::error::'+r.test.replace(/%/g,'%25')+' :: '+String(r.detail||(r.errors&&JSON.stringify(r.errors))||'').replace(/\r?\n/g,' | ').slice(0,900));}
  /* v2.0.0: the PIN pad submits itself on the fourth digit, so #pinSubmit is only
     pressed when the pad is still open (a 5-8 digit PIN). Closing the sheet that is
     already gone used to hang this suite. */
@@ -79,5 +82,5 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  const box=await page.locator('#fatal .flex-card').boundingBox();
  results.push({test:'Chromium 390px Full-mode fatal card centred and within viewport after animation',status:box&&box.x>=0&&box.x+box.width<=390&&box.y>=0&&box.y+box.height<=844&&Math.abs(box.x+box.width/2-195)<2?'PASS':'FAIL',box});
  await page.screenshot({path:path.join(artifacts,'fatal-390.png')});
- console.log(JSON.stringify(results,null,2));await browser.close();if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
-})().catch(e=>{console.error(e);process.exit(1)});
+ console.log(JSON.stringify(results,null,2));annotate();await browser.close();if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
+})().catch(e=>{console.error(e);console.log('::error::'+String(e&&e.stack||e).replace(/\r?\n/g,' | ').replace(/%/g,'%25').slice(0,900));process.exit(1)});

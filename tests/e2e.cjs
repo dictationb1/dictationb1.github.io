@@ -9,6 +9,8 @@ const root = path.resolve(__dirname, '..');
 const url = require('url').pathToFileURL(path.join(root, 'index.html')).href;
 const results = [];
 function rec(name, pass, extra) { results.push(Object.assign({ test: name, status: pass ? 'PASS' : 'FAIL' }, extra || {})); }
+/* Failures are echoed as GitHub check annotations so the Checks API reports the case name. */
+function annotate() { for (const r of results) if (r.status === 'FAIL') console.log('::error::' + r.test.replace(/%/g,'%25') + ' :: ' + JSON.stringify(r).replace(/\r?\n/g,' | ').slice(0, 900)); }
 
 /* Mock speechSynthesis: records every utterance, always has one en-GB voice. */
 function mockSpeech() {
@@ -352,6 +354,7 @@ async function flow(browser, vp, label, seed) {
   }
 
   console.log(JSON.stringify(results, null, 2));
+  annotate();
   await browser.close();
   if (results.some(r => r.status === 'FAIL')) process.exitCode = 1;
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.error(e); console.log('::error::' + String(e && e.stack || e).replace(/\r?\n/g,' | ').replace(/%/g,'%25').slice(0, 900)); process.exit(1); });
