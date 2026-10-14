@@ -16,10 +16,14 @@ const packaged=require('@sparticuz/chromium');
  await page.locator('#homeTitle').waitFor();
  const homeVisibleMs=await page.evaluate(()=>performance.now());
  await page.waitForTimeout(2500);
- await page.locator('#sheets .shead button').click();
+ /* v2.0.0: only close the first-run tour if it is open, and press Unlock only while the
+    pad is still showing - a four-digit PIN auto-submits and closes the sheet itself. */
+ if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();
  await page.locator('#btnLock').click();
  for(const n of require('./test-pin.cjs').split(''))await page.locator('#pinPad [data-k="'+n+'"]').click();
- await page.locator('#pinSubmit').click();
+ const go=page.locator('#pinSubmit');
+ if(await go.count())await go.click({timeout:1500}).catch(()=>{});
+ await page.locator('#adminHost').waitFor({timeout:6000});
  await page.locator('#adminHost').waitFor();
  const words=Array.from({length:200},(_,i)=>'word'+String.fromCharCode(97+(i/26|0))+String.fromCharCode(97+i%26)).join(', ');
  await page.getByLabel('Word list text',{exact:true}).fill(words);

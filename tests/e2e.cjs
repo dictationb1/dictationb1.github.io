@@ -9,6 +9,8 @@ const root = path.resolve(__dirname, '..');
 const url = require('url').pathToFileURL(path.join(root, 'index.html')).href;
 const results = [];
 function rec(name, pass, extra) { results.push(Object.assign({ test: name, status: pass ? 'PASS' : 'FAIL' }, extra || {})); }
+/* Failures are echoed as GitHub check annotations so the Checks API reports the case name. */
+function annotate() { for (const r of results) if (r.status === 'FAIL') console.log('::error::' + r.test.replace(/%/g,'%25') + ' :: ' + JSON.stringify(r).replace(/\r?\n/g,' | ').slice(0, 900)); }
 
 /* Mock speechSynthesis: records every utterance, always has one en-GB voice. */
 function mockSpeech() {
@@ -55,7 +57,10 @@ async function dismissTour(page) {
 async function unlock(page, pin) {
   await page.locator('#btnLock').click();
   for (const d of pin) await page.locator('#pinPad [data-k="' + d + '"]').click();
-  await page.locator('#pinSubmit').click();
+  /* v2.0.0: the pad auto-submits on the fourth digit, so Unlock is only pressed while
+     the pad is still open - the 5 to 8 digit PIN case. */
+  const go = page.locator('#pinSubmit');
+  if (await go.count()) await go.click({ timeout: 1500 }).catch(() => {});
   await page.waitForTimeout(250);
 }
 
@@ -66,7 +71,11 @@ async function flow(browser, vp, label, seed) {
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const errors = [], consoleErrors = [];
   page.on('pageerror', e => errors.push(String(e && e.message || e)));
-  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  /* v2.0.0 probes dictionary MP3 audio and its own static data files. Here the page is
+     file:// and every other request is aborted, so the browser reports each optional
+     load that did not make it as "Failed to load resource" - the app degrades silently
+     and never shows an error card for it. Script errors still fail the run. */
+  page.on('console', m => { const t = m.text(); if (m.type() === 'error' && !/^Failed to load resource/.test(t.trim())) consoleErrors.push(t); });
   await page.addInitScript(mockSpeech);
   /* seed once: the script re-runs on every navigation, and must not wipe the
      auto-saved snapshot when the test reloads the page */
@@ -88,7 +97,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.5.0-rc.1 (2026-10-14)'));
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.0.0 (2026-10-14)'), { stamp: (setTxt.match(/Build [^\s]+ \([^)]*\)/) || ['none'])[0] });
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();
@@ -102,6 +111,24 @@ async function flow(browser, vp, label, seed) {
   const unlocked = await page.locator('#adminHost').isVisible();
   rec(label + ' default PIN unlocks lecturer mode', unlocked);
   await page.getByRole('button', { name: 'Words & planner', exact: true }).click();
+  /* v2.0.0 keeps the quiet days behind "Other days (Monday, Thursday, Friday, weekend)"
+     in the planner, so open the disclosure the test needs before touching it. */
+  const openAround = async (aria) => {
+    const target = page.locator(`select[aria-label="${aria}"]`);
+    if (await target.isVisible().catch(() => false)) return;
+    const groups = page.locator('#adminHost details');
+    const n = await groups.count();
+    for (let i = 0; i < n; i++) {
+      const g = groups.nth(i);
+      if (await g.locator(`select[aria-label="${aria}"]`).count()) {
+        const sum = g.locator('> summary');
+        if (await sum.count()) await sum.click();
+        await target.waitFor({ state: 'visible', timeout: 5000 });
+        return;
+      }
+    }
+  };
+  await openAround('Monday list');
   const monday = page.locator('select[aria-label="Monday list"]');
   const opts = await monday.locator('option').all();
   const pick = Math.min(1, opts.length - 1);
@@ -345,6 +372,7 @@ async function flow(browser, vp, label, seed) {
   }
 
   console.log(JSON.stringify(results, null, 2));
+  annotate();
   await browser.close();
   if (results.some(r => r.status === 'FAIL')) process.exitCode = 1;
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.error(e); console.log('::error::' + String(e && e.stack || e).replace(/\r?\n/g,' | ').replace(/%/g,'%25').slice(0, 900)); process.exit(1); });
