@@ -196,7 +196,8 @@ test('v2: typing digits in the PIN pad feeds the same entry as tapping', () => {
   const sh = Admin.pad('unlock');
   ['7', '8', '9', '8', 'Backspace', '1', 'Enter'].forEach(key =>
     a.w.document.dispatchEvent(new a.w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })));
-  assert.deepEqual(seen, ['7898']);
+  /* the four-digit PIN auto-submits; editing re-arms it; Enter always submits what is in the box */
+  assert.deepEqual(seen, ['7898', '7891', '7891']);
   a.clock.tick(50);
   a.q.UI.closeSheet();
   Admin.hashPin = orig;
@@ -324,12 +325,17 @@ test('v2: frame probe samples once and never loops', () => {
   a.w.requestAnimationFrame = origRaf; a.w.cancelAnimationFrame = origCancel;
   a.q.DB.data.settings.perf = wasPerf;
 });
-test('v2: storage writes skip the duplicate backup copy between words', () => {
+test('v2: hot writes skip the duplicate backup copy, real changes keep it', () => {
   const DB = a.q.DB;
   a.w.localStorage.removeItem('sdp.v1.bak');
   DB.saveNow();
-  assert.equal(a.w.localStorage.getItem('sdp.v1.bak'), null);
-  DB.saveNow(true);
+  assert(a.w.localStorage.getItem('sdp.v1.bak'), 'a real save keeps one recovery copy');
+  a.w.localStorage.removeItem('sdp.v1.bak');
+  DB.save(true);                       /* the light save used by word steps */
+  a.clock.tick(300);
+  assert.equal(a.w.localStorage.getItem('sdp.v1.bak'), null, 'a light save writes one key only');
+  DB.save();
+  a.clock.tick(300);
   assert(a.w.localStorage.getItem('sdp.v1.bak'));
   const snap = html.match(/saveSnapshot: function \(\) \{[\s\S]*?\n  \},/)[0];
   assert.equal(snap.includes('.bak'), false, 'a word step never writes a second copy');

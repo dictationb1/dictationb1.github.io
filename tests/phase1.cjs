@@ -40,7 +40,7 @@ function harness(html = current, opts = {}) {
     setRequestHeader() {}
     send() { w.setTimeout(() => {this.status = 0; this.readyState = 4; if(this.onreadystatechange) this.onreadystatechange();}, 10); }
   };
-  w.fetch = () => { requests.push({method: 'fetch'}); return Promise.reject(Error('offline')); };
+  w.fetch = url => { requests.push({method: 'fetch', url: String(url)}); return Promise.reject(Error('offline')); };
   if(opts.raw !== undefined) w.localStorage.setItem('sdp.v1', opts.raw);
   if(opts.backup) w.localStorage.setItem('sdp.v1.bak', opts.backup);
   if(opts.cloud) w.localStorage.setItem('sdp.cloudurl', 'https://script.google.com/macros/s/unreachable/exec');
@@ -64,6 +64,12 @@ function harness(html = current, opts = {}) {
   return {w, q:w.__qa, clock, errors, requests, spoken, crash:() => w.document.querySelector('#fatal').dataset.shown==='1', close() {clock.uninstall(); dom.window.close();}};
 }
 function withApp(opts, fn, html) {const a=harness(html,opts);try{fn(a);}finally{a.close();}}
+/* v2.0.0: boot may only read the two cache-busted static files next to index.html.
+   Any other request at boot (especially a cloud call) is still a regression. */
+function bootTraffic(a) {
+  return a.requests.every(r => r.method === 'fetch' && /^\.\/data\/(version|session)\.json\?t=\d+$/.test(r.url)) &&
+    !a.requests.some(r => r.method !== 'fetch');
+}
 function clickText(a, text) {const b=Array.from(a.w.document.querySelectorAll('button')).find(n => n.textContent.trim()===text); assert(b, 'button: '+text); b.click(); return b;}
 
 test('1.1 before: original Local-mode boot shows crash card', () => withApp({}, a => assert(a.crash()), original));
@@ -140,7 +146,7 @@ test('1.5 injected script removed, gas-source retained, 20 sections kept', () =>
  const gas=s=>s.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];assert(gas(current).includes("function handlePost(e)")); assert(gas(current).includes("function adminOk(body)"));
  const sections=Array.from(current.matchAll(/SECTION (\d+) -/g)).map(m=>Number(m[1]));assert.deepEqual(sections,Array.from({length:20},(_,i)=>i+1));
 });
-test('1.5 zero network requests on load, including configured cloud', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert.equal(a.requests.length,0);a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
+test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=2 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
 test('1.6 invalid dates and malformed backup import are guarded', () => withApp({}, a => {
  assert(!a.q.U.fmtDate(new a.w.Date('invalid')).includes('NaN'));assert(!a.q.U.fmtTime(new a.w.Date('invalid')).includes('NaN'));
  for(const text of ['null','[]','{"lists":{}}','{bad']) assert.equal(a.q.DB.importAll(text).ok,false);
@@ -156,7 +162,15 @@ test('Static: node --check, ES2017 parser, no eval, under 450KB', () => {
  acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<450000);d.window.close();
 });
 function enterPin(a, pin) {
-  a.q.Admin.open(); for(const digit of pin) a.w.document.querySelector('#pinPad [data-k="'+digit+'"]').click(); a.w.document.querySelector('#pinSubmit').click();
+  a.q.Admin.open();
+  const pad = a.w.document.querySelector('#pinPad');
+  if (!pad) return;                                                 /* locked out: no pad offered */
+  const clear = pad.querySelector('[data-k="clear"]');
+  if (clear) clear.click();
+  for(const digit of pin) { const key = a.w.document.querySelector('#pinPad [data-k="'+digit+'"]'); if (key) key.click(); }
+  if (pin.length === 4) return;                                     /* v2.0.0 auto-submits at four digits */
+  const submit = a.w.document.querySelector('#pinSubmit');
+  if (submit && !submit.disabled) submit.click();
 }
 test('2.1 seeded salted PIN unlocks; existing changed PIN survives migration', () => withApp({}, a => {
  assert(a.q.DB.data.admin.pinSalt);assert.equal(a.q.DB.data.admin.pinHash,require('crypto').createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN).digest('hex'));assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
@@ -223,7 +237,7 @@ test('3.1 setup wizard has four cards, saved URL and red/green response', () => 
  a.q.Cloud.ping=cb=>cb({ok:true});clickText(a,'Test connection');assert(host.textContent.includes('Connected. Your Google Sheet answered.'));
 }));
 test('3.2 student hash connects automatically and is cleared without load requests', () => withApp({hash:'#cloud=validscriptid'}, a => {
- assert(a.q.Cloud.mode);assert.equal(a.w.location.hash,'');assert.equal(a.requests.length,0);assert(a.w.localStorage.getItem('sdp.cloudurl').includes('validscriptid'));
+ assert(a.q.Cloud.mode);assert.equal(a.w.location.hash,'');assert(a.requests.length<=2 && bootTraffic(a), JSON.stringify(a.requests));assert(a.w.localStorage.getItem('sdp.cloudurl').includes('validscriptid'));
 }));
 test('3.3 Unicode link round-trip, explicit preview/Add and split-part assembly', () => {
  let links;withApp({}, a => {a.q.DB.data.announcement={title:'Class notice',text:'Café practice'};links=a.q.Links.listLinks(a.q.Lib.current());assert(links.length>1);assert(links.every(l=>l.length<=2000));const item=a.q.Links.decode(links[0].split('#list=')[1]);assert.equal(item.a.text,'Café practice');});
@@ -243,10 +257,19 @@ test('3.5 outbox auth uses memory-only PIN, skips locked admin items and flushes
 }));
 test('3.5 sync time advances only after successful state reply', () => withApp({cloud:true}, a => {
  assert.equal(a.q.Cloud.updatedAt,0);a.q.Cloud.get=(params,cb)=>cb({ok:false});a.q.Cloud.pullState();assert.equal(a.q.Cloud.updatedAt,0);
- a.q.Cloud.get=(params,cb)=>cb({ok:true,ver:10});a.q.Cloud.pullState();assert(a.q.Cloud.updatedAt);a.q.UI.renderNet();assert(a.w.document.querySelector('#chipNetText').textContent.includes('synced'));
+ a.q.Cloud.get=(params,cb)=>cb({ok:true,ver:10});a.q.Cloud.pullState();assert(a.q.Cloud.updatedAt);a.q.UI.renderNet();assert(/Cloud Synced/i.test(a.w.document.querySelector('#chipNetText').textContent),a.w.document.querySelector('#chipNetText').textContent);assert(!/Local mode/i.test(a.w.document.querySelector('#chipNetText').textContent));
 }));
-test('4.1 no UK voice never invokes speech, Text mode has visible word/manual Next', () => withApp({voice:'en-US'}, a => {
- a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);assert.equal(a.spoken.length,0);a.q.Eng.start({});clickText(a,'Continue in Text mode');clickText(a,"I'm ready");a.clock.tick(10000);assert.equal(a.spoken.length,0);assert(a.q.Eng.showWord);assert.equal(a.q.Eng.idx,0);assert.equal(a.q.Eng.st,'waiting');
+test('4.1 a missing UK voice never blocks: any English voice speaks and no sheet is thrown up', () => withApp({voice:'en-US'}, a => {
+ a.q.Speech.playAudio=(src,rate,ms,cb)=>cb(false);                   /* pretend no dictionary/TTS audio is reachable */
+ a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);
+ assert.equal(a.spoken.length,1,'the phone speaks out loud instead of going silent');
+ assert.equal(a.spoken[0].lang,'en-GB');
+ assert(!a.q.Speech.textOnly,'never silently dropped into Text mode');
+ a.q.Eng.start({});
+ assert(!a.w.document.querySelector('#sheets').textContent.includes('No UK English voice found on this device'),'the blocking modal is gone');
+ clickText(a,"I'm ready");a.clock.tick(10000);
+ assert(a.spoken.length>1);assert(a.q.Eng.st==='waiting'||a.q.Eng.st==='speaking');
+ assert(/var NoVoice = \{/.test(current) && current.includes('No UK English voice found on this device'),'the guidance card still exists for Diagnostics');
 }));
 test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused', () => withApp({voice:'en-GB'}, a => {
  a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.spoken.length);assert(a.spoken.every(s=>s.lang==='en-GB'&&s.voice==='en-GB'));
@@ -254,6 +277,7 @@ test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused',
  const uk=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/word-us.mp3'},{text:'/uk/',audio:'https://audio.example/word-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);assert.equal(uk.ipa,'uk');assert(uk.audio.endsWith('-uk.mp3'));
 }));
 test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, result saved', () => withApp({voice:'en-GB'}, a => {
+ a.q.Speech.playAudio=(src,rate,ms,cb)=>cb(false);                    /* device voice path, as before tier 1 */
  a.q.DB.data.settings.mode='type';a.q.DB.data.settings.writeMode='fixed';a.q.DB.data.settings.writeFixed=3;
  a.q.Eng.start({});clickText(a,"I'm ready");let paused=false;
  for(let i=0;i<5000&&!a.q.DB.data.history.length;i++) {
@@ -264,8 +288,8 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem('sdp.v1')).history.length);
- assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='appointment').length>=2);
- assert(!a.spoken.some(s=>s.text.includes('dentist appointment')));assert.equal(a.q.Errors.items.length,0);
+ assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='hobbies').length>=2);
+ assert(!a.spoken.some(s=>s.text.includes('Reading and gardening')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
  let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem('sdp.v1');});
@@ -327,13 +351,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'1.5.0-rc.1'); assert.equal(a.w.SDP.build,'2026-10-14'); assert.equal(a.w.SDP.stamp(),'v1.5.0-rc.1 (2026-10-14)');
+ assert.equal(a.w.SDP.version,'2.0.0'); assert.equal(a.w.SDP.build,'2026-10-14'); assert.equal(a.w.SDP.stamp(),'v2.0.0 (2026-10-14)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v1.5.0-rc.1 (2026-10-14)')); assert(txt.includes('My data'));
+ assert(txt.includes('v2.0.0 (2026-10-14)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.5.0-rc.1 (2026-10-14)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.0.0 (2026-10-14)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
