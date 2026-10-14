@@ -1,87 +1,15 @@
 # Smart Dictation Player
-
-A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency. Open the file directly, or serve it over HTTPS. Development test packages are not used by the app.
-
-## Release status
-
-**1.5.0-rc.1 (2026-10-14) is an incomplete Phase 1 candidate, not a released upgrade.** Do not deploy or merge until the remaining requirements and release gates in [PHASE1_QA.md](PHASE1_QA.md) are satisfied. Phases 2–4 have not started. `QA_REPORT.md` describes earlier work; it is not evidence for this candidate.
-
-## Add next week's words in three steps (candidate)
-
-1. Unlock **Lecturer mode → Words & planner**. Paste the whole list: commas, semicolons, bullets, or one word per line. Multi-word entries such as “go shopping” stay together. For columns, use `word | sentence | meaning`, tabs, or CSV with a `word,sentence,meaning` header.
-2. Check **“I read this as…”** and the counter. Use the one-tap format switch if necessary. Edit any preview cell, delete a row, or reorder using Drag / Up / Down (Up / Down work on phones). Correct all reported problems. Choose class-date chips (today plus the next four Tuesday/Wednesday dates), or another date/weekday in **Publish for**.
-3. Tap **Publish to students** and check the word count, dates, and session number before confirming. It publishes the current preview, not the previous saved list. **Local mode means this device only.** Without a configured backend, send a list link/file to students; publishing does not magically distribute it.
-
-**Replace this list** and **Add to this list** are optional draft actions. Each preserves the existing short-lived Undo. The full requested published version-history/Undo workflow is still outstanding.
-
-## Saved data and migration
-
-- The key stays `sdp.v1`; the schema inside it advances from 1 to 2.
-- A one-time migration turns example sentences OFF and sets repeats to two. Subsequent changes to these settings are retained, not reset at each launch.
-- Lists, published snapshots, history, answers, planner, custom PIN verifier, and queued jobs remain in place.
-- The original pre-migration JSON is retained as `sdp.v1.before-v2` when storage is available. Existing recovery/backup keys remain supported.
-- Export a backup before experimenting. Browser storage can be cleared by the user or operating system. This candidate has not added an installable PWA or persistent-storage guarantee.
-
-## The lecturer PIN is a convenience lock
-
-The existing default PIN remains unchanged; historical default-PIN literals have also been removed from the current test/document files (not Git history). The shipped HTML contains only its precomputed salted SHA-256 verifier, not the PIN text. On successful login the verifier is re-salted and upgraded to PBKDF2-HMAC-SHA-256 (120,000 iterations, 256-bit output) when Web Crypto is available. Without Web Crypto, salted SHA-256 is retained. Existing changed PINs are verified with their old scheme before upgrade. PIN creation/change uses the strongest supported scheme.
-
-**A four-digit PIN in a public page is not real protection.** Anyone who can edit their browser's JavaScript or local storage can bypass this local lock, and short PINs can be guessed offline. PBKDF2 does not change that fact. The five-try lockout, idle lock, and Lock now are convenience safeguards. Only server-side authorization can protect cloud publishing.
-
-A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Crypto: the app explains this rather than silently downgrading its verification. Open the HTTPS app in a current browser. The student/player parts remain usable offline.
-
-### Forgot the local PIN (preserve data)
-
-1. Use **Settings → My data → backup/export** before doing anything else. A locked export intentionally excludes the lecturer's private inbox and authentication material. Do **not** clear all site storage or use Reset if you need existing work.
-2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v1` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
-3. In the console for this site, run this convenience-lock recovery only on your own device:
-   ```js
-   var d = JSON.parse(localStorage.getItem('sdp.v1'));
-   if (!d || !Array.isArray(d.lists)) throw new Error('Stop: saved data is not valid');
-   d.admin = {};
-   localStorage.setItem('sdp.v1', JSON.stringify(d));
-   location.reload();
-   ```
-   Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
-
-This does not reset the PIN on an Apps Script or future Worker server. Server recovery must happen in that service's secret settings.
-
-## Cloud: current adapter versus planned Worker
-
-The existing Google Apps Script adapter is still supported. Its setup remains under **Lecturer → Settings & tools**, including the embedded script, Cloud URL and test control. It has not been newly deployed or end-to-end verified against Google in this change.
-
-GitHub Pages is static, and this repository is public. A browser cannot safely write to GitHub with an embedded token: everyone visiting the page could extract it. The requested Phase 3 design uses a server-side Cloudflare Worker for authorization/rate limits and D1 for concurrent writes, with secrets kept outside this repository. Public state/community snapshots may be batched to GitHub; private messages must never go there.
-
-**The Worker, D1 schema, contract tests and ten-minute setup wizard do not exist yet.** There are no Worker setup steps to run in this candidate. Do not create a GitHub token or paste one into the app. Phase 3 is blocked until Phases 1 and 2 are merged and smoke-tested, per the release plan. Do not enter secrets in chat, issues, or committed files.
-
-## Development verification
-
-```sh
-npm ci --prefix tests
-node tests/check.cjs
-node --test tests/upgrade.test.cjs
-npm test --prefix tests
-```
-
-For Chromium on the minimal sandbox:
-
-```sh
-mkdir -p tests/artifacts/chromium-libs
-node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync("tests/artifacts/al2023.tar",z.brotliDecompressSync(fs.readFileSync("tests/node_modules/@sparticuz/chromium/bin/al2023.tar.br")))'
-tar -xf tests/artifacts/al2023.tar -C tests/artifacts/chromium-libs
-export LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib"
-node tests/upgrade-browser.cjs
-npm run test:browser --prefix tests
-npm run test:e2e --prefix tests
-node tests/profile.cjs
-```
-
-The full historical E2E takes several minutes. On a normal development machine/CI, install Playwright's actual browsers, then select one:
-
-```sh
-./tests/node_modules/.bin/playwright-core install --with-deps chromium webkit
-SDP_BROWSER_STANDARD=1 SDP_BROWSER=chromium node tests/upgrade-browser.cjs
-SDP_BROWSER=webkit node tests/upgrade-browser.cjs
-```
-
-No test needs real cloud credentials. Test speech is synthetic; it verifies order/selection, not audible pronunciation or real iPhone audio policies. Raw traces and generated outputs stay in ignored `tests/artifacts/`.
+Draft v2.0.0: NOT approved for deployment; see [test results and release blockers](tests/V2_REPORT.md).
+Publish a class: unlock Lecturer mode, paste words, check the preview, choose a date and confirm Publish.
+Until cloud setup is complete, local publishing does not distribute changes to other phones.
+Apps Script setup: new Google Sheet → Extensions → Apps Script → paste the code from `#gas-source` in index.html.
+Set script property `ADMIN_PIN` to your lecturer PIN; deploy as a web app, Execute as Me, access Anyone.
+Put the deployed `/exec` URL in `data/config.json` as `cloudUrl`; no cloud URL was supplied for this draft.
+GitHub-only publishing: update `data/session.json` and `data/version.json` through an authorised repository change.
+Defaults and class days belong in `data/config.json`; full Tue/Wed planner integration is still TODO.
+Old phone: close the app tab, open `https://dictationb1.github.io/?cb=20261014`, and reload; export a backup before clearing any website data.
+The PIN is a UI lock only; server-side `ADMIN_PIN` protects cloud administration. Keep tokens out of this repo.
+Cambridge audio is copyrighted and has no free API; keep its dictionary link, never scrape or copy its audio.
+Credits: dictionaryapi.dev is the existing optional lookup source; starter meanings and sentences are authored here; no eSpeak files are bundled yet.
+TODO first: vendor licensed offline UK eSpeak; then complete MUST A1–A8 and acceptance coverage before merge; SHOULD B1–B4 remain outstanding.
+Later: network-first PWA; licence-checked Piper voices; Cambridge audio only with permission. No analytics; public comments are public, lecturer messages must stay private.
