@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # tests/phase1.cjs compares against commit 7577968
+          fetch-depth: 0   # before/after inventory uses the v1.4.0 main commit
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,4 +33,4 @@ jobs:
           mkdir -p tests/artifacts/chromium-libs
           node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync("tests/artifacts/al2023.tar",z.brotliDecompressSync(fs.readFileSync("tests/node_modules/@sparticuz/chromium/bin/al2023.tar.br")))'
           tar -xf tests/artifacts/al2023.tar -C tests/artifacts/chromium-libs
-          LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:browser --prefix tests
+          LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:browser:v2 --prefix tests

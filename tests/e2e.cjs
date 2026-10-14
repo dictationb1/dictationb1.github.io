@@ -97,9 +97,9 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets .shead button').click();
 
   /* unlock and set a Monday list + session number and day */
-  await unlock(page, '7898');
+  await unlock(page, process.env.SDP_TEST_PIN);
   const unlocked = await page.locator('#adminHost').isVisible();
-  rec(label + ' PIN 7898 unlocks lecturer mode', unlocked);
+  rec(label + ' configured PIN unlocks lecturer mode', unlocked);
   await page.getByRole('button', { name: 'Words & planner', exact: true }).click();
   const monday = page.locator('select[aria-label="Monday list"]');
   const opts = await monday.locator('option').all();

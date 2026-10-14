@@ -1,3 +1,4 @@
+process.chdir(require('path').resolve(__dirname,'..'));
 const fs=require('fs'),cp=require('child_process'),acorn=require('acorn');
 const before=cp.execFileSync('git',['show','427bedd:index.html'],{maxBuffer:1000000}).toString();
 const after=fs.readFileSync('index.html','utf8');

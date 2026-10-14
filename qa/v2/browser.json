@@ -1,0 +1,76 @@
+[
+  {
+    "id": "T1/T27 Chromium fresh defaults, 30 words and Settings stamp",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T3/T4 Chromium Ready, Escape/outside protection, go/countdown and three word beats",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T7/T8 Chromium early paper marks update ring/mistakes and finalise once",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T11 Chromium en-US only produces zero speech; labelled Text mode",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T12 Chromium UK voice arrives five seconds late",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T13 Chromium local configured PIN unlocks",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T20 Chromium layout sample 320px / all sizes / light dark contrast",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T20 Chromium layout sample 375px / all sizes / light dark contrast",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T20 Chromium layout sample 430px / all sizes / light dark contrast",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T20 Chromium layout sample 768px / all sizes / light dark contrast",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "T20 Chromium layout sample 1440px / all sizes / light dark contrast",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "D12/T16 two-device HTTP mock publish while locked, student updates without tap",
+    "status": "PASS"
+  },
+  {
+    "id": "T18/T25 two-device HTTP mock private Unicode message",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "id": "Firefox browser suite",
+    "status": "NOT RUN",
+    "detail": "browserType.launch: Executable doesn't exist at /home/user/.cache/ms-playwright/firefox-1495/firefox/firefox"
+  },
+  {
+    "id": "WebKit browser suite",
+    "status": "NOT RUN",
+    "detail": "browserType.launch: Executable doesn't exist at /home/user/.cache/ms-playwright/webkit-2215/pw_run.sh"
+  }
+]

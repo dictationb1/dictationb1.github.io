@@ -63,5 +63,30 @@
     "id": "D15 dictionary allows any word in This list",
     "status": "FAIL",
     "detail": "The expression evaluated to a falsy value:\n\n  assert(a.w.document.querySelector('#screen-dict').textContent.includes('xyz'))\n"
+  },
+  {
+    "id": "D12 queued admin sends retain credential after panel lock",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(sent)\n"
+  },
+  {
+    "id": "D13 backup retains previous version rather than current",
+    "status": "FAIL",
+    "detail": "'Later' == 'Earlier'"
+  },
+  {
+    "id": "D15 personal RESET needs no lecturer unlock and preserves lists",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(input)\n"
+  },
+  {
+    "id": "D16 lecturer class results show averages and device breakdown",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(host.textContent.includes('75%'))\n"
+  },
+  {
+    "id": "D7 first-run tour cannot replace an active Ready sheet",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(a.w.document.querySelector('#readyNum'))\n"
   }
 ]

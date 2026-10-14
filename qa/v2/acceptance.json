@@ -1,0 +1,60 @@
+[
+  {
+    "id": "T2/T28 schema-1 migration is additive and one-time; personal changes survive sync",
+    "status": "PASS"
+  },
+  {
+    "id": "T5/T6 scheduler cancel, pause/resume, autosave and reload resume",
+    "status": "PASS"
+  },
+  {
+    "id": "T9 typed answers, American spelling option and diff rendering",
+    "status": "PASS"
+  },
+  {
+    "id": "T13 five wrong PIN attempts lock, auto-lock and session credential lifetime",
+    "status": "PASS"
+  },
+  {
+    "id": "T14 full weekend publishing choice exists",
+    "status": "FAIL",
+    "detail": "Weekend guided flow not implemented"
+  },
+  {
+    "id": "T15 planned date session metadata resolves independently of global fallback",
+    "status": "PASS"
+  },
+  {
+    "id": "T17 auto-post once per session and server rate limits separate from manual posts",
+    "status": "PASS"
+  },
+  {
+    "id": "T19 offline saves and retries each successful job once behind a bad item",
+    "status": "PASS"
+  },
+  {
+    "id": "T21 rolling backup is previous version, throttled; corrupt primary restores",
+    "status": "PASS"
+  },
+  {
+    "id": "T23 cached/offline dictionary; UK-only recording source and Cambridge link",
+    "status": "PASS"
+  },
+  {
+    "id": "T24 user text renders literally and CSV cells are formula-safe",
+    "status": "PASS"
+  },
+  {
+    "id": "T26 Run self-test action exists",
+    "status": "FAIL",
+    "detail": "Full self-test not implemented"
+  },
+  {
+    "id": "T27 diagnostics and error card contain build stamp",
+    "status": "PASS"
+  },
+  {
+    "id": "A ES2017 inline scripts and banned syntax/inline handlers/PIN audit",
+    "status": "PASS"
+  }
+]

@@ -1,3 +1,4 @@
+process.chdir(require('path').resolve(__dirname,'..'));
 const assert=require('assert'),fs=require('fs'),cp=require('child_process');const {createMock,serve}=require('./gas-mock-v2.cjs');
 const baseline=process.argv.includes('--baseline'),html=baseline?cp.execFileSync('git',['show','427bedd:index.html'],{maxBuffer:1000000}).toString():undefined;
 const results=[];

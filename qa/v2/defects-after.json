@@ -50,5 +50,25 @@
   {
     "id": "D15 dictionary allows any word in This list",
     "status": "PASS"
+  },
+  {
+    "id": "D12 queued admin sends retain credential after panel lock",
+    "status": "PASS"
+  },
+  {
+    "id": "D13 backup retains previous version rather than current",
+    "status": "PASS"
+  },
+  {
+    "id": "D15 personal RESET needs no lecturer unlock and preserves lists",
+    "status": "PASS"
+  },
+  {
+    "id": "D16 lecturer class results show averages and device breakdown",
+    "status": "PASS"
+  },
+  {
+    "id": "D7 first-run tour cannot replace an active Ready sheet",
+    "status": "PASS"
   }
 ]

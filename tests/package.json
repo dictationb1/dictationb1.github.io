@@ -2,9 +2,11 @@
   "private": true,
   "description": "Development-only tests; no dependencies are loaded by the single-file app.",
   "scripts": {
-    "test": "node phase1.cjs && node server.cjs",
+    "test": "node inventory-v2.cjs && node defects-v2.cjs && node server-v2.cjs && node acceptance-v2.cjs",
     "test:browser": "node browser.cjs",
-    "test:e2e": "node e2e.cjs"
+    "test:e2e": "node e2e.cjs",
+    "test:legacy": "node phase1.cjs && node server.cjs",
+    "test:browser:v2": "node browser-v2.cjs"
   },
   "devDependencies": {
     "jsdom": "22.1.0",

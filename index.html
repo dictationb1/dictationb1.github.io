@@ -874,6 +874,7 @@ function handlePost(e) {
     if (action === 'login') return adminLogin(body);
     if (action === 'myReplies') return myReplies(body);
     if (action === 'comment') return addComment(body, cid);
+    if (action === 'removeOwn') return removeOwn(body);
     if (action === 'message') return addMessage(body, cid);
     if (action === 'result') return addResult(body, cid);
     if (action === 'updateResult') return updateResult(body, cid);
@@ -1217,15 +1218,28 @@ function cleanPublic(text, n) {
 function addComment(body, cid) {
   if (body.website || /\b(lecturer|teacher|admin|sir|miss)\b/i.test(String(body.name || ''))) return {ok:false,err:'bad_public_identity'};
   var old = rows(TAB.Comments); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
-  if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
+  var autoKey = '';
+  if (body.auto) {
+    if (!body.deviceId || !body.sessionDate || !body.removeKey) return {ok:false,err:'bad_payload'};
+    autoKey = pinDigest(clip(body.deviceId,60) + '|' + clip(body.sessionDate,20) + '|' + clip(body.sessionNo,16));
+    for (var ai=0; ai<old.length; ai++) if (String(old[ai][11]) === autoKey) return {ok:true,id:String(old[ai][0]),dup:true};
+  } else if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
   var status = String(body.status || 'comment');
   if (['finished', 'problem', 'notdone', 'comment'].indexOf(status) < 0) status = 'comment';
   var id = cid || 'c' + Date.now() + Math.floor(Math.random() * 1000);
-  append(TAB.Comments, ['id', 'ts', 'name', 'status', 'text', 'meta', 'pinned', 'reported', 'hidden', 'reply'],
-    [id, Date.now(), cleanPublic(body.name, 24), status, cleanPublic(body.text, 280), clip(body.meta, 200), 'no', 'no', 'no', '']);
+  append(TAB.Comments, ['id', 'ts', 'name', 'status', 'text', 'meta', 'pinned', 'reported', 'hidden', 'reply', 'removeHash', 'autoKey'],
+    [id, Date.now(), cleanPublic(body.name, 24), status, cleanPublic(body.text, 280), cleanPublic(body.meta, 200), 'no', 'no', 'no', '', body.removeKey ? pinDigest(String(body.removeKey)) : '', autoKey]);
   return { ok: true, id: id };
 }
 
+function removeOwn(body) {
+  var r = rows(TAB.Comments), s = ss().getSheetByName(TAB.Comments);
+  for (var i=0; i<r.length; i++) if (String(r[i][0]) === String(body.id)) {
+    if (!body.removeKey || !r[i][10] || !constantTimeEqual(r[i][10], pinDigest(String(body.removeKey)))) return {ok:false,err:'unauthorised'};
+    s.getRange(i+2,9).setValue('yes'); return {ok:true};
+  }
+  return {ok:true};
+}
 function addMessage(body, cid) {
   var old = rows(TAB.Inbox); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
   if (rateLimited(clip(body.deviceId || cid, 60), 'm', 30, 5)) return { ok: false, err: 'rate' };
@@ -1377,7 +1391,7 @@ function inboxAction(body) {
 </script>
 <script>
 /* ==========================================================================
-   Smart Dictation Player  v1.4.0  (build 2026-10-13)
+   Smart Dictation Player  v2.0.0  (build 2026-10-14)
    Changelog: 1.4.0 - hardened DOMTokenList guard, per-widget Home rendering,
    build stamp in Settings and on the fatal card, safe-area insets,
    Test sound button.
@@ -1993,7 +2007,7 @@ function defaultData() {
       writeMode: "auto", writeFixed: 12,
       pauseWord: 1.2, pauseSent: 1.6,
       advance: "auto", shuffle: false, mode: "paper", showWord: false,
-      haptics: true, slowerOnce: false, usSpelling: "wrong"
+      haptics: true, autoPost: true, shareScore: false, slowerOnce: false, usSpelling: "wrong"
     },
     defaultsMigrated2: true,
     touchedSettings: {},
@@ -2299,7 +2313,7 @@ var UI = {
   autoPerf: function () {
     if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
     if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-    if (U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
+    if (U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 4) return "lite";
     if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 2) return "lite";
     try {
       var conn = navigator.connection || navigator.webkitConnection;
@@ -2612,24 +2626,20 @@ var Lib = {
     return { id: l.id, name: l.publishedName || l.name, words: l.publishedWords || l.words,
       version: l.publishedVersion || l.version, published: l.published };
   },
+  today: function () { return new Date(Date.now() + (DB.data.serverOffset || 0)); },
+  livePlan: function () { return DB.data.lecturerDevice && DB.data.live ? DB.data.live.plan : DB.data.plan; },
+  sessionForDate: function (date) {
+    var p = this.livePlan(), key = U.dateKey(date), entry = !p.pinned && p.dates[key];
+    var fallback = DB.data.lecturerDevice && DB.data.live ? DB.data.live.session : DB.data.session;
+    return entry && typeof entry === "object" ? {no:entry.sessionNo, day:entry.day || DAYS[U.weekdayIndex(date)], date:key, title:entry.title || ""} : fallback;
+  },
   forDate: function (date) {
-    var p = DB.data.plan, d = U.validDate(date);
-    var l = Lib.byId(p.pinned) || Lib.byId(p.dates[U.dateKey(d)]) || Lib.byId(p.weekdays[U.weekdayIndex(d)]) || Lib.byId(p.defaultList);
+    var p = this.livePlan(), d = U.validDate(date), key = U.dateKey(d);
+    var past = Object.keys(p.dates).filter(function (day) { return day <= key; }).sort().reverse();
+    var l = Lib.byId(p.pinned) || Lib.byId(p.dates[key]) || Lib.byId(p.weekdays[U.weekdayIndex(d)]) || Lib.byId(p.dates[past[0]]) || Lib.byId(p.defaultList);
     return l && l.published ? Lib.studentList(l) : null;
   },
-  current: function () {
-    var p = DB.data.plan;
-    var l;
-    if (p.pinned) { l = this.byId(p.pinned); if (l && l.published) return this.studentList(l); }
-    var key = U.dateKey(new Date());
-    if (p.dates && p.dates[key]) { l = this.byId(p.dates[key]); if (l && l.published) return this.studentList(l); }
-    var wi = U.weekdayIndex(new Date());
-    if (p.weekdays && p.weekdays[wi]) { l = this.byId(p.weekdays[wi]); if (l && l.published) return this.studentList(l); }
-    l = this.byId(p.defaultList);
-    if (l && l.published) return this.studentList(l);
-    var pub = this.published();
-    return pub.length ? this.studentList(pub[0]) : null;
-  },
+  current: function () { return this.forDate(this.today()); },
   estSeconds: function (list) {
     if (!list || !list.words) return 0;
     var st = DB.data.settings;
@@ -2644,7 +2654,7 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
-    var s = DB.data.session;
+    var s = this.sessionForDate(this.today());
     var bits = [];
     if (s.no) bits.push("Session " + s.no);
     if (s.day) bits.push(s.day);
@@ -2711,7 +2721,7 @@ var Screens = {
     /* announcement */
     var ann = U.$("#homeAnn");
     ann.textContent = "";
-    var a = d.announcement;
+    var a = d.lecturerDevice && d.live ? d.live.announcement : d.announcement;
     if (a && a.title) {
       var exp = a.expires ? new Date(a.expires + "T23:59:59").getTime() : 0;
       if (!exp || exp >= Date.now()) {
@@ -2941,6 +2951,12 @@ var Screens = {
 
     var host = U.$("#commList");
     host.textContent = "";
+    d.inbox.filter(function (m) { return m.mine && m.reply; }).forEach(function (message) {
+      var reply = U.el("div", "glass card pad-s", null);
+      reply.appendChild(U.el("b", null, "Reply from your lecturer")); reply.appendChild(U.el("p", "small", message.reply));
+      var read = U.btn(message.replyRead ? "Read" : "Mark read", "i-check", "soft");
+      U.on(read, "click", function () { message.replyRead = true; DB.save(); Screens.comm(); }); reply.appendChild(read); host.appendChild(reply);
+    });
     var items = d.comments.filter(function (c) { return !c.hidden; });
     if (this.commFilter !== "all") items = items.filter(function (c) { return c.status === Screens.commFilter; });
     items.sort(function (a, b) {
@@ -2968,14 +2984,14 @@ var Screens = {
       fb.appendChild(U.el("p", "tiny muted", "You can also reach the lecturer directly:"));
       var row = U.el("div", "btn-row tight", null);
       row.style.marginTop = "6px";
-      if (d.contactEmail) {
+      if (d.contactEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.contactEmail) && !/[?&#]/.test(d.contactEmail)) {
         var me = U.el("a", "btn sm soft", null);
         me.href = "mailto:" + d.contactEmail;
         me.rel = "noopener";
         me.appendChild(U.icn("i-mail", 16)); me.appendChild(U.el("span", null, "E-mail"));
         row.appendChild(me);
       }
-      if (d.contactPhone) {
+      if (d.contactPhone && /^[+0-9 ()-]{7,24}$/.test(d.contactPhone)) {
         var wa = U.el("a", "btn sm soft", null);
         wa.href = "https://wa.me/" + String(d.contactPhone).replace(/[^0-9]/g, "");
         wa.target = "_blank"; wa.rel = "noopener noreferrer";
@@ -3128,6 +3144,7 @@ var Screens = {
 
     /* ---- Dictation ---- */
     var p = card("Dictation");
+    p.appendChild(switchRow("Share that I finished", "An anonymous finished post; your score stays private", "autoPost"));
     p.appendChild(segRow("Word repeats", [{ id: 1, label: "Once" }, { id: 2, label: "Twice" }, { id: 3, label: "Three times" }], st.repeats, function (val) { d.touchedSettings.repeats = true; st.repeats = Number(val); DB.save(); }));
     p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { d.touchedSettings.writeMode = true; st.writeMode = val; DB.save(); Screens.settings(); }));
     if (st.writeMode === "fixed") p.appendChild(sliderRow("Seconds per word", 3, 60, 1, "writeFixed", function (x) { return x + " s"; }));
@@ -3333,7 +3350,23 @@ var DataTools = {
       ta.setAttribute("aria-label", "Full backup text"); ta.style.minHeight = "160px"; b.appendChild(ta);
     }, actions: actions });
   },
-  reset: function (emergency) { DataTools.backup(true, emergency); },
+  personalReset: function () {
+    UI.sheet({title:"Reset my personal data", body:function (b) {
+      b.appendChild(U.el("p", "small", "This clears your results, mistakes, saved words and your messages on this phone. Lecturer lists and plans stay."));
+      var input = U.el("input", null, null); input.setAttribute("aria-label", "Type RESET"); b.appendChild(input);
+      var button = U.btn("Reset my data", "i-trash", "danger block"); button.disabled = true;
+      U.on(input, "input", function () { button.disabled = input.value !== "RESET"; });
+      U.on(button, "click", function () {
+        if (input.value !== "RESET") return;
+        Eng.stop(); var d = DB.data;
+        d.history = []; d.mistakes = []; d.mywords = []; d.dictCache = {}; delete d.snapshot;
+        d.comments = d.comments.filter(function (c) { return !c.mine; }); d.inbox = d.inbox.filter(function (m) { return !m.mine; });
+        d.outbox = d.outbox.filter(function (item) { return ["publish","announce","moderate","inbox"].indexOf(item.action) >= 0; });
+        DB.saveNow(true); UI.closeSheet(); Screens.home(); UI.toast("Your personal data has been reset.");
+      }); b.appendChild(button);
+    }});
+  },
+  reset: function (emergency) { if (!Admin.unlocked && !emergency) this.personalReset(); else DataTools.backup(true, emergency); },
   confirmReset: function () {
     if (!Admin.unlocked) { UI.toast("Unlock lecturer mode, then open Reset again."); Admin.open(); return; }
     UI.sheet({ title: "Step 2: confirm reset", body: function (b) {
@@ -3473,6 +3506,7 @@ var Speech = {
 
   stop: function () {
     this.token++;
+    if (typeof Dict !== "undefined" && Dict && Dict.audioEl) { try { Dict.audioEl.pause(); } catch (ignored) {} }
     if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
     if (!this.supported) return;
     try { window.speechSynthesis.cancel(); } catch (e) {}
@@ -3524,7 +3558,7 @@ var Speech = {
       u.pitch = o.pitch === undefined ? 1 : o.pitch;
       self.activeUtter = u;
       function done(res) {
-        if (finished) return;
+        if (finished || stale()) return;
         finished = true;
         if (self.watchdog) { clearTimeout(self.watchdog); self.watchdog = null; }
         if (stale()) return;
@@ -3551,7 +3585,7 @@ var Speech = {
         try { window.speechSynthesis.cancel(); } catch (e) {}
         done(null);
       }, Math.max(2500, expected * 1000));
-      try { window.speechSynthesis.speak(u); }
+      try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); }
       catch (e) { done({ err: "speak-failed" }); }
     }
     /* iOS needs a short gap after a cancel before the next speak */
@@ -3614,7 +3648,7 @@ var NoVoice = {
         U.on(other, "click", function () {
           Speech.textOnly = true; Speech.allowNonUK = false;
           self.close();
-          UI.toast("Text mode: the word is shown. Tap Next when you are ready.", { icon: "i-info", ms: 6000 });
+          UI.toast(S.textModeNotice, { icon: "i-info", ms: 6000 });
           if (onOther) onOther();
         });
         b.appendChild(other);
@@ -3698,7 +3732,28 @@ var Eng = {
   },
 
   start: function (opts) {
-    var o = opts || {};
+    var o = opts || {}, self = this;
+    Speech.readVoices(); Speech.unlock();
+    if (Speech.supported && !Speech.ukVoices.length && !Speech.textOnly && !o.voiceChecked) {
+      var until = Date.now() + 3000, cancelled = false;
+      var exit = U.btn("Exit", "i-x", "ghost");
+      var sh = UI.sheet({ title: "Getting the UK voice ready...", required: true, actions: [exit] });
+      U.on(exit, "click", function () { cancelled = true; UI.closeSheet(); });
+      (function waitForVoice() {
+        if (cancelled || !sh.parentNode) return;
+        Speech.readVoices();
+        if (Speech.ukVoices.length || Date.now() >= until) { UI.closeSheet(); o.voiceChecked = true; self.start(o); }
+        else setTimeout(waitForVoice, 150);
+      })();
+      return;
+    }
+    if (Cloud.mode && !o.freshnessChecked && U.nav("onLine", true) !== false && Date.now() - (DB.data.lastConfirmed || 0) > 21600000) {
+      o.freshnessChecked = true;
+      var finished = false;
+      var note = UI.sheet({title: "Checking for today's list...", required: true});
+      function continueStart() { if (finished) return; finished = true; UI.closeSheet(); self.start(o); }
+      Cloud.pullState(continueStart); setTimeout(continueStart, 4000); return;
+    }
     var list = o.list || Lib.current();
     if (!list || !list.words || !list.words.length) {
       UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
@@ -3715,9 +3770,10 @@ var Eng = {
     this.listId = o.listId || list.id || "";
     this.listName = o.listName || list.name || "Practise list";
     this.listVersion = list.version || 1;
-    this.sessionNo = o.sessionNo !== undefined ? o.sessionNo : (DB.data.session.no || "");
-    this.sessionDay = o.sessionDay !== undefined ? o.sessionDay : (DB.data.session.day || "");
-    this.sessionDate = o.sessionDate || DB.data.session.date || U.dateKey(new Date()); this.sessionTitle = o.sessionTitle || DB.data.session.title || "";
+    var liveSession = Lib.sessionForDate(Lib.today());
+    this.sessionNo = o.sessionNo !== undefined ? o.sessionNo : (liveSession.no || "");
+    this.sessionDay = o.sessionDay !== undefined ? o.sessionDay : (liveSession.day || "");
+    this.sessionDate = o.sessionDate || liveSession.date || U.dateKey(new Date()); this.sessionTitle = o.sessionTitle || liveSession.title || "";
     this.mode = o.mode || DB.data.settings.mode || "paper";
     this.answers = [];
     this.hard = [];
@@ -3985,7 +4041,7 @@ var Eng = {
     Speech.stop();
     this.st = "idle";
     this.releaseWake();
-    if (!silent && this.layer) UI.closeLayer(this.layer);
+    if (this.layer) UI.closeLayer(this.layer);
     this.layer = null;
     if (Cloud.pendingState) { Cloud.releasePending(); DB.saveNow(); }
   },
@@ -4485,7 +4541,7 @@ var Results = {
             msg.textContent = rec.percent === null ? S.markWords : rec.percent === 100 ? "Well done! Keep practising." : "Your marked mistakes are ready to practise.";
           }
           rec.rows.forEach(function (row, i) {
-            var line = U.el("div", "listrow", null);
+            var line = U.el("div", "listrow", null); line.style.flexWrap = "wrap";
             line.appendChild(U.el("b", "w", (i + 1) + ". " + row.word));
             ["ok", "wrong", "unscored"].forEach(function (state) {
               var label = state === "ok" ? "Correct" : state === "wrong" ? "Incorrect" : "Unmarked";
@@ -4665,6 +4721,7 @@ Eng.finish = function (early) {
 
   var res = meta.mode === "type" ? Results.scoreTypeMode(words, order, answers) : {rows:words.map(function (w) { return {word:w.w, state:"unscored"}; }),correct:0,half:0,total:words.length};
   var rec = Results.finish(words, order, res, meta);
+  if (!early) Comm.finished(rec);
   var built = false;
   function build() {
     if (built) return; built = true;
@@ -4741,7 +4798,7 @@ var Dict = {
       var i;
       var ph = e.phonetics || [];
       for (i = 0; i < ph.length; i++) {
-        if (!audio && ph[i] && typeof ph[i].audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(ph[i].audio)) {
+        if (!audio && ph[i] && typeof ph[i].audio === "string" && /^https:\/\/api\.dictionaryapi\.dev\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(ph[i].audio)) {
           audio = ph[i].audio;
           ipa = ph[i].text ? String(ph[i].text).replace(/^\//, "").replace(/\/$/, "") : "";
         }
@@ -4766,8 +4823,9 @@ var Dict = {
   speak: function (word, rate) {
     var self = this;
     var key = U.norm(word);
+    Speech.stop();
     var cache = DB.data.dictCache[key];
-    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
+    if (cache && typeof cache.audio === "string" && /^https:\/\/api\.dictionaryapi\.dev\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
       try {
         if (!this.audioEl) {
           this.audioEl = new Audio();
@@ -4797,6 +4855,17 @@ var Comm = {
     { id: "notdone", label: "Could not finish / did not do it", cls: "notdone" },
     { id: "comment", label: "Just a comment", cls: "comment" }
   ],
+  finished: function (rec) {
+    var d = DB.data;
+    if (!d.settings.autoPost) return;
+    if (!d.autoPosts) d.autoPosts = {};
+    var key = rec.sessionDate + "|" + rec.sessionNo;
+    if (d.autoPosts[key]) return;
+    var c = {id:U.uid("c"), ts:Date.now(), name:d.profile.nickname, status:"finished", text:d.profile.nickname + " finished Session " + rec.sessionNo + " (" + rec.sessionDay + ")", meta:rec.sessionDate, mine:true, auto:true, pending:Cloud.mode, removeKey:U.uid("owner")};
+    d.autoPosts[key] = c.id; d.comments.unshift(c);
+    Cloud.queue({action:"comment",cid:c.id,name:c.name,status:c.status,text:c.text,meta:c.meta,auto:true,sessionDate:rec.sessionDate,sessionNo:rec.sessionNo,removeKey:c.removeKey});
+    DB.saveNow();
+  },
   statusLabel: function (id) {
     for (var i = 0; i < this.statuses.length; i++) if (this.statuses[i].id === id) return this.statuses[i].label;
     return "Just a comment";
@@ -4877,6 +4946,15 @@ var Comm = {
       UI.toast("Thanks \u2013 your lecturer has been told about this comment.", { icon: "i-check" });
     });
     box.appendChild(rep2);
+    if (c.mine && c.auto) {
+      var remove = U.btn("Remove my finished post", "i-trash", "soft");
+      U.on(remove, "click", function () {
+        c.hidden = true; DB.data.settings.autoPost = false;
+        DB.data.outbox = DB.data.outbox.filter(function (item) { return item.cid !== c.id; });
+        if (Cloud.mode && c.sent) Cloud.queue({action:"removeOwn",id:c.serverId || c.id,removeKey:c.removeKey});
+        DB.saveNow(); Screens.comm();
+      }); box.appendChild(remove);
+    }
     if (!Cloud.mode && c.mine) { var send = U.btn("Send to lecturer", "i-share", "sm soft"); U.on(send,"click",function () { Links.contact(c.name + ": " + c.text + "\n" + c.meta); }); box.appendChild(send); }
     return box;
   },
@@ -5269,6 +5347,17 @@ var Admin = {
     this.lastActive = Date.now();
     this.panel();
     this.startIdleWatch();
+    if (this.inboxTimer) clearInterval(this.inboxTimer);
+    this.inboxTimer = setInterval(function () {
+      if (!Admin.unlocked || !Cloud.mode || !Admin.token || document.hidden) return;
+      Cloud.post({action:"readInbox",token:Admin.token},function (res) {
+        if (!Admin.unlocked || !res || !res.ok) return;
+        if (Array.isArray(res.inbox)) DB.data.inbox = res.inbox;
+        if (res.stats) DB.data.classStats = res.stats;
+        DB.save();
+        if (Admin.tab === "comments" && !U.$("#sheets .sheet")) Admin.renderTab();
+      });
+    },30000);
     if (Cloud.mode) Cloud.flush();
   },
   lock: function () {
@@ -5277,6 +5366,7 @@ var Admin = {
     this.pin = "";
     this.retainSendingCredential();
     while (UI.closeTop()) {}
+    if (this.inboxTimer) { clearInterval(this.inboxTimer); this.inboxTimer = null; }
     if (this.idleTimer) { clearInterval(this.idleTimer); this.idleTimer = null; }
     var L = this.layer;
     if (L) UI.closeLayer(L);
@@ -5350,7 +5440,7 @@ var Admin = {
   panel: function () {
     var self = this;
     this.touch();
-    if (this.layer) { var pin = this.pin; UI.closeLayer(this.layer); this.unlocked = true; this.pin = pin; }
+    if (this.layer) { var credential = this.token; UI.closeLayer(this.layer); this.unlocked = true; this.token = credential; }
     var L = UI.layer({
       title: S.lecturerMode,
       backLabel: "Close",
@@ -5904,6 +5994,7 @@ Admin.publish = function (list) {
   list.publishedWords = list.words.map(function (x) { return { w: x.w, s: x.s, m: x.m }; });
   list.publishedName = list.name; list.publishedVersion = list.version;
   delete list.draftText; delete this.draft[list.id];
+  DB.data.live = {plan:JSON.parse(JSON.stringify(DB.data.plan)),session:JSON.parse(JSON.stringify(DB.data.session)),announcement:DB.data.announcement};
   var s = DB.data.session;
   DB.data.sessions.unshift({
     no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "",
@@ -5921,7 +6012,7 @@ Admin.publish = function (list) {
       for (var i = 0; i < 7; i++) out.push({ key: "w" + i, listId: DB.data.plan.weekdays[i] || "", pinned: false });
       out.push({ key: "pinned", listId: DB.data.plan.pinned || "", pinned: true });
       out.push({ key: "default", listId: DB.data.plan.defaultList || list.id, pinned: false });
-      Object.keys(DB.data.plan.dates).forEach(function (key) { out.push({ key: "d" + key, listId: DB.data.plan.dates[key], pinned: false }); });
+      Object.keys(DB.data.plan.dates).forEach(function (key) { var e = DB.data.plan.dates[key]; out.push({ key: "d" + key, listId: typeof e === "string" ? e : e.listId, sessionNo:e.sessionNo || s.no, day:e.day || s.day, title:e.title || s.title, pinned: false }); });
       return out;
     })()
   });
@@ -6351,6 +6442,12 @@ Admin.tabComments = function (host) {
 
   function paint(mode) {
     listHost.textContent = "";
+    d.inbox.filter(function (m) { return m.mine && m.reply; }).forEach(function (message) {
+      var reply = U.el("div", "glass card pad-s", null);
+      reply.appendChild(U.el("b", null, "Reply from your lecturer")); reply.appendChild(U.el("p", "small", message.reply));
+      var read = U.btn(message.replyRead ? "Read" : "Mark read", "i-check", "soft");
+      U.on(read, "click", function () { message.replyRead = true; DB.save(); Screens.comm(); }); reply.appendChild(read); host.appendChild(reply);
+    });
     var items = d.comments.filter(function (c) {
       if (mode === "hidden") return !!c.hidden;
       if (mode === "reported") return !!c.reported;
@@ -6867,17 +6964,23 @@ var Cloud = {
       });
     }, CONFIG.pollMs + jitter);
   },
-  pullState: function () {
+  pullState: function (done) {
     var self = this;
     this.get({ action: "state" }, function (res) {
-      if (!res || !res.ok) return;
+      if (!res || !res.ok) { if (done) done(); return; }
       self.remoteVer = Number(res.ver) || self.remoteVer;
       DB.data.remoteVer = self.remoteVer;
       self.applyState(res);
       self.updatedAt = Date.now(); self.fails = 0;
+      DB.data.lastConfirmed = self.updatedAt;
+      if (res.serverTime) DB.data.serverOffset = Number(res.serverTime) - Date.now();
+      if (res.serverDate) DB.data.serverDate = res.serverDate;
+      if (Admin.unlocked && res.scriptVersion !== 2) UI.toast("Update your Google script. Open Cloud and tools to copy it.", {ms:8000});
+      if (Math.abs(DB.data.serverOffset || 0) > 43200000) UI.toast("Your phone clock differs from the class clock. Check Date and Time in phone settings.", {ms:8000});
       DB.save();
       UI.renderNet();
       if (UI.tab === "home") Screens.home();
+      if (done) done();
     });
   },
   pullReplies: function () {
@@ -6898,7 +7001,7 @@ var Cloud = {
       DB.data.comments.forEach(function (c) { mine[c.serverId || c.id] = c; });
       var merged = res.comments.map(function (c) {
         var old = mine[c.id];
-        if (old && old.mine) { c.mine = true; }
+        if (old && old.mine) { c.mine = true; c.auto = old.auto; c.removeKey = old.removeKey; c.sent = true; }
         return c;
       });
       DB.data.comments = pending.concat(merged).slice(0, CONFIG.maxComments);
@@ -6944,7 +7047,7 @@ var Cloud = {
           var i = parseInt(p.key.slice(1), 10);
           if (i >= 0 && i < 7) weekdays[i] = p.listId || "";
         } else if (p.key.charAt(0) === "d") {
-          dates[p.key.slice(1)] = p.listId || "";
+          dates[p.key.slice(1)] = { listId:p.listId || "", sessionNo:p.sessionNo || "", day:p.day || "", title:p.title || "" };
         }
       });
       d.plan.weekdays = weekdays;
@@ -7465,7 +7568,7 @@ function fatalCard(err) {
 }
 
 function firstRunTour() {
-  if (DB.data.tourSeen) return;
+  if (DB.data.tourSeen || Eng.st !== "idle" || U.$("#sheets .sheet")) return;
   var cards = [
     { t: S.tour1t, b: S.tour1, i: "i-play" },
     { t: S.tour2t, b: S.tour2, i: "i-lock" },
@@ -7506,6 +7609,8 @@ function firstRunTour() {
 function boot() {
   Store.test();
   DB.load();
+  DB.data.history.filter(function (rec) { return rec.mode === "paper" && !rec.finalised && rec.score === null; }).forEach(function (rec) { setTimeout(function () { Results.finalise(rec); }, Math.max(0, rec.ts + 600000 - Date.now())); });
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (ignored) {}
   if (Store.blocked) UI.warnStorage();
   UI.applyTheme();
   UI.applySize();
@@ -7580,6 +7685,7 @@ function boot() {
     if (document.hidden) {
       UI.pauseAnimations(true);
       Admin.wentBackground();
+      if (Eng.st === "ready") { Eng.runId++; Eng.clearTimers(); Speech.stop(); UI.closeSheet(); Eng.readyScreen(); Speech.stop(); }
       if (Eng.st === "speaking" || Eng.st === "waiting") {
         Eng.pause();
         Eng.showResumeCard = true;
