@@ -744,7 +744,7 @@ body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite
       <span class="t"><b id="brandName">Smart Dictation</b><span id="brandSub">UK English &middot; B1</span></span>
     </div>
     <div class="row">
-      <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Local mode</span></button>
+      <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Connecting…</span></button>
       <button type="button" id="btnLock" class="btn icon ghost" aria-label="Open lecturer mode"><svg aria-hidden="true"><use xlink:href="#i-lock" href="#i-lock"></use></svg></button>
     </div>
   </header>
@@ -1454,7 +1454,7 @@ function sdpTokens(args) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.5.0-rc.1";
+var APP_VERSION = "2.0.0";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
 var BUILD_DATE = "2026-10-14";
@@ -1476,7 +1476,7 @@ var CONFIG = {
   lockMs: 5 * 60 * 1000,
   idleLockMs: 10 * 60 * 1000,
   bgLockMs: 2 * 60 * 1000,
-  pollMs: 20000,
+  pollMs: 50000,
   netTimeout: 8000,
   dictHost: "https://api.dictionaryapi.dev/api/v2/entries/en/",
   cambridge: "https://dictionary.cambridge.org/dictionary/english/",
@@ -1498,7 +1498,7 @@ var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oc
    ============================================================ */
 var S = {
   appName: "Smart Dictation Player",
-  localMode: "Local mode",
+  localMode: "Offline · saved on this phone",
   online: "Online",
   offline: "Offline",
   updated: "Updated",
@@ -1928,36 +1928,156 @@ var Store = {
 };
 
 var SAMPLE_WORDS = [
-  { w: "appointment", s: "I have a dentist appointment on Thursday at four o'clock.", m: "an arranged time to meet someone" },
-  { w: "temperature", s: "The temperature dropped to minus five last night.", m: "how hot or cold something is" },
-  { w: "neighbour", s: "Our new neighbour has a very friendly dog.", m: "a person who lives near you" },
-  { w: "schedule", s: "The bus schedule changed at the beginning of March.", m: "a plan of times for events" },
-  { w: "delicious", s: "This chocolate cake your mother made is absolutely delicious.", m: "tasting very good" },
-  { w: "necessary", s: "It is necessary to book your tickets early.", m: "needed; you must have it" },
-  { w: "equipment", s: "The gym bought new equipment for the fitness room.", m: "tools or machines for a purpose" },
-  { w: "comfortable", s: "These shoes are very comfortable for long walks.", m: "making you feel relaxed" },
-  { w: "opportunity", s: "She got the opportunity to study in London.", m: "a chance to do something" },
-  { w: "knowledge", s: "He has good knowledge of the local history.", m: "information you have learned" },
-  { w: "though", s: "It was cold, though we still enjoyed the walk.", m: "but; however" },
-  { w: "environment", s: "We should protect the environment for our children.", m: "the natural world around us" },
-  { w: "weight", s: "The nurse checked my height and weight this morning.", m: "how heavy something is" },
-  { w: "interview", s: "Her job interview at the bank lasted forty minutes.", m: "a formal meeting with questions" },
-  { w: "programme", s: "There is a good programme on television tonight.", m: "a show on TV or radio" },
-  { w: "receive", s: "Did you receive my message about the meeting?", m: "to get something sent to you" },
-  { w: "advertisement", s: "I saw the advertisement for the part-time job.", m: "a notice that promotes something" },
-  { w: "definitely", s: "I will definitely come to your birthday party.", m: "certainly; without any doubt" },
-  { w: "foreign", s: "He enjoys learning foreign languages at his evening class.", m: "from another country" },
-  { w: "separate", s: "Please keep the recycling in a separate bag.", m: "not together; apart" },
-  { w: "nervous", s: "I always feel nervous before a big exam.", m: "worried and unable to relax" },
-  { w: "library", s: "You can borrow three books from the library.", m: "a place where you borrow books" },
-  { w: "improve", s: "Practising every day will really improve your spelling.", m: "to get better at something" },
-  { w: "suggestion", s: "Thank you for your helpful suggestion about our project.", m: "an idea that you offer" },
-  { w: "accommodation", s: "The price includes accommodation, breakfast and airport transfer.", m: "a place to live or stay" },
-  { w: "available", s: "Are any double rooms available for next weekend?", m: "able to be used or obtained" },
-  { w: "especially", s: "I love fruit, especially fresh mangoes and pineapple.", m: "more than usual; particularly" },
-  { w: "experience", s: "She has five years of experience in sales.", m: "knowledge gained by doing something" },
-  { w: "recipe", s: "This simple recipe needs only four basic ingredients.", m: "instructions for cooking food" },
-  { w: "disappointed", s: "He was disappointed that the concert was cancelled.", m: "sad because hopes were not met" }
+  {
+    "w": "hobbies",
+    "m": "activities you enjoy in your free time",
+    "s": "My hobbies are reading and swimming."
+  },
+  {
+    "w": "leisure",
+    "m": "time when you are not working",
+    "s": "I enjoy cycling in my leisure time."
+  },
+  {
+    "w": "barbecue",
+    "m": "a meal cooked outside over a fire",
+    "s": "We had a barbecue in the garden on Sunday."
+  },
+  {
+    "w": "camping",
+    "m": "staying outdoors in a tent",
+    "s": "We went camping near the lake."
+  },
+  {
+    "w": "collection",
+    "m": "a group of things kept together",
+    "s": "She has a collection of old coins."
+  },
+  {
+    "w": "cruise",
+    "m": "a holiday journey on a ship",
+    "s": "They went on a cruise around the islands."
+  },
+  {
+    "w": "dancing",
+    "m": "moving your body to music",
+    "s": "We enjoy dancing at parties."
+  },
+  {
+    "w": "drawing",
+    "m": "making pictures with a pencil or pen",
+    "s": "He is drawing a picture of his dog."
+  },
+  {
+    "w": "facilities",
+    "m": "buildings or equipment available for people to use",
+    "s": "The hotel has good sports facilities."
+  },
+  {
+    "w": "festival",
+    "m": "an event with music, films or other activities",
+    "s": "We heard a new band at the music festival."
+  },
+  {
+    "w": "fiction",
+    "m": "stories about people and events that are not real",
+    "s": "I like reading fiction before bed."
+  },
+  {
+    "w": "gallery",
+    "m": "a place where you can see art",
+    "s": "We visited an art gallery in London."
+  },
+  {
+    "w": "go shopping",
+    "m": "visit shops to buy things",
+    "s": "I go shopping with my sister on Saturdays."
+  },
+  {
+    "w": "guitar",
+    "m": "a musical instrument with strings",
+    "s": "He plays the guitar in a band."
+  },
+  {
+    "w": "hire",
+    "m": "pay to use something for a short time",
+    "s": "You can hire a bicycle at the station."
+  },
+  {
+    "w": "hike",
+    "m": "a long walk in the countryside",
+    "s": "We went for a hike in the hills."
+  },
+  {
+    "w": "holidays",
+    "m": "days when you do not work or attend school",
+    "s": "We visit our grandparents during the school holidays."
+  },
+  {
+    "w": "jogging",
+    "m": "running slowly for exercise",
+    "s": "She goes jogging in the park every morning."
+  },
+  {
+    "w": "magazine",
+    "m": "a thin book with articles and pictures",
+    "s": "I bought a magazine about travel."
+  },
+  {
+    "w": "musician",
+    "m": "a person who plays music",
+    "s": "My brother wants to become a musician."
+  },
+  {
+    "w": "nightlife",
+    "m": "entertainment available in the evening and at night",
+    "s": "The city is famous for its nightlife."
+  },
+  {
+    "w": "painting",
+    "m": "a picture made using paint",
+    "s": "There is a beautiful painting on the wall."
+  },
+  {
+    "w": "party",
+    "m": "a social event where people celebrate together",
+    "s": "We are having a party for her birthday."
+  },
+  {
+    "w": "photograph",
+    "m": "a picture made with a camera",
+    "s": "I took a photograph of the beach."
+  },
+  {
+    "w": "picnic",
+    "m": "a meal eaten outside",
+    "s": "We had a picnic under a tree."
+  },
+  {
+    "w": "quiz",
+    "m": "a game or test with questions",
+    "s": "Our teacher gave us a short quiz."
+  },
+  {
+    "w": "sculpture",
+    "m": "art made by shaping stone, wood or other materials",
+    "s": "There is a stone sculpture in the park."
+  },
+  {
+    "w": "sightseeing",
+    "m": "visiting interesting places as a tourist",
+    "s": "We spent the afternoon sightseeing in Oxford."
+  },
+  {
+    "w": "sunbathe",
+    "m": "sit or lie in the sun",
+    "s": "Remember to use sun cream when you sunbathe."
+  },
+  {
+    "w": "torch",
+    "m": "a small electric light you can carry",
+    "s": "Take a torch if you walk outside at night."
+  }
 ];
 
 var SAMPLE_LIST_ID = "list_sample_b1";
@@ -2074,7 +2194,8 @@ var DB = {
     if (!d.v) d.v = 1;
     /* One-time default correction, not an every-load preference reset.
        Preserve an original copy before any schema-1 repair or defaults change. */
-    if (d.v < 2) {
+    if (!d.settingsRev || d.settingsRev < 2) {
+      d.settingsRev = 2;
       d.settings.sentence = false;
       d.settings.repeats = 2;
       d.v = 2;
@@ -2124,12 +2245,17 @@ var DB = {
       self.saveNow();
     }, 120);
   },
-  saveNow: function () {
+  lastBackup: 0,
+  saveNow: function (backup) {
     if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
     try {
+      var keys = Object.keys(this.data.dictCache || {});
+      if (keys.length > 300) keys.slice(0, keys.length - 300).forEach(function (key) { delete DB.data.dictCache[key]; });
       var text = JSON.stringify(this.data);
       Store.set(CONFIG.key, text);
-      Store.set(CONFIG.key + ".bak", text);
+      if (backup || Date.now() - this.lastBackup >= 60000) {
+        Store.set(CONFIG.key + ".bak", text); this.lastBackup = Date.now();
+      }
     } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
   },
   reset: function () {
@@ -2265,10 +2391,12 @@ var UI = {
     try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; }
   },
   autoPerf: function () {
+    var ua = U.nav("userAgent", ""), ios = ua.match(/OS (\d+)_/), android = ua.match(/Android (\d+)/);
+    if ((U.isIOS() && ios && Number(ios[1]) <= 13) || (android && Number(android[1]) <= 8)) return "lite";
     if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
     if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-    if (U.deviceType() !== "iPhone" && U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
-    if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 2) return "lite";
+    if (U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 4) return "lite";
+    if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 3) return "lite";
     try {
       var conn = navigator.connection || navigator.webkitConnection;
       if (conn && conn.saveData) return "lite";
@@ -2284,38 +2412,26 @@ var UI = {
     var bg = U.$("#bg");
     if (bg) bg.setAttribute("data-anim", (mode === "full" && !this.prefers("(prefers-reduced-motion: reduce)")) ? "on" : "off");
   },
-  /* Watch complete two-second foreground windows throughout use. A single
-     slow window downgrades Auto for this page lifetime, avoiding oscillation. */
+  /* A bounded sample, never an idle animation loop. */
   frameProbe: function (cb) {
-    if (!window.requestAnimationFrame) { this.frameMs = 30; this.applyPerf(); cb && cb(); return; }
-    if (this.frameWatchStarted) return;
+    if (!window.requestAnimationFrame || this.frameWatchStarted) return;
     this.frameWatchStarted = true;
-    var last = 0, start = 0, samples = [], request = null, done = false;
+    var last = 0, samples = [], count = 0;
+    function done() { UI.frameWatchStarted = false; UI.recordFrames(samples); if (cb) cb(); }
     function step(t) {
-      request = null;
-      if (document.hidden) { last = start = 0; samples = []; return; }
-      if (!start) start = t;
+      if (document.hidden || ++count >= 120) { done(); return; }
       if (last) samples.push(t - last);
       last = t;
-      if (t - start >= 2000) {
-        UI.recordFrames(samples);
-        samples = []; start = t;
-        if (!done) { done = true; cb && cb(); }
-      }
-      request = window.requestAnimationFrame(step);
+      window.requestAnimationFrame(step);
     }
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) { if (request !== null) window.cancelAnimationFrame(request); request = null; last = start = 0; samples = []; }
-      else if (request === null) request = window.requestAnimationFrame(step);
-    });
-    request = window.requestAnimationFrame(step);
+    window.requestAnimationFrame(step);
   },
   recordFrames: function (samples) {
     if (!samples.length) return;
     samples.sort(function (a, b) { return a - b; });
     var median = samples[Math.floor(samples.length / 2)];
     this.frameMs = Math.round(median * 10) / 10;
-    if (median > 24) this.autoDowngraded = true;
+    this.autoDowngraded = median > 24;
     if (DB.data.settings.perf === "auto") this.applyPerf();
   },
   pauseAnimations: function (paused) {
@@ -2974,6 +3090,7 @@ var Screens = {
   /* ---------- SETTINGS ---------- */
   settings: function () {
     var d = DB.data, st = d.settings;
+    UI.frameProbe(function () { UI.applyPerf(); });
     var host = U.$("#setBody");
     host.textContent = "";
     var self = this;
@@ -3692,7 +3809,7 @@ var Eng = {
 
   start: function (opts) {
     var o = opts || {};
-    var list = o.list || Lib.current();
+    var list = o.words ? {words: o.words, id: o.listId, name: o.listName, version: 1} : (o.list || Lib.current());
     if (!list || !list.words || !list.words.length) {
       UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
       return;
@@ -3749,7 +3866,7 @@ var Eng = {
     this.runItem(this.idx);
   },
 
-  saveSnapshot: function () {
+  saveSnapshot: function (deferred) {
     if (this.st === "idle" || this.st === "finished") return;
     DB.data.snapshot = {
       listId: this.listId, listName: this.listName, listVersion: this.listVersion,
@@ -3759,7 +3876,7 @@ var Eng = {
       startedAt: this.startedAt, savedAt: Date.now(), seed: this.seed, showWord: this.showWord,
       settingsAtStart: JSON.parse(JSON.stringify(DB.data.settings))
     };
-    DB.saveNow();
+    if (deferred) DB.save(); else DB.saveNow();
   },
 
   /* ---------- the scheduler ---------- */
@@ -4137,7 +4254,7 @@ Eng.openPlayer = function () {
         inp.setAttribute("aria-label", "Your answer");
         var feedback = U.el("p", "tiny muted", ""); feedback.setAttribute("role", "status");
         U.on(inp, "input", function () {
-          self.answers[self.idx] = U.clip(inp.value, 100); self.saveSnapshot();
+          self.answers[self.idx] = U.clip(inp.value, 100); self.saveSnapshot(true);
           var answer = U.norm(inp.value), target = U.norm(self.currentWord().w);
           feedback.textContent = !answer ? "" : answer === target ? "Correct" : US_UK[answer] === target ? "American spelling — UK: " + target : "Keep trying";
         }); top.appendChild(feedback);
@@ -4405,7 +4522,7 @@ var Results = {
     if (st.count >= 5) bg.streak5 = true;
     if (pct === 100 && total >= 5) bg.perfect = true;
     delete DB.data.snapshot;
-    DB.saveNow();
+    DB.saveNow(true);
     Cloud.queue({ action: "result", cid: rec.id, sessionNo: rec.sessionNo, day: rec.sessionDay, list: rec.listName,
       mode: rec.mode, words: rec.wordCount, score: rec.score, secs: rec.durationSec, voice: rec.voiceName,
       uk: rec.ukVoice, device: rec.deviceType });
@@ -5072,7 +5189,7 @@ var Admin = {
        upgraded to a device-specific PBKDF2 hash on successful login. */
     admin.pinSalt = "c56a80f01b264e39";
     admin.pinHash = "5cc8204af44727a4da3b0d615fb32939b0f86d8b660efaaf9772fde9d753428b";
-    admin.pinKdf = "sha256"; admin.pinRehashed = false;
+    admin.pinKdf = "sha256"; admin.pinRehashed = false; admin.pinLength = 4;
   },
   preferredKdf: function () {
     try { if (window.crypto && window.crypto.subtle && window.crypto.subtle.deriveBits) return "pbkdf2-sha256"; } catch (e) {}
@@ -5186,13 +5303,29 @@ var Admin = {
           if (entry.length >= CONFIG.maxPin) return;
           entry += k;
           paint();
+          if (DB.data.admin.pinLength && entry.length === DB.data.admin.pinLength) enter.click();
         });
         var enter = U.btn("Unlock", "i-lock", "primary block"); enter.id = "pinSubmit";
         U.on(enter, "click", function () {
-          if (DB.data.admin.lockUntil > Date.now()) return;
+          if (enter.disabled || DB.data.admin.lockUntil > Date.now()) return;
           if (!/^[0-9]{4,8}$/.test(entry)) { setMsg("Use 4 to 8 digits, then tap Unlock."); return; }
           var pin = entry; entry = ""; paint(); submit(pin);
         }); b.appendChild(enter);
+        // Listen only while this sheet is present; remove the listener on close.
+        function keyboard(ev) {
+          if (!sh || !sh.parentNode || enter.disabled) return;
+          if (/^[0-9]$/.test(ev.key)) {
+            ev.preventDefault(); if (entry.length >= CONFIG.maxPin) return;
+            entry += ev.key; paint();
+            if (DB.data.admin.pinLength && entry.length === DB.data.admin.pinLength) enter.click();
+          } else if (ev.key === "Backspace") { ev.preventDefault(); entry = entry.slice(0, -1); paint(); }
+          else if (ev.key === "Enter") { ev.preventDefault(); enter.click(); }
+        }
+        document.addEventListener("keydown", keyboard);
+        var cleanup = new MutationObserver(function () {
+          if (!sh.parentNode) { document.removeEventListener("keydown", keyboard); cleanup.disconnect(); }
+        });
+        cleanup.observe(document.getElementById("sheets"), {childList: true});
 
         function submit(pin) {
           if (mode === "create") {
@@ -5242,7 +5375,7 @@ var Admin = {
             enter.disabled = false;
             if (!hash) { setMsg("This saved PIN needs Web Crypto. Open the HTTPS app in a current browser; your data is safe."); return; }
             if (hash === a.pinHash) {
-              a.fails = 0;
+              a.fails = 0; a.pinLength = pin.length;
               function finish() { DB.saveNow(); UI.closeSheet(); self.unlock(); }
               if (a.pinKdf !== "pbkdf2-sha256" && (self.preferredKdf() === "pbkdf2-sha256" || !a.pinRehashed)) {
                 enter.disabled = true;
@@ -5348,52 +5481,35 @@ var Admin = {
   parseWords: function (text, force) {
     text = String(text || "").replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "")
       .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
-    var out = [], problems = [], dupes = 0, seen = Object.create(null), self = this;
-    var delimiter = ",", data = this.readRows(text, ","), header = null, mode = "plain list";
-    function consistent(rows) {
-      return rows.length && rows.every(function (r) { return r.length === rows[0].length && r.length >= 2 && r.length <= 3; });
-    }
-    ["|", "\t"].some(function (sep) {
-      var candidate = self.readRows(text, sep);
-      if (consistent(candidate.rows)) { delimiter = sep; data = candidate; mode = "columns"; return true; }
-      return false;
-    });
-    function findHeader(rows) {
-      if (!rows.length) return null;
-      var labels = rows[0].map(function (x) { return U.trim(x).toLowerCase(); });
-      return labels.length > 1 && labels.indexOf("word") >= 0 ? labels : null;
-    }
-    header = findHeader(data.rows);
-    if (header || (consistent(data.rows) && data.rows.every(function (r) { return U.trim(r[1]).split(/\s+/).length >= 4; }))) mode = "columns";
-    if (force === "columns") {
-      mode = "columns";
-      delimiter = text.indexOf("|") >= 0 ? "|" : text.indexOf("\t") >= 0 ? "\t" : ",";
-      data = this.readRows(text, delimiter); header = findHeader(data.rows);
-    } else if (force === "plain") { mode = "plain list"; header = null; }
-    if (mode === "plain list") data = this.readRows(text.replace(/[;\u2022\u25cf\u25aa\u25cb\uf0b7]/g, "\n"), ",");
-    if (data.unclosed) problems.push("Unclosed quote: check the final item.");
-    function add(w, sentence, meaning, rowNo) {
-      if (mode === "plain list" && /[\t|]/.test(w)) { problems.push("Item " + rowNo + ": mixed column separators; use one format for the whole paste."); return; }
-      w = U.trim(w).replace(/^\s*(?:[-*\u2013\u2014]\s+|\d+\s*[.)\-:]\s*)/, "");
+    var out = [], problems = [], dupes = 0, seen = Object.create(null), header = null, self = this;
+    function add(w, m, sentence, line) {
+      w = U.trim(w).replace(/^(?:[-*•●▪○]\s*|\d+\s*[.)\-:]\s*)/, "");
       w = U.trim(w).replace(/^['"]|['"]$/g, "").replace(/\s+/g, " ");
       if (!w) return;
       if (w.length > CONFIG.maxWordChars || !/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) {
-        problems.push("Item " + rowNo + ": invalid word: " + w.slice(0, 40)); return;
+        problems.push("Item " + line + ": check this word."); return;
       }
       var key = w.toLowerCase();
       if (seen[key]) { dupes++; return; }
-      seen[key] = true;
-      out.push({ w: w, s: U.clip(sentence || "", 500), m: U.clip(meaning || "", 500) });
+      seen[key] = true; out.push({w: w, m: U.clip(m || "", 500), s: U.clip(sentence || "", 500)});
     }
-    data.rows.forEach(function (row, i) {
-      if (mode === "plain list") { row.forEach(function (cell) { add(cell, "", "", i + 1); }); return; }
-      if (header && i === 0) return;
-      if (row.length > (header ? header.length : 3)) problems.push("Row " + (i + 1) + ": extra columns; switch to plain list if these are words.");
-      var wi = header ? header.indexOf("word") : 0, si = header ? header.indexOf("sentence") : 1, mi = header ? header.indexOf("meaning") : 2;
-      if (!U.trim(row[wi])) problems.push("Row " + (i + 1) + ": empty word.");
-      add(row[wi], row[si], row[mi], i + 1);
+    text.replace(/[;•●▪○]/g, "\n").split("\n").forEach(function (line, i) {
+      line = U.trim(line); if (!line) return;
+      var sep = line.indexOf("|") >= 0 ? "|" : line.indexOf("\t") >= 0 ? "\t" : ",";
+      var parsed = self.readRows(line, sep), row = parsed.rows[0] || [];
+      var labels = row.map(function (x) { return U.trim(x).toLowerCase(); });
+      if (labels.indexOf("word") >= 0 && (labels.indexOf("meaning") >= 0 || labels.indexOf("sentence") >= 0)) { header = labels; return; }
+      if (parsed.unclosed) { problems.push("Item " + (i + 1) + ": close the quote."); return; }
+      if (sep !== "," || (header && row.length > 1) || force === "columns") {
+        var wi = header ? header.indexOf("word") : 0, mi = header ? header.indexOf("meaning") : 1, si = header ? header.indexOf("sentence") : 2;
+        add(row[wi], row[mi], row[si], i + 1); return;
+      }
+      row.forEach(function (cell) {
+        var parts = cell.split(/\s+[\-–—]\s+/);
+        add(parts[0], parts.slice(1).join(" - "), "", i + 1);
+      });
     });
-    return { items: out, problems: problems, dupes: dupes, mode: mode };
+    return {items: out, problems: problems, dupes: dupes, mode: header ? "columns" : "plain list"};
   },
 
   /* ---------- the panel ---------- */
@@ -5544,7 +5660,7 @@ Admin.tabWords = function (host) {
   if (!list) return;
   this.editListId = list.id;
   var ed = this.card(host, "Editor: " + list.name);
-  var hint = U.el("p", "tiny muted", "1 Paste words (commas or lines). 2 Preview and edit. 3 Pick class dates. 4 Publish. Use pipes, tabs, or a CSV header for sentence and meaning columns.");
+  var hint = U.el("p", "tiny muted", "1 Paste words (commas or lines). 2 Preview and edit. 3 Pick class dates. 4 Publish. Use pipes, tabs, or a CSV header for meaning and sentence columns.");
   ed.appendChild(hint);
   var ta = U.el("textarea", null, null);
   ta.setAttribute("aria-label", "Word list text");
@@ -5695,7 +5811,7 @@ Admin.tabWords = function (host) {
   U.on(bImp, "click", function () { fi.click(); });
   var bExp = U.btn("Export list", "i-down", "soft");
   U.on(bExp, "click", function () {
-    var txt = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.s || "") + " | " + (x.m || "")) : x.w; }).join("\n");
+    var txt = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.m || "") + " | " + (x.s || "")) : x.w; }).join("\n");
     if (!U.download(list.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".txt", txt)) U.selectForCopy(txt);
   });
   var csv = U.btn("Export CSV", "i-down", "soft");
@@ -5727,7 +5843,7 @@ Admin.tabWords = function (host) {
         bFill.disabled = false;
         prog.textContent = cancel.stop ? "Stopped." : "Done. " + todo.length + " words checked.";
         DB.saveNow();
-        ta.value = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.s || "") + " | " + (x.m || "")) : x.w; }).join("\n");
+        ta.value = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.m || "") + " | " + (x.s || "")) : x.w; }).join("\n");
         refresh();
         return;
       }
@@ -6011,17 +6127,19 @@ Admin.publish = function (list) {
   list.draft = false;
   list.version = (list.version || 1) + 1;
   list.updatedAt = Date.now();
+  DB.data.lastPublishAt = list.updatedAt;
   list.publishedWords = list.words.map(function (x) { return { w: x.w, s: x.s, m: x.m }; });
   list.publishedName = list.name; list.publishedVersion = list.version;
   delete list.draftText; delete this.draft[list.id];
   var s = DB.data.session;
+  DB.data.sessions = DB.data.sessions.filter(function (old) { return String(old.no) !== String(s.no) || old.date !== (s.date || U.dateKey(new Date())); });
   DB.data.sessions.unshift({
     no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "",
     listId: list.id, listName: list.name, version: list.version,
     words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; })
   });
   if (DB.data.sessions.length > 10) DB.data.sessions.length = 10;
-  DB.saveNow();
+  DB.saveNow(true);
   Cloud.queue({
     action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: {pauseWord:DB.data.settings.pauseWord,pauseSent:DB.data.settings.pauseSent,writeFixed:DB.data.settings.writeFixed,repeats:DB.data.settings.repeats,sentence:DB.data.settings.sentence,numbers:DB.data.settings.numbers,writeMode:DB.data.settings.writeMode,advance:DB.data.settings.advance},
     words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }),
@@ -6955,7 +7073,7 @@ var Cloud = {
     var jitter = Math.floor(Math.random() * 4000);
     this.pollTimer = setTimeout(function () {
       self.pollTimer = null;
-      if (document.hidden || U.nav("onLine", true) === false || !self.mode) { self.poll(); return; }
+      if (document.hidden || (Eng.st !== "idle" && Eng.st !== "finished") || U.nav("onLine", true) === false || !self.mode) { self.poll(); return; }
       self.get({ action: "ver" }, function (res) {
         if (res && res.ok && Number(res.ver) > self.remoteVer) self.pullState();
         self.pullComments(); self.flush();
@@ -7438,7 +7556,7 @@ UI.renderNet = function () {
   var outbox = DB.data ? DB.data.outbox.length : 0;
   var label;
   chip.className = "chip";
-  if (!Cloud.mode) label = "Local mode - this device only" + (outbox ? " · " + outbox + " waiting" : "");
+  if (!Cloud.mode) label = "Offline · saved on this phone";
   else if (!online) label = S.offline + (outbox ? " \u00b7 " + outbox + " waiting" : "");
   else label = Cloud.fails ? "Offline - cloud not reachable" + (outbox ? " · " + outbox + " waiting" : "") : "Online - " + (Cloud.updatedAt ? "synced " + U.relTime(Cloud.updatedAt) : "not synced yet") + (outbox ? " · " + outbox + " waiting" : "");
   txt.textContent = label;
@@ -7602,7 +7720,7 @@ function boot() {
   });
   U.on(U.$("#btnLock"), "click", function () { Admin.open(); });
   U.on(U.$("#btnRefresh"), "click", function () {
-    if (!Cloud.mode) { UI.toast("Local mode \u2013 everything is already on this device.", { icon: "i-info" }); return; }
+    if (!Cloud.mode) { UI.toast("Saved on this phone.", { icon: "i-info" }); return; }
     UI.toast("Refreshing\u2026", { icon: "i-refresh", ms: 1600 });
     Cloud.pullState();
     Cloud.pullComments();
@@ -7611,7 +7729,7 @@ function boot() {
   });
   U.on(U.$("#chipNet"), "click", function () {
     if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); UI.renderNet(); }
-    else UI.toast("Local mode. Your lecturer can add a cloud link to share data between phones.", { icon: "i-cloud", ms: 5000 });
+    else UI.toast("Saved on this phone. Ask your lecturer about online sharing.", { icon: "i-cloud", ms: 5000 });
   });
 
   /* home actions */
@@ -7631,7 +7749,7 @@ function boot() {
   });
   U.on(U.$("#btnResumeNo"), "click", function () {
     delete DB.data.snapshot;
-    DB.saveNow();
+    DB.saveNow(true);
     Screens.home();
     Speech.unlock();
     Eng.start({});
@@ -7711,7 +7829,8 @@ function boot() {
   UI.setTab("home");
   UI.applyPerf();
   UI.frameProbe(function () { UI.applyPerf(); });
-  /* Opening the file makes no network requests. Sync begins on the first user tap. */
+  Published.boot();
+  /* Cloud sync can also begin on a user tap when configured by a fallback link. */
   var syncStarted = false;
   function beginSync() {
     if (syncStarted || !Cloud.mode) return;
@@ -7727,6 +7846,64 @@ function boot() {
   }
   if (!Links.importPending) setTimeout(firstRunTour, 700);
 }
+
+/* Static GitHub Pages publishing; cloud remains the preferred live source. */
+var Published = {
+  get: function (name) {
+    if (!window.fetch || location.protocol === "file:") return Promise.reject(new Error("offline"));
+    return fetch("data/" + name + ".json?t=" + Date.now(), {cache: "no-store"}).then(function (r) {
+      if (!r.ok) throw new Error("unavailable"); return r.json();
+    });
+  },
+  apply: function (session) {
+    if (!session || !Array.isArray(session.words) || !session.words.length || !session.publishedAt) return;
+    var stamp = Date.parse(session.publishedAt), cached = DB.data.cachedPublished;
+    if (!isFinite(stamp) || DB.data.lastPublishAt > stamp || (cached && Date.parse(cached.publishedAt) > stamp) || Cloud.updatedAt || Admin.unlocked || Eng.st !== "idle") return;
+    var words = session.words.filter(function (x) { return x && typeof x.w === "string" && U.trim(x.w); });
+    if (words.length !== session.words.length) return;
+    var id = "static-published", list = Lib.byId(id);
+    if (!list) { list = {id: id, version: 1}; DB.data.lists.push(list); }
+    list.name = U.clip(session.name || session.title || "Latest session", 120);
+    list.words = words.map(function (x) { return {w: U.clip(x.w, 40), m: U.clip(x.m, 500), s: U.clip(x.s, 500)}; });
+    list.publishedWords = list.words.slice(); list.publishedName = list.name;
+    list.published = true; list.draft = false; list.updatedAt = stamp;
+    DB.data.plan.pinned = id; DB.data.plan.defaultList = id;
+    ["no", "day", "date", "title"].forEach(function (key) { DB.data.session[key] = U.clip(String(session[key] || ""), 120); });
+    DB.data.session.autoDay = false; DB.data.announcement = session.announcement || null;
+    DB.data.cachedPublished = session; DB.save(); Screens.home();
+  },
+  version: function () {
+    this.get("version").then(function (data) {
+      function parts(v) { return String(v).replace(/^v/, "").split(".").map(function (x) { return parseInt(x, 10) || 0; }); }
+      var remote = parts(data.build), local = parts(APP_VERSION), newer = false;
+      for (var i = 0; i < 3; i++) { if (remote[i] !== local[i]) { newer = remote[i] > local[i]; break; } }
+      if (!newer || U.$("#versionReload")) return;
+      var banner = U.btn("New version - Reload", null, "primary block"); banner.id = "versionReload";
+      banner.style.cssText = "position:fixed;bottom:90px;left:16px;right:16px;width:calc(100% - 32px);z-index:9999";
+      U.on(banner, "click", function () {
+        var clear = window.caches ? caches.keys().then(function (keys) { return Promise.all(keys.map(function (key) { return caches.delete(key); })); }) : Promise.resolve();
+        clear.catch(function () {}).then(function () { location.replace(location.pathname + "?cb=" + Date.now() + location.hash); });
+      }); document.body.appendChild(banner);
+    }).catch(function () {});
+  },
+  boot: function () {
+    var self = this;
+    if (DB.data.cachedPublished) this.apply(DB.data.cachedPublished);
+    this.get("config").then(function (config) {
+      if (config.cloudUrl && Cloud.valid(config.cloudUrl)) { Cloud.setUrl(config.cloudUrl); Cloud.pullState(); Cloud.poll(); Cloud.flush(); }
+      if (Array.isArray(config.classDays)) DB.data.classDays = config.classDays.filter(function (day) { return Number.isInteger(day) && day >= 0 && day < 7; });
+      if (config.defaults && DB.data.publishedDefaults !== JSON.stringify(config.defaults)) {
+        Object.keys(defaultData().settings).forEach(function (key) { if (typeof config.defaults[key] === typeof DB.data.settings[key]) DB.data.settings[key] = config.defaults[key]; });
+        DB.data.publishedDefaults = JSON.stringify(config.defaults); DB.save();
+      }
+    }).catch(function () {});
+    this.get("session").then(function (session) { self.apply(session); }).catch(function () {});
+    this.version(); setInterval(function () { if (!document.hidden) self.version(); }, 180000);
+    U.on(document, "visibilitychange", function () { if (!document.hidden) self.version(); });
+    var footer = U.el("p", "tiny muted center", "Build " + buildStamp());
+    var home = U.$("#homeKicker"); if (home && home.parentNode) home.parentNode.appendChild(footer);
+  }
+};
 
 /* global safety nets */
 window.addEventListener("error", function (ev) {

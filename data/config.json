@@ -1,0 +1,16 @@
+{
+  "cloudUrl": "",
+  "classDays": [
+    2,
+    3
+  ],
+  "defaults": {
+    "repeats": 2,
+    "sentence": false,
+    "numbers": true,
+    "rate": 0.85,
+    "advance": "auto",
+    "mode": "paper"
+  },
+  "minBuild": "2.0.0"
+}
