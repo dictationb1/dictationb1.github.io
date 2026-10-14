@@ -1,0 +1,32 @@
+name: Upgrade phase 1
+
+on:
+  pull_request:
+  push:
+    branches: [arena/d0de1e09-dictationb1-github-io]
+
+permissions:
+  contents: read
+
+jobs:
+  phase-1:
+    name: Paste, migration and phone layouts (not full v2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix tests
+      - name: Syntax, saved data, paste and accounting tests
+        run: npm run test:upgrade --prefix tests
+      - name: Chromium phone layouts in light and dark, XL text
+        run: |
+          mkdir -p tests/artifacts/chromium-libs
+          node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync("tests/artifacts/al2023.tar",z.brotliDecompressSync(fs.readFileSync("tests/node_modules/@sparticuz/chromium/bin/al2023.tar.br")))'
+          tar -xf tests/artifacts/al2023.tar -C tests/artifacts/chromium-libs
+          LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:upgrade-browser --prefix tests
+      # B5 is deliberately NOT claimed by this phase. The draft PR documents
+      # the failing test: npm run test:pending-security --prefix tests.

@@ -559,11 +559,23 @@ body[data-perf="lite"] .shake { animation: none; }
 .dots i.on { background: var(--acc); border-color: var(--acc); }
 
 /* admin segmented tabs */
-.admintabs { position: sticky; top: 0; z-index: 5; padding: 8px 0 10px;
+.admintabs { padding: 8px 0 10px;
   background: linear-gradient(180deg, var(--bg1) 62%, rgba(0,0,0,0)); }
-.unlockedbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px;
+.unlockedbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 8px 12px; border-radius: var(--r1); background: rgba(122,60,240,.14);
   border: 1px solid rgba(122,60,240,.32); font-size: .82rem; font-weight: 640; margin-bottom: 10px; }
+/* The layer header is outside the only scroller. Tabs and notices scroll normally. */
+.lecturer .lhead { gap: 6px; padding-left: 10px; padding-right: 10px; }
+.lecturer .lhead h2 { min-width: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.lecturer .lhead button { min-height: 44px; flex-shrink: 0; }
+.adminstatus { display: block; font-size: .65rem; font-weight: 500; }
+.admintabs .seg { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); overflow: visible; }
+.lecturer .admintabs .seg button { min-width: 0; min-height: 44px; padding: 8px 2px; white-space: normal; font-size: .78rem; }
+.lecturer .lbody { min-width: 0; }
+.lecturer table { table-layout: fixed; overflow-wrap: anywhere; }
+.lecturer .planrow { flex-wrap: wrap; }
+.lecturer .planrow select, .lecturer .planrow input, .lecturer .switch select { min-width: 0; max-width: 100%; }
+.parseproblems { max-height: 180px; overflow: auto; overflow-wrap: anywhere; }
 .grid2 { display: grid; gap: 10px; grid-template-columns: 1fr; }
 @media (min-width: 760px) { .grid2 { grid-template-columns: 1fr 1fr; } }
 .grid3 { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -1425,7 +1437,9 @@ function sdpTokens(args) {
 var APP_VERSION = "1.4.0";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
-var BUILD_DATE = "2026-10-13";
+var BUILD_DATE = "2026-10-14";
+/* Upgrade phase 1: loss-aware paste, four tabs, dated overrides and sentence
+   migration. Not the v2 release; cloud/security/offline phases remain open. */
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
@@ -1939,13 +1953,13 @@ function defaultData() {
     published: true,
     updatedAt: Date.now()
   };
-  var plan = { weekdays: ["", "", "", "", "", "", ""], dates: {}, pinned: "", defaultList: SAMPLE_LIST_ID };
+  var plan = { weekdays: ["", "", "", "", "", "", ""], dates: {}, pinned: "", pinnedDate: "", defaultList: SAMPLE_LIST_ID };
   return {
     v: CONFIG.schema,
     settings: {
       theme: "auto", size: "m", hc: false, perf: "auto",
       voiceName: "", rate: 0.85, volume: 1,
-      repeats: 2, sentence: true, numbers: true,
+      repeats: 2, sentence: false, sentenceTouched: false, sentenceDefaultMigrated: true, numbers: true,
       writeMode: "auto", writeFixed: 12,
       pauseWord: 1.2, pauseSent: 1.6,
       advance: "auto", shuffle: false, mode: "paper", showWord: false,
@@ -2012,13 +2026,6 @@ var DB = {
     this.data = d;
     if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
-    /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
-    if (!this.data.admin.pinHash) {
-      var salt = Admin.makeSalt();
-      this.data.admin.pinSalt = salt;
-      this.data.admin.pinHash = Sha.hex("sdp.v1:" + salt + ":7898");
-      this.saveNow();
-    }
     return d;
   },
   migrate: function (d) {
@@ -2040,7 +2047,14 @@ var DB = {
     if (!Array.isArray(d.session.ready)) d.session.ready = base.session.ready;
     if (!Array.isArray(d.session.praise)) d.session.praise = base.session.praise;
     if (!d.v) d.v = 1;
-    /* future migrations go here: if (d.v < 2) { ...; d.v = 2; } */
+    /* Additive migration: keep sdp.v1, every list and all other preferences.
+       v1.4.0 did not track the sentence toggle: an untracked true resets once.
+       Existing overrides remain available today, not forever. */
+    if (!d.settings.sentenceDefaultMigrated) {
+      if (!d.settings.sentenceTouched) d.settings.sentence = false;
+      d.settings.sentenceDefaultMigrated = true;
+    }
+    if (d.plan.pinned && d.plan.pinnedDate === undefined) d.plan.pinnedDate = U.dateKey(new Date());
     for (k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
     for (k in base.settings) { if (d.settings[k] === undefined) d.settings[k] = base.settings[k]; }
     for (k in base.plan) { if (d.plan[k] === undefined) d.plan[k] = base.plan[k]; }
@@ -2101,7 +2115,6 @@ var DB = {
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
     this.data.admin.pinSalt = Admin.makeSalt();
-    this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898");
     Store.set(CONFIG.key, JSON.stringify(this.data));
   },
   exportAll: function (emergency) {
@@ -2133,7 +2146,6 @@ var DB = {
     }
     if (!d || Array.isArray(d) || !Array.isArray(d.lists) || !d.lists.length) return { ok: false, err: "This backup has no word lists inside." };
     this.data = this.migrate(d);
-    if (!this.data.admin.pinHash) { this.data.admin.pinSalt = Admin.makeSalt(); this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898"); }
     this.saveNow();
     return { ok: true, lists: this.data.lists.length, results: this.data.history.length };
   }
@@ -2543,15 +2555,26 @@ var Lib = {
     return { id: l.id, name: l.publishedName || l.name, words: l.publishedWords || l.words,
       version: l.publishedVersion || l.version, published: l.published };
   },
+  activeOverride: function (date) {
+    var p = DB.data.plan, today = U.dateKey(new Date());
+    if (p.pinnedDate !== today || U.dateKey(U.validDate(date)) !== today) return null;
+    var list = this.byId(p.pinned);
+    return list && list.published ? list : null;
+  },
+  overrideNotice: function () {
+    var list = this.activeOverride(new Date());
+    return list ? U.el("div", "unlockedbar", "Override for today only: “" + list.name + "”. Ends at midnight on this phone.") : null;
+  },
   forDate: function (date) {
     var p = DB.data.plan, d = U.validDate(date);
-    var l = Lib.byId(p.pinned) || Lib.byId(p.dates[U.dateKey(d)]) || Lib.byId(p.weekdays[U.weekdayIndex(d)]) || Lib.byId(p.defaultList);
+    var l = Lib.activeOverride(d) || Lib.byId(p.dates[U.dateKey(d)]) || Lib.byId(p.weekdays[U.weekdayIndex(d)]) || Lib.byId(p.defaultList);
     return l && l.published ? Lib.studentList(l) : null;
   },
   current: function () {
     var p = DB.data.plan;
     var l;
-    if (p.pinned) { l = this.byId(p.pinned); if (l && l.published) return this.studentList(l); }
+    l = this.activeOverride(new Date());
+    if (l) return this.studentList(l);
     var key = U.dateKey(new Date());
     if (p.dates && p.dates[key]) { l = this.byId(p.dates[key]); if (l && l.published) return this.studentList(l); }
     var wi = U.weekdayIndex(new Date());
@@ -2642,6 +2665,8 @@ var Screens = {
     /* announcement */
     var ann = U.$("#homeAnn");
     ann.textContent = "";
+    var override = Lib.overrideNotice();
+    if (override) ann.appendChild(override);
     var a = d.announcement;
     if (a && a.title) {
       var exp = a.expires ? new Date(a.expires + "T23:59:59").getTime() : 0;
@@ -2966,6 +2991,7 @@ var Screens = {
       b.appendChild(U.el("i", null, null));
       U.on(b, "click", function () {
         st[key] = !st[key];
+        if (key === "sentence") st.sentenceTouched = true;
         b.setAttribute("aria-checked", String(!!st[key]));
         DB.save();
         if (onChange) onChange(st[key]);
@@ -5039,7 +5065,7 @@ var Admin = {
     } else if (a.pinHash) {
       this.pad("local", null);
     } else {
-      this.pad("local", null);
+      this.pad("create", null);
     }
   },
 
@@ -5052,7 +5078,7 @@ var Admin = {
       body: function (b) {
         if (mode === "create") b.appendChild(U.el("p", "small muted", S.createPinSub));
         else if (mode === "confirm") b.appendChild(U.el("p", "small muted", "Type the same PIN again to be sure."));
-        else b.appendChild(U.el("p", "small muted", Cloud.mode ? "The server checks your PIN. It is sent over HTTPS and kept in memory only while the panel is open." : "This PIN locks this device only."));
+        else b.appendChild(U.el("p", "small muted", Cloud.mode ? "The server checks your PIN. It is sent over HTTPS and kept in memory only while the panel is open." : "This PIN protects this phone only."));
         var dots = U.el("div", "dots", null);
         dots.id = "pinDots";
         for (var i = 0; i < 8; i++) dots.appendChild(U.el("i", null, null));
@@ -5228,40 +5254,76 @@ var Admin = {
     var cells = [], cell = "", quoted = false;
     for (var i = 0; i < line.length; i++) {
       var ch = line.charAt(i);
-      if (ch === '"') {
-        if (quoted && line.charAt(i + 1) === '"') { cell += '"'; i++; }
+      if (ch === '"' || ch === "\u201c" || ch === "\u201d") {
+        if (quoted && line.charAt(i + 1) === ch) { cell += ch; i++; }
         else quoted = !quoted;
-      } else if (ch === "," && !quoted) { cells.push(cell); cell = ""; }
+      } else if ((ch === "," || ch === ";") && !quoted) { cells.push(cell); cell = ""; }
       else cell += ch;
     }
-    cells.push(cell); return cells;
+    cells.push(cell);
+    cells.invalid = quoted;
+    return cells;
   },
   parseWords: function (text) {
-    var lines = String(text || "").split(/\r?\n/);
-    var out = [], problems = [], dupes = 0, seen = Object.create(null);
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      line = line.replace(/^\s*[\u2022\u25cf\u25aa\u25cb\*\-\u2013\u2014\uf0b7]\s*/, "");
-      line = line.replace(/^\s*\d+\s*[\.\)\:\-]\s*/, "");
-      /* CSV quotes are handled by splitRow, not stripped from the whole row. */
-      line = U.trim(line);
-      if (!line) { if (i < lines.length - 1) problems.push("Line " + (i + 1) + ": blank line ignored"); continue; }
-      var bits = this.splitRow(line);
-      var w = U.trim(bits[0]).replace(/[,;]+$/, "");
-      var s = bits[1] ? U.clip(bits[1], 200) : "";
-      var m = bits[2] ? U.clip(bits[2], 120) : "";
-      if (!w) { problems.push("Line " + (i + 1) + ": empty word"); continue; }
-      if (w.length > CONFIG.maxWordChars) { problems.push("\u201c" + w.slice(0, 20) + "\u2026\u201d is longer than " + CONFIG.maxWordChars + " characters"); continue; }
-      if (/[0-9]/.test(w)) { problems.push("\u201c" + w + "\u201d has a number in it"); continue; }
-      if (!/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) { problems.push("\u201c" + w + "\u201d has unusual symbols"); continue; }
-      var key = w.toLowerCase();
-      if (seen[key]) { dupes++; problems.push("Line " + (i + 1) + ": duplicate word removed: " + w); continue; }
-      if (!s) problems.push("Line " + (i + 1) + ": add an example sentence for " + w);
-      if (US_UK[key]) problems.push("Line " + (i + 1) + ": American spelling. UK: " + US_UK[key]);
-      seen[key] = true;
-      out.push({ w: w, s: s, m: m });
+    /* Per line: pipe/TAB means structured; comma/semicolon means CSV only
+       after a header or when a later cell has 6+ words or ends in . ? !.
+       Otherwise EVERY cell is a word/phrase. Spaces never split a phrase.
+       Headers, blank lines and empty trailing cells are not items read.
+       A malformed structured row is ONE skipped item, including all its text.
+       No source item is silently cut: read = items.length + dupes + skipped. */
+    var lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+    var out = [], problems = [], hints = [], dupes = 0, skipped = 0, read = 0;
+    var seen = Object.create(null), formats = Object.create(null), header = false;
+    function clean(value) {
+      return String(value || "").replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\u00ad]/g, "")
+        .replace(/\s+/g, " ").trim();
     }
-    return { items: out, problems: problems, dupes: dupes };
+    function word(value) {
+      return clean(value).replace(/^(?:[\u2022\u25cf\u25aa\u25cb*\-\u2013\u2014\uf0b7]\s*|\d+\s*[.)：:\-]\s*)/, "")
+        .replace(/[,;]+$/, "").trim();
+    }
+    function reject(line, value, reason) {
+      skipped++;
+      problems.push("Line " + line + ": skipped “" + value + "” — " + reason);
+    }
+    function add(w, sentence, meaning, line, raw) {
+      read++;
+      if (!w) { reject(line, raw, "empty word"); return; }
+      if (w.length > CONFIG.maxWordChars) { reject(line, raw, "word or phrase is longer than " + CONFIG.maxWordChars + " characters"); return; }
+      if (!/[A-Za-z\u00c0-\u024f]/.test(w) || !/^[A-Za-z\u00c0-\u024f'\u2019 \-]+$/.test(w)) { reject(line, raw, "use a word or phrase without numbers or unusual symbols"); return; }
+      if (sentence.length > 500 || meaning.length > 500) { reject(line, raw, "a sentence or meaning is longer than 500 characters"); return; }
+      var key = w.toLowerCase();
+      if (seen[key]) { dupes++; problems.push("Line " + line + ": duplicate removed: “" + w + "”"); return; }
+      if (out.length >= 200) { reject(line, raw, "the list already has 200 words"); return; }
+      seen[key] = true;
+      out.push({ w: w, s: sentence, m: meaning });
+      if (US_UK[key]) problems.push("Line " + line + ": American spelling kept: “" + w + "”. UK: " + US_UK[key]);
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\u00ad]/g, "").trim();
+      if (!line) continue;
+      var explicit = /[|\t]/.test(line), delimited = /[,;]/.test(line);
+      var rawBits = this.splitRow(line), bits = rawBits.map(clean);
+      // Empty trailing separators do not create phantom words or extra columns.
+      while (bits.length > 1 && !bits[bits.length - 1]) bits.pop();
+      if (!bits.some(function (b) { return b; })) continue;
+      if (rawBits.invalid) { read++; reject(i + 1, line, "unclosed CSV quote"); continue; }
+      if (/^word$/i.test(bits[0]) && /^sentence$/i.test(bits[1] || "") && /^meaning$/i.test(bits[2] || "") && bits.length === 3) {
+        header = true; formats.csv = true; continue;
+      }
+      var structured = explicit || (delimited && (header || bits.slice(1).some(function (b) { return b.split(/\s+/).length >= 6 || /[.?!]$/.test(b); })));
+      formats[structured ? (explicit ? "structured" : "csv") : (delimited ? "separated" : "lines")] = true;
+      if (structured) {
+        if (bits.length > 3) { read++; reject(i + 1, line, "more than three columns; use quotes around commas inside a field"); }
+        else add(word(bits[0]), bits[1] || "", bits[2] || "", i + 1, line);
+      } else {
+        bits.forEach(function (b) { add(word(b), "", "", i + 1, b || "empty item between separators"); });
+        if (delimited && bits.length === 2 && bits[0] && bits[1]) hints.push({ line: i + 1, w: word(bits[0]), m: word(bits[1]) });
+      }
+    }
+    var types = Object.keys(formats);
+    return { items: out, problems: problems, dupes: dupes, read: read, skipped: skipped,
+      format: types.length > 1 ? "mixed" : (types[0] || "empty"), hints: hints };
   },
 
   /* ---------- the panel ---------- */
@@ -5270,29 +5332,32 @@ var Admin = {
   panel: function () {
     var self = this;
     this.touch();
+    if (["comments", "stats", "tools"].indexOf(this.tab) >= 0) { this.moreTab = this.tab; this.tab = "more"; }
     if (this.layer) { var pin = this.pin; UI.closeLayer(this.layer); this.unlocked = true; this.pin = pin; }
     var L = UI.layer({
       title: S.lecturerMode,
       backLabel: "Close",
       body: function (body, LL, foot, rightSlot) {
-        var lockBtn = U.btn("", "i-lock", "icon ghost");
-        lockBtn.setAttribute("aria-label", S.lockNow);
+        U.setCls(LL, "lecturer", true);
+        var title = LL.querySelector(".lhead h2");
+        title.appendChild(U.el("span", "adminstatus", Cloud.mode ? "Cloud configured" : "This phone only"));
+        var lockBtn = U.btn("Lock", null, "sm ghost");
+        lockBtn.setAttribute("aria-label", "Lock");
         U.on(lockBtn, "click", function () { self.lock(); });
         rightSlot.appendChild(lockBtn);
 
         var bar = U.el("div", "unlockedbar", null);
-        bar.appendChild(U.icn("i-check", 16));
-        bar.appendChild(U.el("span", null, S.unlocked + (Cloud.mode ? " \u00b7 cloud" : " \u00b7 this device only")));
-        var lock2 = U.btn("Lock now", null, "sm ghost");
-        U.on(lock2, "click", function () { self.lock(); });
-        bar.appendChild(lock2);
+        bar.appendChild(U.el("span", null, Cloud.mode ? "Lecturer mode — unlocked" : "Local only: students on other phones will NOT see changes. This PIN protects this phone only."));
         body.appendChild(bar);
+        var overrideHost = U.el("div", null, null);
+        overrideHost.id = "adminOverride"; body.appendChild(overrideHost);
+        var initialOverride = Lib.overrideNotice();
+        if (initialOverride) overrideHost.appendChild(initialOverride);
 
         var tabs = U.el("div", "admintabs", null);
-        var seg = U.el("div", "seg scroll", null);
+        var seg = U.el("div", "seg", null);
         seg.appendChild(U.el("span", "thumb", null));
-        var names = [["words", "Words & planner"], ["session", "Session"], ["announce", "Announce & inbox"],
-          ["comments", "Comments"], ["stats", "Class stats"], ["tools", "Settings & tools"]];
+        var names = [["words", "Words"], ["session", "Session"], ["announce", "Inbox"], ["more", "More"]];
         names.forEach(function (n) {
           var b = U.el("button", null, n[1]);
           b.type = "button";
@@ -5322,12 +5387,26 @@ var Admin = {
     if (!host) host = U.$("#adminHost");
     if (!host) return;
     host.textContent = "";
+    var overrideHost = U.$("#adminOverride"), override = Lib.overrideNotice();
+    if (overrideHost) { overrideHost.textContent = ""; if (override) overrideHost.appendChild(override); }
     if (this.tab === "words") this.tabWords(host);
     else if (this.tab === "session") this.tabSession(host);
     else if (this.tab === "announce") this.tabAnnounce(host);
     else if (this.tab === "comments") this.tabComments(host);
     else if (this.tab === "stats") this.tabStats(host);
-    else this.tabTools(host);
+    else if (this.tab === "more") {
+      var self = this, menu = U.el("div", "btn-row", null), content = U.el("div", null, null);
+      [["comments", "Comments"], ["stats", "Class stats"], ["tools", "Settings & tools"]].forEach(function (item) {
+        var b = U.btn(item[1], null, "soft");
+        b.setAttribute("aria-pressed", String((self.moreTab || "comments") === item[0]));
+        U.on(b, "click", function () { self.moreTab = item[0]; self.renderTab(host); });
+        menu.appendChild(b);
+      });
+      host.appendChild(menu); host.appendChild(content);
+      if (this.moreTab === "stats") this.tabStats(content);
+      else if (this.moreTab === "tools") this.tabTools(content);
+      else this.tabComments(content);
+    } else this.tabTools(host);
     setTimeout(function () { U.$$(".seg").forEach(UI.segSync); }, 30);
   },
 
@@ -5410,15 +5489,18 @@ Admin.tabWords = function (host) {
   if (!list) return;
   this.editListId = list.id;
   var ed = this.card(host, "Editor: " + list.name);
-  var hint = U.el("p", "tiny muted", "Paste one word per line, or word | sentence | meaning. Tabs and CSV commas work too. Check the preview, save a draft, then publish.");
+  var hint = U.el("p", "tiny muted", "Paste words separated by commas, semicolons or new lines. Keep phrases together. For fields, use word | sentence | meaning, TABs, or CSV with a word,sentence,meaning header. Check the preview before using these words.");
   ed.appendChild(hint);
   var ta = U.el("textarea", null, null);
   ta.setAttribute("aria-label", "Word list text");
-  ta.style.minHeight = "180px";
-  ta.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
+  ta.style.minHeight = "45vh";
+  ta.style.fontFamily = "var(--font)";
+  ta.setAttribute("autocapitalize", "off");
+  ta.setAttribute("autocorrect", "off");
+  ta.setAttribute("spellcheck", "false");
   ta.style.fontSize = "16px";
   ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : list.words.map(function (x) {
-    return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w;
+    return x.s || x.m ? (x.w + " | " + (x.s || "") + " | " + (x.m || "")) : x.w;
   }).join("\n");
   ed.appendChild(ta);
   var info = U.el("p", "tiny muted", "");
@@ -5430,12 +5512,27 @@ Admin.tabWords = function (host) {
   function refresh() {
     var r = self.parseWords(ta.value);
     self.draft[list.id] = ta.value; list.draftText = ta.value; DB.save();
-    info.textContent = r.items.length + " words \u00b7 " + r.dupes + " duplicate" + (r.dupes === 1 ? "" : "s") + " removed \u00b7 " + r.problems.length + " problem" + (r.problems.length === 1 ? "" : "s");
+    info.textContent = r.read + " items read → " + r.items.length + " words · " + r.dupes + " duplicates removed · " + r.skipped + " skipped";
     preview.textContent = "";
     if (r.problems.length) {
-      var p = U.el("div", "tiny no", null);
-      r.problems.slice(0, 6).forEach(function (x) { p.appendChild(U.el("div", null, "\u2022 " + x)); });
+      var p = U.el("div", "tiny no parseproblems", null);
+      r.problems.forEach(function (x) { p.appendChild(U.el("div", null, "• " + x)); });
       preview.appendChild(p);
+    }
+    if (r.hints.length) {
+      var hints = U.el("div", "parseproblems", null);
+      r.hints.forEach(function (h) {
+        var row = U.el("div", "small", "Line " + h.line + ": “" + h.w + "” and “" + h.m + "” are two words. ");
+        var btn = U.btn("Treat as word, meaning", null, "sm soft");
+        U.on(btn, "click", function () {
+          var before = ta.value, lines = before.replace(/\r\n?/g, "\n").split("\n");
+          lines[h.line - 1] = h.w + " | | " + h.m;
+          ta.value = lines.join("\n"); refresh();
+          UI.toast("Line changed to word and meaning", { undo: function () { ta.value = before; refresh(); } });
+        });
+        row.appendChild(btn); hints.appendChild(row);
+      });
+      preview.appendChild(hints);
     }
     if (r.items.length) {
       var scroll = U.el("div", null, null); scroll.style.maxHeight = "220px"; scroll.style.overflow = "auto";
@@ -5446,13 +5543,18 @@ Admin.tabWords = function (host) {
       scroll.appendChild(table); preview.appendChild(scroll);
     }
   }
-  U.on(ta, "input", function () { self.draft[list.id] = ta.value; list.draftText = ta.value; DB.saveNow(); });
+  U.on(ta, "input", function () { self.draft[list.id] = ta.value; list.draftText = ta.value; DB.saveNow(); preview.textContent = ""; info.textContent = "Reading words…"; });
   U.on(ta, "input", U.debounce(refresh, 220));
   refresh();
 
   function applyParsed(mode2) {
     var r = self.parseWords(ta.value);
     if (!r.items.length) { UI.toast("No valid words found in that text.", { icon: "i-alert" }); return; }
+    if (mode2 === "append") {
+      var merged = Object.create(null);
+      list.words.concat(r.items).forEach(function (x) { merged[x.w.toLowerCase()] = true; });
+      if (Object.keys(merged).length > 200) { UI.toast("This would make more than 200 words. Use fewer words or create another list.", { icon: "i-alert", ms: 6000 }); return; }
+    }
     var old = list.words.slice(0);
     if (mode2 === "replace") list.words = r.items;
     else {
@@ -5472,7 +5574,7 @@ Admin.tabWords = function (host) {
 
   var brow = U.el("div", "btn-row tight", null);
   brow.style.marginTop = "10px";
-  var bReplace = U.btn("Save draft (replace list)", "i-refresh", "soft");
+  var bReplace = U.btn("Use these words", "i-refresh", "soft");
   U.on(bReplace, "click", function () {
     UI.confirm({
       title: "Replace the whole list?",
@@ -5481,7 +5583,7 @@ Admin.tabWords = function (host) {
       onOk: function () { applyParsed("replace"); }
     });
   });
-  var bAppend = U.btn("Append", "i-plus", "soft");
+  var bAppend = U.btn("Add to list", "i-plus", "soft");
   U.on(bAppend, "click", function () { applyParsed("append"); });
   brow.appendChild(bReplace); brow.appendChild(bAppend);
   ed.appendChild(brow);
@@ -5733,12 +5835,17 @@ Admin.tabWords = function (host) {
 
   var pinRow = U.el("div", "switch", null);
   var pinTxt = U.el("div", "txt", null);
-  pinTxt.appendChild(U.el("b", null, "Pin a list now"));
-  pinTxt.appendChild(U.el("span", null, "Students get this list today, whatever the planner says."));
+  pinTxt.appendChild(U.el("b", null, "Override for today only"));
+  pinTxt.appendChild(U.el("span", null, "Ends at midnight on this phone. The normal plan returns tomorrow."));
   var pinSel = U.el("select", null, null);
-  pinSel.setAttribute("aria-label", "Pinned list");
-  optList(pinSel, d.plan.pinned || "");
-  U.on(pinSel, "change", function () { d.plan.pinned = pinSel.value; DB.saveNow(); });
+  pinSel.setAttribute("aria-label", "Override for today only");
+  optList(pinSel, Lib.activeOverride(new Date()) ? d.plan.pinned : "");
+  U.on(pinSel, "change", function () {
+    var old = d.plan.pinned, oldDate = d.plan.pinnedDate;
+    d.plan.pinned = pinSel.value; d.plan.pinnedDate = pinSel.value ? U.dateKey(new Date()) : "";
+    DB.saveNow(); Screens.home(); self.panel();
+    UI.toast("Today's override changed", { undo: function () { d.plan.pinned = old; d.plan.pinnedDate = oldDate; DB.saveNow(); Screens.home(); self.panel(); } });
+  });
   pinRow.appendChild(pinTxt);
   pinRow.appendChild(pinSel);
   pl.appendChild(pinRow);
@@ -5772,7 +5879,7 @@ Admin.tabWords = function (host) {
   var targetRow = U.el("div", "planrow", null);
   targetRow.appendChild(U.el("span", "small", "Publish for"));
   var target = U.el("select", null, null); target.id = "publishTarget";
-  [["today", "Today"], ["w5", "Saturday every week"], ["w6", "Sunday every week"], ["date", "A specific date"], ["pinned", "Pin now"]].concat(DAYS.map(function (day, i) { return ["w" + i, day + " every week"]; })).forEach(function (item) {
+  [["today", "Today"], ["w5", "Saturday every week"], ["w6", "Sunday every week"], ["date", "A specific date"], ["pinned", "Override for today only"]].concat(DAYS.map(function (day, i) { return ["w" + i, day + " every week"]; })).forEach(function (item) {
     var option = U.el("option", null, item[1]); option.value = item[0]; target.appendChild(option);
   }); targetRow.appendChild(target);
   var targetDate = U.el("input", null, null); targetDate.type = "date"; targetDate.value = U.dateKey(new Date()); targetDate.setAttribute("aria-label", "Publish date"); targetRow.appendChild(targetDate); pl.appendChild(targetRow);
@@ -5801,7 +5908,7 @@ Admin.tabWords = function (host) {
       onOk: function () {
         if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
         else if (target.value === "date") { if (!targetDate.value) { UI.toast("Choose a date first."); return; } d.plan.dates[targetDate.value] = list.id; }
-        else if (target.value === "pinned") d.plan.pinned = list.id;
+        else if (target.value === "pinned") { d.plan.pinned = list.id; d.plan.pinnedDate = U.dateKey(new Date()); }
         else d.plan.weekdays[Number(target.value.slice(1))] = list.id;
         self.publish(list);
       }
@@ -5836,6 +5943,7 @@ Admin.publish = function (list) {
       var out = [];
       for (var i = 0; i < 7; i++) out.push({ key: "w" + i, listId: DB.data.plan.weekdays[i] || "", pinned: false });
       out.push({ key: "pinned", listId: DB.data.plan.pinned || "", pinned: true });
+      out.push({ key: "pinnedDate", listId: DB.data.plan.pinnedDate || "", pinned: false });
       out.push({ key: "default", listId: DB.data.plan.defaultList || list.id, pinned: false });
       Object.keys(DB.data.plan.dates).forEach(function (key) { out.push({ key: "d" + key, listId: DB.data.plan.dates[key], pinned: false }); });
       return out;
@@ -6003,7 +6111,7 @@ Admin.tabSession = function (host) {
     b.setAttribute("aria-checked", String(!!st[key]));
     b.setAttribute("aria-label", title);
     b.appendChild(U.el("i", null, null));
-    U.on(b, "click", function () { st[key] = !st[key]; b.setAttribute("aria-checked", String(!!st[key])); DB.save(); });
+    U.on(b, "click", function () { st[key] = !st[key]; if (key === "sentence") st.sentenceTouched = true; b.setAttribute("aria-checked", String(!!st[key])); DB.save(); });
     row.appendChild(t); row.appendChild(b);
     return row;
   }
@@ -6824,10 +6932,11 @@ var Cloud = {
       });
     }
     if (Array.isArray(st.plan) && st.plan.length) {
-      var weekdays = ["", "", "", "", "", "", ""], pinned = "", dates = {};
+      var weekdays = ["", "", "", "", "", "", ""], pinned = "", pinnedDate = null, dates = {};
       st.plan.forEach(function (p) {
         if (!p || typeof p.key !== "string") return;
         if (p.key === "pinned") pinned = p.listId || "";
+        else if (p.key === "pinnedDate") pinnedDate = p.listId || "";
         else if (p.key === "default") d.plan.defaultList = p.listId || d.plan.defaultList;
         else if (p.key.charAt(0) === "w") {
           var i = parseInt(p.key.slice(1), 10);
@@ -6838,6 +6947,9 @@ var Cloud = {
       });
       d.plan.weekdays = weekdays;
       d.plan.dates = dates;
+      /* Old servers have no expiry row. Give a changed legacy override today
+         only; repeated polls must never extend its lifetime. */
+      d.plan.pinnedDate = pinnedDate !== null ? pinnedDate : (pinned !== d.plan.pinned ? U.dateKey(new Date()) : d.plan.pinnedDate);
       d.plan.pinned = pinned;
       if (!Lib.byId(d.plan.defaultList) && d.lists.length) d.plan.defaultList = d.lists[0].id;
     }
@@ -7112,7 +7224,7 @@ var Links = {
     var list = {id: id, name: "Shared session " + U.clip(data.n,16), words: words, published: true, version: 1, draft: false};
     if (!existing) DB.data.lists.push(list);
     var announcement = data.a && typeof data.a === "object" ? {title: U.clip(data.a.title,80), text: U.clip(data.a.text,500), expires: U.clip(data.a.expires,10), priority: "info"} : null;
-    var state = {lists:[list], session:{no:U.clip(data.n,16),day:U.clip(data.d,24),title:U.clip(data.t,80)}, announcement:announcement, contact:data.k, plan:[{key:"pinned",listId:id}]};
+    var state = {lists:[list], session:{no:U.clip(data.n,16),day:U.clip(data.d,24),title:U.clip(data.t,80)}, announcement:announcement, contact:data.k, plan:[{key:"pinned",listId:id},{key:"pinnedDate",listId:U.dateKey(new Date())}]};
     Cloud.applyState(state); delete DB.data.sharedParts[data.b]; DB.saveNow(); Screens.home(); UI.toast("List added. Your old saved work is still here.");
   },
   contact: function (text) {
@@ -7479,6 +7591,21 @@ function boot() {
   U.on(window, "online", function () { if (syncStarted) Cloud.flush(); UI.renderNet(); UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" }); });
   U.on(window, "offline", function () { UI.renderNet(); });
   U.on(window, "focus", function () { if (syncStarted && Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); } });
+  /* Repaint dated overrides at local midnight without interrupting audio. */
+  var lastDay = U.dateKey(new Date());
+  function refreshDay() {
+    var today = U.dateKey(new Date());
+    if (today === lastDay) return;
+    lastDay = today; Screens.home();
+    if (Admin.unlocked && Admin.layer) Admin.panel();
+  }
+  function midnightRefresh() {
+    var next = new Date(); next.setHours(24, 0, 0, 20);
+    setTimeout(function () { refreshDay(); midnightRefresh(); }, Math.max(20, next.getTime() - Date.now()));
+  }
+  midnightRefresh();
+  U.on(window, "focus", refreshDay);
+  U.on(document, "visibilitychange", function () { if (!document.hidden) refreshDay(); });
   U.on(window, "resize", U.debounce(function () { U.$$(".seg").forEach(UI.segSync); }, 200));
   U.on(document, "keydown", function (e) {
     if (e.key === "Escape") {
