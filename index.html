@@ -6028,7 +6028,7 @@ var Admin = {
     });
     Screens.home();
     UI.renderNet();
-    UI.toast("Published " + list.words.length + " words \u00b7 Session " + (d.session.no || "1") + " \u00b7 v" + list.version + (sent ? " \u00b7 live sync" : " \u00b7 will send when online"), { icon: "i-check", ms: 6000 });
+    UI.toast("Saved & published to all students \u00b7 " + list.words.length + " words \u00b7 Session " + (d.session.no || "1") + " \u00b7 v" + list.version + (sent ? " \u00b7 live sync" : " \u00b7 will send when online"), { icon: "i-check", ms: 6000 });
   },
   /* Defect A: a list called "Session 4 words" always drives "SESSION 4" in the
      Hero kicker, so the kicker and the title can never contradict each other. */

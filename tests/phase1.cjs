@@ -72,8 +72,9 @@ function bootTraffic(a) {
      state and the community feed) next to the two static ./data files. A POST,
      an Apps Script call or any other host is still a failure. */
   const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
+  const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
   const staticFile = /^\.\/data\/(version|session)\.json\?t=\d+$/;
-  return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url))) &&
+  return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url) || sse.test(r.url))) &&
     !a.requests.some(r => r.method !== 'fetch') &&
     !a.requests.some(r => /script\.google\.com|api\.github\.com/.test(r.url));
 }
