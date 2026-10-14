@@ -1422,10 +1422,10 @@ function sdpTokens(args) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.4.0";
+var APP_VERSION = "2.0.0";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
-var BUILD_DATE = "2026-10-13";
+var BUILD_DATE = "2026-10-14";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
@@ -1434,7 +1434,7 @@ var CLOUD_URL = "";
 
 var CONFIG = {
   key: "sdp.v1",
-  schema: 1,
+  schema: 2,
   maxHistory: 200,
   maxComments: 200,
   maxInbox: 200,
@@ -1466,6 +1466,9 @@ var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oc
    ============================================================ */
 var S = {
   appName: "Smart Dictation Player",
+  textModeNotice: "Text mode: word shown on screen - not a real dictation",
+  unscored: "Unscored",
+  markWords: "Tick or cross the words you have checked. Unmarked words are not scored.",
   localMode: "Local mode",
   online: "Online",
   offline: "Offline",
@@ -1885,9 +1888,13 @@ var Store = {
     try { return window.localStorage.getItem(k); } catch (e) { this.blocked = true; return Mem[k] === undefined ? null : Mem[k]; }
   },
   set: function (k, v) {
-    if (this.blocked) { Mem[k] = v; return false; }
-    try { window.localStorage.setItem(k, v); return true; }
-    catch (e) { this.blocked = true; Mem[k] = v; UI.warnStorage(); return false; }
+    Mem[k] = v;
+    try { window.localStorage.setItem(k, v); this.blocked = false; return true; }
+    catch (e) {
+      // Retry persistent storage on every save; a quota error is not permanent.
+      try { window.localStorage.removeItem(CONFIG.key + ".bak"); window.localStorage.setItem(k, v); this.blocked = false; return true; } catch (retry) {}
+      this.blocked = true; UI.warnStorage(); return false;
+    }
   },
   del: function (k) {
     if (this.blocked) { delete Mem[k]; return; }
@@ -1929,6 +1936,8 @@ var SAMPLE_WORDS = [
 ];
 
 var SAMPLE_LIST_ID = "list_sample_b1";
+var LOCAL_PIN_SALT = "sdp2local20261014";
+var LOCAL_PIN_HASH = "5105f94cef28ba0b90cac15611cc5f2019854382e4e30f49e627ab0b8473eafa";
 
 function defaultData() {
   var sample = {
@@ -1945,12 +1954,15 @@ function defaultData() {
     settings: {
       theme: "auto", size: "m", hc: false, perf: "auto",
       voiceName: "", rate: 0.85, volume: 1,
-      repeats: 2, sentence: true, numbers: true,
+      repeats: 2, sentence: false, numbers: true,
       writeMode: "auto", writeFixed: 12,
       pauseWord: 1.2, pauseSent: 1.6,
       advance: "auto", shuffle: false, mode: "paper", showWord: false,
       haptics: true, slowerOnce: false, usSpelling: "wrong"
     },
+    defaultsMigrated2: true,
+    touchedSettings: {},
+    classDefaults: { version: 1, repeats: 2, sentence: false, numbers: true, writeMode: "auto", writeFixed: 12, pauseWord: 1.2, pauseSent: 1.6, advance: "auto", mode: "paper" },
     lists: [sample],
     plan: plan,
     session: {
@@ -1962,8 +1974,17 @@ function defaultData() {
         "Take a deep breath. Are you ready? Let's start.",
         "Relax and listen carefully. Ready? Let's go.",
         "Good luck! Are you ready to begin?",
-        "Everything ready? Then let's start."
+        "Everything ready? Then let's start.",
+        "{greeting}, class. Session {session}, {day}. There are {count} words today. Are you ready?",
+        "Find a quiet place. Your {count} words are ready. Are you?",
+        "Hello again. Have you got your pen and paper? Tap when you are ready.",
+        "Welcome to Session {session}. Take your time and get comfortable. Ready?",
+        "Let's practise together this {day}. Are you ready to listen?",
+        "A little practice helps every day. Shall we try {count} words?",
+        "{greeting}. Put your phone where you can hear it. Ready to start?",
+        "Welcome back. Don't worry about mistakes. Are you ready to have a go?"
       ],
+      go: ["Let's begin. Good luck!", "Here we go. Listen carefully.", "You are ready. Let's start.", "Take a breath. Let's begin.", "Pens ready. Here we go.", "Let's practise these words together.", "Time to listen. Good luck!", "Ready, steady. Let's start."],
       praise: [
         "Well done! That is the end of the dictation. Now check your answers.",
         "Great work! The dictation is finished. Let's check your answers.",
@@ -2014,9 +2035,8 @@ var DB = {
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
     /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
     if (!this.data.admin.pinHash) {
-      var salt = Admin.makeSalt();
-      this.data.admin.pinSalt = salt;
-      this.data.admin.pinHash = Sha.hex("sdp.v1:" + salt + ":7898");
+      this.data.admin.pinSalt = LOCAL_PIN_SALT;
+      this.data.admin.pinHash = LOCAL_PIN_HASH;
       this.saveNow();
     }
     return d;
@@ -2040,7 +2060,17 @@ var DB = {
     if (!Array.isArray(d.session.ready)) d.session.ready = base.session.ready;
     if (!Array.isArray(d.session.praise)) d.session.praise = base.session.praise;
     if (!d.v) d.v = 1;
-    /* future migrations go here: if (d.v < 2) { ...; d.v = 2; } */
+    if (!d.defaultsMigrated2) {
+      d.settings.sentence = false; d.settings.repeats = 2;
+      d.defaultsMigrated2 = true;
+      // Schema-1 published defaults are not an instruction to undo this migration.
+      d.defaultsVersion = 0;
+    }
+    Object.keys(d.plan.dates).forEach(function (date) {
+      if (typeof d.plan.dates[date] === "string") d.plan.dates[date] = {
+        listId: d.plan.dates[date], sessionNo: d.session.no || "", day: DAYS[U.weekdayIndex(new Date(date + "T12:00:00"))], title: d.session.title || ""
+      };
+    });
     for (k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
     for (k in base.settings) { if (d.settings[k] === undefined) d.settings[k] = base.settings[k]; }
     for (k in base.plan) { if (d.plan[k] === undefined) d.plan[k] = base.plan[k]; }
@@ -2086,12 +2116,15 @@ var DB = {
       self.saveNow();
     }, 120);
   },
-  saveNow: function () {
+  saveNow: function (backup) {
     if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
     try {
       var text = JSON.stringify(this.data);
+      var previous = Store.get(CONFIG.key);
+      if (previous && (backup || !this.lastBackup || Date.now() - this.lastBackup >= 30000)) {
+        if (Store.set(CONFIG.key + ".bak", previous)) this.lastBackup = Date.now();
+      }
       Store.set(CONFIG.key, text);
-      Store.set(CONFIG.key + ".bak", text);
     } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
   },
   reset: function () {
@@ -2100,8 +2133,8 @@ var DB = {
     Store.set(CONFIG.key + ".beforeReset", JSON.stringify(this.data));
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
-    this.data.admin.pinSalt = Admin.makeSalt();
-    this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898");
+    this.data.admin.pinSalt = LOCAL_PIN_SALT;
+    this.data.admin.pinHash = LOCAL_PIN_HASH;
     Store.set(CONFIG.key, JSON.stringify(this.data));
   },
   exportAll: function (emergency) {
@@ -2133,7 +2166,7 @@ var DB = {
     }
     if (!d || Array.isArray(d) || !Array.isArray(d.lists) || !d.lists.length) return { ok: false, err: "This backup has no word lists inside." };
     this.data = this.migrate(d);
-    if (!this.data.admin.pinHash) { this.data.admin.pinSalt = Admin.makeSalt(); this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898"); }
+    if (!this.data.admin.pinHash) { this.data.admin.pinSalt = LOCAL_PIN_SALT; this.data.admin.pinHash = LOCAL_PIN_HASH; }
     this.saveNow();
     return { ok: true, lists: this.data.lists.length, results: this.data.history.length };
   }
@@ -2368,7 +2401,7 @@ var UI = {
     var x = U.btn("", "i-x", "icon ghost");
     x.setAttribute("aria-label", "Close");
     U.on(x, "click", function () { self.closeSheet(); });
-    head.appendChild(x);
+    if (!o.required) head.appendChild(x);
     sh.appendChild(head);
     var body = U.el("div", "sbody", null);
     sh.appendChild(body);
@@ -2381,9 +2414,9 @@ var UI = {
     var host = U.$("#sheets");
     host.appendChild(scrim);
     host.appendChild(sh);
-    U.on(scrim, "click", function () { self.closeSheet(); });
+    U.on(scrim, "click", function () { if (!o.required) self.closeSheet(); });
     var unt = this.trap(sh);
-    this.stack.push({ type: "sheet", node: sh, scrim: scrim, unt: unt, onClose: o.onClose });
+    this.stack.push({ type: "sheet", node: sh, scrim: scrim, unt: unt, onClose: o.onClose, required: !!o.required });
     var f = U.$("input, textarea, button.btn", body);
     if (f) setTimeout(function () { try { f.focus(); } catch (e) {} }, 60);
     return sh;
@@ -2532,7 +2565,7 @@ function writeSecs(word) {
 }
 
 var Lib = {
-  byId: function (id) { return DB.findList(null, id); },
+  byId: function (id) { return DB.findList(null, id && typeof id === "object" ? id.listId : id); },
   published: function () {
     var out = [];
     for (var i = 0; i < DB.data.lists.length; i++) if (DB.data.lists[i].published) out.push(DB.data.lists[i]);
@@ -2725,7 +2758,7 @@ var Screens = {
     /* past sessions */
     var host = U.$("#homeSessions");
     host.textContent = "";
-    var sess = (d.sessions || []).slice(0, 10);
+    var sess = (d.sessions || []).filter(function (session) { return session.date && session.date <= U.dateKey(new Date()); }).sort(function (a,b) { return b.date.localeCompare(a.date); }).slice(0, 10);
     if (!sess.length) {
       host.appendChild(UI.emptyState("i-cal", "No past sessions yet", "Your lecturer publishes each session here, so you can practise it again."));
     } else {
@@ -2736,7 +2769,7 @@ var Screens = {
         left.appendChild(U.el("div", "tiny muted", (s2.listName || "") + " \u00b7 " + (s2.words ? s2.words.length : 0) + " words \u00b7 " + (s2.date ? U.fmtDate(new Date(s2.date + "T12:00:00")) : "")));
         var btn = U.btn("Practise", "i-play", "sm soft");
         U.on(btn, "click", function () {
-          Eng.start({ words: s2.words || [], listId: s2.listId || "", listName: (s2.listName || "Past session"), sessionNo: s2.no || "", sessionDay: s2.day || "" });
+          Eng.start({ list: { words: s2.words || [], version: s2.version }, sessionDate: s2.date, sessionTitle: s2.title, listId: s2.listId || "", listName: (s2.listName || "Past session"), sessionNo: s2.no || "", sessionDay: s2.day || "" });
         });
         row.appendChild(left);
         row.appendChild(btn);
@@ -2764,7 +2797,7 @@ var Screens = {
     }
     if (q) {
       items = items.filter(function (x) { return x.w.toLowerCase().indexOf(q) === 0; });
-      if (!items.length && this.dictSrc !== "list") items = [{ w: q, s: "", m: "" }];
+      if (!items.length) items = [{ w: q, s: "", m: "" }];
     }
     if (!items.length) {
       host.appendChild(UI.emptyState("i-book", S.emptyWords, "Type a word above to look it up."));
@@ -2885,7 +2918,7 @@ var Screens = {
     }
 
     var badge = U.$("#commBadge");
-    var unread = d.inbox.filter(function (m) { return !m.read; }).length;
+    var unread = d.inbox.filter(function (m) { return Admin.unlocked ? (!m.mine && !m.read) : (m.mine && m.reply && !m.replyRead); }).length;
     if (badge) {
       if (unread) { badge.textContent = String(unread); U.setCls(badge, "hidden", false); }
       else U.setCls(badge, "hidden", true);
@@ -2965,7 +2998,7 @@ var Screens = {
       b.setAttribute("aria-label", titleText);
       b.appendChild(U.el("i", null, null));
       U.on(b, "click", function () {
-        st[key] = !st[key];
+        d.touchedSettings[key] = true; st[key] = !st[key];
         b.setAttribute("aria-checked", String(!!st[key]));
         DB.save();
         if (onChange) onChange(st[key]);
@@ -2986,7 +3019,7 @@ var Screens = {
       r.value = String(st[key]);
       r.setAttribute("aria-label", titleText);
       U.on(r, "input", function () {
-        st[key] = Number(r.value);
+        d.touchedSettings[key] = true; st[key] = Number(r.value);
         val.textContent = fmt(st[key]);
         DB.save();
         if (onChange) onChange(st[key]);
@@ -3334,7 +3367,7 @@ var Speech = {
     this.pollTimer = setInterval(function () {
       tries++;
       self.readVoices();
-      if (self.ukVoices.length || tries >= 16) { clearInterval(self.pollTimer); self.pollTimer = null; }
+      if (tries >= 40) { clearInterval(self.pollTimer); self.pollTimer = null; }
     }, 250);
   },
 
@@ -3345,7 +3378,6 @@ var Speech = {
     if (!this.supported) return;
     var list = [];
     try { list = window.speechSynthesis.getVoices() || []; } catch (e) { list = []; }
-    if (!list || !list.length) return;
     this.voices = list.slice(0);
     var uks = [];
     for (var i = 0; i < list.length; i++) if (this.isUK(list[i])) uks.push(list[i]);
@@ -3398,6 +3430,7 @@ var Speech = {
       u.volume = 0;
       u.lang = "en-GB";
       if (this.chosen) u.voice = this.chosen;
+      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch (e) {}
   },
@@ -3427,7 +3460,8 @@ var Speech = {
   say: function (parts, opts, cb) {
     var self = this;
     var o = opts || {};
-    var token = ++this.token;
+    this.stop();
+    var token = this.token;
     if (!this.supported || this.textOnly) { cb && cb({ ok: false, err: "text mode" }); return token; }
     if (!this.chosen) this.pick();
     if (!this.chosen || !this.isUK(this.chosen)) { UI.toast("No UK voice. Add one in Settings or use Text mode."); cb && cb({ok:false,err:"no UK voice"}); return token; }
@@ -3460,7 +3494,7 @@ var Speech = {
         if (stale()) return;
         if (res && res.err === "interrupted" && self.onInterrupt) {
           var hook = self.onInterrupt;
-          self.onInterrupt = null;
+          /* Keep the interruption hook for subsequent calls or app switches. */
           try { hook(); } catch (e2) {}
           return;
         }
@@ -3576,6 +3610,7 @@ var Eng = {
   beats: [],
   beatIdx: 0,
   answers: [],
+  dictated: [],
   hard: [],
   startedAt: 0,
   listId: "",
@@ -3646,10 +3681,12 @@ var Eng = {
     this.listVersion = list.version || 1;
     this.sessionNo = o.sessionNo !== undefined ? o.sessionNo : (DB.data.session.no || "");
     this.sessionDay = o.sessionDay !== undefined ? o.sessionDay : (DB.data.session.day || "");
-    this.sessionDate = DB.data.session.date || U.dateKey(new Date()); this.sessionTitle = DB.data.session.title || "";
+    this.sessionDate = o.sessionDate || DB.data.session.date || U.dateKey(new Date()); this.sessionTitle = o.sessionTitle || DB.data.session.title || "";
     this.mode = o.mode || DB.data.settings.mode || "paper";
     this.answers = [];
     this.hard = [];
+    this.dictated = [];
+    this.beats = []; this.beatIdx = 0;
     this.idx = 0;
     this.startedAt = Date.now();
     this.showWord = !!DB.data.settings.showWord || !Speech.supported || Speech.textOnly;
@@ -3674,6 +3711,7 @@ var Eng = {
     this.sessionDate = snap.sessionDate || DB.data.session.date; this.sessionTitle = snap.sessionTitle || "";
     this.mode = snap.mode || "paper";
     this.answers = snap.answers || [];
+    this.dictated = snap.dictated || this.words.map(function (_, i) { return i <= (snap.index || 0); });
     this.hard = snap.hard || [];
     this.order = snap.order || this.words.map(function (_, i) { return i; });
     this.idx = U.clamp(snap.index || 0, 0, this.words.length - 1);
@@ -3690,7 +3728,7 @@ var Eng = {
     DB.data.snapshot = {
       listId: this.listId, listName: this.listName, listVersion: this.listVersion,
       words: this.words.slice(0), index: this.idx, order: this.order.slice(0),
-      answers: this.answers.slice(0), hard: this.hard.slice(0), mode: this.mode,
+      answers: this.answers.slice(0), dictated: this.dictated.slice(0), hard: this.hard.slice(0), mode: this.mode,
       sessionNo: this.sessionNo, sessionDay: this.sessionDay, sessionDate: this.sessionDate, sessionTitle: this.sessionTitle,
       startedAt: this.startedAt, savedAt: Date.now(), seed: this.seed, showWord: this.showWord,
       settingsAtStart: JSON.parse(JSON.stringify(DB.data.settings))
@@ -3701,6 +3739,7 @@ var Eng = {
   /* ---------- the scheduler ---------- */
   runItem: function (i) {
     this.runId++;
+    Speech.stop();
     this.clearTimers();
     this.idx = U.clamp(i, 0, this.words.length - 1);
     this.beats = this.buildBeats(this.idx);
@@ -3721,6 +3760,7 @@ var Eng = {
     function stale() { return token !== self.runId || self.st === "paused" || self.st === "idle"; }
 
     if (b.t === "say") {
+      if (b.text === this.currentWord().w) { this.dictated[this.idx] = true; this.saveSnapshot(); }
       this.st = "speaking";
       this.status(b.status || S.listening);
       if (!Speech.supported) { this.after(700, function () { if (!stale()) self.runBeat(n + 1); }); return; }
@@ -3786,6 +3826,7 @@ var Eng = {
 
   /* ---------- controls ---------- */
   playPause: function () {
+    if (this.st === "ready") { this.readyScreen(); return; }
     if (this.st === "paused") this.resume();
     else if (this.st === "idle" || this.st === "finished") { if (!this.layer) this.start({}); }
     else this.pause();
@@ -3889,7 +3930,7 @@ var Eng = {
       title: S.restart + "?",
       text: S.restartQ,
       okLabel: S.restart,
-      onOk: function () { self.answers = []; self.hard = []; self.startedAt = Date.now(); self.runItem(0); }
+      onOk: function () { self.answers = []; self.hard = []; self.dictated = []; self.startedAt = Date.now(); self.runItem(0); }
     });
   },
   finishEarly: function () {
@@ -4183,7 +4224,7 @@ Eng.bindKeys = function () {
     if (!self.layer) return;
     var t = e.target;
     var typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
-    if (e.key === "Escape") { UI.closeLayer(self.layer); return; }
+    if (e.key === "Escape" || self.st === "ready" || U.$("#sheets .sheet")) return;
     if (typing) return;
     if (e.key === " " || e.code === "Space") { e.preventDefault(); self.playPause(); }
     else if (e.key === "r" || e.key === "R") { e.preventDefault(); self.repeatWord(); }
@@ -4196,64 +4237,49 @@ Eng.bindKeys = function () {
 
 Eng.readyScreen = function () {
   var self = this;
+  if (U.$("#readyNum")) return;
   var phrases = DB.data.session.ready || [];
-  var phrase = phrases.length ? phrases[Math.floor(Math.random() * phrases.length)] : "Are you ready? Let's begin.";
-  var sh = UI.sheet({
-    title: S.ready,
-    body: function (b) {
-      var vline = U.el("p", "small", null);
-      if (!Speech.supported) vline.textContent = "This browser cannot speak, so Text mode is on: the word will be shown on screen.";
-      else if (Speech.chosen) vline.textContent = S.voiceFound + ": " + Speech.voiceName() + (Speech.isUkVoice() ? "" : " (not UK)");
-      else vline.textContent = "No UK voice selected yet.";
-      b.appendChild(vline);
-      b.appendChild(U.el("p", "small muted", S.volumeTip));
-      b.appendChild(U.el("p", "small", "Get your pen and paper. Tap Start when you are."));
-      var num = U.el("div", "center", null);
-      num.style.margin = "18px 0 6px";
-      var big = U.el("div", null, "");
-      big.id = "readyNum";
-      big.style.fontSize = "4rem";
-      big.style.fontWeight = "750";
-      big.style.lineHeight = "1";
-      num.appendChild(big);
-      b.appendChild(num);
-      b.appendChild(U.el("p", "tiny muted center", "You can tap Pause at any time. Nothing is lost."));
-    },
-    actions: [(function () {
-      var b = U.btn(S.imReady, "i-play", "primary xl block");
-      U.on(b, "click", function () {
-        /* first speak() must run synchronously inside this tap on iOS */
-        Speech.unlock();
-        self.requestWake();
-        var big = U.$("#readyNum");
-        var rate = DB.data.settings.rate;
-        Speech.say([phrase], { rate: rate, volume: DB.data.settings.volume }, function () {
-          var count = 3;
-          (function step() {
-            if (count <= 0) { UI.closeSheet(); self.st = "speaking"; self.runItem(0); return; }
-            if (big) big.textContent = String(count);
-            Speech.say([String(count)], { rate: Math.min(1.1, rate + 0.15), volume: DB.data.settings.volume }, function () {
-              count--;
-              setTimeout(step, 320);
-            });
-          })();
-        });
-      });
-      return b;
-    })(), (function () {
-      /* the countdown is optional - skipping still starts inside a user tap */
-      var sk = U.btn("Skip countdown", "i-next", "ghost");
-      U.on(sk, "click", function () {
-        Speech.unlock();
-        self.requestWake();
-        self.runId++;
-        UI.closeSheet();
-        self.st = "speaking";
-        self.runItem(0);
-      });
-      return sk;
-    })()]
+  var choices = phrases.filter(function (line) { return line !== self.lastReady; });
+  var raw = choices[Math.floor(Math.random() * choices.length)] || phrases[0] || S.ready;
+  self.lastReady = raw;
+  var hour = new Date().getHours();
+  var tokens = { session: self.sessionNo, day: self.sessionDay, count: self.words.length, greeting: hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening" };
+  var phrase = raw.replace(/\{(session|day|count|greeting)\}/g, function (_, key) { return String(tokens[key] || ""); });
+  var started = false, token = ++self.runId;
+  function active() { return token === self.runId && self.st === "ready"; }
+  function begin() { if (!active()) return; UI.closeSheet(); self.requestWake(); self.runItem(0); }
+  var ready = U.btn(S.imReady, "i-play", "primary xl block");
+  var skip = U.btn("Skip countdown", "i-next", "ghost"); skip.disabled = true;
+  var exit = U.btn("Exit", "i-x", "ghost");
+  U.on(exit, "click", function () { self.runId++; UI.closeSheet(); self.stop(); delete DB.data.snapshot; DB.saveNow(); Screens.home(); });
+  U.on(skip, "click", function () { Speech.stop(); begin(); });
+  U.on(ready, "click", function () {
+    if (started || !active()) return;
+    started = true; ready.disabled = true; skip.disabled = false;
+    Speech.unlock();
+    var goes = DB.data.session.go || ["Let's begin."];
+    var choices = goes.filter(function (line) { return line !== self.lastGo; });
+    var go = choices[Math.floor(Math.random() * choices.length)] || goes[0]; self.lastGo = go;
+    Speech.say([go], {}, function () {
+      var count = 3;
+      function step() {
+        if (!active()) return;
+        if (!count) { begin(); return; }
+        var big = U.$("#readyNum"); if (big) big.textContent = String(count);
+        Speech.say([String(count)], {}, function () { count--; self.after(320, step); });
+      }
+      step();
+    });
   });
+  var sh = UI.sheet({ title: S.ready, required: true,
+    body: function (b) {
+      b.appendChild(U.el("p", "small", Speech.textOnly || !Speech.supported ? S.textModeNotice : S.voiceFound + ": " + Speech.voiceName()));
+      b.appendChild(U.el("p", "small", phrase));
+      b.appendChild(U.el("p", "small muted", S.volumeTip));
+      var num = U.el("div", "center", ""); num.id = "readyNum"; num.style.fontSize = "4rem"; b.appendChild(num);
+    }, actions: [ready, skip, exit]
+  });
+  Speech.say([phrase], { rate: DB.data.settings.rate }, function () {});
   return sh;
 };
 
@@ -4315,8 +4341,9 @@ var Results = {
       listId: meta.listId,
       mode: meta.mode,
       wordCount: total,
-      score: Math.round(score * 10) / 10,
-      percent: pct,
+      score: meta.mode === "paper" ? null : Math.round(score * 10) / 10,
+      percent: meta.mode === "paper" ? null : pct,
+      markedCount: meta.mode === "paper" ? 0 : total,
       durationSec: Math.round((Date.now() - meta.startedAt) / 1000),
       voiceName: Speech.voiceName() || "none",
       ukVoice: Speech.isUkVoice(),
@@ -4343,12 +4370,31 @@ var Results = {
     if (pct === 100 && total >= 5) bg.perfect = true;
     delete DB.data.snapshot;
     DB.saveNow();
-    Cloud.queue({ action: "result", cid: rec.id, sessionNo: rec.sessionNo, day: rec.sessionDay, list: rec.listName,
-      mode: rec.mode, words: rec.wordCount, score: rec.score, secs: rec.durationSec, voice: rec.voiceName,
-      uk: rec.ukVoice, device: rec.deviceType });
+    if (rec.mode !== "paper") this.finalise(rec);
+    else setTimeout(function () { Results.finalise(rec); }, Math.max(0, rec.ts + 600000 - Date.now()));
     return rec;
   },
 
+  mark: function (rec, index, state) {
+    if (rec.finalised || !rec.rows[index]) return;
+    rec.rows[index].state = state;
+    var marked = rec.rows.filter(function (row) { return row.state === "ok" || row.state === "wrong"; });
+    rec.markedCount = marked.length;
+    rec.score = marked.length ? marked.filter(function (row) { return row.state === "ok"; }).length : null;
+    rec.percent = marked.length ? Math.round(rec.score / marked.length * 100) : null;
+    var row = rec.rows[index];
+    if (state === "wrong") Lib.addMistake(row.word);
+    else if (state === "ok") DB.data.mistakes = DB.data.mistakes.filter(function (item) { return U.norm(item.w) !== U.norm(row.word); });
+    DB.saveNow();
+  },
+  finalise: function (rec) {
+    if (rec.finalised) return;
+    rec.finalised = true;
+    Cloud.queue({ action: "result", cid: rec.id, sessionNo: rec.sessionNo, day: rec.sessionDay, list: rec.listName,
+      mode: rec.mode, words: rec.wordCount, scoredWords: rec.markedCount, score: rec.score, secs: rec.durationSec,
+      voice: rec.voiceName, uk: rec.ukVoice, device: rec.deviceType });
+    DB.saveNow(true);
+  },
   open: function (rec, words, order) {
     var self = this;
     var L = UI.layer({
@@ -4373,15 +4419,15 @@ var Results = {
         svg.appendChild(bgc); svg.appendChild(fgc);
         ringWrap.appendChild(svg);
         var lbl = U.el("div", "lbl", null);
-        lbl.appendChild(U.el("b", null, rec.percent + "%"));
-        lbl.appendChild(U.el("span", null, rec.score + " / " + rec.wordCount));
+        lbl.appendChild(U.el("b", null, rec.percent === null ? S.unscored : rec.percent + "%"));
+        lbl.appendChild(U.el("span", null, rec.score === null ? "" : rec.score + " / " + rec.markedCount));
         ringWrap.appendChild(lbl);
         body.appendChild(ringWrap);
         setTimeout(function () { fgc.setAttribute("stroke-dashoffset", (C * (1 - rec.percent / 100)).toFixed(1)); }, 60);
 
         var msg = U.el("p", "center muted small", null);
         msg.style.margin = "10px 0 4px";
-        msg.textContent = rec.percent === 100 ? "Perfect! Every word correct."
+        msg.textContent = rec.percent === null ? S.markWords : rec.percent === 100 ? "Perfect! Every word correct."
           : (rec.percent >= 80 ? "Great work. A few words to practise."
             : (rec.percent >= 50 ? "Good effort. The words below will help."
               : "Keep going \u2013 try these words again tomorrow."));
@@ -4394,54 +4440,31 @@ var Results = {
         if (rec.mode === "paper") {
           var box = U.el("div", "glass card pad-s r2", null);
           box.style.marginTop = "14px";
-          var head = U.el("div", "spread", null);
-          head.appendChild(U.el("b", "small", S.selfScore));
-          var stepper = U.el("div", "stepper", null);
-          var minus = U.btn("", "i-minus", "sm soft icon");
-          minus.setAttribute("aria-label", "One fewer correct word");
-          var val = U.el("span", "val", rec.score + " / " + rec.wordCount);
-          var plus = U.btn("", "i-plus", "sm soft icon");
-          plus.setAttribute("aria-label", "One more correct word");
-          var n = rec.score;
-          function paint() { val.textContent = n + " / " + rec.wordCount; }
-          U.on(minus, "click", function () { n = U.clamp(n - 1, 0, rec.wordCount); paint(); saveSelf(); });
-          U.on(plus, "click", function () { n = U.clamp(n + 1, 0, rec.wordCount); paint(); saveSelf(); });
-          function saveSelf() {
-            rec.score = n;
-            rec.percent = rec.wordCount ? Math.round((n / rec.wordCount) * 100) : 0;
-            var recs = DB.data.history;
-            for (var i = 0; i < recs.length; i++) if (recs[i].id === rec.id) { recs[i].score = rec.score; recs[i].percent = rec.percent; break; }
-            DB.save();
+          box.appendChild(U.el("b", "small", S.selfScore));
+          function paint() {
+            lbl.firstChild.textContent = rec.percent === null ? S.unscored : rec.percent + "%";
+            lbl.lastChild.textContent = rec.score === null ? "" : rec.score + " / " + rec.markedCount + " marked";
+            fgc.setAttribute("stroke-dashoffset", (C * (1 - (rec.percent || 0) / 100)).toFixed(1));
+            fgc.style.stroke = rec.percent === null ? "var(--muted)" : rec.percent < 50 ? "var(--bad)" : rec.percent < 80 ? "var(--warn)" : "var(--good)";
+            msg.textContent = rec.percent === null ? S.markWords : rec.percent === 100 ? "Well done! Keep practising." : "Your marked mistakes are ready to practise.";
           }
-          stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
-          head.appendChild(stepper);
-          box.appendChild(head);
-          var showBtn = U.btn(S.showSpellings, "i-eye", "soft block");
-          showBtn.style.marginTop = "10px";
-          var list = U.el("div", null, null);
-          list.style.marginTop = "8px";
-          var shown = false;
-          U.on(showBtn, "click", function () {
-            shown = !shown;
-            showBtn.textContent = shown ? "Hide the spellings" : S.showSpellings;
-            list.textContent = "";
-            if (!shown) return;
-            words.forEach(function (w, i) {
-              var row = U.el("div", "listrow", null);
-              row.appendChild(U.el("div", "n", String(i + 1)));
-              var ww = U.el("div", "w", null);
-              ww.appendChild(U.el("b", null, w.w));
-              if (w.s) ww.appendChild(U.el("div", "tiny muted", w.s));
-              row.appendChild(ww);
-              var hear = U.btn("", "i-vol", "sm ghost icon");
-              hear.setAttribute("aria-label", "Hear this word");
-              U.on(hear, "click", function () { Speech.say([w.w], { rate: DB.data.settings.rate }, function () {}); });
-              row.appendChild(hear);
-              list.appendChild(row);
+          rec.rows.forEach(function (row, i) {
+            var line = U.el("div", "listrow", null);
+            line.appendChild(U.el("b", "w", (i + 1) + ". " + row.word));
+            ["ok", "wrong", "unscored"].forEach(function (state) {
+              var label = state === "ok" ? "Correct" : state === "wrong" ? "Incorrect" : "Unmarked";
+              var button = U.btn(label, null, "soft");
+              button.setAttribute("aria-label", label + ": " + row.word);
+              button.setAttribute("aria-pressed", String(row.state === state)); button.disabled = !!rec.finalised;
+              U.on(button, "click", function () {
+                Results.mark(rec, i, state);
+                U.$$("button", line).forEach(function (b) { b.setAttribute("aria-pressed", String(b === button)); }); paint();
+              });
+              line.appendChild(button);
             });
+            box.appendChild(line);
           });
-          box.appendChild(showBtn);
-          box.appendChild(list);
+          paint();
           body.appendChild(box);
         }
 
@@ -4482,7 +4505,7 @@ var Results = {
         var text = Results.reportText(rec);
         var share = U.btn(S.shareResult, "i-share", "primary block");
         U.on(share, "click", function () {
-          if (!U.share("Dictation result", text)) {
+          if (!U.share("Dictation result", Results.reportText(rec))) {
             U.copy(text).then(function (ok) { if (ok) UI.toast(S.copied, { icon: "i-check" }); else U.selectForCopy(text); });
           }
         });
@@ -4502,7 +4525,7 @@ var Results = {
               return found || { w: r.word, s: "", m: "" };
             });
           } else {
-            items = words.slice(0);
+            items = rec.rows.filter(function (r) { return r.state === "wrong"; }).map(function (r) { return {w:r.word,s:"",m:""}; });
           }
           if (!items.length) { UI.toast("No mistakes to practise", { icon: "i-check" }); return; }
           UI.closeLayer(L);
@@ -4541,7 +4564,7 @@ var Results = {
 
         if (rec.percent === 100 && rec.mode === "type" && UI.perfMode === "full") Results.confetti();
       },
-      onClose: function () { Screens.home(); }
+      onClose: function () { Results.finalise(rec); Screens.home(); }
     });
     return L;
   },
@@ -4551,7 +4574,7 @@ var Results = {
     lines.push("Smart Dictation \u2013 result");
     lines.push("Session " + (rec.sessionNo || "\u2013") + (rec.sessionDay ? " (" + rec.sessionDay + ")" : "") + " \u00b7 " + U.fmtDate(rec.ts));
     lines.push("List: " + (rec.listName || "\u2013") + " (" + rec.wordCount + " words)");
-    lines.push("Score: " + rec.score + " / " + rec.wordCount + " (" + rec.percent + "%)");
+    lines.push(rec.score === null ? S.unscored : "Score: " + rec.score + " / " + rec.markedCount + " marked (" + rec.percent + "%)");
     lines.push("Mode: " + (rec.mode === "type" ? "typed answers" : "paper") + " \u00b7 Time: " + U.dur(rec.durationSec));
     lines.push("Voice: " + (rec.voiceName || "none") + (rec.ukVoice ? " (UK)" : " (not UK)"));
     if (rec.rows && rec.rows.length) {
@@ -4592,8 +4615,11 @@ Eng.finish = function (early) {
   Speech.stop();
   this.st = "finished";
   this.releaseWake();
-  var words = this.words.slice(0);
-  var order = this.order.slice(0);
+  var fullWords = this.words, fullOrder = this.order, fullAnswers = this.answers;
+  var positions = this.order.map(function (_, i) { return i; }).filter(function (i) { return !!self.dictated[i]; });
+  var words = positions.map(function (i) { return fullWords[fullOrder[i]]; });
+  var order = words.map(function (_, i) { return i; });
+  var answers = positions.map(function (i) { return fullAnswers[i] || ""; });
   var meta = {
     listId: this.listId, listName: this.listName, sessionNo: this.sessionNo, sessionDay: this.sessionDay,
     mode: this.mode, startedAt: this.startedAt, sessionDate: this.sessionDate, sessionTitle: this.sessionTitle
@@ -4601,7 +4627,7 @@ Eng.finish = function (early) {
   var praise = DB.data.session.praise || [];
   var line = praise.length ? praise[Math.floor(Math.random() * praise.length)] : S.wellDone;
 
-  var res = meta.mode === "type" ? Results.scoreTypeMode(words, order, self.answers) : {rows:[],correct:0,half:0,total:words.length};
+  var res = meta.mode === "type" ? Results.scoreTypeMode(words, order, answers) : {rows:words.map(function (w) { return {word:w.w, state:"unscored"}; }),correct:0,half:0,total:words.length};
   var rec = Results.finish(words, order, res, meta);
   var built = false;
   function build() {
@@ -5181,6 +5207,7 @@ var Admin = {
 
   unlock: function () {
     this.unlocked = true;
+    DB.data.lecturerDevice = true;
     if (Cloud.mode && this.pin) {
       Cloud.post({ action: "readInbox", pin: this.pin }, function (res) {
         if (!Admin.unlocked || !res || !res.ok || !Array.isArray(res.inbox)) return;
@@ -5794,15 +5821,19 @@ Admin.tabWords = function (host) {
   pub.appendChild(status);
   var pubBtn = U.btn(S.publish, "i-cloud", "primary block");
   U.on(pubBtn, "click", function () {
+    var parsed = self.parseWords(ta.value);
+    if (!parsed.items.length) { UI.toast("Add valid words before publishing."); return; }
+    var previewWords = parsed.items.map(function (x) { return { w:x.w, s:x.s, m:x.m }; });
     UI.confirm({
       title: S.publish + "?",
-      text: "Students will see \u201c" + list.name + "\u201d with " + list.words.length + " words. A session record is saved too.",
+      text: "Students will see \u201c" + list.name + "\u201d with " + previewWords.length + " words. A session record is saved too." + (d.plan.pinned && target.value !== "pinned" ? " Warning: a pinned list still overrides this date. Unpin it before publishing." : ""),
       okLabel: "Publish now",
       onOk: function () {
         if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
         else if (target.value === "date") { if (!targetDate.value) { UI.toast("Choose a date first."); return; } d.plan.dates[targetDate.value] = list.id; }
         else if (target.value === "pinned") d.plan.pinned = list.id;
         else d.plan.weekdays[Number(target.value.slice(1))] = list.id;
+        list.words = previewWords;
         self.publish(list);
       }
     });
@@ -5829,7 +5860,7 @@ Admin.publish = function (list) {
   if (DB.data.sessions.length > 10) DB.data.sessions.length = 10;
   DB.saveNow();
   Cloud.queue({
-    action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: {pauseWord:DB.data.settings.pauseWord,pauseSent:DB.data.settings.pauseSent,writeFixed:DB.data.settings.writeFixed,repeats:DB.data.settings.repeats,sentence:DB.data.settings.sentence,numbers:DB.data.settings.numbers,writeMode:DB.data.settings.writeMode,advance:DB.data.settings.advance},
+    action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: JSON.parse(JSON.stringify(DB.data.classDefaults)), defaultsVersion: DB.data.classDefaults.version,
     words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }),
     session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "", ready:s.ready, praise:s.praise },
     plan: (function () {
@@ -5841,7 +5872,7 @@ Admin.publish = function (list) {
       return out;
     })()
   });
-  UI.toast(S.published + " v" + list.version + (Cloud.mode ? " \u00b7 saved, waiting to sync" : " \u00b7 on this device"), { icon: "i-check", ms: 5000 });
+  UI.toast(Cloud.mode ? "Saved on this phone; will send when online" : "Published on this phone, v" + list.version, { icon: "i-check", ms: 5000 });
   this.renderTab();
 };
 
@@ -5986,8 +6017,8 @@ Admin.tabSession = function (host) {
   var timing = self.card(host, "Player timing");
   [["pauseWord", "Pause after word (seconds)", 0, 10, 0.1], ["pauseSent", "Pause after sentence (seconds)", 0, 15, 0.1], ["writeFixed", "Fixed writing time (seconds)", 3, 60, 1]].forEach(function (item) {
     var label = U.el("label", "field", null); label.appendChild(U.el("span", "lbl", item[1]));
-    var input = U.el("input", null, null); input.type = "number"; input.min = item[2]; input.max = item[3]; input.step = item[4]; input.value = DB.data.settings[item[0]];
-    U.on(input, "change", function () { DB.data.settings[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
+    var input = U.el("input", null, null); input.type = "number"; input.min = item[2]; input.max = item[3]; input.step = item[4]; input.value = DB.data.classDefaults[item[0]];
+    U.on(input, "change", function () { DB.data.classDefaults[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
   });
   /* default student settings */
   var c3 = this.card(host, "Default student settings");
@@ -6003,7 +6034,7 @@ Admin.tabSession = function (host) {
     b.setAttribute("aria-checked", String(!!st[key]));
     b.setAttribute("aria-label", title);
     b.appendChild(U.el("i", null, null));
-    U.on(b, "click", function () { st[key] = !st[key]; b.setAttribute("aria-checked", String(!!st[key])); DB.save(); });
+    U.on(b, "click", function () { st.version = (st.version || 1) + 1; st[key] = !st[key]; b.setAttribute("aria-checked", String(!!st[key])); DB.save(); });
     row.appendChild(t); row.appendChild(b);
     return row;
   }
@@ -6160,7 +6191,7 @@ Admin.tabAnnounce = function (host) {
   c1.appendChild(brow);
 
   /* inbox */
-  var unread = d.inbox.filter(function (m) { return !m.read; }).length;
+  var unread = d.inbox.filter(function (m) { return Admin.unlocked ? (!m.mine && !m.read) : (m.mine && m.reply && !m.replyRead); }).length;
   var c2 = this.card(host, "Private messages" + (unread ? " (" + unread + " unread)" : ""));
   var filterRow = U.el("div", "row", null);
   filterRow.style.marginBottom = "6px";
@@ -6601,8 +6632,8 @@ var Cloud = {
     var fileUrl = U.trim(CLOUD_URL);
     var stored = "";
     try { stored = U.trim(Store.get("sdp.cloudurl") || ""); } catch (e) {}
-    if (this.valid(stored)) this.url = stored;
-    else if (this.valid(fileUrl)) this.url = fileUrl;
+    if (this.valid(fileUrl)) this.url = fileUrl;
+    else if (this.valid(stored)) this.url = stored;
     else this.url = "";
     this.mode = !!this.url;
     this.remoteVer = DB.data.remoteVer || 0;
@@ -6717,6 +6748,7 @@ var Cloud = {
     if (!DB.data.outbox.length) { UI.renderNet(); return; }
     if (U.nav("onLine", true) === false) return;
     this.flushing = true;
+    var attempted = [];
     (function stepFn() {
       if (!DB.data.outbox.length) {
         self.flushing = false;
@@ -6727,10 +6759,12 @@ var Cloud = {
       var index = -1;
       for (var j = 0; j < DB.data.outbox.length; j++) {
         var candidate = DB.data.outbox[j];
+        if (attempted.indexOf(candidate) >= 0 || (candidate.retryAt && candidate.retryAt > Date.now())) continue;
         if (["publish", "announce", "moderate", "inbox"].indexOf(candidate.action) < 0 || (Admin.unlocked && Admin.pin)) { index = j; break; }
       }
-      if (index < 0) { self.flushing = false; UI.renderNet(); return; }
+      if (index < 0) { self.flushing = false; UI.renderNet(); self.scheduleFlush(); return; }
       var item = DB.data.outbox[index], request = {};
+      attempted.push(item);
       Object.keys(item).forEach(function (key) { if (key !== "pin") request[key] = item[key]; });
       if (["publish", "announce", "moderate", "inbox"].indexOf(item.action) >= 0) request.pin = Admin.pin;
       self.post(request, function (res) {
@@ -6744,10 +6778,11 @@ var Cloud = {
           DB.save();
           setTimeout(stepFn, 120);
         } else {
-          self.flushing = false;
+          item.retryAt = Date.now() + self.retryDelay();
+          item.lastError = U.clip(res && res.err || "Waiting to send", 120);
           DB.save();
           UI.renderNet();
-          self.scheduleFlush();
+          setTimeout(stepFn, 120);
         }
       });
     })();
@@ -6798,6 +6833,7 @@ var Cloud = {
   },
   applyState: function (st) {
     var d = DB.data;
+    var draftFields = d.lecturerDevice ? { plan: JSON.parse(JSON.stringify(d.plan)), session: JSON.parse(JSON.stringify(d.session)), announcement: d.announcement } : null;
     var busy = (Eng.st === "speaking" || Eng.st === "waiting" || Eng.st === "paused" || Eng.st === "ready");
     if (!st || typeof st !== "object") return;
     if (Array.isArray(st.lists) && st.lists.length) {
@@ -6813,12 +6849,12 @@ var Cloud = {
         if (!local) {
           d.lists.push({ id: rl.id, name: rl.name || "Cloud list", words: rl.words, version: rl.version || 1, published: true, draft: false, updatedAt: Date.now() });
         } else if (!DB.data.outbox.some(function (item) { return item.action === "publish" && item.listId === rl.id; })) {
-          local.name = rl.name || local.name;
-          if (!(Admin.unlocked && local.draft)) local.words = rl.words;
+          if (!local.draft && local.draftText === undefined) local.name = rl.name || local.name;
+          if (!local.draft && local.draftText === undefined) local.words = rl.words;
           local.publishedWords = rl.words; local.publishedName = rl.name || local.name; local.publishedVersion = rl.version || 1;
           local.version = rl.version || local.version;
           local.published = true;
-          if (!Admin.unlocked) local.draft = false;
+          /* An unpublished edit remains a draft, even after the panel locks. */
           local.updatedAt = Date.now();
         }
       });
@@ -6849,13 +6885,18 @@ var Cloud = {
     }
     if (st.session) ["ready","praise"].forEach(function (key) { if (Array.isArray(st.session[key]) && st.session[key].length) d.session[key]=st.session[key].filter(function (x) { return typeof x === "string"; }).map(function (x) { return U.clip(x,160); }); });
     if (st.contact && typeof st.contact === "object") d.lecturerContact={whatsapp:U.clip(st.contact.whatsapp,30),email:U.clip(st.contact.email,120)};
-    if (st.defaults && typeof st.defaults === "object") {
-      ["pauseWord","pauseSent","writeFixed","repeats"].forEach(function (key) { if (st.defaults[key] !== undefined) d.settings[key]=U.clamp(st.defaults[key],key === "writeFixed" ? 3 : key === "repeats" ? 1 : 0,key === "writeFixed" ? 60 : key === "repeats" ? 3 : 15); });
-      ["sentence","numbers"].forEach(function (key) { if (typeof st.defaults[key] === "boolean") d.settings[key]=st.defaults[key]; });
-      if (["auto","fixed"].indexOf(st.defaults.writeMode)>=0) d.settings.writeMode=st.defaults.writeMode;
-      if (["auto","manual"].indexOf(st.defaults.advance)>=0) d.settings.advance=st.defaults.advance;
+    if (st.defaults && Number(st.defaultsVersion || st.defaults.version || 0) > Number(d.defaultsVersion || 0)) {
+      var defaults = st.defaults;
+      ["pauseWord", "pauseSent", "writeFixed", "repeats"].forEach(function (key) {
+        if (!d.touchedSettings[key] && defaults[key] !== undefined) d.settings[key] = U.clamp(defaults[key], key === "writeFixed" ? 3 : key === "repeats" ? 1 : 0, key === "writeFixed" ? 60 : key === "repeats" ? 3 : 15);
+      });
+      ["sentence", "numbers"].forEach(function (key) { if (!d.touchedSettings[key] && typeof defaults[key] === "boolean") d.settings[key] = defaults[key]; });
+      ["writeMode", "advance", "mode"].forEach(function (key) { if (!d.touchedSettings[key] && ["auto", "fixed", "manual", "paper", "type"].indexOf(defaults[key]) >= 0) d.settings[key] = defaults[key]; });
+      d.defaultsVersion = Number(st.defaultsVersion || defaults.version);
     }
     d.announcement = st.announcement && st.announcement.title ? st.announcement : null;
+    d.live = { plan: JSON.parse(JSON.stringify(d.plan)), session: JSON.parse(JSON.stringify(d.session)), announcement: d.announcement };
+    if (draftFields) { d.plan = draftFields.plan; d.session = draftFields.session; d.announcement = draftFields.announcement; }
     if (Array.isArray(st.sessions) && st.sessions.length) {
       var map = {};
       d.sessions.forEach(function (s) { map[(s.no || "") + "|" + (s.date || "")] = s; });
@@ -6864,7 +6905,7 @@ var Cloud = {
         var key = (s.no || "") + "|" + (s.date || "");
         var existing = map[key];
         var list = Lib.byId(s.listId);
-        var words = existing && existing.words ? existing.words : (list ? list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }) : []);
+        var words = Array.isArray(s.words) ? s.words : existing && existing.words ? existing.words : (list ? list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }) : []);
         map[key] = { no: s.no, day: s.day, date: s.date, title: s.title, listId: s.listId, listName: list ? list.name : (existing ? existing.listName : ""), words: words };
       });
       var out = [];
@@ -7482,6 +7523,8 @@ function boot() {
   U.on(window, "resize", U.debounce(function () { U.$$(".seg").forEach(UI.segSync); }, 200));
   U.on(document, "keydown", function (e) {
     if (e.key === "Escape") {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (Eng.st === "ready") return;
       if (UI.closeTop()) return;
       var L = UI.topLayer();
       if (L) UI.closeLayer(L);
@@ -7515,16 +7558,14 @@ function boot() {
   UI.setTab("home");
   UI.applyPerf();
   UI.frameProbe(function () { UI.applyPerf(); });
-  /* Opening the file makes no network requests. Sync begins on the first user tap. */
+  /* Cloud freshness must not depend on the first Start tap. Local mode makes no requests. */
   var syncStarted = false;
   function beginSync() {
     if (syncStarted || !Cloud.mode) return;
     syncStarted = true;
     Cloud.poll(); Cloud.flush(); Cloud.pullState(); Cloud.pullComments();
   }
-  U.on(document, "click", beginSync);
-  U.on(document, "touchstart", beginSync);
-  U.on(document, "keydown", beginSync);
+  setTimeout(beginSync, 0);
 
   if (window.location.hash === "#lecturer") {
     setTimeout(function () { Admin.open(); }, 350);
