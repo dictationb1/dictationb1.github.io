@@ -534,5 +534,29 @@ test('v2: a skipped countdown never lets the ready greeting cut the first beat',
   }
 });
 
+test('v2: the DOM token guard splits, trims and never throws on any input', () => {
+  const d = a.w.document;
+  const tryAdd = v => {
+    const el = d.createElement('div');
+    try { el.classList.add(v); return { cls: el.className, threw: false }; }
+    catch (err) { return { cls: String(err && err.message || err), threw: true }; }
+  };
+  assert.deepEqual(tryAdd('a  b\tc'), { cls: 'a b c', threw: false });
+  assert.deepEqual(tryAdd('  padded \n'), { cls: 'padded', threw: false });
+  assert.deepEqual(tryAdd(''), { cls: '', threw: false });
+  assert.deepEqual(tryAdd('   '), { cls: '', threw: false });
+  assert.deepEqual(tryAdd(['glass', 'card']), { cls: 'glass,card', threw: false });
+  assert.deepEqual(tryAdd(0), { cls: '0', threw: false });
+  assert.deepEqual(tryAdd(null), { cls: '', threw: false });
+  const hostile = d.createElement('div');
+  hostile.className = 'keep me';
+  assert.deepEqual(tryAdd({ toString() { throw Error('nope'); } }).threw, false);
+  const el = d.createElement('div');
+  el.classList.add('one', 'two three');
+  el.classList.remove('two');
+  assert.deepEqual(Array.from(el.classList), ['one', 'three'], 'multiple tokens per call still work');
+  assert.equal(hostile.className, 'keep me');
+});
+
 test.after(()=>a.close());
 module.exports={sample};
