@@ -17,7 +17,10 @@ async function boot(browser,width=390,scenario='gb',height=844){
  const context=await browser.newContext({viewport:{width,height},isMobile:width<768,hasTouch:width<768});
  const page=await context.newPage();page.setDefaultTimeout(25000);
  if(engine==='chromium'){const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});}
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const errors=[];
+ /* the first frames are kept too, so an engine-only failure names the file and line
+    that threw instead of leaving only WebKit's message to guess from */
+ page.on('pageerror',e=>errors.push(String(e&&e.message||e)+(e&&e.stack?' @ '+String(e.stack).split('\n').slice(1,3).map(function(l){return l.trim();}).join(' '):'')));
  await page.addInitScript(fakeSpeech,scenario);
  await page.route('https://**/*',r=>r.abort());
  await page.goto(fileURL);await page.locator('#homeTitle').waitFor();await page.waitForTimeout(800);
