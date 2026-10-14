@@ -5,7 +5,8 @@
     "test": "node phase1.cjs && node server.cjs",
     "test:browser": "node browser.cjs",
     "test:e2e": "node e2e.cjs",
-    "test:upgrade": "node check.cjs && node --test upgrade.test.cjs && node upgrade-browser.cjs"
+    "test:upgrade": "node check.cjs && node --test upgrade.test.cjs && node upgrade-browser.cjs",
+    "test:live": "node live-lab.cjs"
   },
   "devDependencies": {
     "@sinonjs/fake-timers": "11.3.1",
