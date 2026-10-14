@@ -506,7 +506,7 @@
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
     {
-      "test": "iPhone 390x844 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "test": "iPhone 390x844 / fresh storage: default PIN unlocks lecturer mode",
       "status": "PASS",
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
@@ -576,7 +576,7 @@
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
     {
-      "test": "low-end Android 360x640 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "test": "low-end Android 360x640 / fresh storage: default PIN unlocks lecturer mode",
       "status": "PASS",
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
@@ -646,7 +646,7 @@
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
     {
-      "test": "desktop 1280x800 / fresh storage: PIN 7898 unlocks lecturer mode",
+      "test": "desktop 1280x800 / fresh storage: default PIN unlocks lecturer mode",
       "status": "PASS",
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
@@ -716,7 +716,7 @@
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },
     {
-      "test": "iPhone 390x844 / storage from old build: PIN 7898 unlocks lecturer mode",
+      "test": "iPhone 390x844 / storage from old build: default PIN unlocks lecturer mode",
       "status": "PASS",
       "how": "Chromium (@sparticuz/chromium), 4x CPU throttle, mocked en-GB speechSynthesis"
     },

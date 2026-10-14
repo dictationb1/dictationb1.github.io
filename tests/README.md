@@ -1,6 +1,6 @@
 # Smart Dictation Player tests
 
-These are **development-only** dependencies. `index.html` remains a standalone vanilla ES2017 app and loads none of them.
+These are **development-only** dependencies. `index.html` remains a standalone vanilla ES5-syntax app and loads none of them.
 
 From the repository root:
 
@@ -40,7 +40,7 @@ LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:e2e --pref
 
 `e2e.cjs` drives the real UI at 390x844, 360x640 and 1280x800 with 4x CPU throttling:
 fresh storage and storage written by the 1.0.0 build, Home render, build stamp in
-Settings, wrong PIN, PIN 7898, Monday list plus session number and day, the
+Settings, wrong PIN, the default PIN, Monday list plus session number and day, the
 "Are you ready?" screen and skippable countdown, every word spoken in order with a
 mocked en-GB `speechSynthesis`, auto-save, reload and resume, an anonymous comment
 with its result badge, the 30-second spam limit, a private lecturer message, and an
@@ -48,3 +48,10 @@ offline boot. `SDP_E2E_ONLY=old|offline|iphone|360|1280` runs a subset.
 
 This is Chromium only. WebKit and Firefox are **not** run: the sandbox has no such
 binary and cannot download one, so iPhone Safari and Firefox behaviour is unverified.
+
+## Current Phase 1 candidate
+
+See `../PHASE1_QA.md` for the current release blockers and actually observed outputs.
+`node --test tests/upgrade.test.cjs` (from the repository root) adds the parser, migration, voice, PIN and live-performance units. `node tests/upgrade-browser.cjs` runs Chromium at 6x CPU plus axe; `SDP_BROWSER=webkit` selects a real installed WebKit, with phone portrait/landscape viewports. A reduced viewport is only a keyboard proxy, not a real iOS keyboard test.
+
+The new `.github/workflows/ci.yml` installs both engines on CI. A workflow being configured is not evidence it passed. The old report and historical `qa/automated-results.json` do not describe the current candidate.

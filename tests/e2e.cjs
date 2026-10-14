@@ -1,3 +1,4 @@
+const DEFAULT_PIN = require('./test-pin.cjs');
 /* End-to-end flow in a real browser (Chromium via @sparticuz/chromium).
    WebKit and Firefox are NOT exercised here: this sandbox has no WebKit or
    Firefox binary and cannot download one. Everything below is Chromium. */
@@ -87,7 +88,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.4.0 (2026-10-13)'));
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.5.0-rc.1 (2026-10-14)'));
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();
@@ -97,9 +98,9 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets .shead button').click();
 
   /* unlock and set a Monday list + session number and day */
-  await unlock(page, '7898');
+  await unlock(page, DEFAULT_PIN);
   const unlocked = await page.locator('#adminHost').isVisible();
-  rec(label + ' PIN 7898 unlocks lecturer mode', unlocked);
+  rec(label + ' default PIN unlocks lecturer mode', unlocked);
   await page.getByRole('button', { name: 'Words & planner', exact: true }).click();
   const monday = page.locator('select[aria-label="Monday list"]');
   const opts = await monday.locator('option').all();

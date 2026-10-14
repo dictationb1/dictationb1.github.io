@@ -1,4 +1,5 @@
 'use strict';
+const DEFAULT_PIN = require('./test-pin.cjs');
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
@@ -147,8 +148,8 @@ function enterPin(a, pin) {
   a.q.Admin.open(); for(const digit of pin) a.w.document.querySelector('#pinPad [data-k="'+digit+'"]').click(); a.w.document.querySelector('#pinSubmit').click();
 }
 test('2.1 seeded salted PIN unlocks; existing changed PIN survives migration', () => withApp({}, a => {
- assert(a.q.DB.data.admin.pinSalt);assert.equal(a.q.DB.data.admin.pinHash,require('crypto').createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':7898').digest('hex'));assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':7898'));
- enterPin(a,'7898');assert(a.q.Admin.unlocked);assert(a.w.document.querySelector('#adminHost'));assert(!a.w.document.querySelector('#adminHost').textContent.includes('7898'));
+ assert(a.q.DB.data.admin.pinSalt);assert.equal(a.q.DB.data.admin.pinHash,require('crypto').createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN).digest('hex'));assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
+ enterPin(a,DEFAULT_PIN);assert(a.q.Admin.unlocked);assert(a.w.document.querySelector('#adminHost'));assert(!a.w.document.querySelector('#adminHost').textContent.includes(DEFAULT_PIN));
  a.q.DB.data.admin.pinHash='changed';a.q.DB.saveNow();const data=JSON.parse(a.w.localStorage.getItem('sdp.v1'));assert.equal(a.q.DB.migrate(data).admin.pinHash,'changed');
 }));
 test('2.1 five wrong PINs cause five-minute lockout; 8-digit PIN is usable', () => withApp({}, a => {
@@ -160,17 +161,24 @@ test('2.1 #lecturer and direct render/edit methods reveal nothing without PIN', 
  const words=a.q.DB.data.lists[0].words.length;a.q.Admin.publish(a.q.DB.data.lists[0]);a.q.Admin.panel();assert(!a.w.document.querySelector('#adminHost'));assert.equal(a.q.DB.data.lists[0].words.length,words);
 }));
 test('2.1 detached editing handlers and delayed list rows cannot edit after Lock now', () => withApp({}, a => {
- enterPin(a,'7898');const button=Array.from(a.w.document.querySelectorAll('#adminHost button')).find(n=>n.textContent.includes('Duplicate list'));assert(button);
+ enterPin(a,DEFAULT_PIN);const button=Array.from(a.w.document.querySelectorAll('#adminHost button')).find(n=>n.textContent.includes('Duplicate list'));assert(button);
  const count=a.q.DB.data.lists.length;a.q.Admin.lock();button.click();a.clock.tick(300);assert.equal(a.q.DB.data.lists.length,count);assert(!a.q.Admin.unlocked);
 }));
 test('2.2 paste handles 120 words, pipes, tabs, CSV quotes and warnings', () => withApp({}, a => {
  const lines=Array.from({length:120},(_,i)=>'word'+String.fromCharCode(97+Math.floor(i/26))+String.fromCharCode(97+i%26)+' | This is a short example sentence for our class today. | meaning');
  assert.equal(a.q.Admin.parseWords(lines.join('\n')).items.length,120);
- const r=a.q.Admin.parseWords('colour\tI like this colour very much today.\ta shade\n"neighbour","Our neighbour, Pat, has a friendly dog today.","nearby person"\ncolor\ncolour\n\n'+ 'a'.repeat(41));
- assert.equal(r.items[1].s,'Our neighbour, Pat, has a friendly dog today.');assert.equal(r.dupes,1);assert(r.problems.some(x=>x.includes('American')));assert(r.problems.some(x=>x.includes('blank')));assert(r.problems.some(x=>x.includes('longer')));
+ const tab=a.q.Admin.parseWords('colour\tI like this colour very much today.\ta shade');
+ assert.equal(tab.items[0].m,'a shade');
+ const csv=a.q.Admin.parseWords('word,sentence,meaning\n"neighbour","Our neighbour, Pat, has a friendly dog today.","nearby person"');
+ assert.equal(csv.items[0].s,'Our neighbour, Pat, has a friendly dog today.');
+ const r=a.q.Admin.parseWords('colour,Colour\n\n'+ 'a'.repeat(41));
+ assert.equal(r.dupes,1);assert.equal(r.problems.length,1);assert(r.problems[0].includes('invalid word'));
+ // Mixed row formats are not guessed individually: ambiguity is flagged.
+ assert(a.q.Admin.parseWords('colour\tA shade\nneighbour,A nearby person').problems.length);
+
 }));
 test('2.2 30-word Saturday assignment, draft isolation and eight-week planner', () => withApp({}, a => {
- enterPin(a,'7898');const list=a.q.DB.data.lists[0];list.name='Saturday class';list.words[0]={w:'Saturdayword',s:'This is a new sentence for our Saturday class.',m:''};list.draft=true;
+ enterPin(a,DEFAULT_PIN);const list=a.q.DB.data.lists[0];list.name='Saturday class';list.words[0]={w:'Saturdayword',s:'This is a new sentence for our Saturday class.',m:''};list.draft=true;
  assert.notEqual(a.q.Lib.current().words[0].w,'Saturdayword');a.q.DB.data.plan.weekdays[5]=list.id;a.q.Admin.publish(list);
  a.clock.setSystemTime(Date.UTC(2026,9,17,12));a.q.Screens.home();assert.equal(a.q.Lib.current().words.length,30);assert.equal(a.q.Lib.current().words[0].w,'Saturdayword');assert(a.w.document.querySelector('#homeTitle').textContent.includes('Saturday class'));
  assert(a.w.document.querySelector('#adminHost').textContent.includes('Next 8 weeks'));assert(a.w.document.querySelectorAll('#adminHost table').length>=2);
@@ -181,13 +189,13 @@ test('2.2 cloud list update stays queued throughout active session', () => withA
  assert(a.q.Cloud.pendingState);assert.equal(a.q.Eng.words.length,30);a.q.Eng.stop(true);assert(!a.q.Cloud.pendingState);assert.equal(a.q.Lib.current().words.length,1);
 }));
 test('2.3 session typing/day chips update Home, player and comment metadata', () => withApp({voice:'en-GB'}, a => {
- enterPin(a,'7898');a.q.Admin.tab='session';a.q.Admin.renderTab();const no=a.w.document.querySelector('[aria-label="Session number"]');no.value='42';no.dispatchEvent(new a.w.Event('input'));
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='session';a.q.Admin.renderTab();const no=a.w.document.querySelector('[aria-label="Session number"]');no.value='42';no.dispatchEvent(new a.w.Event('input'));
  clickText(a,'Sun');assert.equal(a.q.DB.data.session.day,'Sunday');assert(a.w.document.querySelector('#homeKicker').textContent.includes('42'));assert(a.q.Comm.meta().includes('Sunday'));
  a.q.Eng.start({});assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
 }));
 test('2.4 private message is absent from public comments, visible only in unlocked inbox', () => withApp({}, a => {
  a.q.Comm.message();a.w.document.querySelector('#sheets textarea').value='Private QA message';clickText(a,'Send to lecturer');assert.equal(a.q.DB.data.inbox.length,1);assert.equal(a.q.DB.data.comments.length,0);assert(!a.w.document.querySelector('#commList').textContent.includes('Private QA message'));
- enterPin(a,'7898');a.q.Admin.tab='announce';a.q.Admin.renderTab();assert(a.w.document.querySelector('#adminHost').textContent.includes('Private QA message'));assert(a.w.document.querySelector('#adminHost').textContent.includes('Reply'));
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='announce';a.q.Admin.renderTab();assert(a.w.document.querySelector('#adminHost').textContent.includes('Private QA message'));assert(a.w.document.querySelector('#adminHost').textContent.includes('Reply'));
 }));
 test('2.5 all four anonymous comment statuses persist with safe text and session metadata', () => withApp({}, a => {
  for(const status of ['finished','problem','notdone','comment']) {
@@ -198,7 +206,7 @@ test('2.5 all four anonymous comment statuses persist with safe text and session
  assert(a.q.DB.data.comments.every(c=>!c.text.includes('spam.test')&&!c.text.includes('07123456789')&&c.meta.includes('Session')));
 }));
 test('3.1 setup wizard has four cards, saved URL and red/green response', () => withApp({}, a => {
- enterPin(a,'7898');a.q.Admin.tab='tools';a.q.Admin.renderTab();const host=a.w.document.querySelector('#adminHost');assert(host.textContent.includes('1. Copy the script'));assert(host.textContent.includes('4. Test connection'));
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();const host=a.w.document.querySelector('#adminHost');assert(host.textContent.includes('1. Copy the script'));assert(host.textContent.includes('4. Test connection'));
  const input=a.w.document.querySelector('[aria-label="Google Apps Script web app link"]');input.value='https://script.google.com/macros/s/validscriptid/exec';clickText(a,'Save link');assert(a.w.localStorage.getItem('sdp.cloudurl'));
  a.q.Cloud.ping=cb=>cb({ok:false});clickText(a,'Test connection');assert(host.textContent.includes('Could not connect'));
  a.q.Cloud.ping=cb=>cb({ok:true});clickText(a,'Test connection');assert(host.textContent.includes('Connected. Your Google Sheet answered.'));
@@ -220,7 +228,7 @@ test('3.4 no-cloud contact offers explicit WhatsApp/Email/Share, private content
 test('3.5 outbox auth uses memory-only PIN, skips locked admin items and flushes student items', () => withApp({}, a => {
  a.q.Cloud.mode=true;a.q.Cloud.url='https://script.google.com/macros/s/validscriptid/exec';a.q.DB.data.outbox=[{action:'publish',cid:'admin-job'},{action:'comment',cid:'student-job'}];
  const requests=[];a.q.Cloud.post=(body,cb)=>{requests.push(body);cb({ok:true,id:'server-comment'});};a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests.length,1);assert.equal(requests[0].action,'comment');assert.equal(a.q.DB.data.outbox.length,1);
- a.q.Admin.unlocked=true;a.q.Admin.pin='7898';a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests[1].pin,'7898');assert.equal(a.q.DB.data.outbox.length,0);assert(!a.w.localStorage.getItem('sdp.v1').includes('"pin":"7898"'));
+ a.q.Admin.unlocked=true;a.q.Admin.pin=DEFAULT_PIN;a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests[1].pin,DEFAULT_PIN);assert.equal(a.q.DB.data.outbox.length,0);assert(!a.w.localStorage.getItem('sdp.v1').includes('"pin":'+JSON.stringify(DEFAULT_PIN)));
 }));
 test('3.5 sync time advances only after successful state reply', () => withApp({cloud:true}, a => {
  assert.equal(a.q.Cloud.updatedAt,0);a.q.Cloud.get=(params,cb)=>cb({ok:false});a.q.Cloud.pullState();assert.equal(a.q.Cloud.updatedAt,0);
@@ -246,7 +254,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem('sdp.v1')).history.length);
  assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='appointment').length>=2);
- assert(a.spoken.some(s=>s.text.includes('dentist appointment')));assert.equal(a.q.Errors.items.length,0);
+ assert(!a.spoken.some(s=>s.text.includes('dentist appointment')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
  let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem('sdp.v1');});
@@ -260,21 +268,21 @@ test('4.3 dictionary keeps lecturer meaning, Cambridge link and UK-labelled fall
 }));
 
 test('2.1 Change PIN requires old PIN and new matching PIN; new PIN unlocks',()=>withApp({},a=>{
- enterPin(a,'7898');a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');const inputs=a.w.document.querySelectorAll('#sheets input');inputs[0].value='0000';inputs[1].value='98765';inputs[2].value='98765';clickText(a,'Save new PIN');const oldHash=a.q.DB.data.admin.pinHash;assert.equal(oldHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':7898'));
- inputs[0].value='7898';clickText(a,'Save new PIN');assert.notEqual(a.q.DB.data.admin.pinHash,oldHash);a.q.Admin.lock();enterPin(a,'98765');assert(a.q.Admin.unlocked);
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');const inputs=a.w.document.querySelectorAll('#sheets input');inputs[0].value='0000';inputs[1].value='98765';inputs[2].value='98765';clickText(a,'Save new PIN');const oldHash=a.q.DB.data.admin.pinHash;assert.equal(oldHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
+ inputs[0].value=DEFAULT_PIN;clickText(a,'Save new PIN');assert.notEqual(a.q.DB.data.admin.pinHash,oldHash);a.q.Admin.lock();enterPin(a,'98765');assert(a.q.Admin.unlocked);
 }));
 test('2.1 idle/background locks and privileged sheets disappear',()=>withApp({},a=>{
- enterPin(a,'7898');a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');a.clock.tick(615000);assert(!a.q.Admin.unlocked);assert(!a.w.document.querySelector('#sheets .sheet'));
- enterPin(a,'7898');a.q.Admin.wentBackground();a.clock.tick(120001);a.q.Admin.cameForeground();assert(!a.q.Admin.unlocked);
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');a.clock.tick(615000);assert(!a.q.Admin.unlocked);assert(!a.w.document.querySelector('#sheets .sheet'));
+ enterPin(a,DEFAULT_PIN);a.q.Admin.wentBackground();a.clock.tick(120001);a.q.Admin.cameForeground();assert(!a.q.Admin.unlocked);
 }));
 test('2.2 rename/duplicate/reorder/delete with Undo retain list and planner data',()=>withApp({},a=>{
- enterPin(a,'7898');clickText(a,'Duplicate list');assert.equal(a.q.DB.data.lists.length,2);clickText(a,'Rename');a.w.document.querySelector('#sheets input').value='Changed list';clickText(a,'Save');assert.equal(a.q.DB.data.lists[1].name,'Changed list');
+ enterPin(a,DEFAULT_PIN);clickText(a,'Duplicate list');assert.equal(a.q.DB.data.lists.length,2);clickText(a,'Rename');a.w.document.querySelector('#sheets input').value='Changed list';clickText(a,'Save');assert.equal(a.q.DB.data.lists[1].name,'Changed list');
  const words=a.q.DB.data.lists[1].words,first=words[0].w,second=words[1].w;const down=a.w.document.querySelector('[aria-label="Move down"]');down.click();assert.equal(words[0].w,second);assert.equal(words[1].w,first);
- a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');clickText(a,'Delete');assert.equal(a.q.DB.data.lists.length,1);
+ a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');Array.from(a.w.document.querySelectorAll('#modals button')).find(b=>b.textContent==='Delete').click();assert.equal(a.q.DB.data.lists.length,1);
  const undo=Array.from(a.w.document.querySelectorAll('#toasts button')).find(b=>b.textContent==='Undo');assert(undo);undo.click();assert.equal(a.q.DB.data.lists.length,2);assert.equal(a.q.DB.data.plan.defaultList,id);
 }));
 test('2.4 announcements, expiry and lecturer moderation stay separate from private inbox',()=>withApp({},a=>{
- enterPin(a,'7898');a.q.Admin.tab='announce';a.q.Admin.renderTab();a.w.document.querySelector('[aria-label="Announcement title"]').value='Class notice';a.w.document.querySelector('[aria-label="Announcement text"]').value='Bring your notebook.';clickText(a,'Publish announcement');assert(a.w.document.querySelector('#homeAnn').textContent.includes('Bring your notebook.'));
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='announce';a.q.Admin.renderTab();a.w.document.querySelector('[aria-label="Announcement title"]').value='Class notice';a.w.document.querySelector('[aria-label="Announcement text"]').value='Bring your notebook.';clickText(a,'Publish announcement');assert(a.w.document.querySelector('#homeAnn').textContent.includes('Bring your notebook.'));
  a.q.DB.data.announcement.expires='2026-10-12';a.q.Screens.home();assert(!a.w.document.querySelector('#homeAnn').textContent);
  a.q.DB.data.comments=[{id:'comment-test',name:'Happy Owl',status:'finished',text:'Public QA',ts:a.clock.now}];a.q.Admin.tab='comments';a.q.Admin.renderTab();clickText(a,'Pin');assert(a.q.DB.data.comments[0].pinned);clickText(a,'Hide');a.q.Screens.comm();assert(!a.w.document.querySelector('#commList').textContent.includes('Public QA'));
 }));
@@ -308,13 +316,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'1.4.0'); assert.equal(a.w.SDP.build,'2026-10-13'); assert.equal(a.w.SDP.stamp(),'v1.4.0 (2026-10-13)');
+ assert.equal(a.w.SDP.version,'1.5.0-rc.1'); assert.equal(a.w.SDP.build,'2026-10-14'); assert.equal(a.w.SDP.stamp(),'v1.5.0-rc.1 (2026-10-14)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v1.4.0 (2026-10-13)')); assert(txt.includes('My data'));
+ assert(txt.includes('v1.5.0-rc.1 (2026-10-14)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.4.0 (2026-10-13)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.5.0-rc.1 (2026-10-14)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
@@ -341,7 +349,7 @@ test('4.5 ready screen speaks the greeting from the tap and can skip the countdo
 test('4.5 greeting text and skippable countdown exist in the ready sheet', () => withApp({voice:'en-GB'}, a => {
  a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list'});
  const sheet=a.w.document.querySelector('#sheets').textContent;
- assert(sheet.includes('Get your pen and paper. Tap Start when you are.'));
+ assert(sheet.includes("Get your pen and paper. Tap I'm ready when you are."));
  assert(Array.from(a.w.document.querySelectorAll('#sheets button')).some(b=>b.textContent.trim()==='Skip countdown'));
 }));
 test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a => {

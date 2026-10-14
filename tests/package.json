@@ -4,13 +4,15 @@
   "scripts": {
     "test": "node phase1.cjs && node server.cjs",
     "test:browser": "node browser.cjs",
-    "test:e2e": "node e2e.cjs"
+    "test:e2e": "node e2e.cjs",
+    "test:upgrade": "node check.cjs && node --test upgrade.test.cjs && node upgrade-browser.cjs"
   },
   "devDependencies": {
-    "jsdom": "22.1.0",
-    "acorn": "8.15.0",
     "@sinonjs/fake-timers": "11.3.1",
-    "playwright-core": "1.56.0",
-    "@sparticuz/chromium": "138.0.2"
+    "@sparticuz/chromium": "138.0.2",
+    "acorn": "8.15.0",
+    "axe-core": "4.10.3",
+    "jsdom": "22.1.0",
+    "playwright-core": "1.56.0"
   }
 }
