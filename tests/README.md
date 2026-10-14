@@ -1,3 +1,25 @@
+# v2 candidate tests (release gate is NOT green)
+
+Run `npm ci --prefix tests`, then `npm test --prefix tests` from the repository root.
+The v2 command runs ES2017/function inventory, before/after client regressions,
+Apps Script mocks, and acceptance checks. It currently **exits nonzero** for the
+missing full weekend planner (T14) and self-test UI (T26). Do not merge this candidate.
+
+`npm run test:browser:v2 --prefix tests` runs Chromium, including a local HTTP mock
+bridged to two isolated browser contexts, mocked UK speech, and 4x CPU throttling.
+Use the library extraction instructions below if Chromium needs NSS libraries.
+Set `SDP_TEST_PIN` in the shell environment to run the configured local PIN browser
+check. The real PIN must not be committed. No test dependencies are loaded by the app.
+`node tests/gas-mock-v2.cjs` serves the development mock API on port 8787.
+
+Evidence and limitations: `../V2_UPGRADE_REPORT.md` and `../qa/v2/`.
+The historical v1 suite below remains as `npm run test:legacy --prefix tests`; it
+cannot execute in this clone because commit `7577968` is absent. Its old backup,
+Ready, default-sentence and raw-PIN contracts also differ from the v2 requirements.
+Historical instructions below describe those old tests, not proof of the v2 build.
+
+---
+
 # Smart Dictation Player tests
 
 These are **development-only** dependencies. `index.html` remains a standalone vanilla ES2017 app and loads none of them.
@@ -40,7 +62,7 @@ LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:e2e --pref
 
 `e2e.cjs` drives the real UI at 390x844, 360x640 and 1280x800 with 4x CPU throttling:
 fresh storage and storage written by the 1.0.0 build, Home render, build stamp in
-Settings, wrong PIN, PIN 7898, Monday list plus session number and day, the
+Settings, wrong PIN, PIN the lecturer PIN, Monday list plus session number and day, the
 "Are you ready?" screen and skippable countdown, every word spoken in order with a
 mocked en-GB `speechSynthesis`, auto-save, reload and resume, an anonymous comment
 with its result badge, the 30-second spam limit, a private lecturer message, and an

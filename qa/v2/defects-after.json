@@ -1,0 +1,74 @@
+[
+  {
+    "id": "D1 automatic sync without a tap",
+    "status": "PASS"
+  },
+  {
+    "id": "D2 Publish previews unsaved editor words",
+    "status": "PASS"
+  },
+  {
+    "id": "D3 sync preserves personal settings and lecturer draft",
+    "status": "PASS"
+  },
+  {
+    "id": "D4 fresh defaults sentence off, two repeats",
+    "status": "PASS"
+  },
+  {
+    "id": "D5 past practice uses archived words and hides future",
+    "status": "PASS"
+  },
+  {
+    "id": "D6 paper finish is unscored and not sent before Done",
+    "status": "PASS"
+  },
+  {
+    "id": "D7 Ready ignores Escape and resets beats",
+    "status": "PASS"
+  },
+  {
+    "id": "D9 finish early includes only dictated words",
+    "status": "PASS"
+  },
+  {
+    "id": "D10 next word cancels speech",
+    "status": "PASS"
+  },
+  {
+    "id": "D11 sent private messages are not unread for sender",
+    "status": "PASS"
+  },
+  {
+    "id": "D13 quota error does not permanently disable storage",
+    "status": "PASS"
+  },
+  {
+    "id": "D14 failed item does not block next item",
+    "status": "PASS"
+  },
+  {
+    "id": "D15 dictionary allows any word in This list",
+    "status": "PASS"
+  },
+  {
+    "id": "D12 queued admin sends retain credential after panel lock",
+    "status": "PASS"
+  },
+  {
+    "id": "D13 backup retains previous version rather than current",
+    "status": "PASS"
+  },
+  {
+    "id": "D15 personal RESET needs no lecturer unlock and preserves lists",
+    "status": "PASS"
+  },
+  {
+    "id": "D16 lecturer class results show averages and device breakdown",
+    "status": "PASS"
+  },
+  {
+    "id": "D7 first-run tour cannot replace an active Ready sheet",
+    "status": "PASS"
+  }
+]

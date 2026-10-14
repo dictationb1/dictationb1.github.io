@@ -111,7 +111,7 @@ The error log is in memory for this page, not permanent. Copy it before reloadin
 
 1. On the published HTTPS page, unlock lecturer mode and open **Settings & tools**.
 2. Tap **Copy script**. Create a Google Sheet; open **Extensions → Apps Script** and replace `Code.gs` with the copied source.
-3. In **Project Settings → Script properties**, set `ADMIN_PIN` to **7898** initially, then change it later. This setup value is not displayed by the app UI. Do not put it in a student link.
+3. In **Project Settings → Script properties**, set `ADMIN_PIN` to **the lecturer PIN** initially, then change it later. This setup value is not displayed by the app UI. Do not put it in a student link.
 4. Deploy a **Web app**, execute as **Me**, access **Anyone**; authorise the project and copy the `/exec` URL. Some school/Workspace accounts do not allow Anyone access.
 5. Paste/save the URL and tap **Test connection**. A green result verifies a ping, not every feature.
 6. **Lock now and unlock again** after changing from Local to Cloud mode: the server must check the PIN before queued lecturer writes can send. Reopen/redeploy after Apps Script source changes.

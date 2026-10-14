@@ -1,0 +1,92 @@
+[
+  {
+    "id": "D1 automatic sync without a tap",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(a.requests.some(r=>r.url&&r.url.includes('action=state')))\n"
+  },
+  {
+    "id": "D2 Publish previews unsaved editor words",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(confirmation.text.includes('2 words'))\n"
+  },
+  {
+    "id": "D3 sync preserves personal settings and lecturer draft",
+    "status": "FAIL",
+    "detail": "false == true"
+  },
+  {
+    "id": "D4 fresh defaults sentence off, two repeats",
+    "status": "FAIL",
+    "detail": "true == false"
+  },
+  {
+    "id": "D5 past practice uses archived words and hides future",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(!a.w.document.querySelector('#homeSessions').textContent.includes('future'))\n"
+  },
+  {
+    "id": "D6 paper finish is unscored and not sent before Done",
+    "status": "FAIL",
+    "detail": "0 == null"
+  },
+  {
+    "id": "D7 Ready ignores Escape and resets beats",
+    "status": "FAIL",
+    "detail": "1 == 0"
+  },
+  {
+    "id": "D9 finish early includes only dictated words",
+    "status": "FAIL",
+    "detail": "30 == 1"
+  },
+  {
+    "id": "D10 next word cancels speech",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(cancelled>0)\n"
+  },
+  {
+    "id": "D11 sent private messages are not unread for sender",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(!badge||badge.classList.contains('hidden'))\n"
+  },
+  {
+    "id": "D13 quota error does not permanently disable storage",
+    "status": "FAIL",
+    "detail": "null == 'b'"
+  },
+  {
+    "id": "D14 failed item does not block next item",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(sent.includes('good'))\n"
+  },
+  {
+    "id": "D15 dictionary allows any word in This list",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(a.w.document.querySelector('#screen-dict').textContent.includes('xyz'))\n"
+  },
+  {
+    "id": "D12 queued admin sends retain credential after panel lock",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(sent)\n"
+  },
+  {
+    "id": "D13 backup retains previous version rather than current",
+    "status": "FAIL",
+    "detail": "'Later' == 'Earlier'"
+  },
+  {
+    "id": "D15 personal RESET needs no lecturer unlock and preserves lists",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(input)\n"
+  },
+  {
+    "id": "D16 lecturer class results show averages and device breakdown",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(host.textContent.includes('75%'))\n"
+  },
+  {
+    "id": "D7 first-run tour cannot replace an active Ready sheet",
+    "status": "FAIL",
+    "detail": "The expression evaluated to a falsy value:\n\n  assert(a.w.document.querySelector('#readyNum'))\n"
+  }
+]
