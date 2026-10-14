@@ -929,10 +929,11 @@ function rows(name) {
 
 function append(name, headers, values) {
   var s = sheet(name, headers);
-  s.appendRow(values.map(function (value) { return typeof value === 'string' && /^[=+\-@]/.test(value) ? "'" + value : value; }));
+  s.appendRow(values.map(safeCell));
   return s.getLastRow();
 }
 
+function safeCell(value) { return typeof value === 'string' && /^[=+\-@]/.test(value) ? "'" + value : value; }
 function getCfg(key) {
   var s = ss().getSheetByName(TAB.Config);
   if (!s) return '';
@@ -1221,7 +1222,11 @@ function addComment(body, cid) {
   var autoKey = '';
   if (body.auto) {
     if (!body.deviceId || !body.sessionDate || !body.removeKey) return {ok:false,err:'bad_payload'};
-    autoKey = pinDigest(clip(body.deviceId,60) + '|' + clip(body.sessionDate,20) + '|' + clip(body.sessionNo,16));
+    var approved = lastSessions(10).filter(function (session) { return session.date === body.sessionDate && session.no === body.sessionNo; })[0];
+    if (!approved) return {ok:false,err:'unknown_session'};
+    body.status = 'finished';
+    body.text = cleanPublic(body.name,24) + ' finished Session ' + approved.no + ' (' + approved.day + ')';
+    autoKey = pinDigest(clip(body.deviceId,60) + '|' + approved.date + '|' + approved.no);
     for (var ai=0; ai<old.length; ai++) if (String(old[ai][11]) === autoKey) return {ok:true,id:String(old[ai][0]),dup:true};
   } else if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
   var status = String(body.status || 'comment');
@@ -1352,7 +1357,7 @@ function moderate(body) {
     else if (what === 'unhide') s.getRange(row, 9).setValue('no');
     else if (what === 'pin') s.getRange(row, 7).setValue(typeof body.pinned === 'boolean' ? (body.pinned ? 'yes' : 'no') : (String(data[i][6]) === 'yes' ? 'no' : 'yes'));
     else if (what === 'report') s.getRange(row, 8).setValue('yes');
-    else if (what === 'reply') s.getRange(row, 10).setValue(clip(body.text, 500));
+    else if (what === 'reply') s.getRange(row, 10).setValue(safeCell(clip(body.text, 500)));
     else if (what === 'delete') s.deleteRow(row);
     else return { ok: false, err: 'unknown op' };
     return { ok: true };
@@ -1362,11 +1367,9 @@ function moderate(body) {
 
 /* public, rate-limited: a student flags a comment for the lecturer */
 function reportComment(body, cid) {
-  if (rateLimited(cid, 'rep', 10, 20)) return { ok: false, err: 'rate' };
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000); } catch (err) {}
-  try { return moderate({ id: body.id, op: 'report' }); }
-  finally { try { lock.releaseLock(); } catch (err2) {} }
+  if (rateLimited(clip(body.deviceId || cid, 60), 'rep', 10, 20)) return { ok: false, err: 'rate' };
+  // handlePost already holds the write lock. Do not acquire it twice.
+  return moderate({ id: body.id, op: 'report' });
 }
 
 function inboxAction(body) {
@@ -1381,7 +1384,7 @@ function inboxAction(body) {
     if (what === 'read') s.getRange(row, 7).setValue('yes');
     else if (what === 'unread') s.getRange(row, 7).setValue('no');
     else if (what === 'delete') s.deleteRow(row);
-    else if (what === 'reply') s.getRange(row, 9).setValue(clip(body.text, 600));
+    else if (what === 'reply') s.getRange(row, 9).setValue(safeCell(clip(body.text, 600)));
     else return { ok: false, err: 'unknown op' };
     return { ok: true };
   }

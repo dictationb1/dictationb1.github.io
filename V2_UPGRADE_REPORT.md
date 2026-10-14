@@ -88,13 +88,13 @@ calls/Siri remain device checks. NOT RUN can include a passing subset: see the l
 | T26 | FAIL | Executed: full Run self-test action absent; P1 deferred |
 | T27 | PASS | Build stamp in Settings (Chromium), diagnostics and fatal card (VM) |
 | T28 | PASS | Existing lists/history/comments/inbox/outbox/snapshot retained by schema migration fixture |
-| T29 | PASS | Seven local Apps Script/HTTP checks green; not proof of Google deployment/runtime |
+| T29 | PASS | Eight local Apps Script/HTTP checks green; not proof of Google deployment/runtime |
 
 ## Execution details and static audit
 
 - `npm ci --prefix tests`: completed, audit reported zero dependency vulnerabilities.
 - `SDP_TEST_PIN=<PIN> npm test --prefix tests`: ES2017/inventory, 18 client regressions,
-  seven server checks pass; acceptance gate exits 1 for T14/T26.
+  eight server checks pass; acceptance gate exits 1 for T14/T26.
 - `LD_LIBRARY_PATH=... SDP_TEST_PIN=<PIN> node tests/browser-v2.cjs`: Chromium execution;
   first runs exposed test timing assumptions, corrected to wait for the existing
   90 ms speech and 250 ms result-display delays. The latest run passes 13 scenarios.

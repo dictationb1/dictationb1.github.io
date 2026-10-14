@@ -24,6 +24,10 @@
     "status": "PASS"
   },
   {
+    "id": "Security follow-up: formula-safe replies and auto-post limit cannot use invented sessions",
+    "status": "PASS"
+  },
+  {
     "id": "C10 HTTP JSON shim round trip",
     "status": "PASS"
   }

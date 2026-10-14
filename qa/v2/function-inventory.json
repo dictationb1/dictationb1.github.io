@@ -1,6 +1,6 @@
 {
   "beforeBytes": 361624,
-  "afterBytes": 384545,
+  "afterBytes": 384845,
   "removed": [
     "Results.saveSelf"
   ],
@@ -22,6 +22,7 @@
     "myReplies",
     "pinDigest",
     "removeOwn",
+    "safeCell",
     "serverDate",
     "updateResult"
   ],
@@ -724,6 +725,7 @@
     "respond",
     "rotr",
     "rows",
+    "safeCell",
     "sdpTokens",
     "seen",
     "serverDate",
