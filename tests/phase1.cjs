@@ -67,8 +67,15 @@ function withApp(opts, fn, html) {const a=harness(html,opts);try{fn(a);}finally{
 /* v2.0.0: boot may only read the two cache-busted static files next to index.html.
    Any other request at boot (especially a cloud call) is still a regression. */
 function bootTraffic(a) {
-  return a.requests.every(r => r.method === 'fetch' && /^\.\/data\/(version|session)\.json\?t=\d+$/.test(r.url)) &&
-    !a.requests.some(r => r.method !== 'fetch');
+  /* v2.0.0 keeps the Phase-1 rule - the page sends nothing on load - and adds
+     the documented free live channel: the two cached ntfy reads (the published
+     state and the community feed) next to the two static ./data files. A POST,
+     an Apps Script call or any other host is still a failure. */
+  const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
+  const staticFile = /^\.\/data\/(version|session)\.json\?t=\d+$/;
+  return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url))) &&
+    !a.requests.some(r => r.method !== 'fetch') &&
+    !a.requests.some(r => /script\.google\.com|api\.github\.com/.test(r.url));
 }
 function clickText(a, text) {const b=Array.from(a.w.document.querySelectorAll('button')).find(n => n.textContent.trim()===text); assert(b, 'button: '+text); b.click(); return b;}
 
@@ -146,7 +153,7 @@ test('1.5 injected script removed, gas-source retained, 20 sections kept', () =>
  const gas=s=>s.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];assert(gas(current).includes("function handlePost(e)")); assert(gas(current).includes("function adminOk(body)"));
  const sections=Array.from(current.matchAll(/SECTION (\d+) -/g)).map(m=>Number(m[1]));assert.deepEqual(sections,Array.from({length:20},(_,i)=>i+1));
 });
-test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=2 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
+test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=4 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
 test('1.6 invalid dates and malformed backup import are guarded', () => withApp({}, a => {
  assert(!a.q.U.fmtDate(new a.w.Date('invalid')).includes('NaN'));assert(!a.q.U.fmtTime(new a.w.Date('invalid')).includes('NaN'));
  for(const text of ['null','[]','{"lists":{}}','{bad']) assert.equal(a.q.DB.importAll(text).ok,false);
@@ -237,7 +244,7 @@ test('3.1 setup wizard has four cards, saved URL and red/green response', () => 
  a.q.Cloud.ping=cb=>cb({ok:true});clickText(a,'Test connection');assert(host.textContent.includes('Connected. Your Google Sheet answered.'));
 }));
 test('3.2 student hash connects automatically and is cleared without load requests', () => withApp({hash:'#cloud=validscriptid'}, a => {
- assert(a.q.Cloud.mode);assert.equal(a.w.location.hash,'');assert(a.requests.length<=2 && bootTraffic(a), JSON.stringify(a.requests));assert(a.w.localStorage.getItem('sdp.cloudurl').includes('validscriptid'));
+ assert(a.q.Cloud.mode);assert.equal(a.w.location.hash,'');assert(a.requests.length<=4 && bootTraffic(a), JSON.stringify(a.requests));assert(a.w.localStorage.getItem('sdp.cloudurl').includes('validscriptid'));
 }));
 test('3.3 Unicode link round-trip, explicit preview/Add and split-part assembly', () => {
  let links;withApp({}, a => {a.q.DB.data.announcement={title:'Class notice',text:'Café practice'};links=a.q.Links.listLinks(a.q.Lib.current());assert(links.length>1);assert(links.every(l=>l.length<=2000));const item=a.q.Links.decode(links[0].split('#list=')[1]);assert.equal(item.a.text,'Café practice');});
@@ -273,7 +280,15 @@ test('4.1 a missing UK voice never blocks: any English voice speaks and no sheet
 }));
 test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused', () => withApp({voice:'en-GB'}, a => {
  a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.spoken.length);assert(a.spoken.every(s=>s.lang==='en-GB'&&s.voice==='en-GB'));
- const parsed=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/us.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);assert.equal(parsed.audio,'');assert.equal(parsed.ipa,'');
+ const parsed=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/us.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);
+ assert.equal(parsed.audio,'https://audio.example/us.mp3');assert.equal(parsed.ukSource,false);
+ assert.equal(a.q.Speech.isBritishAudio('https://audio.example/us.mp3'),false);
+ assert(a.q.Speech.isBritishAudio('https://audio.example/word-uk.mp3'));
+ a.q.DB.data.dictCache['word']={audio:'https://audio.example/word-us.mp3',ukSource:false,ts:Date.now()};
+ assert(/--_gb_1\.mp3$/.test(a.q.Speech.mp3For('word')),'a non-UK recording never becomes the dictation voice: '+a.q.Speech.mp3For('word'));
+ a.q.DB.data.dictCache['word'].audio='https://audio.example/word-uk.mp3';
+ assert.equal(a.q.Speech.mp3For('word'),'https://audio.example/word-uk.mp3','a real British recording wins');
+ delete a.q.DB.data.dictCache['word'];
  const uk=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/word-us.mp3'},{text:'/uk/',audio:'https://audio.example/word-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);assert.equal(uk.ipa,'uk');assert(uk.audio.endsWith('-uk.mp3'));
 }));
 test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, result saved', () => withApp({voice:'en-GB'}, a => {
@@ -312,7 +327,13 @@ test('2.1 idle/background locks and privileged sheets disappear',()=>withApp({},
 }));
 test('2.2 rename/duplicate/reorder/delete with Undo retain list and planner data',()=>withApp({},a=>{
  enterPin(a,DEFAULT_PIN);clickText(a,'Duplicate list');assert.equal(a.q.DB.data.lists.length,2);clickText(a,'Rename');a.w.document.querySelector('#sheets input').value='Changed list';clickText(a,'Save');assert.equal(a.q.DB.data.lists[1].name,'Changed list');
- const words=a.q.DB.data.lists[1].words,first=words[0].w,second=words[1].w;const down=a.w.document.querySelector('[aria-label="Move down"]');down.click();assert.equal(words[0].w,second);assert.equal(words[1].w,first);
+ const words=a.q.DB.data.lists[1].words,first=words[0].w,second=words[1].w;
+ /* v2.0.0 has ONE word table: reorder the row in it, then publish the list */
+ const down=a.w.document.querySelector('[aria-label="Down word 1"]');assert(down,'the single table offers a Down control');down.click();
+ assert(!words[0].w||words[0].w===first,'the draft reorder does not touch the published list before saving');
+ clickText(a,'Save & Publish to All Students');
+ const republished=a.q.DB.data.lists[1].words;
+ assert.equal(republished[0].w,second);assert.equal(republished[1].w,first);
  a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');Array.from(a.w.document.querySelectorAll('#modals button')).find(b=>b.textContent==='Delete').click();assert.equal(a.q.DB.data.lists.length,1);
  const undo=Array.from(a.w.document.querySelectorAll('#toasts button')).find(b=>b.textContent==='Undo');assert(undo);undo.click();assert.equal(a.q.DB.data.lists.length,2);assert.equal(a.q.DB.data.plan.defaultList,id);
 }));
