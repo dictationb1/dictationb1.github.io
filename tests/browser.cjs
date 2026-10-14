@@ -23,14 +23,20 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  }
  for(const width of [390,320,768]) {
   const context=await browser.newContext({viewport:{width,height:844},deviceScaleFactor:1});
-  const page=await context.newPage(),requests=[],errors=[];
-  page.on('request',r=>{if(r.url().startsWith('http'))requests.push(r.url())});page.on('pageerror',e=>errors.push(e.message));
+  const page=await context.newPage(),requests=[],posts=[],errors=[];
+  page.on('request',r=>{if(r.url().startsWith('http'))requests.push(r.url());if(r.method()!=='GET')posts.push(r.method()+' '+r.url())});page.on('pageerror',e=>errors.push(e.message));
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
   await page.waitForTimeout(1500);
-  /* v2.0.0 may only read its two cache-busted static files at boot (relative to a
-     file:// page, so nothing here is even http). No cloud call, ever. */
-  const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u));
-  results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests});
+  /* v2.0.0 may only read its two cache-busted static files (relative to a
+     file:// page, so not even http) plus the two documented read-only live
+     channel reads - the cached ntfy state and community feeds - at boot.
+     Nothing is ever POSTed, and no Apps Script, GitHub or other host is
+     contacted: publishing and completions wait for a real user action. */
+  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
+  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
+  const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!live.test(u)&&!sse.test(u));
+  const otherHosts=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
+  results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
   await closeSheet(page);
   await unlockPin(page);
   await page.waitForTimeout(300);results.push({test:'Chromium '+width+'px PIN unlock and no horizontal page overflow',status:await page.locator('#adminHost').isVisible() && await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)?'PASS':'FAIL'});
