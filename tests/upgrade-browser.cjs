@@ -116,11 +116,15 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
     assert.ok(usLangs.length&&usLangs.every(l=>l==='en-GB'),'every utterance is tagged en-GB: '+JSON.stringify(usLangs.slice(0,6)));
    } else {
     await heard(2);
+    /* the number beat is its own stage, so give it the same chance to land before the
+       transcript is read (Say the number is a learner setting, not always on) */
+    await page.waitForFunction(()=>/Number 1\./.test((window.__spoken||[]).join(' ')),null,{timeout:8000}).catch(()=>{});
     const spoken=await said();
+    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v1')||'{}').settings||{}).numbers);
     const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
     const phase=spoken.slice(0,until+1);
     assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
-    assert(phase.indexOf('Number 1.')>=0,'the number is read before the word: '+JSON.stringify(phase));
+    assert.equal(numbersOn,phase.indexOf('Number 1.')>=0,'the number is read before the word (numbers on, phase '+JSON.stringify(phase)+', all '+JSON.stringify(spoken)+')');
     assert(!phase.some(t=>String(t).trim()===first.s.trim()),'the sentence waits for its own stage: '+JSON.stringify(phase));
     const gbLangs=await langs();
     assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));

@@ -111,6 +111,24 @@ async function flow(browser, vp, label, seed) {
   const unlocked = await page.locator('#adminHost').isVisible();
   rec(label + ' default PIN unlocks lecturer mode', unlocked);
   await page.getByRole('button', { name: 'Words & planner', exact: true }).click();
+  /* v2.0.0 keeps the quiet days behind "Other days (Monday, Thursday, Friday, weekend)"
+     in the planner, so open the disclosure the test needs before touching it. */
+  const openAround = async (aria) => {
+    const target = page.locator(`select[aria-label="${aria}"]`);
+    if (await target.isVisible().catch(() => false)) return;
+    const groups = page.locator('#adminHost details');
+    const n = await groups.count();
+    for (let i = 0; i < n; i++) {
+      const g = groups.nth(i);
+      if (await g.locator(`select[aria-label="${aria}"]`).count()) {
+        const sum = g.locator('> summary');
+        if (await sum.count()) await sum.click();
+        await target.waitFor({ state: 'visible', timeout: 5000 });
+        return;
+      }
+    }
+  };
+  await openAround('Monday list');
   const monday = page.locator('select[aria-label="Monday list"]');
   const opts = await monday.locator('option').all();
   const pick = Math.min(1, opts.length - 1);
