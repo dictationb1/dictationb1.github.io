@@ -1454,7 +1454,7 @@ function sdpTokens(args) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.5.0-rc.1";
+var APP_VERSION = "1.5.0-rc.2";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
 var BUILD_DATE = "2026-10-14";
@@ -2044,6 +2044,10 @@ var DB = {
     d = DB.migrate(d);
     this.data = d;
     if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
+    /* settingsRev 1: every device gets the new lecturer defaults (no sentence, 2 repeats). */
+    if ((this.data.settings.settingsRev || 0) < 1) {
+      this.data.settings.sentence = false; this.data.settings.repeats = 2; this.data.settings.settingsRev = 1;
+    }
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
     /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
     if (!this.data.admin.pinHash) {
@@ -2290,32 +2294,23 @@ var UI = {
     if (!window.requestAnimationFrame) { this.frameMs = 30; this.applyPerf(); cb && cb(); return; }
     if (this.frameWatchStarted) return;
     this.frameWatchStarted = true;
-    var last = 0, start = 0, samples = [], request = null, done = false;
+    var last = 0, samples = [], count = 0, self = this;
     function step(t) {
-      request = null;
-      if (document.hidden) { last = start = 0; samples = []; return; }
-      if (!start) start = t;
+      if (document.hidden) { last = 0; samples = []; count = 0; window.requestAnimationFrame(step); return; }
       if (last) samples.push(t - last);
-      last = t;
-      if (t - start >= 2000) {
-        UI.recordFrames(samples);
-        samples = []; start = t;
-        if (!done) { done = true; cb && cb(); }
-      }
-      request = window.requestAnimationFrame(step);
+      last = t; count++;
+      if (count < 120) { window.requestAnimationFrame(step); return; }
+      self.recordFrames(samples); samples = [];
+      cb && cb();
     }
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) { if (request !== null) window.cancelAnimationFrame(request); request = null; last = start = 0; samples = []; }
-      else if (request === null) request = window.requestAnimationFrame(step);
-    });
-    request = window.requestAnimationFrame(step);
+    window.requestAnimationFrame(step);
   },
   recordFrames: function (samples) {
     if (!samples.length) return;
     samples.sort(function (a, b) { return a - b; });
     var median = samples[Math.floor(samples.length / 2)];
     this.frameMs = Math.round(median * 10) / 10;
-    if (median > 24) this.autoDowngraded = true;
+    if (median > 24) this.autoDowngraded = true; /* one sample set only; never re-probed */
     if (DB.data.settings.perf === "auto") this.applyPerf();
   },
   pauseAnimations: function (paused) {
@@ -3692,19 +3687,18 @@ var Eng = {
 
   start: function (opts) {
     var o = opts || {};
-    var list = o.list || Lib.current();
+    var list = o.list || (o.words ? { words: o.words } : Lib.current());
     if (!list || !list.words || !list.words.length) {
       UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
       return;
     }
     if (!Speech.supported) {
       UI.toast("This browser cannot speak. Use Text mode: the word is shown and you tap Next.", { icon: "i-alert", ms: 8000 });
-    } else if (!Speech.ukVoices.length && !Speech.textOnly) {
-      var self = this; NoVoice.open(function () { self.start(o); }, function () { self.start(o); });
-      return;
     }
+    /* Start is never blocked by a missing UK voice: the word is shown instead. */
+    if (Speech.supported && !Speech.textOnly && !Speech.chosen) Speech.pick();
     this.stop(true);
-    this.words = list.words.slice(0);
+    this.words = (o.words || list.words).slice(0);
     this.listId = o.listId || list.id || "";
     this.listName = o.listName || list.name || "Practise list";
     this.listVersion = list.version || 1;
@@ -3716,7 +3710,7 @@ var Eng = {
     this.hard = [];
     this.idx = 0;
     this.startedAt = Date.now();
-    this.showWord = !!DB.data.settings.showWord || !Speech.supported || Speech.textOnly;
+    this.showWord = !!DB.data.settings.showWord || !Speech.supported || Speech.textOnly || !Speech.isUkVoice();
     var seed = Math.floor(Math.random() * 100000) + 1;
     this.seed = seed;
     this.order = DB.data.settings.shuffle ? Lib.shuffleSeeded(this.words.length, seed) : this.words.map(function (_, i) { return i; });
@@ -3743,7 +3737,7 @@ var Eng = {
     this.idx = U.clamp(snap.index || 0, 0, this.words.length - 1);
     this.startedAt = snap.startedAt || Date.now();
     this.seed = snap.seed || 1;
-    this.showWord = !!snap.showWord || !Speech.supported || Speech.textOnly;
+    this.showWord = !!snap.showWord || !Speech.supported || Speech.textOnly || !Speech.isUkVoice();
     this.st = "ready";
     this.openPlayer();
     this.runItem(this.idx);
