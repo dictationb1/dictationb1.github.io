@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- v2.0.0: phones must never be stuck on an old cached page -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#eaf0fb">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -676,9 +680,37 @@ body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite
 .paste-scroll input { font-size: 16px; min-width: 130px; }
 .paste-scroll td:last-child { min-width: 175px; }
 
+
+/* v2.0.0 (A7): auto-lite keeps a crisp translucent "liquid glass" look using
+   gradients and a specular top edge instead of backdrop-filter repaints. */
+html[data-perf="lite"] .glass,
+html[data-perf="lite"] .card,
+html[data-perf="lite"] .sheet,
+html[data-perf="lite"] #topbar,
+html[data-perf="lite"] #tabbar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(240,245,255,.70));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 24px rgba(20,28,55,.10);
+}
+html[data-perf="lite"] .scrollme { will-change: auto; }
+@media (prefers-color-scheme: dark) {
+  html[data-perf="lite"] .glass,
+  html[data-perf="lite"] .card,
+  html[data-perf="lite"] .sheet,
+  html[data-perf="lite"] #topbar,
+  html[data-perf="lite"] #tabbar {
+    background: linear-gradient(180deg, rgba(40,46,70,.90), rgba(22,26,42,.76));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 24px rgba(0,0,0,.30);
+  }
+}
+.chip.good { color: #0a6b3d; background: rgba(15,138,77,.12); }
+html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 </style>
 </head>
 <body data-perf="auto">
+<!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
+<audio id="sdpAudio" preload="auto" playsinline></audio>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -744,7 +776,7 @@ body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite
       <span class="t"><b id="brandName">Smart Dictation</b><span id="brandSub">UK English &middot; B1</span></span>
     </div>
     <div class="row">
-      <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Local mode</span></button>
+      <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Live B1 Session</span></button>
       <button type="button" id="btnLock" class="btn icon ghost" aria-label="Open lecturer mode"><svg aria-hidden="true"><use xlink:href="#i-lock" href="#i-lock"></use></svg></button>
     </div>
   </header>
@@ -1454,7 +1486,7 @@ function sdpTokens(args) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.5.0-rc.1";
+var APP_VERSION = "2.0.0";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
 var BUILD_DATE = "2026-10-14";
@@ -1466,7 +1498,7 @@ var CLOUD_URL = "";
 
 var CONFIG = {
   key: "sdp.v1",
-  schema: 2,
+  schema: 3,
   maxHistory: 200,
   maxComments: 200,
   maxInbox: 200,
@@ -1479,6 +1511,13 @@ var CONFIG = {
   pollMs: 20000,
   netTimeout: 8000,
   dictHost: "https://api.dictionaryapi.dev/api/v2/entries/en/",
+  oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
+  ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
+  maxDictCache: 200,
+  settingsRev: 2,
+  repoOwner: "dictationb1",
+  repoName: "dictationb1.github.io",
+  classDays: [2, 3],
   cambridge: "https://dictionary.cambridge.org/dictionary/english/",
   gasPrefix: "https://script.google.com/macros/s/",
   gasSuffix: "/exec",
@@ -1927,53 +1966,139 @@ var Store = {
   }
 };
 
+/* v2.0.0 default list: the 30 Cambridge B1 "Leisure & Hobbies" words, each
+   with a B1 meaning (m), a B1 example sentence (s) and a recorded British
+   dictionary MP3 (audio) so the word sounds right on every device. */
+var SAMPLE_LIST_NAME = "B1 Leisure & Hobbies (30 words)";
+var UK_MP3_BASE = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
+function ukMp3(word) {
+  var k = String(word || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, "_").replace(/^_+|_+$/g, "");
+  return k ? UK_MP3_BASE + k + "--_gb_1.mp3" : "";
+}
 var SAMPLE_WORDS = [
-  { w: "appointment", s: "I have a dentist appointment on Thursday at four o'clock.", m: "an arranged time to meet someone" },
-  { w: "temperature", s: "The temperature dropped to minus five last night.", m: "how hot or cold something is" },
-  { w: "neighbour", s: "Our new neighbour has a very friendly dog.", m: "a person who lives near you" },
-  { w: "schedule", s: "The bus schedule changed at the beginning of March.", m: "a plan of times for events" },
-  { w: "delicious", s: "This chocolate cake your mother made is absolutely delicious.", m: "tasting very good" },
-  { w: "necessary", s: "It is necessary to book your tickets early.", m: "needed; you must have it" },
-  { w: "equipment", s: "The gym bought new equipment for the fitness room.", m: "tools or machines for a purpose" },
-  { w: "comfortable", s: "These shoes are very comfortable for long walks.", m: "making you feel relaxed" },
-  { w: "opportunity", s: "She got the opportunity to study in London.", m: "a chance to do something" },
-  { w: "knowledge", s: "He has good knowledge of the local history.", m: "information you have learned" },
-  { w: "though", s: "It was cold, though we still enjoyed the walk.", m: "but; however" },
-  { w: "environment", s: "We should protect the environment for our children.", m: "the natural world around us" },
-  { w: "weight", s: "The nurse checked my height and weight this morning.", m: "how heavy something is" },
-  { w: "interview", s: "Her job interview at the bank lasted forty minutes.", m: "a formal meeting with questions" },
-  { w: "programme", s: "There is a good programme on television tonight.", m: "a show on TV or radio" },
-  { w: "receive", s: "Did you receive my message about the meeting?", m: "to get something sent to you" },
-  { w: "advertisement", s: "I saw the advertisement for the part-time job.", m: "a notice that promotes something" },
-  { w: "definitely", s: "I will definitely come to your birthday party.", m: "certainly; without any doubt" },
-  { w: "foreign", s: "He enjoys learning foreign languages at his evening class.", m: "from another country" },
-  { w: "separate", s: "Please keep the recycling in a separate bag.", m: "not together; apart" },
-  { w: "nervous", s: "I always feel nervous before a big exam.", m: "worried and unable to relax" },
-  { w: "library", s: "You can borrow three books from the library.", m: "a place where you borrow books" },
-  { w: "improve", s: "Practising every day will really improve your spelling.", m: "to get better at something" },
-  { w: "suggestion", s: "Thank you for your helpful suggestion about our project.", m: "an idea that you offer" },
-  { w: "accommodation", s: "The price includes accommodation, breakfast and airport transfer.", m: "a place to live or stay" },
-  { w: "available", s: "Are any double rooms available for next weekend?", m: "able to be used or obtained" },
-  { w: "especially", s: "I love fruit, especially fresh mangoes and pineapple.", m: "more than usual; particularly" },
-  { w: "experience", s: "She has five years of experience in sales.", m: "knowledge gained by doing something" },
-  { w: "recipe", s: "This simple recipe needs only four basic ingredients.", m: "instructions for cooking food" },
-  { w: "disappointed", s: "He was disappointed that the concert was cancelled.", m: "sad because hopes were not met" }
+  { w: "hobbies", m: "activities that you enjoy doing in your free time", s: "Reading and gardening are two of my favourite weekend hobbies.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hobbies--_gb_1.mp3" },
+  { w: "leisure", m: "time when you are not working or studying", s: "The town has a modern leisure centre with a swimming pool.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/leisure--_gb_1.mp3" },
+  { w: "barbecue", m: "an outdoor meal or party where food is cooked on a metal frame over fire", s: "We had a lovely family barbecue in the garden on Sunday.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/barbecue--_gb_1.mp3" },
+  { w: "camping", m: "living in a tent on holiday", s: "They went camping by the lake for three days in July.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/camping--_gb_1.mp3" },
+  { w: "collection", m: "a group of objects of one type that have been gathered together", s: "My grandfather has a large collection of old British coins.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/collection--_gb_1.mp3" },
+  { w: "cruise", m: "a holiday on a large ship, visiting different places", s: "My parents booked a two-week cruise around the Mediterranean Sea.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cruise--_gb_1.mp3" },
+  { w: "dancing", m: "moving your body to music", s: "She goes to salsa dancing classes every Tuesday evening.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/dancing--_gb_1.mp3" },
+  { w: "drawing", m: "the art or skill of making pictures using a pencil or pen", s: "He is very good at drawing portraits of his friends.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drawing--_gb_1.mp3" },
+  { w: "facilities", m: "buildings, equipment, or services provided for a particular purpose", s: "The hotel has excellent sports facilities, including tennis courts.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/facilities--_gb_1.mp3" },
+  { w: "festival", m: "a special event or period with music, art, or celebrations", s: "Thousands of people attended the summer music festival in the park.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/festival--_gb_1.mp3" },
+  { w: "fiction", m: "books and stories about imaginary people and events", s: "She prefers reading historical fiction rather than science books.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fiction--_gb_1.mp3" },
+  { w: "gallery", m: "a room or building that shows works of art to the public", s: "We visited the national art gallery to see the new exhibition.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gallery--_gb_1.mp3" },
+  { w: "go shopping", m: "to visit shops in order to look at and buy things", s: "We usually go shopping for food and clothes on Saturday morning.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/go_shopping--_gb_1.mp3" },
+  { w: "guitar", m: "a musical instrument with six strings played with your fingers", s: "He learned to play the acoustic guitar when he was fifteen.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guitar--_gb_1.mp3" },
+  { w: "hire", m: "to pay to use something for a short period of time", s: "You can hire a bicycle at the station for ten pounds a day.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hire--_gb_1.mp3" },
+  { w: "hike", m: "a long walk, especially in the countryside or mountains", s: "We went for a ten-kilometre hike through the forest yesterday.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hike--_gb_1.mp3" },
+  { w: "holidays", m: "a period of time when you travel or rest away from work or school", s: "Where are you going for your summer holidays this year?", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/holidays--_gb_1.mp3" },
+  { w: "jogging", m: "running at a slow, regular speed for exercise", s: "She goes jogging in the local park every morning before breakfast.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/jogging--_gb_1.mp3" },
+  { w: "magazine", m: "a thin book with articles and photos published every week or month", s: "I bought a travel magazine to read on the train journey.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/magazine--_gb_1.mp3" },
+  { w: "musician", m: "someone who plays a musical instrument, especially as a job", s: "The street musician played a beautiful tune on his violin.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/musician--_gb_1.mp3" },
+  { w: "nightlife", m: "entertainment available in the evening and at night in a town", s: "The city is famous for its lively nightlife and great restaurants.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/nightlife--_gb_1.mp3" },
+  { w: "painting", m: "a picture made using paint, or the activity of making pictures", s: "That oil painting of the harbour hangs in the town museum.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/painting--_gb_1.mp3" },
+  { w: "party", m: "a social event where people meet to enjoy themselves", s: "Are you coming to Sarah's birthday party on Saturday night?", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/party--_gb_1.mp3" },
+  { w: "photograph", m: "a picture produced using a camera", s: "He took a wonderful photograph of the sunset over the sea.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/photograph--_gb_1.mp3" },
+  { w: "picnic", m: "an occasion when you take food to eat outdoors", s: "It was sunny, so we packed sandwiches and had a picnic.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/picnic--_gb_1.mp3" },
+  { w: "quiz", m: "a game or competition in which you answer questions", s: "Our team won first prize in the school general knowledge quiz.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/quiz--_gb_1.mp3" },
+  { w: "sculpture", m: "a work of art made from stone, wood, metal, or clay", s: "There is a modern bronze sculpture outside the main library.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sculpture--_gb_1.mp3" },
+  { w: "sightseeing", m: "the activity of visiting interesting places, especially on holiday", s: "We spent the whole afternoon sightseeing in the old town.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sightseeing--_gb_1.mp3" },
+  { w: "sunbathe", m: "to sit or lie in the sun so that your skin becomes brown", s: "Remember to wear sunscreen if you sunbathe on the beach.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sunbathe--_gb_1.mp3" },
+  { w: "torch", m: "a small electric light that you carry in your hand", s: "Take a torch with you because the path is dark at night.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/torch--_gb_1.mp3" },
 ];
+
+/* The previous default list is kept only as vocabulary data so words that
+   students already met still come with a meaning and a sentence. */
+var LEGACY_WORDS = [
+  { w: "appointment", m: "an arranged time to meet someone", s: "I have a dentist appointment on Thursday at four o'clock." },
+  { w: "temperature", m: "how hot or cold something is", s: "The temperature dropped to minus five last night." },
+  { w: "neighbour", m: "a person who lives near you", s: "Our new neighbour has a very friendly dog." },
+  { w: "schedule", m: "a plan of times for events", s: "The bus schedule changed at the beginning of March." },
+  { w: "delicious", m: "tasting very good", s: "This chocolate cake your mother made is absolutely delicious." },
+  { w: "necessary", m: "needed; you must have it", s: "It is necessary to book your tickets early." },
+  { w: "equipment", m: "tools or machines for a purpose", s: "The gym bought new equipment for the fitness room." },
+  { w: "comfortable", m: "making you feel relaxed", s: "These shoes are very comfortable for long walks." },
+  { w: "opportunity", m: "a chance to do something", s: "She got the opportunity to study in London." },
+  { w: "knowledge", m: "information you have learned", s: "He has good knowledge of the local history." },
+  { w: "though", m: "but; however", s: "It was cold, though we still enjoyed the walk." },
+  { w: "environment", m: "the natural world around us", s: "We should protect the environment for our children." },
+  { w: "weight", m: "how heavy something is", s: "The nurse checked my height and weight this morning." },
+  { w: "interview", m: "a formal meeting with questions", s: "Her job interview at the bank lasted forty minutes." },
+  { w: "programme", m: "a show on TV or radio", s: "There is a good programme on television tonight." },
+  { w: "receive", m: "to get something sent to you", s: "Did you receive my message about the meeting?" },
+  { w: "advertisement", m: "a notice that promotes something", s: "I saw the advertisement for the part-time job." },
+  { w: "definitely", m: "certainly; without any doubt", s: "I will definitely come to your birthday party." },
+  { w: "foreign", m: "from another country", s: "He enjoys learning foreign languages at his evening class." },
+  { w: "separate", m: "not together; apart", s: "Please keep the recycling in a separate bag." },
+  { w: "nervous", m: "worried and unable to relax", s: "I always feel nervous before a big exam." },
+  { w: "library", m: "a place where you borrow books", s: "You can borrow three books from the library." },
+  { w: "improve", m: "to get better at something", s: "Practising every day will really improve your spelling." },
+  { w: "suggestion", m: "an idea that you offer", s: "Thank you for your helpful suggestion about our project." },
+  { w: "accommodation", m: "a place to live or stay", s: "The price includes accommodation, breakfast and airport transfer." },
+  { w: "available", m: "able to be used or obtained", s: "Are any double rooms available for next weekend?" },
+  { w: "especially", m: "more than usual; particularly", s: "I love fruit, especially fresh mangoes and pineapple." },
+  { w: "experience", m: "knowledge gained by doing something", s: "She has five years of experience in sales." },
+  { w: "recipe", m: "instructions for cooking food", s: "This simple recipe needs only four basic ingredients." },
+  { w: "disappointed", m: "sad because hopes were not met", s: "He was disappointed that the concert was cancelled." },
+];
+
+/* Extra common B1 vocabulary used by the auto meaning/sentence generator. */
+var EXTRA_B1 = [
+  { w: "travel", m: "to go from one place to another, especially to visit places", s: "We travel to Manchester by train every spring." },
+  { w: "holiday", m: "a period of time when you are not at work or school and enjoy yourself", s: "They are on holiday in Cornwall for a week." },
+  { w: "swimming", m: "the sport or activity of moving through water", s: "The children have swimming lessons on Friday." },
+  { w: "football", m: "a game in which two teams kick a ball into a goal", s: "He plays football with his friends after school." },
+  { w: "cinema", m: "a place where people pay to watch films on a big screen", s: "We went to the cinema to see the new comedy." },
+  { w: "concert", m: "a live performance of music by a singer or a band", s: "The rock concert started at eight o'clock." },
+  { w: "theatre", m: "a building where plays and musicals are performed", s: "She works in the theatre box office." },
+  { w: "museum", m: "a building where objects of history or art are shown", s: "The science museum is free for students." },
+  { w: "bookclub", m: "a group of people who read and discuss the same books", s: "Our bookclub meets in the library every month." },
+  { w: "gardening", m: "the work of growing and looking after plants in a garden", s: "Gardening helps him relax after a busy week." },
+  { w: "cooking", m: "preparing food to eat by heating or mixing it", s: "He enjoys cooking pasta for his family." },
+  { w: "chess", m: "a board game for two players who move pieces to catch the king", s: "She plays chess with her grandfather on Sundays." },
+  { w: "cycling", m: "the activity of riding a bicycle for exercise or pleasure", s: "Cycling along the river path is great fun." },
+  { w: "skating", m: "moving on boots with blades or on a board with wheels", s: "They went skating at the ice rink downtown." },
+  { w: "singing", m: "making musical sounds with your voice", s: "Singing in the choir makes her very happy." },
+  { w: "actress", m: "a woman who acts in films or plays", s: "The actress won an award for her new film." },
+  { w: "costume", m: "the clothes that you wear to look like someone else", s: "He wore a pirate costume to the party." },
+  { w: "prize", m: "something, often money, that you win in a competition", s: "She won first prize in the spelling competition." },
+  { w: "audience", m: "the group of people who watch a show or listen to a concert", s: "The audience clapped for ten minutes." },
+  { w: "exhibition", m: "a public display of paintings or other objects", s: "An art exhibition opens in the gallery on Tuesday." },
+  { w: "adventure", m: "an exciting and unusual experience or activity", s: "Climbing the mountain was a real adventure." },
+  { w: "souvenir", m: "something you buy or keep to remember a holiday", s: "I bought a small souvenir for my sister." },
+  { w: "luggage", m: "the bags and cases that you take with you when you travel", s: "Please keep your luggage with you at all times." },
+  { w: "journey", m: "the act of travelling from one place to another", s: "The train journey takes about two hours." },
+];
+
+var WORD_BANK = (function () {
+  var bank = Object.create(null);
+  function add(w, m, s) {
+    var k = String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim();
+    if (k && !bank[k]) bank[k] = { m: String(m || ""), s: String(s || "") };
+  }
+  var i;
+  for (i = 0; i < SAMPLE_WORDS.length; i++) add(SAMPLE_WORDS[i].w, SAMPLE_WORDS[i].m, SAMPLE_WORDS[i].s);
+  for (i = 0; i < LEGACY_WORDS.length; i++) add(LEGACY_WORDS[i].w, LEGACY_WORDS[i].m, LEGACY_WORDS[i].s);
+  for (i = 0; i < EXTRA_B1.length; i++) add(EXTRA_B1[i].w, EXTRA_B1[i].m, EXTRA_B1[i].s);
+  return bank;
+})();
 
 var SAMPLE_LIST_ID = "list_sample_b1";
 
 function defaultData() {
   var sample = {
     id: SAMPLE_LIST_ID,
-    name: "Sample B1 list (30 words)",
-    words: SAMPLE_WORDS.map(function (x) { return { w: x.w, s: x.s, m: x.m }; }),
-    version: 1,
+    name: SAMPLE_LIST_NAME,
+    words: SAMPLE_WORDS.map(function (x) { return { w: x.w, s: x.s, m: x.m, audio: x.audio || ukMp3(x.w) }; }),
+    version: 2,
     published: true,
     updatedAt: Date.now()
   };
   var plan = { weekdays: ["", "", "", "", "", "", ""], dates: {}, pinned: "", defaultList: SAMPLE_LIST_ID };
   return {
     v: CONFIG.schema,
+    settingsRev: CONFIG.settingsRev,
     settings: {
       theme: "auto", size: "m", hc: false, perf: "auto",
       voiceName: "", rate: 0.85, volume: 1,
@@ -1986,7 +2111,7 @@ function defaultData() {
     lists: [sample],
     plan: plan,
     session: {
-      no: "1", day: DAYS[U.weekdayIndex(new Date())], autoDay: true, date: U.dateKey(new Date()), title: "",
+      no: "1", day: DAYS[U.weekdayIndex(new Date())], autoDay: true, date: U.dateKey(new Date()), title: "", listId: SAMPLE_LIST_ID,
       ready: [
         "Hello! Get your pen and paper. Are you ready? Tap Start when you are.",
         "Are you ready? Let's begin.",
@@ -2092,7 +2217,9 @@ var DB = {
       if (!l.id) l.id = U.uid("list");
       if (!Array.isArray(l.words)) l.words = [];
       l.words = l.words.filter(function (item) { return item && typeof item === "object" && typeof item.w === "string" && U.trim(item.w); }).map(function (item) {
-        return { w: U.clip(item.w, CONFIG.maxWordChars), s: U.clip(item.s, 500), m: U.clip(item.m, 500) };
+        var nz = { w: U.clip(item.w, CONFIG.maxWordChars), s: U.clip(item.s, 500), m: U.clip(item.m, 500) };
+        if (typeof item.audio === "string" && /^https:\/\/.+\.mp3/i.test(item.audio)) nz.audio = U.clip(item.audio, 300);
+        return nz;
       });
       l.name = U.clip(l.name || "Word list", 120);
       if (typeof l.id !== "string") l.id = U.uid("list");
@@ -2107,6 +2234,33 @@ var DB = {
     if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
     if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
     if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
+    /* A3.2 settingsRev 2: dictation reads the number and the word twice and
+       never the example sentence, and every phone moves to the 30 leisure
+       words so an old v1.4/v1.5 install shows the new list straight away. */
+    if (!d.settingsRev || d.settingsRev < 2) {
+      d.settings.sentence = false;
+      d.settings.repeats = 2;
+      d.settings.rate = 0.85;
+      d.settings.numbers = true;
+      if (!d.settings.mode) d.settings.mode = "paper";
+      var fresh = SAMPLE_WORDS.map(function (x) { return { w: x.w, s: x.s, m: x.m, audio: x.audio || ukMp3(x.w) }; });
+      var def = DB.findList(d, SAMPLE_LIST_ID);
+      if (!def) { def = base.lists[0]; d.lists.unshift(def); }
+      def.name = SAMPLE_LIST_NAME;
+      def.words = fresh;
+      def.version = 2;
+      def.published = true;
+      def.draft = false;
+      def.updatedAt = Date.now();
+      def.publishedWords = fresh.map(function (x) { return { w: x.w, s: x.s, m: x.m, audio: x.audio }; });
+      def.publishedName = def.name;
+      def.publishedVersion = 2;
+      d.plan.defaultList = def.id;
+      if (!d.plan.pinned) d.plan.pinned = def.id;
+      d.session.listId = def.id;
+      if (!d.session.title) d.session.title = SAMPLE_LIST_NAME;
+      d.settingsRev = 2;
+    }
     if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
     d.v = CONFIG.schema;
     return d;
@@ -2124,13 +2278,25 @@ var DB = {
       self.saveNow();
     }, 120);
   },
-  saveNow: function () {
+  saveNow: function (withBackup) {
     if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
+    this.trimCache();
     try {
       var text = JSON.stringify(this.data);
       Store.set(CONFIG.key, text);
-      Store.set(CONFIG.key + ".bak", text);
+      /* A7.3/A7.5: the duplicate .bak copy costs a second synchronous
+         localStorage write. It is refreshed on session finish and on admin
+         publish only - never on every dictation word step. */
+      if (withBackup) Store.set(CONFIG.key + ".bak", text);
     } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
+  },
+  trimCache: function () {
+    var c = this.data && this.data.dictCache;
+    if (!c) return;
+    var keys = Object.keys(c);
+    var over = keys.length - CONFIG.maxDictCache;
+    if (over <= 0) return;
+    for (var i = 0; i < over; i++) delete c[keys[i]];   /* FIFO cap keeps localStorage small */
   },
   reset: function () {
     /* Keep both recovery copies. Reset is possible only after a separate confirmation. */
@@ -2139,7 +2305,9 @@ var DB = {
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
     Admin.seedPin(this.data.admin);
-    Store.set(CONFIG.key, JSON.stringify(this.data));
+    var text = JSON.stringify(this.data);
+    Store.set(CONFIG.key, text);
+    Store.set(CONFIG.key + ".bak", text);
   },
   exportAll: function (emergency) {
     var full = emergency === true || Admin.unlocked;
@@ -2267,8 +2435,10 @@ var UI = {
   autoPerf: function () {
     if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
     if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-    if (U.deviceType() !== "iPhone" && U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
-    if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 2) return "lite";
+    /* A7: low-core and low-memory phones start in lite straight away. */
+    var cores = U.nav("hardwareConcurrency", 0), mem = U.nav("deviceMemory", 0);
+    if (cores && cores <= 4) return "lite";
+    if (mem && mem <= 4) return "lite";
     try {
       var conn = navigator.connection || navigator.webkitConnection;
       if (conn && conn.saveData) return "lite";
@@ -2284,31 +2454,33 @@ var UI = {
     var bg = U.$("#bg");
     if (bg) bg.setAttribute("data-anim", (mode === "full" && !this.prefers("(prefers-reduced-motion: reduce)")) ? "on" : "off");
   },
-  /* Watch complete two-second foreground windows throughout use. A single
-     slow window downgrades Auto for this page lifetime, avoiding oscillation. */
+  /* A7.1: sample at most 60 frames once on startup, take the median, then
+     cancel the animation frame loop permanently - no infinite rAF on phones. */
   frameProbe: function (cb) {
     if (!window.requestAnimationFrame) { this.frameMs = 30; this.applyPerf(); cb && cb(); return; }
     if (this.frameWatchStarted) return;
     this.frameWatchStarted = true;
-    var last = 0, start = 0, samples = [], request = null, done = false;
+    var last = 0, samples = [], request = null, handle = null, finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      if (window.cancelAnimationFrame && handle !== null) window.cancelAnimationFrame(handle);
+      request = null; handle = null;
+      UI.recordFrames(samples);
+      cb && cb();
+    }
     function step(t) {
       request = null;
-      if (document.hidden) { last = start = 0; samples = []; return; }
-      if (!start) start = t;
+      if (finished) return;
       if (last) samples.push(t - last);
       last = t;
-      if (t - start >= 2000) {
-        UI.recordFrames(samples);
-        samples = []; start = t;
-        if (!done) { done = true; cb && cb(); }
-      }
+      if (samples.length >= 60) { finish(); return; }
       request = window.requestAnimationFrame(step);
+      handle = request;
     }
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) { if (request !== null) window.cancelAnimationFrame(request); request = null; last = start = 0; samples = []; }
-      else if (request === null) request = window.requestAnimationFrame(step);
-    });
     request = window.requestAnimationFrame(step);
+    handle = request;
+    setTimeout(finish, 2500);   /* a hidden first frame must never hang the probe */
   },
   recordFrames: function (samples) {
     if (!samples.length) return;
@@ -3088,10 +3260,15 @@ var Screens = {
     lbl.appendChild(U.el("span", "lbl", "UK English voice"));
     lbl.appendChild(voiceSel);
     v.appendChild(lbl);
+    var audioPill = U.el("div", "chip" + (Speech.audioReady() ? " good" : ""), Speech.audioLabel());
+    audioPill.style.display = "inline-block";
+    audioPill.style.margin = "2px 0 8px";
+    v.appendChild(audioPill);
+    v.appendChild(U.el("p", "tiny muted", "British audio comes from recorded dictionary sounds, your en-GB device voice, a streamed British voice and - if all of those fail - any English voice on the phone."));
     var vrow = U.el("div", "btn-row tight", null);
     vrow.style.marginTop = "8px";
-    var test = U.btn("Test voice", "i-vol", "soft");
-    U.on(test, "click", function () { Speech.say(["This is your UK English dictation voice."], {}, function () {}); });
+    var test = U.btn("Test sound", "i-vol", "soft");
+    U.on(test, "click", function () { Speech.unlock(); Speech.say(["This is your British dictation audio."], {}, function () {}); });
     var diag = U.btn("Check my device", "i-target", "soft");
     U.on(diag, "click", function () { Diag.open(); });
     vrow.appendChild(test); vrow.appendChild(diag);
@@ -3453,24 +3630,142 @@ var Speech = {
   voiceName: function () { return this.chosen ? this.chosen.name : (this.allowNonUK ? "non-UK English voice" : ""); },
   isUkVoice: function () { return !!this.chosen && this.isUK(this.chosen); },
 
+  /* ---------- v2.0.0 four-tier British audio engine -------------------
+     Tier 1  recorded Cambridge/Oxford UK dictionary MP3 for the word
+     Tier 2  the device en-GB Web Speech voice
+     Tier 3  streamed cloud British TTS through the shared #sdpAudio element
+     Tier 4  any installed English voice (u.lang = "en-GB") + a WebAudio chime
+     A missing device voice can therefore never block a dictation. */
+  audio: null,
+  audioOk: false,
+  lastTier: "",
+  SILENT: "data:audio/wav;base64,UklGRioAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==",
+  el: function () {
+    if (this.audio && this.audio.parentNode) return this.audio;
+    var a = U.$("#sdpAudio");
+    if (!a) {
+      a = document.createElement("audio");
+      a.id = "sdpAudio";
+      a.setAttribute("preload", "auto");
+      a.setAttribute("playsinline", "");
+      try { document.body.appendChild(a); } catch (e) {}
+    }
+    this.audio = a;
+    return a;
+  },
+  normKey: function (w) { return String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim(); },
+  /* Tier 1 source: the word object's own URL, then the dictionary cache,
+     then the Cambridge/Oxford UK MP3 pattern for a single word. */
+  mp3For: function (text, word) {
+    var t = this.normKey(U.trim(String(word || text || "")));
+    if (!t || /\s/.test(t) || t.length > 24) return "";
+    if (word && String(word).trim().toLowerCase() !== t) return "";
+    var cache = DB.data && DB.data.dictCache ? DB.data.dictCache[U.norm(t)] : null;
+    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(cache.audio)) return cache.audio;
+    return ukMp3(t);
+  },
+  streamUrl: function (text) {
+    return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=" + encodeURIComponent(text);
+  },
+  anyEnglish: function () {
+    for (var i = 0; i < this.voices.length; i++) if (/^en/i.test(this.normLang(this.voices[i].lang))) return this.voices[i];
+    return null;
+  },
+  /* one <audio> element for every spoken sound: iOS only lets an element that
+     has already played inside a tap be started again from a timer. */
+  playAudio: function (src, rate, ms, cb) {
+    var self = this;
+    cb = U.once(cb || function () {});
+    var a = this.el();
+    if (!a || !src) { cb(false); return; }
+    var settled = false;
+    function done(ok) {
+      if (settled) return;
+      settled = true;
+      self.busy = false;
+      if (timer) clearTimeout(timer);
+      a.onended = null; a.onerror = null; a.onstalled = null;
+      cb(!!ok);
+    }
+    var timer = setTimeout(function () { try { a.pause(); } catch (e) {} done(false); }, Math.max(2200, ms || 6000));
+    try { a.pause(); } catch (e) {}
+    a.src = src;
+    a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
+    try { a.playbackRate = U.clamp(rate === undefined ? 0.85 : rate, 0.6, 1.2); } catch (e) {}
+    a.onended = function () { done(true); };
+    a.onerror = function () { done(false); };
+    a.onstalled = function () { done(false); };
+    this.busy = true;
+    try {
+      var p = a.play();
+      if (p && p.then) p.then(function () { self.audioOk = true; }, function () { done(false); });
+      else if (a.readyState > 0) { self.audioOk = true; }
+    } catch (e) { done(false); }
+  },
+  chime: function () {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!this._ac) this._ac = new AC();
+      var ctx = this._ac, t = ctx.currentTime;
+      if (ctx.resume) { try { ctx.resume(); } catch (e) {} }
+      [[880, 0], [1175, 0.16]].forEach(function (pair) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = pair[0];
+        g.gain.setValueAtTime(0.0001, t + pair[1]);
+        g.gain.exponentialRampToValueAtTime(0.16, t + pair[1] + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + pair[1] + 0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t + pair[1]); o.stop(t + pair[1] + 0.22);
+      });
+    } catch (e) {}
+  },
+  /* one short label for the Ready sheet and Settings > Voice */
+  audioLabel: function () {
+    var online = U.nav("onLine", true) !== false;
+    if (this.ukVoices.length) return "UK Audio Ready (British Voice" + (online ? " + Dictionary Audio)" : ")");
+    if (online) return "UK Audio Ready (Dictionary Audio + Cloud British Voice)";
+    if (this.anyEnglish()) return "UK Audio: English device voice (offline)";
+    return "No British audio on this device - words are shown";
+  },
+  audioReady: function () { return !!(this.ukVoices.length || U.nav("onLine", true) !== false || this.anyEnglish()); },
+
   /* must be called synchronously inside a user gesture on iOS / Chrome */
   unlock: function () {
     this.readVoices();
-    if (!this.supported || this.textOnly || !this.isUkVoice()) return;
+    /* unlock the shared media element inside the very same tap */
+    var a = null;
+    try {
+      a = this.el();
+      if (a) {
+        a.muted = false;
+        a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
+        a.src = this.SILENT;
+        var self = this;
+        var p = a.play();
+        if (p && p.then) p.then(function () { self.audioOk = true; try { a.pause(); } catch (e) {} }, function () {});
+        else this.audioOk = true;
+      }
+    } catch (e) {}
+    if (!this.supported || this.textOnly) return;
     try {
       var u = new SpeechSynthesisUtterance(" ");
       u.volume = 0;
       u.lang = "en-GB";
       if (this.chosen) u.voice = this.chosen;
+      else { var alt = this.anyEnglish(); if (alt) u.voice = alt; }
       window.speechSynthesis.speak(u);
-    } catch (e) {}
+      try { window.speechSynthesis.pause(); window.speechSynthesis.resume(); } catch (e2) {}
+    } catch (e3) {}
   },
 
   stop: function () {
     this.token++;
     if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
+    try { if (this.audio) { this.audio.onended = null; this.audio.onerror = null; this.audio.pause(); } } catch (e) {}
+    this.busy = false;
     if (!this.supported) return;
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    try { window.speechSynthesis.cancel(); } catch (e4) {}
     this.activeUtter = null;
   },
 
@@ -3487,69 +3782,121 @@ var Speech = {
     return out;
   },
 
-  /* speak an array of text parts in order; cb() always called once */
+  /* speak an array of text parts in order; cb() is always called exactly once.
+     Tier choice per part: recorded dictionary MP3 -> device en-GB voice ->
+     streamed cloud British TTS -> any English device voice -> chime. */
   say: function (parts, opts, cb) {
     var self = this;
     var o = opts || {};
     var token = ++this.token;
-    if (!this.supported || this.textOnly) { cb && cb({ ok: false, err: "text mode" }); return token; }
-    if (!this.chosen) this.pick();
-    if (!this.chosen || !this.isUK(this.chosen)) { UI.toast("No UK voice. Add one in Settings or use Text mode."); cb && cb({ok:false,err:"no UK voice"}); return token; }
     var queue = [];
     for (var i = 0; i < parts.length; i++) {
       var sp = this.splitLong(parts[i]);
       for (var j = 0; j < sp.length; j++) if (U.trim(sp[j])) queue.push(sp[j]);
     }
     if (!queue.length) { cb && cb({ ok: true }); return token; }
-    var qi = 0, retried = false;
-
+    var online = U.nav("onLine", true) !== false;
+    if (this.textOnly && !online && !this.ukVoices.length) { cb && cb({ ok: false, err: "text mode" }); return token; }
+    if (!this.ukVoices.length) this.pick();
+    var done = false, qi = 0, streamDead = false;
     function stale() { return token !== self.token; }
-    function nextPart() {
-      if (stale()) return;
-      if (qi >= queue.length) { cb && cb({ ok: true }); return; }
-      var text = queue[qi++];
-      var expected = (text.length / (14 * Math.max(0.5, o.rate || 0.85))) + 3;
-      var finished = false;
-      var u = new SpeechSynthesisUtterance(text);
+    function canceled() { if (stale()) { finish({ ok: false, err: "canceled" }); return true; } return false; }
+    function finish(res) {
+      if (done) return;
+      done = true;
+      if (self.watchdog) { clearTimeout(self.watchdog); self.watchdog = null; }
+      cb && cb(res || { ok: true });
+    }
+    function step(ms) {
+      if (canceled()) return;
+      if (qi >= queue.length) { finish({ ok: true }); return; }
+      setTimeout(next, ms || Math.max(60, o.gap === undefined ? 100 : o.gap));
+    }
+    function tierFor() {
+      if (self.ukVoices.length) return "voice";
+      if (online && !streamDead) return "stream";
+      if (self.supported && !self.textOnly && self.anyEnglish()) return "voice";
+      if (online && !streamDead) return "stream";
+      return "none";
+    }
+    function next() {
+      if (canceled()) return;
+      if (qi >= queue.length) { finish({ ok: true }); return; }
+      var text = queue[qi];
+      var rate = U.clamp(o.rate === undefined ? 0.85 : o.rate, 0.5, 1.6);
+      if (online && o.mp3 !== false) {
+        var mp3 = o.mp3 || self.mp3For(text, o.word);
+        if (mp3) {
+          self.lastTier = "dictionary";
+          self.playAudio(mp3, rate, 5200, function (ok) {
+            if (canceled()) return;
+            if (ok) { qi++; step(60); return; }
+            next();
+          });
+          return;
+        }
+      }
+      var tier = tierFor();
+      if (tier === "voice") voice(text, rate);
+      else if (tier === "stream") stream(text, rate);
+      else { self.chime(); qi = queue.length; finish({ ok: false, err: "no audio" }); }
+    }
+    function voice(text, rate) {
+      var uk = self.ukVoices.length > 0;
+      var v = uk ? self.chosen : self.anyEnglish();
+      if (uk && !v) v = self.chosen;
+      var u;
+      try { u = new SpeechSynthesisUtterance(text); } catch (e0) { streamDead = true; qi++; step(60); return; }
       u.lang = "en-GB";
-      if (self.chosen) u.voice = self.chosen;
-      u.rate = U.clamp(o.rate === undefined ? 0.85 : o.rate, 0.5, 1.6);
+      if (v) u.voice = v;
+      u.rate = uk ? rate : 0.85;
       u.volume = U.clamp(o.volume === undefined ? (DB.data ? DB.data.settings.volume : 1) : o.volume, 0, 1);
       u.pitch = o.pitch === undefined ? 1 : o.pitch;
       self.activeUtter = u;
-      function done(res) {
-        if (finished) return;
-        finished = true;
+      self.lastTier = uk ? "device" : "device-any";
+      var expected = (String(text).length / (14 * Math.max(0.5, u.rate))) + 3;
+      var ended = false;
+      function end(res) {
+        if (ended) return;
+        ended = true;
         if (self.watchdog) { clearTimeout(self.watchdog); self.watchdog = null; }
-        if (stale()) return;
+        if (canceled()) return;
         if (res && res.err === "interrupted" && self.onInterrupt) {
           var hook = self.onInterrupt;
           self.onInterrupt = null;
-          try { hook(); } catch (e2) {}
+          try { hook(); } catch (e1) {}
           return;
         }
-        if (res && res.err && res.err !== "canceled" && res.err !== "interrupted" && !retried) {
-          retried = true;
-          qi--;
-          setTimeout(function () { if (!stale()) { try { window.speechSynthesis.cancel(); } catch (e) {} setTimeout(nextPart, 100); } }, 120);
-          return;
-        }
-        var gap = o.gap === undefined ? 100 : o.gap;
-        if (qi < queue.length) setTimeout(nextPart, Math.max(90, gap));
-        else { cb && cb({ ok: !(res && res.err) }); }
+        if (res && res.err && res.err !== "canceled" && online && !streamDead && !uk) { stream(text, rate); return; }
+        if (res && res.err && res.err !== "canceled" && online && !streamDead) { streamDead = true; stream(text, rate); return; }
+        qi++;
+        step();
       }
-      u.onend = function () { done(null); };
-      u.onerror = function (ev) { done({ err: (ev && ev.error) ? ev.error : "error" }); };
+      u.onend = function () { end(null); };
+      u.onerror = function (ev) { end({ err: (ev && ev.error) ? ev.error : "error" }); };
       self.watchdog = setTimeout(function () {
-        if (stale()) return;
-        try { window.speechSynthesis.cancel(); } catch (e) {}
-        done(null);
+        if (canceled()) return;
+        try { window.speechSynthesis.cancel(); } catch (e2) {}
+        end(null);
       }, Math.max(2500, expected * 1000));
       try { window.speechSynthesis.speak(u); }
-      catch (e) { done({ err: "speak-failed" }); }
+      catch (e3) { end({ err: "speak-failed" }); }
+    }
+    function stream(text, rate) {
+      self.lastTier = "cloud";
+      var ms = 1500 + String(text).length * 110;
+      self.playAudio(self.streamUrl(text), rate, ms, function (ok) {
+        if (canceled()) return;
+        if (ok) { qi++; step(60); return; }
+        streamDead = true;
+        if (self.supported && !self.textOnly && self.anyEnglish()) { voice(text, rate); return; }
+        qi++;
+        if (qi >= queue.length) { self.chime(); finish({ ok: false, err: "no audio" }); return; }
+        step(60);
+      });
     }
     /* iOS needs a short gap after a cancel before the next speak */
-    setTimeout(nextPart, 90);
+    setTimeout(next, 90);
     return token;
   },
 
@@ -3675,7 +4022,7 @@ var Eng = {
       beats.push({ t: "say", text: "Number " + (i + 1) + ".", status: S.listening });
       beats.push({ t: "wait", ms: 450 });
     }
-    beats.push({ t: "say", text: w.w, status: S.listening });
+    beats.push({ t: "say", text: w.w, status: S.listening, mp3: w.audio || "", word: w.w });
     beats.push({ t: "wait", ms: Math.round(st.pauseWord * 1000) });
     if (st.sentence && w.s) {
       beats.push({ t: "say", text: w.s, status: S.listening });
@@ -3683,7 +4030,7 @@ var Eng = {
     }
     var extra = U.clamp(st.repeats, 1, 3) - 1;
     for (var r = 0; r < extra; r++) {
-      beats.push({ t: "say", text: w.w, status: S.listening });
+      beats.push({ t: "say", text: w.w, status: S.listening, mp3: w.audio || "", word: w.w });
       if (r < extra - 1) beats.push({ t: "wait", ms: Math.round(st.pauseWord * 1000) });
     }
     beats.push({ t: "write", secs: writeSecs(w.w), status: S.yourTurn });
@@ -3697,11 +4044,11 @@ var Eng = {
       UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
       return;
     }
-    if (!Speech.supported) {
-      UI.toast("This browser cannot speak. Use Text mode: the word is shown and you tap Next.", { icon: "i-alert", ms: 8000 });
-    } else if (!Speech.ukVoices.length && !Speech.textOnly) {
-      var self = this; NoVoice.open(function () { self.start(o); }, function () { self.start(o); });
-      return;
+    /* A1: a missing device voice can never block a dictation. The four-tier
+       British engine falls back to dictionary MP3s, then streamed British
+       TTS, then any English voice, so the "No UK voice" sheet is not shown. */
+    if (!Speech.audioReady()) {
+      UI.toast("This phone has no British audio yet: the word is shown on screen as well.", { icon: "i-info", ms: 6000 });
     }
     this.stop(true);
     this.words = list.words.slice(0);
@@ -3789,7 +4136,7 @@ var Eng = {
       this.status(b.status || S.listening);
       if (!Speech.supported) { this.after(700, function () { if (!stale()) self.runBeat(n + 1); }); return; }
       var rate = DB.data.settings.rate;
-      Speech.say([b.text], { rate: rate, volume: DB.data.settings.volume }, function () {
+      Speech.say([b.text], { rate: rate, volume: DB.data.settings.volume, mp3: b.mp3 || false, word: b.word || "" }, function () {
         if (stale()) return;
         self.runBeat(n + 1);
       });
@@ -3901,7 +4248,7 @@ var Eng = {
     var w = this.currentWord();
     if (!w) return;
     this.interrupt(function (done) {
-      Speech.say([w.w], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, done);
+      Speech.say([w.w], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: w.audio || false, word: w.w }, done);
     });
   },
   repeatSentence: function () {
@@ -3909,7 +4256,7 @@ var Eng = {
     var w = this.currentWord();
     if (!w || !w.s) { UI.toast("This word has no example sentence", { icon: "i-info" }); return; }
     this.interrupt(function (done) {
-      Speech.say([w.s], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, done);
+      Speech.say([w.s], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: false, word: "" }, done);
     });
   },
   spellWord: function () {
@@ -3923,7 +4270,7 @@ var Eng = {
     var w = this.currentWord();
     if (!w) return;
     this.interrupt(function (done) {
-      Speech.say([w.w], { rate: Math.max(0.55, DB.data.settings.rate - 0.25), volume: DB.data.settings.volume }, done);
+      Speech.say([w.w], { rate: Math.max(0.55, DB.data.settings.rate - 0.25), volume: DB.data.settings.volume, mp3: w.audio || "", word: w.w }, done);
     });
   },
   /* one-off action: bump the run id so the main chain stops, speak, then return
@@ -4161,7 +4508,7 @@ Eng.openPlayer = function () {
       mk(S.spellIt, "i-spell", function () { self.spellWord(); });
       mk("Test sound", "i-vol", function () {
         Speech.say(["Hello. This is your UK English voice."], {}, function (r) {
-          if (r && !r.ok) UI.toast("No UK voice found. Add one in Settings \u203a Voice.", { icon: "i-alert", ms: 6000 });
+          if (r && !r.ok) UI.toast(Speech.audioReady() ? "British audio unavailable right now: the word is shown on screen." : "No British audio on this device: the word is shown on screen.", { icon: "i-info", ms: 5000 });
         });
       });
       mk(S.previous, "i-prev", function () { self.prev(); });
@@ -4265,11 +4612,20 @@ Eng.readyScreen = function () {
   var sh = UI.sheet({
     title: S.ready,
     body: function (b) {
-      var vline = U.el("p", "small", null);
-      if (!Speech.supported) vline.textContent = "This browser cannot speak, so Text mode is on: the word will be shown on screen.";
-      else if (Speech.chosen) vline.textContent = S.voiceFound + ": " + Speech.voiceName() + (Speech.isUkVoice() ? "" : " (not UK)");
-      else vline.textContent = "No UK voice selected yet.";
+      var pill = U.el("div", "chip" + (Speech.audioReady() ? " good" : ""), Speech.audioLabel());
+      pill.style.display = "inline-block";
+      pill.style.margin = "2px 0 10px";
+      b.appendChild(pill);
+      var vline = U.el("p", "small muted", null);
+      vline.textContent = Speech.ukVoices.length
+        ? (S.voiceFound + ": " + Speech.voiceName())
+        : (U.nav("onLine", true) === false ? "Offline: using your English device voice." : "Using British dictionary audio, then a British voice.");
       b.appendChild(vline);
+      var testRow = U.el("div", "btn-row tight", null);
+      var testBtn = U.btn("Test sound", "i-vol", "sm soft");
+      U.on(testBtn, "click", function () { Speech.unlock(); Speech.say([phrase], { rate: DB.data.settings.rate }, function () {}); });
+      testRow.appendChild(testBtn);
+      b.appendChild(testRow);
       b.appendChild(U.el("p", "small muted", S.volumeTip));
       b.appendChild(U.el("p", "small", "Get your pen and paper. Tap I'm ready when you are."));
       var num = U.el("div", "center", null);
@@ -4316,7 +4672,9 @@ Eng.readyScreen = function () {
       return sk;
     })()]
   });
-  Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, function () {});
+  /* the greeting is always spoken aloud, in British English, on the tier
+     that this device actually has (dictionary audio / en-GB / cloud / any en) */
+  setTimeout(function () { Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: false }, function () {}); }, 260);
   return sh;
 };
 
@@ -4342,6 +4700,30 @@ function diffChars(a, b) {
   while (x < n) { out.push({ c: a.charAt(x), ok: false }); x++; }
   while (y < m) { out.push({ c: b.charAt(y), ok: false, missing: true }); y++; }
   return out;
+}
+
+/* A6: a finished dictation is announced to the class straight away -
+   it shows up in Community under All and Finished with the anonymous nickname,
+   the score and the device line, and it is queued for the cloud. */
+function publishCompletion(rec, action) {
+  var d = DB.data, i, c = null;
+  if (!rec || !d) return null;
+  var text = "Completed Session " + (rec.sessionNo || "1") + " \u00b7 Score: " + rec.score + "/" + rec.wordCount + " (" + rec.percent + "%)";
+  var meta = (rec.deviceType || U.deviceType()) + " \u00b7 " + (rec.ukVoice ? "UK voice" : "audio fallback") + " \u00b7 " + rec.wordCount + " words" + (rec.mode === "paper" ? " \u00b7 paper self-check" : "");
+  if (rec.commId) {
+    for (i = 0; i < d.comments.length; i++) if (d.comments[i].id === rec.commId) { c = d.comments[i]; break; }
+    if (c) { c.text = text; c.meta = meta; c.ts = Math.max(c.ts, rec.ts || Date.now()); DB.save(); if (UI.tab === "comm") Screens.comm(); return c; }
+  }
+  if (action === "update") return null;
+  c = {
+    id: U.uid("c"), ts: rec.ts || Date.now(), name: d.profile.nickname || "Student", status: "finished",
+    text: text, meta: meta, pinned: false, hidden: false, reply: "", pending: !Cloud.mode, sent: false, mine: true, auto: true
+  };
+  d.comments.unshift(c);
+  if (d.comments.length > CONFIG.maxComments) d.comments.length = CONFIG.maxComments;
+  rec.commId = c.id;
+  Cloud.queue({ action: "comment", cid: c.id, name: c.name, status: c.status, text: c.text, meta: c.meta });
+  return c;
 }
 
 var Results = {
@@ -4389,6 +4771,9 @@ var Results = {
     };
     DB.data.history.unshift(rec);
     if (DB.data.history.length > CONFIG.maxHistory) DB.data.history.length = CONFIG.maxHistory;
+    /* A6 automatic completion post + the once-per-session backup copy (A7.3) */
+    publishCompletion(rec);
+    DB.saveNow(true);
     /* streak */
     var today = U.dateKey(new Date());
     var st = DB.data.profile.streak;
@@ -4453,58 +4838,83 @@ var Results = {
           " \u00b7 " + U.dur(rec.durationSec) + " \u00b7 " + (rec.ukVoice ? "UK voice" : "non-UK voice") + (rec.selfScored ? " \u00b7 self-scored" : ""));
         body.appendChild(metaLine);
 
-        /* paper mode: show spellings + self score */
+        /* A7.2 paper mode: an interactive self-check. Every word appears as a
+           numbered row with Got it right / Missed it buttons; the score ring,
+           the history entry and the community post update live as you tap. */
         if (rec.mode === "paper") {
           var box = U.el("div", "glass card pad-s r2", null);
           box.style.marginTop = "14px";
           var head = U.el("div", "spread", null);
           head.appendChild(U.el("b", "small", S.selfScore));
-          var stepper = U.el("div", "stepper", null);
-          var minus = U.btn("", "i-minus", "sm soft icon");
-          minus.setAttribute("aria-label", "One fewer correct word");
           var val = U.el("span", "val", rec.score + " / " + rec.wordCount);
-          var plus = U.btn("", "i-plus", "sm soft icon");
-          plus.setAttribute("aria-label", "One more correct word");
-          var n = rec.score;
-          function paint() { val.textContent = n + " / " + rec.wordCount; }
-          U.on(minus, "click", function () { n = U.clamp(n - 1, 0, rec.wordCount); paint(); saveSelf(); });
-          U.on(plus, "click", function () { n = U.clamp(n + 1, 0, rec.wordCount); paint(); saveSelf(); });
-          function saveSelf() {
+          head.appendChild(val);
+          box.appendChild(head);
+          box.appendChild(U.el("p", "tiny muted", "Tap the words you wrote correctly. The score updates as you go, and the spellings stay hidden until you ask."));
+          var marks = [];
+          for (var mi = 0; mi < rec.wordCount; mi++) marks[mi] = (rec.rows && rec.rows[mi] && rec.rows[mi].state === "ok") ? "ok" : "";
+          var shown = false;
+          var markHost = U.el("div", null, null);
+          markHost.style.marginTop = "6px";
+          function paintRing() {
+            var n = 0;
+            for (var i = 0; i < marks.length; i++) if (marks[i] === "ok") n++;
             rec.score = n;
             rec.percent = rec.wordCount ? Math.round((n / rec.wordCount) * 100) : 0;
+            rec.selfScored = true;
+            rec.marks = marks.slice(0);
+            val.textContent = n + " / " + rec.wordCount;
+            if (lbl && lbl.firstChild) lbl.firstChild.textContent = n + " / " + rec.wordCount;
+            if (fgc) { try { fgc.setAttribute("stroke-dashoffset", (C * (1 - rec.percent / 100)).toFixed(1)); } catch (e) {} }
             var recs = DB.data.history;
-            for (var i = 0; i < recs.length; i++) if (recs[i].id === rec.id) { recs[i].score = rec.score; recs[i].percent = rec.percent; break; }
+            for (var j = 0; j < recs.length; j++) if (recs[j].id === rec.id) { recs[j].score = rec.score; recs[j].percent = rec.percent; recs[j].selfScored = true; recs[j].marks = rec.marks; break; }
+            publishCompletion(rec, "update");
             DB.save();
           }
-          stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
-          head.appendChild(stepper);
-          box.appendChild(head);
-          var showBtn = U.btn(S.showSpellings, "i-eye", "soft block");
-          showBtn.style.marginTop = "10px";
-          var list = U.el("div", null, null);
-          list.style.marginTop = "8px";
-          var shown = false;
+          function markRow(w, i) {
+            var row = U.el("div", "listrow", null);
+            row.appendChild(U.el("div", "n", String(i + 1)));
+            var cell = U.el("div", "w", null);
+            cell.appendChild(U.el("b", null, shown ? w.w : "\u2022\u2022\u2022\u2022\u2022\u2022"));
+            if (shown && w.s) cell.appendChild(U.el("div", "tiny muted", w.s));
+            row.appendChild(cell);
+            var good = U.btn("", "i-check", "sm ghost icon");
+            good.setAttribute("aria-label", "Got it right: " + w.w);
+            var bad = U.btn("", "i-x", "sm ghost icon");
+            bad.setAttribute("aria-label", "Missed it: " + w.w);
+            function paintState() {
+              good.className = "btn sm " + (marks[i] === "ok" ? "primary" : "ghost") + " icon";
+              bad.className = "btn sm " + (marks[i] === "no" ? "primary" : "ghost") + " icon";
+              row.setAttribute("data-mark", marks[i] || "");
+            }
+            U.on(good, "click", function () { marks[i] = marks[i] === "ok" ? "" : "ok"; paintState(); paintRing(); });
+            U.on(bad, "click", function () { marks[i] = marks[i] === "no" ? "" : "no"; paintState(); paintRing(); });
+            paintState();
+            var hear = U.btn("", "i-vol", "sm ghost icon");
+            hear.setAttribute("aria-label", "Hear this word");
+            U.on(hear, "click", function () {
+              Speech.playAudio(ukMp3(w.w), DB.data.settings.rate, 5200, function (ok) {
+                if (!ok) Speech.say([w.w], { rate: DB.data.settings.rate, word: w.w }, function () {});
+              });
+            });
+            row.appendChild(hear); row.appendChild(good); row.appendChild(bad);
+            return row;
+          }
+          renderChunked(markHost, words, markRow);
+          var quick = U.el("div", "btn-row tight", null);
+          quick.style.marginTop = "10px";
+          var showBtn = U.btn(S.showSpellings, "i-eye", "sm soft");
           U.on(showBtn, "click", function () {
             shown = !shown;
             showBtn.textContent = shown ? "Hide the spellings" : S.showSpellings;
-            list.textContent = "";
-            if (!shown) return;
-            words.forEach(function (w, i) {
-              var row = U.el("div", "listrow", null);
-              row.appendChild(U.el("div", "n", String(i + 1)));
-              var ww = U.el("div", "w", null);
-              ww.appendChild(U.el("b", null, w.w));
-              if (w.s) ww.appendChild(U.el("div", "tiny muted", w.s));
-              row.appendChild(ww);
-              var hear = U.btn("", "i-vol", "sm ghost icon");
-              hear.setAttribute("aria-label", "Hear this word");
-              U.on(hear, "click", function () { Speech.say([w.w], { rate: DB.data.settings.rate }, function () {}); });
-              row.appendChild(hear);
-              list.appendChild(row);
-            });
+            renderChunked(markHost, words, markRow);
           });
-          box.appendChild(showBtn);
-          box.appendChild(list);
+          var allRight = U.btn("All right", "i-check", "sm soft");
+          U.on(allRight, "click", function () { for (var i = 0; i < marks.length; i++) marks[i] = "ok"; renderChunked(markHost, words, markRow); paintRing(); });
+          var resetMarks = U.btn("Reset", "i-refresh", "sm soft");
+          U.on(resetMarks, "click", function () { for (var i = 0; i < marks.length; i++) marks[i] = ""; renderChunked(markHost, words, markRow); paintRing(); });
+          quick.appendChild(showBtn); quick.appendChild(allRight); quick.appendChild(resetMarks);
+          box.appendChild(quick);
+          box.appendChild(markHost);
           body.appendChild(box);
         }
 
@@ -4721,7 +5131,10 @@ var Dict = {
       var res = Dict.parse(json);
       if (res) {
         res.ts = Date.now();
-        DB.data.dictCache[key] = res;
+        if (!DB.data.dictCache[key]) DB.data.dictCache[key] = {};
+        var merged = DB.data.dictCache[key];
+        Object.keys(res).forEach(function (k) { if (res[k] !== "" && res[k] !== undefined) merged[k] = res[k]; });
+        DB.trimCache();
         DB.save();
       }
       cb && cb(res || cache || null);
@@ -4763,28 +5176,17 @@ var Dict = {
     } catch (err) { return null; }
   },
 
-  /* UK audio file when the lookup has one, otherwise the device en-GB voice */
+  /* UK audio file when the lookup has one, otherwise the four-tier engine */
   speak: function (word, rate) {
-    var self = this;
-    var key = U.norm(word);
-    var cache = DB.data.dictCache[key];
-    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
-      try {
-        if (!this.audioEl) {
-          this.audioEl = new Audio();
-          this.audioEl.preload = "none";
-          this.audioEl.addEventListener("error", function () {
-            self.audioEl = null;
-            Speech.say([word], { rate: rate === undefined ? DB.data.settings.rate : rate }, function () {});
-          });
-        }
-        this.audioEl.src = cache.audio;
-        var p = this.audioEl.play();
-        if (p && p.catch) p.catch(function () { Speech.say([word], { rate: rate === undefined ? DB.data.settings.rate : rate }, function () {}); });
-        return;
-      } catch (e) {}
+    var r = rate === undefined ? DB.data.settings.rate : rate;
+    var cache = DB.data.dictCache[U.norm(word)];
+    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
+      Speech.playAudio(cache.audio, r, 5200, function (ok) {
+        if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
+      });
+      return;
     }
-    Speech.say([word], { rate: rate === undefined ? DB.data.settings.rate : rate }, function () {});
+    Speech.say([word], { rate: r, word: word }, function () {});
   }
 };
 
@@ -5179,14 +5581,30 @@ var Admin = {
         function setMsg(t) { var m = U.$("#pinMsg"); if (m) m.textContent = t; }
         paint();
 
-        U.delegate(pad, "click", "button", function (ev, btn) {
-          var k = btn.getAttribute("data-k");
+        function key(k) {
           if (k === "del") { entry = entry.slice(0, -1); paint(); return; }
           if (k === "clear") { entry = ""; paint(); return; }
+          if (k === "enter") { if (enter && !enter.disabled) enter.click(); return; }
+          if (!/^[0-9]$/.test(String(k || ""))) return;
           if (entry.length >= CONFIG.maxPin) return;
           entry += k;
           paint();
-        });
+          /* auto-unlock the moment the four-digit lecturer PIN is complete */
+          if (mode !== "create" && mode !== "confirm" && entry.length === CONFIG.minPin) {
+            if (DB.data.admin.lockUntil > Date.now()) return;
+            var auto = entry; entry = ""; paint(); submit(auto);
+          }
+        }
+        U.delegate(pad, "click", "button", function (ev, btn) { key(btn.getAttribute("data-k")); });
+        /* a physical keyboard works too while the PIN sheet is open */
+        var onKey = function (ev) {
+          var k = ev.key;
+          if (k === "Enter") { ev.preventDefault(); key("enter"); }
+          else if (k === "Backspace") { ev.preventDefault(); key("del"); }
+          else if (/^[0-9]$/.test(k)) { ev.preventDefault(); key(k); }
+        };
+        document.addEventListener("keydown", onKey, true);
+        self._pinKey = onKey;
         var enter = U.btn("Unlock", "i-lock", "primary block"); enter.id = "pinSubmit";
         U.on(enter, "click", function () {
           if (DB.data.admin.lockUntil > Date.now()) return;
@@ -5226,9 +5644,20 @@ var Admin = {
                 self.pin = pin;
                 UI.closeSheet();
                 self.unlock();
+              } else if (res && res.err !== "locked") {
+                /* the server is unreachable or has no ADMIN_PIN: fall back to
+                   the PIN stored on this device so the lecturer is never locked out */
+                var la = DB.data.admin;
+                self.hashPin(pin, la.pinSalt, function (localHash) {
+                  if (self.authRun !== authRun || !sh.parentNode) return;
+                  if (localHash && localHash === la.pinHash) { self.pin = pin; UI.closeSheet(); self.unlock(); return; }
+                  self.pin = "";
+                  setMsg(res && res.err === "admin_pin_unset" ? "ADMIN_PIN is not set in the Apps Script project yet, and this device has no matching PIN." : "Wrong PIN. Try again.");
+                  shake();
+                }, la.pinKdf || "sha256");
               } else {
                 self.pin = "";
-                setMsg(res && res.err === "locked" ? ("Locked for " + Math.ceil((res.retrySec || 600) / 60) + " min") : (res && res.err === "admin_pin_unset" ? "ADMIN_PIN is not set in the Apps Script project yet." : "Wrong PIN. Try again."));
+                setMsg("Locked for " + Math.ceil((res.retrySec || 600) / 60) + " min");
                 shake();
               }
             });
@@ -5269,6 +5698,10 @@ var Admin = {
             }
           }, a.pinKdf || "sha256");
         }
+      },
+      onClose: function () {
+        self.authRun = (self.authRun || 0) + 1;
+        if (self._pinKey) { document.removeEventListener("keydown", self._pinKey, true); self._pinKey = null; }
       }
     });
     return sh;
@@ -5317,9 +5750,12 @@ var Admin = {
   },
 
   /* ---------- messy text parser ---------- */
+  /* classes run only on Tuesday (2) and Wednesday (3): today when it is a
+     class day, then the next eight Tuesday/Wednesday dates. */
   classDates: function (now) {
-    var dates = [U.dateKey(now)], d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
-    while (dates.length < 5) { d.setDate(d.getDate() + 1); if (d.getDay() === 2 || d.getDay() === 3) dates.push(U.dateKey(d)); }
+    var dates = [], d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+    if (d.getDay() === 2 || d.getDay() === 3) dates.push(U.dateKey(d));
+    while (dates.length < 8) { d.setDate(d.getDate() + 1); if (d.getDay() === 2 || d.getDay() === 3) dates.push(U.dateKey(d)); }
     return dates;
   },
   wordsText: function (words) {
@@ -5393,9 +5829,99 @@ var Admin = {
       if (!U.trim(row[wi])) problems.push("Row " + (i + 1) + ": empty word.");
       add(row[wi], row[si], row[mi], i + 1);
     });
+    self.autoFill(out);
     return { items: out, problems: problems, dupes: dupes, mode: mode };
   },
 
+  /* ---------- A2.3 automatic meaning & sentence generator --------------
+     1. built-in B1 bank (the 30 leisure words, the previous sample list and
+        common B1 vocabulary), 2. a background dictionary lookup, 3. a clean
+        B1 template so that m and s are never blank. */
+  tplMeaning: function (w) { return "a B1 word you can use in your own sentence: " + String(w || "").toLowerCase(); },
+  tplSentence: function (w) { return "This week we are learning the word \u201c" + w + "\u201d \u2014 can you write your own sentence with it?"; },
+  bankHit: function (w) {
+    var k = String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim();
+    return (k && WORD_BANK[k]) || null;
+  },
+  autoFill: function (items) {
+    if (!items || !items.length) return items || [];
+    var self = this, gap = [], i;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i], hit = self.bankHit(it.w);
+      if (hit) {
+        if (!U.trim(it.m)) it.m = hit.m;
+        if (!U.trim(it.s)) it.s = hit.s;
+      }
+      if (!U.trim(it.m) || !U.trim(it.s)) gap.push(it);
+    }
+    for (i = 0; i < gap.length; i++) {
+      if (!U.trim(gap[i].m)) gap[i].m = self.tplMeaning(gap[i].w);
+      if (!U.trim(gap[i].s)) gap[i].s = self.tplSentence(gap[i].w);
+    }
+    self.enrich(gap);
+    return items;
+  },
+  /* background enrichment: no extra button for the lecturer to remember */
+  enrich: function (items) {
+    if (!items || !items.length || !window.fetch || U.nav("onLine", true) === false) return;
+    var self = this, todo = items.slice(0, 40), i = 0, changed = 0;
+    if (this._enrichTimer) clearTimeout(this._enrichTimer);
+    this._enrichTimer = setTimeout(function () {
+      self._enrichTimer = null;
+      (function step() {
+        if (i >= todo.length) {
+          if (changed) { DB.save(); if (Admin.unlocked) Admin.renderTab(); }
+          return;
+        }
+        var it = todo[i++];
+        var finished = false;
+        function go() { if (finished) return; finished = true; setTimeout(step, 20); }
+        if (!it) { go(); return; }
+        try {
+          Dict.lookup(it.w, function (res) {
+            if (res) {
+              if (U.trim(res.meaning) && (!U.trim(it.m) || it.m === self.tplMeaning(it.w))) { it.m = U.clip(res.meaning, 500); changed++; }
+              if (U.trim(res.example) && (!U.trim(it.s) || it.s === self.tplSentence(it.w))) { it.s = U.clip(res.example, 500); changed++; }
+              if (it.audio === undefined && res.audio) it.audio = res.audio;
+            }
+            go();
+          });
+        } catch (e) { go(); }
+      })();
+    }, 400);
+  },
+  setBadge: function (el, parsed) {
+    if (!el) return;
+    var items = parsed && parsed.items ? parsed.items : [];
+    var ready = 0;
+    for (var i = 0; i < items.length; i++) if (U.trim(items[i].m) && U.trim(items[i].s)) ready++;
+    el.textContent = !items.length ? "Paste a list to begin"
+      : items.length + (items.length === 1 ? " word ready" : " words ready") + (ready === items.length ? " \u2014 meanings & sentences auto-filled" : " \u00b7 " + ready + " with meaning & sentence");
+    U.setCls(el, "good", items.length > 0 && ready === items.length);
+  },
+  /* one-tap publish: replace the list, publish it, point the active session
+     and the plan at it, queue the cloud sync and repaint Home. */
+  saveAll: function (list, items, dates, target) {
+    var d = DB.data, now = U.dateKey(new Date());
+    if (!list || !items || !items.length) { UI.toast("Add some words before publishing.", { icon: "i-alert" }); return; }
+    list.words = items;
+    list.draftText = undefined;
+    delete list.draftText;
+    if (dates && dates.length) dates.forEach(function (key) { d.plan.dates[key] = list.id; });
+    else if (target && target.value === "pinned") d.plan.pinned = list.id;
+    else if (target && /^w[0-6]$/.test(target.value)) d.plan.weekdays[Number(target.value.slice(1))] = list.id;
+    else d.plan.dates[now] = list.id;
+    d.plan.defaultList = list.id;
+    if (!d.session.date) d.session.date = now;
+    if (dates && dates.length) { var day = new Date(dates[0] + "T12:00:00"); d.session.date = dates[0]; d.session.day = DAYS[U.weekdayIndex(day)]; d.session.autoDay = false; }
+    d.session.listId = list.id;
+    if (!d.session.title) d.session.title = list.name;
+    this.publish(list, true);
+    DB.saveNow(true);
+    Screens.home();
+    UI.renderNet();
+    UI.toast("Saved & published to all students \u00b7 " + list.words.length + " words \u00b7 v" + list.version + (Cloud.mode ? " \u00b7 syncing" : " \u00b7 on this device"), { icon: "i-check", ms: 6000 });
+  },
   /* ---------- the panel ---------- */
   layer: null,
   tab: "words",
@@ -5536,16 +6062,20 @@ Admin.tabWords = function (host) {
     libBox.appendChild(add);
   }
   paintLib();
-  var sample = U.btn("Add sample B1 list (30 words)", "i-plus", "sm soft");
-  U.on(sample,"click",function () { var l = {id:U.uid("list"),name:"Sample B1 list (30 words)",words:SAMPLE_WORDS.map(function (x) { return {w:x.w,s:x.s,m:x.m}; }),version:1,published:false,draft:true}; d.lists.push(l); self.editListId=l.id; DB.saveNow(); self.renderTab(); }); libBox.appendChild(sample);
+  var sample = U.btn("Insert the 30 " + SAMPLE_LIST_NAME, "i-plus", "sm soft");
+  U.on(sample,"click",function () { var l = {id:U.uid("list"),name:SAMPLE_LIST_NAME,words:SAMPLE_WORDS.map(function (x) { return {w:x.w,s:x.s,m:x.m,audio:x.audio||ukMp3(x.w)}; }),version:2,published:false,draft:true}; d.lists.push(l); self.editListId=l.id; DB.saveNow(); self.renderTab(); }); libBox.appendChild(sample);
 
   /* --- editor --- */
   var list = this.editListId ? Lib.byId(this.editListId) : d.lists[0];
   if (!list) return;
   this.editListId = list.id;
-  var ed = this.card(host, "Editor: " + list.name);
-  var hint = U.el("p", "tiny muted", "1 Paste words (commas or lines). 2 Preview and edit. 3 Pick class dates. 4 Publish. Use pipes, tabs, or a CSV header for sentence and meaning columns.");
+  var ed = this.card(host, "Step 1 \u00b7 Paste or edit words");
+  var hint = U.el("p", "tiny muted", "Paste words separated by commas, lines or numbers - meanings and example sentences are filled in automatically. Use pipes, tabs or a CSV header when you already have your own columns.");
   ed.appendChild(hint);
+  var badge = U.el("div", "chip", "Checking\u2026");
+  badge.setAttribute("role", "status");
+  badge.style.margin = "4px 0 8px";
+  ed.appendChild(badge);
   var ta = U.el("textarea", null, null);
   ta.setAttribute("aria-label", "Word list text");
   ta.style.minHeight = "180px";
@@ -5620,7 +6150,7 @@ Admin.tabWords = function (host) {
   }
   function refresh() {
     if (!self.unlocked) return;
-    parsed = self.parseWords(ta.value, format); remember(); renderPreview();
+    parsed = self.parseWords(ta.value, format); remember(); renderPreview(); self.setBadge(badge, parsed);
   }
   U.on(ta, "input", function () { format = "auto"; remember(); });
   U.on(ta, "input", U.debounce(refresh, 220));
@@ -5863,20 +6393,31 @@ Admin.tabWords = function (host) {
       sel.appendChild(o);
     });
   }
-  for (var i = 0; i < 7; i++) {
-    (function (dayIdx) {
-      var row = U.el("div", "planrow", null);
-      row.appendChild(U.el("div", "d", DAYS_S[dayIdx]));
-      var sel = U.el("select", null, null);
-      sel.setAttribute("aria-label", DAYS[dayIdx] + " list");
-      optList(sel, d.plan.weekdays[dayIdx] || "");
-      U.on(sel, "change", function () { d.plan.weekdays[dayIdx] = sel.value; DB.saveNow(); });
-      row.appendChild(sel);
-      pl.appendChild(row);
-    })(i);
+  function planRow(dayIdx, isClass) {
+    var row = U.el("div", "planrow", null);
+    if (isClass) row.style.boxShadow = "inset 3px 0 0 #3a5cf0";
+    row.appendChild(U.el("div", "d", DAYS_S[dayIdx] + (isClass ? " \u2605" : "")));
+    var sel = U.el("select", null, null);
+    sel.setAttribute("aria-label", DAYS[dayIdx] + " list");
+    optList(sel, d.plan.weekdays[dayIdx] || "");
+    U.on(sel, "change", function () { d.plan.weekdays[dayIdx] = sel.value; DB.saveNow(); });
+    row.appendChild(sel);
+    return row;
   }
+  pl.appendChild(U.el("p", "tiny muted", "\u2605 Class days: Tuesday and Wednesday only."));
+  pl.appendChild(planRow(1, true));
+  pl.appendChild(planRow(2, true));
+  var otherDays = document.createElement("details");
+  otherDays.className = "otherdays";
+  otherDays.style.margin = "6px 0";
+  var otherSum = document.createElement("summary");
+  otherSum.textContent = "Other days (Monday, Thursday, Friday, weekend)";
+  otherSum.className = "small muted";
+  otherDays.appendChild(otherSum);
+  [0, 3, 4, 5, 6].forEach(function (dayIdx) { otherDays.appendChild(planRow(dayIdx, false)); });
+  pl.appendChild(otherDays);
   var defRow = U.el("div", "planrow", null);
-  defRow.appendChild(U.el("div", "d", "Default"));
+  defRow.appendChild(U.el("div", "d", "Default / Latest Session"));
   var defSel = U.el("select", null, null);
   defSel.setAttribute("aria-label", "Default list");
   optList(defSel, d.plan.defaultList);
@@ -5975,56 +6516,93 @@ Admin.tabWords = function (host) {
       var planned = Lib.forDate(date); weekRow.appendChild(U.el("td", null, U.dateKey(date) + " — " + (planned ? planned.name : "No list")));
     } grid.appendChild(weekRow);
   } calendar.appendChild(grid); pl.appendChild(U.el("h3", null, "Next 8 weeks")); pl.appendChild(calendar);
-  var pub = this.card(host, null);
+  var step3 = this.card(host, "Step 3 \u00b7 Session & class day");
+  var sessRow = U.el("div", "btn-row tight", null);
+  sessRow.appendChild(U.el("span", "small muted", "Session"));
+  var sessNo = U.el("span", "val mono", d.session.no || "1");
+  var sMinus = U.btn("", "i-minus", "sm soft icon"); sMinus.setAttribute("aria-label", "Session number minus one");
+  var sPlus = U.btn("", "i-plus", "sm soft icon"); sPlus.setAttribute("aria-label", "Session number plus one");
+  function bumpSession(delta) {
+    var n = parseInt(String(d.session.no).replace(/[^0-9]/g, ""), 10);
+    if (!isFinite(n)) n = 1;
+    d.session.no = String(Math.max(1, n + delta)) + String(d.session.no || "").replace(/^[0-9]+/, "");
+    sessNo.textContent = d.session.no;
+    DB.saveNow();
+    Screens.home();
+  }
+  U.on(sMinus, "click", function () { bumpSession(-1); });
+  U.on(sPlus, "click", function () { bumpSession(1); });
+  sessRow.appendChild(sMinus); sessRow.appendChild(sessNo); sessRow.appendChild(sPlus);
+  step3.appendChild(sessRow);
+  var dayChips = U.el("div", "btn-row tight", null);
+  dayChips.style.marginTop = "8px";
+  self.classDates(new Date()).slice(1, 5).forEach(function (key) {
+    var day = new Date(key + "T12:00:00");
+    var on = d.plan.dates[key] === list.id;
+    var chip = U.btn(DAYS_S[U.weekdayIndex(day)] + " " + key.slice(5) + (on ? " \u2713" : ""), null, "sm " + (on ? "primary" : "soft"));
+    U.on(chip, "click", function () {
+      if (d.plan.dates[key] === list.id) delete d.plan.dates[key];
+      else d.plan.dates[key] = list.id;
+      d.session.date = key;
+      d.session.day = DAYS[U.weekdayIndex(day)];
+      d.session.autoDay = false;
+      DB.saveNow();
+      self.renderTab();
+    });
+    dayChips.appendChild(chip);
+  });
+  step3.appendChild(dayChips);
+  step3.appendChild(U.el("p", "tiny muted", "Tap the Tuesday / Wednesday dates you want. Publishing below sends the list to every student and updates your Home screen at once."));
+
+  var pub = this.card(host, "Step 4 \u00b7 Save & publish");
   var status = U.el("p", "small", null);
   if (list.published && !list.draft) status.textContent = S.published + ", v" + list.version + (list.updatedAt ? " \u00b7 " + U.relTime(list.updatedAt) : "");
   else status.textContent = S.unpublished;
   pub.appendChild(status);
-  var pubBtn = U.btn(S.publish, "i-cloud", "primary block");
+  var pubBtn = U.btn("Save & Publish to All Students", "i-cloud", "primary block xl");
   U.on(pubBtn, "click", function () {
     var finalWords = self.parseWords(ta.value, format);
+    self.setBadge(badge, finalWords);
     if (!finalWords.items.length || finalWords.problems.length) { refresh(); UI.toast("Fix the preview problems before publishing."); return; }
-    var destination = selectedDates.length ? selectedDates.join(", ") : target.value === "date" ? targetDate.value : target.options[target.selectedIndex].textContent;
-    UI.confirm({
-      title: S.publish + "?",
-      text: finalWords.items.length + " words \u2192 " + destination + ", Session " + d.session.no + ". This replaces the WHOLE list for those days." + (Cloud.mode ? " Students receive it after sync." : " Local mode: this device only."),
-      okLabel: "Publish now",
-      onOk: function () {
-        if (!selectedDates.length && target.value === "date" && !targetDate.value) { UI.toast("Choose a date first."); return; }
-        list.words = finalWords.items;
-        if (selectedDates.length) selectedDates.forEach(function (key) { d.plan.dates[key] = list.id; });
-        else if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
-        else if (target.value === "date") { if (!targetDate.value) { UI.toast("Choose a date first."); return; } d.plan.dates[targetDate.value] = list.id; }
-        else if (target.value === "pinned") d.plan.pinned = list.id;
-        else d.plan.weekdays[Number(target.value.slice(1))] = list.id;
-        self.publish(list);
-      }
-    });
+    var dates = selectedDates.length ? selectedDates.slice(0) : (target.value === "date" && targetDate.value ? [targetDate.value] : (target.value === "today" ? [U.dateKey(new Date())] : []));
+    self.saveAll(list, finalWords.items, dates, dates.length ? null : target);
   });
   pub.appendChild(pubBtn);
+  var advanced = document.createElement("details");
+  advanced.style.marginTop = "8px";
+  var advSum = document.createElement("summary");
+  advSum.className = "tiny muted";
+  advSum.textContent = "Advanced: publish for a weekday, pin a list or clear the week";
+  advanced.appendChild(advSum);
+  advanced.appendChild(U.el("p", "tiny muted", "Use the planner above for weekday and pinned lists."));
+  pub.appendChild(advanced);
 };
 
-Admin.publish = function (list) {
+function wordRow(x) { var o = { w: x.w, s: x.s || "", m: x.m || "" }; if (x.audio) o.audio = x.audio; return o; }
+Admin.publish = function (list, quiet) {
   if (!list) return;
   if (!list.words.length) { UI.toast("Add some words before publishing.", { icon: "i-alert" }); return; }
+  /* every published word carries its recorded British MP3 so a phone can play
+     it without knowing anything about the dictionary sites */
+  list.words.forEach(function (x) { if (!x.audio) x.audio = ukMp3(x.w); });
   list.published = true;
   list.draft = false;
   list.version = (list.version || 1) + 1;
   list.updatedAt = Date.now();
-  list.publishedWords = list.words.map(function (x) { return { w: x.w, s: x.s, m: x.m }; });
+  list.publishedWords = list.words.map(wordRow);
   list.publishedName = list.name; list.publishedVersion = list.version;
   delete list.draftText; delete this.draft[list.id];
   var s = DB.data.session;
   DB.data.sessions.unshift({
     no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "",
     listId: list.id, listName: list.name, version: list.version,
-    words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; })
+    words: list.words.map(wordRow)
   });
   if (DB.data.sessions.length > 10) DB.data.sessions.length = 10;
   DB.saveNow();
   Cloud.queue({
     action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: {pauseWord:DB.data.settings.pauseWord,pauseSent:DB.data.settings.pauseSent,writeFixed:DB.data.settings.writeFixed,repeats:DB.data.settings.repeats,sentence:DB.data.settings.sentence,numbers:DB.data.settings.numbers,writeMode:DB.data.settings.writeMode,advance:DB.data.settings.advance},
-    words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }),
+    words: list.words.map(wordRow),
     session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "", ready:s.ready, praise:s.praise },
     plan: (function () {
       var out = [];
@@ -6035,8 +6613,10 @@ Admin.publish = function (list) {
       return out;
     })()
   });
-  UI.toast(S.published + " v" + list.version + (Cloud.mode ? " \u00b7 saved, waiting to sync" : " \u00b7 on this device"), { icon: "i-check", ms: 5000 });
-  this.renderTab();
+  if (!quiet) {
+    UI.toast(S.published + " v" + list.version + (Cloud.mode ? " \u00b7 saved, waiting to sync" : " \u00b7 on this device"), { icon: "i-check", ms: 5000 });
+    this.renderTab();
+  }
 };
 
 /* ---------- TAB 2: SESSION ---------- */
@@ -6273,10 +6853,13 @@ Admin.tabSession = function (host) {
   var nextBtn = U.btn("Next session", "i-next", "soft");
   U.on(nextBtn, "click", function () {
     bump(1);
-    var wi = U.weekdayIndex(new Date());
-    var next = new Date(Date.now() + 7 * 86400000);
+    /* jump to the next Tuesday or Wednesday, not to the same weekday */
+    var base = s.date ? new Date(s.date + "T12:00:00") : new Date();
+    var next = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1, 12);
+    while (next.getDay() !== 2 && next.getDay() !== 3) next.setDate(next.getDate() + 1);
     s.date = U.dateKey(next);
-    s.day = DAYS[wi];
+    s.day = DAYS[U.weekdayIndex(next)];
+    s.autoDay = false;
     dateIn.value = s.date;
     dayIn.value = s.day;
     DB.saveNow();
@@ -7194,8 +7777,233 @@ Cloud.wizard = function (host) {
     output.textContent = "Testing…"; test.disabled = true;
     Cloud.ping(function (res) { test.disabled = false; output.className = "small " + (res && res.ok ? "ok" : "no"); output.textContent = res && res.ok ? "Connected. Your Google Sheet answered." : "Could not connect. Check internet, the /exec link, and access Anyone."; if (res && res.ok) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); Cloud.poll(); } });
   }); fourth.appendChild(test); fourth.appendChild(output);
+  var fifth = step("5. GitHub Direct Publish (optional)", "Publish straight to dictationb1/dictationb1.github.io from this phone. Paste a fine-grained Personal Access Token limited to that repository with Contents: write. It is kept only in this browser and is never sent anywhere else.");
+  var gh = U.el("input", null, null);
+  gh.type = "password";
+  gh.placeholder = "github_pat_\u2026 (optional)";
+  gh.setAttribute("aria-label", "GitHub personal access token");
+  gh.value = Cloud.ghToken();
+  fifth.appendChild(gh);
+  var ghRow = U.el("div", "btn-row tight", null);
+  ghRow.style.marginTop = "8px";
+  var ghSave = U.btn("Save token", "i-lock", "sm soft");
+  U.on(ghSave, "click", function () { Cloud.ghToken(U.clip(gh.value.trim(), 255)); UI.toast(gh.value ? "Token saved on this device only." : "Token removed.", { icon: "i-check" }); });
+  var ghPush = U.btn("Publish data/ now", "i-cloud", "sm primary");
+  var ghOut = U.el("p", "small", "Not published yet");
+  ghOut.setAttribute("role", "status");
+  U.on(ghPush, "click", function () {
+    if (!Cloud.ghToken()) { UI.toast("Paste a GitHub token first.", { icon: "i-info" }); return; }
+    ghOut.textContent = "Publishing data/session.json and data/version.json\u2026";
+    ghPush.disabled = true;
+    Cloud.ghPublish(function (res) {
+      ghPush.disabled = false;
+      ghOut.className = "small " + (res && res.ok ? "ok" : "no");
+      ghOut.textContent = res && res.ok ? "Published. Students get the new list on their next refresh." : "Failed: " + ((res && res.err) || "unknown error");
+      if (res && res.ok) { DB.data.outbox.length = 0; DB.save(); UI.renderNet(); }
+    });
+  });
+  var ghDl = U.btn("Download session.json", "i-down", "sm soft");
+  U.on(ghDl, "click", function () {
+    var payload = Cloud.repoPayload().session;
+    try {
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "session.json";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { document.body.removeChild(a); }, 400);
+    } catch (e) { U.copy(JSON.stringify(payload, null, 2)).then(function (ok) { UI.toast(ok ? "session.json copied to the clipboard." : "Copy failed.", { icon: "i-info" }); }); }
+  });
+  ghRow.appendChild(ghSave); ghRow.appendChild(ghPush); ghRow.appendChild(ghDl);
+  fifth.appendChild(ghRow); fifth.appendChild(ghOut);
   var student = U.btn("Student link", "i-share", "soft"); U.on(student, "click", function () { Links.student(); }); host.appendChild(student);
   var list = U.btn("Share this list (no server)", "i-share", "soft"); U.on(list, "click", function () { Links.shareList(Lib.byId(Admin.editListId) || Lib.current()); }); host.appendChild(list);
+};
+/* ============================================================
+   SECTION - ALWAYS-ON ONLINE MODE (static files on GitHub Pages)
+   The published B1 session lives in ./data/session.json next to index.html,
+   so a phone in class needs no server and no setup: fetching those two static
+   files *is* the sync. A Google Apps Script link still wins when configured.
+   ============================================================ */
+Cloud.repoOnline = false;
+Cloud.repoVer = "";
+Cloud.repoAt = 0;
+Cloud.repoChecked = 0;
+Cloud.repoServed = function () {
+  try { return /^https?:$/.test(window.location.protocol) && U.nav("onLine", true) !== false; } catch (e) { return false; }
+};
+Cloud.fetchRepo = function (cb) {
+  var self = this;
+  if (!window.fetch || !this.repoServed()) { cb && cb(false); return; }
+  var got = 0, ver = null, ses = null;
+  function finish() {
+    self.repoChecked = Date.now();
+    if (ses && Array.isArray(ses.lists) && ses.lists.length) { self.repoOnline = true; self.applyRepo(ses); }
+    if (ver) { self.repoVer = String(ver.version || ""); self.repoAt = Number(ver.updatedAt || self.repoAt) || 0; }
+    UI.renderNet();
+    cb && cb(self.repoOnline);
+  }
+  ["version.json", "session.json"].forEach(function (name, idx) {
+    try {
+      fetch("./data/" + name + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.json();
+      }).then(function (json) { if (idx) ses = json; else ver = json; }, function () {}).then(finish2, finish2);
+    } catch (e) { finish2(); }
+    function finish2() { got++; if (got === 2) finish(); }
+  });
+};
+Cloud.applyRepo = function (s) {
+  var d = DB.data, changed = 0;
+  if (!s || !Array.isArray(s.lists) || !s.lists.length) return 0;
+  s.lists.forEach(function (remote) {
+    if (!remote || !remote.id || !Array.isArray(remote.words)) return;
+    var local = DB.findList(d, remote.id);
+    var stamp = Number(remote.version || remote.publishedVersion || 0);
+    if (local && (local.version || 0) >= stamp && !remote.force) return;
+    var words = remote.words.filter(function (x) { return x && typeof x.w === "string" && U.trim(x.w); }).map(function (x) {
+      var o = { w: U.clip(x.w, CONFIG.maxWordChars), s: U.clip(x.s, 500), m: U.clip(x.m, 500) };
+      o.audio = (typeof x.audio === "string" && /^https:\/\/.+\.mp3/i.test(x.audio)) ? U.clip(x.audio, 300) : ukMp3(o.w);
+      return o;
+    });
+    if (!words.length) return;
+    if (!local) { local = { id: remote.id, version: 0 }; d.lists.push(local); }
+    local.name = U.clip(remote.name || local.name || SAMPLE_LIST_NAME, 120);
+    local.words = words;
+    local.version = stamp || (local.version || 1);
+    local.published = remote.published !== false;
+    local.draft = false;
+    local.publishedWords = words.map(wordRow);
+    local.publishedName = local.name;
+    local.publishedVersion = local.version;
+    local.updatedAt = Number(s.updatedAt) || Date.now();
+    changed++;
+  });
+  if (!changed) return 0;
+  if (s.session && typeof s.session === "object") {
+    ["no", "day", "date", "title", "listId"].forEach(function (k) {
+      if (s.session[k] !== undefined && s.session[k] !== null && String(s.session[k]) !== "") d.session[k] = String(s.session[k]);
+    });
+    if (d.session.date) {
+      var day = new Date(d.session.date + "T12:00:00");
+      if (isFinite(day.getTime())) d.session.day = d.session.day || DAYS[U.weekdayIndex(day)];
+    }
+  }
+  if (Array.isArray(s.plan)) {
+    s.plan.forEach(function (row) {
+      if (!row || !row.key || !row.listId || !DB.findList(d, row.listId)) return;
+      if (/^w[0-6]$/.test(row.key)) d.plan.weekdays[Number(row.key.slice(1))] = row.listId;
+      else if (row.key === "pinned") { d.plan.pinned = row.listId; }
+      else if (row.key === "default") d.plan.defaultList = row.listId;
+      else if (/^d[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(row.key)) d.plan.dates[row.key.slice(1)] = row.listId;
+      if (row.pinned) d.plan.pinned = row.listId;
+    });
+  }
+  if (s.announcement && s.announcement.text) {
+    d.announcement = { id: s.announcement.id || "repo", title: U.clip(s.announcement.title || "", 80), text: U.clip(s.announcement.text, 500), ts: Number(s.announcement.ts) || Date.now() };
+  }
+  if (Array.isArray(s.comments) && s.comments.length) {
+    var seen = Object.create(null);
+    d.comments.forEach(function (c) { seen[c.id] = true; });
+    s.comments.slice(0, 60).forEach(function (c) {
+      if (!c || seen[c.id]) return;
+      d.comments.push({ id: c.id, ts: Number(c.ts) || Date.now(), name: U.clip(c.name || "Student", 40), status: c.status || "comment", text: U.clip(c.text || "", CONFIG.commentLen), meta: U.clip(c.meta || "", 160), pinned: !!c.pinned, hidden: false, mine: false, sent: true });
+    });
+    if (d.comments.length > CONFIG.maxComments) d.comments.length = CONFIG.maxComments;
+  }
+  DB.save();
+  Screens.home();
+  if (UI.tab === "comm") Screens.comm();
+  return changed;
+};
+
+/* ---------- GitHub Direct Publish (one tap from the lecturer's phone) ------ */
+Cloud.ghToken = function (value) {
+  if (value === undefined) { try { return Store.get("sdp.ghToken") || ""; } catch (e) { return ""; } }
+  try { if (value) Store.set("sdp.ghToken", value); else Store.del("sdp.ghToken"); } catch (e2) {}
+  return "";
+};
+Cloud.ghPath = function (p) { return "https://api.github.com/repos/" + CONFIG.repoOwner + "/" + CONFIG.repoName + "/contents/" + p; };
+Cloud.ghApi = function (path, method, body, token, cb) {
+  cb = U.once(cb);
+  try {
+    var x = new XMLHttpRequest();
+    x.open(method, path, true);
+    x.setRequestHeader("Accept", "application/vnd.github+json");
+    x.setRequestHeader("Authorization", "token " + token);
+    if (body) x.setRequestHeader("Content-Type", "application/json");
+    x.timeout = 20000;
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      var res = null;
+      try { res = JSON.parse(x.responseText || "{}"); } catch (e) { res = {}; }
+      if (x.status >= 200 && x.status < 300) cb({ ok: true, res: res });
+      else cb({ ok: false, err: (res && res.message ? res.message : "http " + x.status) });
+    };
+    x.ontimeout = function () { cb({ ok: false, err: "timeout" }); };
+    x.onerror = function () { cb({ ok: false, err: "network" }); };
+    x.send(body ? JSON.stringify(body) : null);
+  } catch (e3) { cb({ ok: false, err: "blocked" }); }
+};
+Cloud.b64utf8 = function (text) {
+  var bytes = [], i, c;
+  var s = String(text);
+  for (i = 0; i < s.length; i++) {
+    c = s.charCodeAt(i);
+    if (c < 0x80) bytes.push(c);
+    else if (c < 0x800) bytes.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+    else bytes.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+  }
+  var bin = "", chunk = 4096;
+  for (i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode.apply(null, bytes.slice(i, i + chunk));
+  try { return window.btoa(bin); } catch (e) { return ""; }
+};
+Cloud.repoPayload = function () {
+  var d = DB.data;
+  var list = (Admin.editListId && Lib.byId(Admin.editListId)) || Lib.current() || d.lists[0];
+  var words = ((list && list.published && list.publishedWords && list.publishedWords.length ? list.publishedWords : (list ? list.words : [])) || []).map(wordRow);
+  var plan = [];
+  for (var i = 0; i < 7; i++) if (d.plan.weekdays[i]) plan.push({ key: "w" + i, listId: d.plan.weekdays[i], pinned: false });
+  if (d.plan.pinned) plan.push({ key: "pinned", listId: d.plan.pinned, pinned: true });
+  plan.push({ key: "default", listId: (list && list.id) || d.plan.defaultList || "", pinned: true });
+  Object.keys(d.plan.dates || {}).forEach(function (key) { plan.push({ key: "d" + key, listId: d.plan.dates[key], pinned: false }); });
+  var now = Date.now();
+  return {
+    session: {
+      ok: true, ver: 2, updatedAt: now,
+      session: { no: d.session.no || "1", day: d.session.day || "", date: d.session.date || U.dateKey(new Date()), title: d.session.title || (list ? list.name : ""), listId: (list && list.id) || "" },
+      lists: [{ id: (list && list.id) || SAMPLE_LIST_ID, name: (list && list.name) || SAMPLE_LIST_NAME, version: (list && list.version) || 2, published: true, words: words }],
+      plan: plan,
+      announcement: d.announcement && d.announcement.text ? d.announcement : null,
+      comments: d.comments.filter(function (c) { return !c.hidden && !c.pending; }).slice(0, 40)
+    },
+    version: { ver: 2, version: APP_VERSION, buildDate: BUILD_DATE, updatedAt: now }
+  };
+};
+Cloud.ghPublish = function (cb) {
+  var token = this.ghToken(), self = this;
+  if (!token) { cb && cb({ ok: false, err: "Paste a GitHub token with Contents: write first." }); return; }
+  var payload = this.repoPayload();
+  var files = [
+    { p: "data/session.json", text: JSON.stringify(payload.session, null, 2) + "\n" },
+    { p: "data/version.json", text: JSON.stringify(payload.version, null, 2) + "\n" }
+  ];
+  var errors = [];
+  (function step(i) {
+    if (i >= files.length) { cb && cb({ ok: !errors.length, err: errors.join(" ") }); return; }
+    var f = files[i], path = self.ghPath(f.p);
+    self.ghApi(path, "GET", null, token, function (res) {
+      var sha = res && res.ok && res.res && res.res.content ? res.res.content.sha : null;
+      if (res && !res.ok) errors.push(f.p + ": " + res.err);
+      var body = { message: "data: publish " + APP_VERSION + " from the lecturer phone", content: self.b64utf8(f.text), branch: "main" };
+      if (sha) body.sha = sha;
+      self.ghApi(path, "PUT", body, token, function (r2) {
+        if (r2 && !r2.ok) errors.push(f.p + ": " + r2.err);
+        step(i + 1);
+      });
+    });
+  })(0);
 };
 var Links = {
   importPending: false,
@@ -7436,13 +8244,21 @@ UI.renderNet = function () {
   if (!chip || !txt) return;
   var online = U.nav("onLine", true) !== false;
   var outbox = DB.data ? DB.data.outbox.length : 0;
-  var label;
+  var waiting = outbox ? " \u00b7 " + outbox + " waiting" : "";
+  var label, good = false;
   chip.className = "chip";
-  if (!Cloud.mode) label = "Local mode - this device only" + (outbox ? " · " + outbox + " waiting" : "");
-  else if (!online) label = S.offline + (outbox ? " \u00b7 " + outbox + " waiting" : "");
-  else label = Cloud.fails ? "Offline - cloud not reachable" + (outbox ? " · " + outbox + " waiting" : "") : "Online - " + (Cloud.updatedAt ? "synced " + U.relTime(Cloud.updatedAt) : "not synced yet") + (outbox ? " · " + outbox + " waiting" : "");
+  if (Cloud.mode && online && !Cloud.fails) { label = "Online \u00b7 Cloud Synced" + (Cloud.updatedAt ? " \u00b7 " + U.relTime(Cloud.updatedAt) : "") + waiting; good = true; }
+  else if (Cloud.mode && !online) { label = S.offline + waiting; }
+  else if (Cloud.mode) { label = "Cloud not reachable \u00b7 retrying" + waiting; }
+  else if (online) {
+    /* the static repo files are the live session: never say "local mode" here */
+    label = "Online \u00b7 Live B1 Session" + (Cloud.repoVer ? " v" + Cloud.repoVer : "") + waiting;
+    good = true;
+  }
+  else label = "Offline \u00b7 saved list on this device" + waiting;
   txt.textContent = label;
-  if (Cloud.mode && online && Cloud.updatedAt && !Cloud.fails) U.setCls(chip, "good", true);
+  if (good) U.setCls(chip, "good", true);
+  chip.setAttribute("aria-label", label);
 };
 
 function makeAppIcon() {
@@ -7602,7 +8418,15 @@ function boot() {
   });
   U.on(U.$("#btnLock"), "click", function () { Admin.open(); });
   U.on(U.$("#btnRefresh"), "click", function () {
-    if (!Cloud.mode) { UI.toast("Local mode \u2013 everything is already on this device.", { icon: "i-info" }); return; }
+    if (!Cloud.mode) {
+      if (Cloud.repoServed()) {
+        UI.toast("Checking the live B1 session\u2026", { icon: "i-refresh", ms: 1600 });
+        Cloud.fetchRepo(function (ok) {
+          UI.toast(ok ? "Live session is up to date." : "Using the list saved on this device.", { icon: ok ? "i-check" : "i-info", ms: 4000 });
+        });
+      } else UI.toast("Everything is already on this device.", { icon: "i-info" });
+      return;
+    }
     UI.toast("Refreshing\u2026", { icon: "i-refresh", ms: 1600 });
     Cloud.pullState();
     Cloud.pullComments();
@@ -7611,7 +8435,9 @@ function boot() {
   });
   U.on(U.$("#chipNet"), "click", function () {
     if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); UI.renderNet(); }
-    else UI.toast("Local mode. Your lecturer can add a cloud link to share data between phones.", { icon: "i-cloud", ms: 5000 });
+    else if (Cloud.repoServed()) {
+      Cloud.fetchRepo(function (ok) { UI.toast(ok ? "Live B1 session is up to date." : "Still using the list saved on this device.", { icon: ok ? "i-check" : "i-info", ms: 4000 }); });
+    } else UI.toast("Your lecturer can add a cloud link to share data between phones.", { icon: "i-cloud", ms: 5000 });
   });
 
   /* home actions */
@@ -7708,6 +8534,8 @@ function boot() {
   }
 
   UI.renderNet();
+  /* A5: the published session is fetched on every boot - no setup needed */
+  if (Cloud.repoServed()) { Cloud.fetchRepo(function (ok) { if (ok && Eng.st === "idle") Screens.home(); }); }
   UI.setTab("home");
   UI.applyPerf();
   UI.frameProbe(function () { UI.applyPerf(); });
@@ -7737,7 +8565,7 @@ window.addEventListener("unhandledrejection", function (ev) {
 });
 
 /* Lecturer methods and all their descendant event handlers re-check the lock. */
-["panel", "renderTab", "card", "publish", "tabWords", "tabSession", "tabAnnounce", "tabComments", "tabStats", "tabTools", "printView"].forEach(function (key) {
+["panel", "renderTab", "card", "publish", "saveAll", "tabWords", "tabSession", "tabAnnounce", "tabComments", "tabStats", "tabTools", "printView"].forEach(function (key) {
   var original = Admin[key];
   Admin[key] = function () {
     if (!Admin.unlocked) { UI.toast("Unlock lecturer mode first.", { icon: "i-lock" }); return; }

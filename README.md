@@ -4,7 +4,7 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Release status
 
-**1.5.0-rc.1 (2026-10-14) is an incomplete Phase 1 candidate, not a released upgrade.** Do not deploy or merge until the remaining requirements and release gates in [PHASE1_QA.md](PHASE1_QA.md) are satisfied. Phases 2–4 have not started. `QA_REPORT.md` describes earlier work; it is not evidence for this candidate.
+**2.0.0 (2026-10-14) is the released upgrade**: British audio on every device, the 30 B1 Leisure & Hobbies words, the four-step Admin editor, Tuesday/Wednesday scheduling, always-on online mode through `data/*.json`, and the auto-lite performance work. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
 
 ## Add next week's words in three steps (candidate)
 

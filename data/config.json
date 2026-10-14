@@ -1,0 +1,14 @@
+{
+  "appName": "Smart Dictation",
+  "level": "B1",
+  "classDays": [
+    "Tuesday",
+    "Wednesday"
+  ],
+  "defaults": {
+    "sentence": false,
+    "repeats": 2,
+    "rate": 0.85,
+    "numbers": true
+  }
+}
