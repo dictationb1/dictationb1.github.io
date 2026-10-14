@@ -40,7 +40,7 @@ LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:e2e --pref
 
 `e2e.cjs` drives the real UI at 390x844, 360x640 and 1280x800 with 4x CPU throttling:
 fresh storage and storage written by the 1.0.0 build, Home render, build stamp in
-Settings, wrong PIN, PIN 7898, Monday list plus session number and day, the
+Settings, wrong PIN, a random, locally created PIN, Monday list plus session number and day, the
 "Are you ready?" screen and skippable countdown, every word spoken in order with a
 mocked en-GB `speechSynthesis`, auto-save, reload and resume, an anonymous comment
 with its result badge, the 30-second spam limit, a private lecturer message, and an
@@ -48,3 +48,34 @@ offline boot. `SDP_E2E_ONLY=old|offline|iphone|360|1280` runs a subset.
 
 This is Chromium only. WebKit and Firefox are **not** run: the sandbox has no such
 binary and cannot download one, so iPhone Safari and Firefox behaviour is unverified.
+
+## Upgrade phase 1 (this branch)
+
+This is not the completed v2 upgrade. Read `../UPGRADE_REPORT.md` first.
+The historical tests above now create random local PINs rather than rely on a
+built-in value. Test PINs are not printed. The old test names refer to their
+original work stages, not the new upgrade phases.
+
+Run the new checks:
+
+```sh
+npm run test:upgrade --prefix tests
+LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:upgrade-browser --prefix tests
+```
+
+`upgrade.cjs` checks the six-line paste, saved v1.4.0 migration, default audio
+beats, both sentence switches, override expiry and banners, cloud expiry rows,
+and removal of local PIN seeds. `parser.cjs` checks the paste formats,
+1,000 deterministic random inputs and the 5,000-line timing limit.
+`upgrade-browser.cjs` checks five widths, light/dark and XL text in Chromium.
+It waits for the opening animation to finish before measuring steady layout.
+It does not test Safari, Google Apps Script or real speech.
+
+The server-authentication bug is still open. This command is expected to fail:
+
+```sh
+npm run test:pending-security --prefix tests
+```
+
+Do not count the phase-1 CI job as evidence that the new server is secure.
+There is no new server in this phase. Do not merge the draft PR as v2.

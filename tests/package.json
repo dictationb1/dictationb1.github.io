@@ -4,7 +4,10 @@
   "scripts": {
     "test": "node phase1.cjs && node server.cjs",
     "test:browser": "node browser.cjs",
-    "test:e2e": "node e2e.cjs"
+    "test:e2e": "node e2e.cjs",
+    "test:upgrade": "node verify.cjs && node upgrade.cjs && node parser.cjs",
+    "test:upgrade-browser": "node upgrade-browser.cjs",
+    "test:pending-security": "node upgrade.cjs --security"
   },
   "devDependencies": {
     "jsdom": "22.1.0",

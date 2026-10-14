@@ -1,3 +1,6 @@
+const TEST_PIN = String(require('crypto').randomInt(100000, 999999));
+const WRONG_PIN = String((Number(TEST_PIN) + 1) % 1000000).padStart(6, '0');
+const NEW_PIN = String(require('crypto').randomInt(10000000, 99999999));
 /* End-to-end flow in a real browser (Chromium via @sparticuz/chromium).
    WebKit and Firefox are NOT exercised here: this sandbox has no WebKit or
    Firefox binary and cannot download one. Everything below is Chromium. */
@@ -87,27 +90,40 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.4.0 (2026-10-13)'));
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.4.0 (2026-10-14)'));
 
+  /* Create a random local PIN first; no shipped default exists. */
+  await dismissTour(page);
+  await page.locator('#btnLock').click();
+  const create = !(await storage(page)).admin.pinHash;
+  if(create) {
+    for(let step=0;step<2;step++) {for(const digit of TEST_PIN) await page.locator('#pinPad [data-k="'+digit+'"]').click();await page.locator('#pinSubmit').click();}
+    await page.locator('#adminHost').waitFor();
+    await page.getByRole('button', {name:'Lock',exact:true}).click();
+  } else {
+    // Historical storage keeps all learning data; use a random test-only hash.
+    await page.evaluate(async pin => { const d=JSON.parse(localStorage.getItem('sdp.v1'));d.admin.pinSalt='qa-local'; const bytes=new TextEncoder().encode('sdp.v1:qa-local:'+pin);d.admin.pinHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('sdp.v1',JSON.stringify(d)); }, TEST_PIN);
+    await page.reload(); await dismissTour(page);
+  }
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();
-  await unlock(page, '0000');
+  await unlock(page, WRONG_PIN);
   const wrongTxt = await page.locator('#sheets').textContent();
   rec(label + ' wrong PIN is refused', !await page.locator('#adminHost').isVisible() && /Wrong PIN/.test(wrongTxt));
   await page.locator('#sheets .shead button').click();
 
   /* unlock and set a Monday list + session number and day */
-  await unlock(page, '7898');
+  await unlock(page, TEST_PIN);
   const unlocked = await page.locator('#adminHost').isVisible();
-  rec(label + ' PIN 7898 unlocks lecturer mode', unlocked);
-  await page.getByRole('button', { name: 'Words & planner', exact: true }).click();
+  rec(label + ' random PIN unlocks lecturer mode', unlocked);
+  await page.getByRole('button', { name: 'Words', exact: true }).click();
   const monday = page.locator('select[aria-label="Monday list"]');
   const opts = await monday.locator('option').all();
   const pick = Math.min(1, opts.length - 1);
   await monday.selectOption({ index: pick });
   const mondayValue = await monday.inputValue();
   /* pin the same list so today's live list is the one we just set for Monday */
-  await page.locator('select[aria-label="Pinned list"]').selectOption(mondayValue);
+  await page.locator('select[aria-label="Override for today only"]').selectOption(mondayValue);
   await page.getByRole('button', { name: 'Session', exact: true }).click();
   await page.getByLabel('Session number', { exact: true }).fill('12');
   await page.getByRole('button', { name: 'Mon', exact: true }).click();
@@ -115,7 +131,7 @@ async function flow(browser, vp, label, seed) {
   rec(label + ' Monday list, session number and day saved',
     plan.plan.weekdays[0] === mondayValue && plan.plan.pinned === mondayValue && plan.session.no === '12' && plan.session.day === 'Monday',
     { monday: plan.plan.weekdays[0], pinned: plan.plan.pinned, no: plan.session.no, day: plan.session.day });
-  await page.getByRole('button', { name: 'Lock now', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Lock', exact: true }).first().click();
   await page.waitForTimeout(300);
   const kicker = await page.locator('#homeKicker').textContent();
   rec(label + ' header shows session number and day; panel locked',

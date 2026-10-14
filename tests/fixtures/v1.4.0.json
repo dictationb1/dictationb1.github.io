@@ -1,0 +1,429 @@
+{
+  "v": 1,
+  "settings": {
+    "theme": "dark",
+    "size": "m",
+    "hc": false,
+    "perf": "auto",
+    "voiceName": "",
+    "rate": 0.7,
+    "volume": 1,
+    "repeats": 2,
+    "sentence": true,
+    "numbers": true,
+    "writeMode": "auto",
+    "writeFixed": 12,
+    "pauseWord": 1.2,
+    "pauseSent": 1.6,
+    "advance": "auto",
+    "shuffle": false,
+    "mode": "paper",
+    "showWord": false,
+    "haptics": true,
+    "slowerOnce": false,
+    "usSpelling": "wrong"
+  },
+  "lists": [
+    {
+      "id": "list_sample_b1",
+      "name": "Sample B1 list (30 words)",
+      "words": [
+        {
+          "w": "appointment",
+          "s": "I have a dentist appointment on Thursday at four o'clock.",
+          "m": "an arranged time to meet someone"
+        },
+        {
+          "w": "temperature",
+          "s": "The temperature dropped to minus five last night.",
+          "m": "how hot or cold something is"
+        },
+        {
+          "w": "neighbour",
+          "s": "Our new neighbour has a very friendly dog.",
+          "m": "a person who lives near you"
+        },
+        {
+          "w": "schedule",
+          "s": "The bus schedule changed at the beginning of March.",
+          "m": "a plan of times for events"
+        },
+        {
+          "w": "delicious",
+          "s": "This chocolate cake your mother made is absolutely delicious.",
+          "m": "tasting very good"
+        },
+        {
+          "w": "necessary",
+          "s": "It is necessary to book your tickets early.",
+          "m": "needed; you must have it"
+        },
+        {
+          "w": "equipment",
+          "s": "The gym bought new equipment for the fitness room.",
+          "m": "tools or machines for a purpose"
+        },
+        {
+          "w": "comfortable",
+          "s": "These shoes are very comfortable for long walks.",
+          "m": "making you feel relaxed"
+        },
+        {
+          "w": "opportunity",
+          "s": "She got the opportunity to study in London.",
+          "m": "a chance to do something"
+        },
+        {
+          "w": "knowledge",
+          "s": "He has good knowledge of the local history.",
+          "m": "information you have learned"
+        },
+        {
+          "w": "though",
+          "s": "It was cold, though we still enjoyed the walk.",
+          "m": "but; however"
+        },
+        {
+          "w": "environment",
+          "s": "We should protect the environment for our children.",
+          "m": "the natural world around us"
+        },
+        {
+          "w": "weight",
+          "s": "The nurse checked my height and weight this morning.",
+          "m": "how heavy something is"
+        },
+        {
+          "w": "interview",
+          "s": "Her job interview at the bank lasted forty minutes.",
+          "m": "a formal meeting with questions"
+        },
+        {
+          "w": "programme",
+          "s": "There is a good programme on television tonight.",
+          "m": "a show on TV or radio"
+        },
+        {
+          "w": "receive",
+          "s": "Did you receive my message about the meeting?",
+          "m": "to get something sent to you"
+        },
+        {
+          "w": "advertisement",
+          "s": "I saw the advertisement for the part-time job.",
+          "m": "a notice that promotes something"
+        },
+        {
+          "w": "definitely",
+          "s": "I will definitely come to your birthday party.",
+          "m": "certainly; without any doubt"
+        },
+        {
+          "w": "foreign",
+          "s": "He enjoys learning foreign languages at his evening class.",
+          "m": "from another country"
+        },
+        {
+          "w": "separate",
+          "s": "Please keep the recycling in a separate bag.",
+          "m": "not together; apart"
+        },
+        {
+          "w": "nervous",
+          "s": "I always feel nervous before a big exam.",
+          "m": "worried and unable to relax"
+        },
+        {
+          "w": "library",
+          "s": "You can borrow three books from the library.",
+          "m": "a place where you borrow books"
+        },
+        {
+          "w": "improve",
+          "s": "Practising every day will really improve your spelling.",
+          "m": "to get better at something"
+        },
+        {
+          "w": "suggestion",
+          "s": "Thank you for your helpful suggestion about our project.",
+          "m": "an idea that you offer"
+        },
+        {
+          "w": "accommodation",
+          "s": "The price includes accommodation, breakfast and airport transfer.",
+          "m": "a place to live or stay"
+        },
+        {
+          "w": "available",
+          "s": "Are any double rooms available for next weekend?",
+          "m": "able to be used or obtained"
+        },
+        {
+          "w": "especially",
+          "s": "I love fruit, especially fresh mangoes and pineapple.",
+          "m": "more than usual; particularly"
+        },
+        {
+          "w": "experience",
+          "s": "She has five years of experience in sales.",
+          "m": "knowledge gained by doing something"
+        },
+        {
+          "w": "recipe",
+          "s": "This simple recipe needs only four basic ingredients.",
+          "m": "instructions for cooking food"
+        },
+        {
+          "w": "disappointed",
+          "s": "He was disappointed that the concert was cancelled.",
+          "m": "sad because hopes were not met"
+        }
+      ],
+      "version": 1,
+      "published": true,
+      "updatedAt": 0,
+      "draft": false,
+      "publishedWords": [
+        {
+          "w": "appointment",
+          "s": "I have a dentist appointment on Thursday at four o'clock.",
+          "m": "an arranged time to meet someone"
+        },
+        {
+          "w": "temperature",
+          "s": "The temperature dropped to minus five last night.",
+          "m": "how hot or cold something is"
+        },
+        {
+          "w": "neighbour",
+          "s": "Our new neighbour has a very friendly dog.",
+          "m": "a person who lives near you"
+        },
+        {
+          "w": "schedule",
+          "s": "The bus schedule changed at the beginning of March.",
+          "m": "a plan of times for events"
+        },
+        {
+          "w": "delicious",
+          "s": "This chocolate cake your mother made is absolutely delicious.",
+          "m": "tasting very good"
+        },
+        {
+          "w": "necessary",
+          "s": "It is necessary to book your tickets early.",
+          "m": "needed; you must have it"
+        },
+        {
+          "w": "equipment",
+          "s": "The gym bought new equipment for the fitness room.",
+          "m": "tools or machines for a purpose"
+        },
+        {
+          "w": "comfortable",
+          "s": "These shoes are very comfortable for long walks.",
+          "m": "making you feel relaxed"
+        },
+        {
+          "w": "opportunity",
+          "s": "She got the opportunity to study in London.",
+          "m": "a chance to do something"
+        },
+        {
+          "w": "knowledge",
+          "s": "He has good knowledge of the local history.",
+          "m": "information you have learned"
+        },
+        {
+          "w": "though",
+          "s": "It was cold, though we still enjoyed the walk.",
+          "m": "but; however"
+        },
+        {
+          "w": "environment",
+          "s": "We should protect the environment for our children.",
+          "m": "the natural world around us"
+        },
+        {
+          "w": "weight",
+          "s": "The nurse checked my height and weight this morning.",
+          "m": "how heavy something is"
+        },
+        {
+          "w": "interview",
+          "s": "Her job interview at the bank lasted forty minutes.",
+          "m": "a formal meeting with questions"
+        },
+        {
+          "w": "programme",
+          "s": "There is a good programme on television tonight.",
+          "m": "a show on TV or radio"
+        },
+        {
+          "w": "receive",
+          "s": "Did you receive my message about the meeting?",
+          "m": "to get something sent to you"
+        },
+        {
+          "w": "advertisement",
+          "s": "I saw the advertisement for the part-time job.",
+          "m": "a notice that promotes something"
+        },
+        {
+          "w": "definitely",
+          "s": "I will definitely come to your birthday party.",
+          "m": "certainly; without any doubt"
+        },
+        {
+          "w": "foreign",
+          "s": "He enjoys learning foreign languages at his evening class.",
+          "m": "from another country"
+        },
+        {
+          "w": "separate",
+          "s": "Please keep the recycling in a separate bag.",
+          "m": "not together; apart"
+        },
+        {
+          "w": "nervous",
+          "s": "I always feel nervous before a big exam.",
+          "m": "worried and unable to relax"
+        },
+        {
+          "w": "library",
+          "s": "You can borrow three books from the library.",
+          "m": "a place where you borrow books"
+        },
+        {
+          "w": "improve",
+          "s": "Practising every day will really improve your spelling.",
+          "m": "to get better at something"
+        },
+        {
+          "w": "suggestion",
+          "s": "Thank you for your helpful suggestion about our project.",
+          "m": "an idea that you offer"
+        },
+        {
+          "w": "accommodation",
+          "s": "The price includes accommodation, breakfast and airport transfer.",
+          "m": "a place to live or stay"
+        },
+        {
+          "w": "available",
+          "s": "Are any double rooms available for next weekend?",
+          "m": "able to be used or obtained"
+        },
+        {
+          "w": "especially",
+          "s": "I love fruit, especially fresh mangoes and pineapple.",
+          "m": "more than usual; particularly"
+        },
+        {
+          "w": "experience",
+          "s": "She has five years of experience in sales.",
+          "m": "knowledge gained by doing something"
+        },
+        {
+          "w": "recipe",
+          "s": "This simple recipe needs only four basic ingredients.",
+          "m": "instructions for cooking food"
+        },
+        {
+          "w": "disappointed",
+          "s": "He was disappointed that the concert was cancelled.",
+          "m": "sad because hopes were not met"
+        }
+      ],
+      "publishedName": "Sample B1 list (30 words)",
+      "publishedVersion": 1
+    },
+    {
+      "id": "thursday",
+      "name": "B1 Thursday list",
+      "words": [
+        {
+          "w": "torch",
+          "s": "Please bring a torch for our walk tonight.",
+          "m": "a small light you can carry"
+        }
+      ],
+      "version": 1,
+      "published": false,
+      "draft": false,
+      "updatedAt": 0
+    }
+  ],
+  "plan": {
+    "weekdays": [
+      "",
+      "",
+      "",
+      "thursday",
+      "",
+      "",
+      ""
+    ],
+    "dates": {},
+    "pinned": "thursday",
+    "defaultList": "list_sample_b1"
+  },
+  "session": {
+    "no": "1",
+    "day": "Wednesday",
+    "autoDay": true,
+    "date": "2026-10-13",
+    "title": "",
+    "ready": [
+      "Hello! Get your pen and paper. Are you ready? Tap Start when you are.",
+      "Are you ready? Let's begin.",
+      "Pen and paper ready? Here we go!",
+      "Take a deep breath. Are you ready? Let's start.",
+      "Relax and listen carefully. Ready? Let's go.",
+      "Good luck! Are you ready to begin?",
+      "Everything ready? Then let's start."
+    ],
+    "praise": [
+      "Well done! That is the end of the dictation. Now check your answers.",
+      "Great work! The dictation is finished. Let's check your answers.",
+      "You finished it! Well done. Now check your spelling.",
+      "That is the end. Nicely done – let's look at the answers.",
+      "Wonderful! You are finished. Time to check your words.",
+      "All done! Good listening. Now check your answers."
+    ]
+  },
+  "announcement": null,
+  "sharedParts": {},
+  "lecturerContact": {
+    "whatsapp": "",
+    "email": ""
+  },
+  "comments": [],
+  "inbox": [],
+  "sentMessages": [],
+  "sessions": [],
+  "results": [],
+  "history": [],
+  "outbox": [],
+  "mywords": [],
+  "mistakes": [],
+  "dictCache": {},
+  "profile": {
+    "nickname": "Test Owl",
+    "deviceId": "",
+    "badges": {},
+    "streak": {
+      "count": 0,
+      "last": ""
+    }
+  },
+  "admin": {
+    "pinHash": "",
+    "pinSalt": "",
+    "fails": 0,
+    "lockUntil": 0,
+    "lastActive": 0
+  },
+  "remoteVer": 0,
+  "tourSeen": false
+}
