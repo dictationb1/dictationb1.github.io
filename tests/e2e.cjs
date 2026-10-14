@@ -55,7 +55,10 @@ async function dismissTour(page) {
 async function unlock(page, pin) {
   await page.locator('#btnLock').click();
   for (const d of pin) await page.locator('#pinPad [data-k="' + d + '"]').click();
-  await page.locator('#pinSubmit').click();
+  /* v2.0.0: the pad auto-submits on the fourth digit, so Unlock is only pressed while
+     the pad is still open - the 5 to 8 digit PIN case. */
+  const go = page.locator('#pinSubmit');
+  if (await go.count()) await go.click({ timeout: 1500 }).catch(() => {});
   await page.waitForTimeout(250);
 }
 
@@ -66,7 +69,11 @@ async function flow(browser, vp, label, seed) {
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const errors = [], consoleErrors = [];
   page.on('pageerror', e => errors.push(String(e && e.message || e)));
-  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  /* v2.0.0 probes dictionary MP3 audio and its own static data files. Here the page is
+     file:// and every other request is aborted, so the browser reports each optional
+     load that did not make it as "Failed to load resource" - the app degrades silently
+     and never shows an error card for it. Script errors still fail the run. */
+  page.on('console', m => { const t = m.text(); if (m.type() === 'error' && !/^Failed to load resource/.test(t.trim())) consoleErrors.push(t); });
   await page.addInitScript(mockSpeech);
   /* seed once: the script re-runs on every navigation, and must not wipe the
      auto-saved snapshot when the test reloads the page */
@@ -88,7 +95,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.5.0-rc.1 (2026-10-14)'));
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.0.0 (2026-10-14)'), { stamp: (setTxt.match(/Build [^\s]+ \([^)]*\)/) || ['none'])[0] });
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();

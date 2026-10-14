@@ -7,15 +7,29 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.SDP_BROWSER_BIN || await serverChromium.executablePath(),args:serverChromium.args.filter(a=>!["--single-process","--disable-web-security","--allow-running-insecure-content","--disable-site-isolation-trials"].includes(a))});
  const results=[];
+ /* v2.0.0: the PIN pad submits itself on the fourth digit, so #pinSubmit is only
+    pressed when the pad is still open (a 5-8 digit PIN). Closing the sheet that is
+    already gone used to hang this suite. */
+ async function closeSheet(page){if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();}
+ async function unlockPin(page){
+  await page.locator('#btnLock').click();
+  for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();
+  const go=page.locator('#pinSubmit');
+  if(await go.count())await go.click({timeout:1500}).catch(()=>{});
+  await page.locator('#adminHost').waitFor({timeout:6000});
+ }
  for(const width of [390,320,768]) {
   const context=await browser.newContext({viewport:{width,height:844},deviceScaleFactor:1});
   const page=await context.newPage(),requests=[],errors=[];
   page.on('request',r=>{if(r.url().startsWith('http'))requests.push(r.url())});page.on('pageerror',e=>errors.push(e.message));
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
   await page.waitForTimeout(1500);
-  results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&requests.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests});
-  await page.locator('#sheets .shead button').click();
-  await page.locator('#btnLock').click();for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();await page.locator('#pinSubmit').click();
+  /* v2.0.0 may only read its two cache-busted static files at boot (relative to a
+     file:// page, so nothing here is even http). No cloud call, ever. */
+  const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u));
+  results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests});
+  await closeSheet(page);
+  await unlockPin(page);
   await page.waitForTimeout(300);results.push({test:'Chromium '+width+'px PIN unlock and no horizontal page overflow',status:await page.locator('#adminHost').isVisible() && await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)?'PASS':'FAIL'});
   await page.getByRole('button',{name:'Session',exact:true}).click();
   await page.getByLabel('Session number',{exact:true}).fill('19');await page.getByRole('button',{name:'Sun',exact:true}).click();
@@ -26,15 +40,15 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  }
  {
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
-  await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);await page.waitForTimeout(900);await page.locator('#sheets .shead button').click();
-  await page.locator('#btnLock').click();for(const digit of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+digit+'"]').click();await page.locator('#pinSubmit').click();
+  await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);await page.waitForTimeout(900);await closeSheet(page);
+  await unlockPin(page);
   await page.getByRole('button',{name:'Settings & tools',exact:true}).click();await page.getByRole('button',{name:'Share this list (no server)',exact:true}).click();
   const originals=await page.locator('#sheets textarea').allTextContents();await page.getByRole('button',{name:'Shorter links (newer phones)',exact:true}).click();
   await page.getByRole('heading',{name:'Shorter links — use originals for older phones',exact:true}).waitFor();
   const compressed=await page.locator('#sheets textarea').allTextContents();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
-  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1'));return d.lists.find(l=>l.id===d.plan.pinned).words.length;});
+  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1'));const l=d.lists.find(x=>x.id===d.plan.pinned)||d.lists.find(x=>x.id===d.session.listId);return l?l.words.length:-1;});
   results.push({test:'Chromium native DecompressionStream preview/Add assembles the full 30-word list',status:words===30?'PASS':'FAIL'});await context.close();
  }
  for (const scenario of ['empty','corrupt','blocked','offline','unreachable','no-speech','no-UK']) {

@@ -8,9 +8,9 @@ const results=[];
 const fileURL=require('node:url').pathToFileURL(path.join(root,'index.html')).href;
 const engine=process.env.SDP_BROWSER||'chromium';
 function fakeSpeech(scenario){
- window.__spoken=[];
+ window.__spoken=[];window.__langs=[];
  let voices=scenario==='none'?[]:scenario==='us'?Array.from({length:5},(_,i)=>({name:'US '+i,lang:'en-US',localService:true})):scenario==='aliases'?[{name:'Samsung',lang:'eng-GBR',localService:true},{name:'test',lang:'en_GB',localService:true}]:[{name:'Daniel',lang:'en-GB',localService:true}];
- Object.defineProperty(window,'speechSynthesis',{value:{getVoices:()=>voices,speak(u){window.__spoken.push(u.text);setTimeout(()=>u.onend&&u.onend(),5);},cancel(){},pause(){},resume(){}}});
+ Object.defineProperty(window,'speechSynthesis',{value:{getVoices:()=>voices,speak(u){window.__spoken.push(u.text);window.__langs.push(u.lang);setTimeout(()=>u.onend&&u.onend(),5);},cancel(){},pause(){},resume(){}}});
  window.SpeechSynthesisUtterance=function(text){this.text=text;};
 }
 async function boot(browser,width=390,scenario='gb',height=844){
@@ -27,7 +27,11 @@ async function boot(browser,width=390,scenario='gb',height=844){
 async function unlock(page,pin=require('./test-pin.cjs').split('')){
  await page.locator('#btnLock').click();
  for(const digit of pin)await page.locator('#pinPad [data-k="'+digit+'"]').click();
- await page.locator('#pinSubmit').click();await page.locator('#adminHost').waitFor();
+ /* v2.0.0: the pad auto-submits on the fourth digit; #pinSubmit is only pressed when
+    the pad is still open, which is the 5-8 digit PIN case. */
+ const go=page.locator('#pinSubmit');
+ if(await go.count())await go.click({timeout:1500}).catch(()=>{});
+ await page.locator('#adminHost').waitFor();
 }
 async function check(name,fn){try{await fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 (async()=>{
@@ -54,18 +58,21 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
    const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).admin.pinKdf);
    assert.equal(kdf,await page.evaluate(()=>crypto.subtle?'pbkdf2-sha256':'sha256'));
    const ta=page.getByLabel('Word list text',{exact:true});await ta.fill(sample);
-   await page.getByText('I read this as: 30 words (plain list)',{exact:true}).waitFor();
+   await page.getByText(/^I read this as: 30 words \(/).waitFor();   /* v2.0.0 prints the detected mode in brackets */
    await page.locator('[data-preview-row="29"]').waitFor();
    await page.getByLabel('Word 1',{exact:true}).fill('free time');
    await page.getByLabel('Down word 1',{exact:true}).click();
    assert.equal(await page.getByLabel('Word 2',{exact:true}).inputValue(),'free time');
    await page.getByLabel('Delete word 1',{exact:true}).click();
    assert.equal(await page.getByLabel('Word 1',{exact:true}).inputValue(),'free time');
-   await page.getByRole('button',{name:'Publish to students',exact:true}).click();
-   assert.match(await page.locator('#modals').textContent(),/29 words.*Session/);
-   await page.getByRole('button',{name:'Publish now',exact:true}).click();
+   /* v2.0.0 Step 4 saves and publishes in one action, and every published word must
+      arrive with its British dictionary MP3 so a phone plays audio without a UK voice. */
+   await page.getByRole('button',{name:'Save & Publish to All Students',exact:true}).click();
+   await page.locator('#toasts').getByText(/Saved & published to all students/).waitFor();
    const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')));
    assert.equal(d.lists[0].publishedWords.length,29);assert.equal(d.lists[0].publishedWords[0].w,'free time');
+   assert.ok(d.lists[0].publishedWords.every(x=>/--_gb_1\.mp3$/.test(x.audio||'')),'every published word keeps a British MP3: '+JSON.stringify(d.lists[0].publishedWords.slice(0,2)));
+   assert.ok(d.lists[0].published&&d.lists[0].publishedVersion>=1,'publish flags');
    const words=Array.from({length:200},(_,i)=>'word'+String.fromCharCode(97+(i/26|0))+String.fromCharCode(97+i%26));
    await ta.fill(words.join(', '));await page.locator('[data-preview-row="199"]').waitFor();assert.equal(await page.locator('[data-preview-row]').count(),200);
    await page.getByRole('button',{name:'Lock now',exact:true}).first().click();await unlock(page);
@@ -76,15 +83,26 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
   const {context,page,errors}=await boot(browser,360,scenario,640);
   try{
    await page.locator('#btnStart').click();
-   if(scenario==='us'||scenario==='none')await page.getByRole('button',{name:'Continue in Text mode',exact:true}).click();
+   const textMode=page.getByRole('button',{name:'Continue in Text mode',exact:true});
+   if(await textMode.count())await textMode.click();   /* v2.0.0 offers help, it never gates the dictation */
    await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
    await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
    await page.waitForFunction(()=>/Your turn|tap Next|Next in/.test(document.querySelector('#plStatus').textContent));
-   const spoken=await page.evaluate(()=>window.__spoken);
-   if(scenario==='us'||scenario==='none')assert.deepEqual(spoken,[]);
-   else{
+   const spoken=await page.evaluate(()=>window.__spoken),langs=await page.evaluate(()=>window.__langs);
+   if(scenario==='none'){
+    /* no synthesised voice at all: the learner still gets the chime and the text, and
+       nothing is spoken in a foreign accent. */
+    assert.deepEqual(spoken,[]);assert.deepEqual(await page.evaluate(()=>window.__langs),[]);
+    assert.match((await page.locator('#plStatus').textContent()).trim(),/Your turn|tap Next|Next in/);
+   } else if(scenario==='us'){
+    /* v2.0.0 never blocks: dictionary MP3, then the cloud stream, then the device voice.
+       Every utterance is tagged en-GB, so a US voice is never used silently. */
+    assert.ok(spoken.length>0,'the fallback tiers keep speaking: '+JSON.stringify(spoken.slice(0,3)));
+    assert.ok(langs.length&&langs.every(l=>l==='en-GB'),'every utterance is tagged en-GB: '+JSON.stringify(langs.slice(0,3)));
+   } else {
     assert.equal(spoken.filter(t=>t==='appointment').length,2);
     assert(spoken.includes('Number 1.'));assert(!spoken.some(t=>t.includes('dentist appointment')));
+    assert.ok(langs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(langs.slice(0,3)));
    }
    const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).snapshot);assert.equal(before.index,0);
    await page.reload();await page.locator('#homeTitle').waitFor();
