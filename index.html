@@ -1905,8 +1905,7 @@ var Store = {
 };
 
 /* v2.0.0 default list: the 30 Cambridge B1 "Leisure & Hobbies" words, each
-   with a B1 meaning (m), a B1 example sentence (s) and a recorded British
-   dictionary MP3 (audio) so the word sounds right on every device. */
+   with a B1 meaning (m), a B1 sentence (s) and a British dictionary MP3. */
 var SAMPLE_LIST_NAME = "B1 Leisure & Hobbies (30 words)";
 var UK_MP3_BASE = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
 function ukMp3(word) {
@@ -2173,9 +2172,8 @@ var DB = {
     if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
     if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
     if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
-    /* A3.2 settingsRev 2: dictation reads the number and the word twice and
-       never the example sentence, and every phone moves to the 30 leisure
-       words so an old v1.4/v1.5 install shows the new list straight away. */
+    /* A3.2 settingsRev 2: number + word twice, no example sentence, and every
+       install moves to the 30 leisure words. */
     if (!d.settingsRev || d.settingsRev < 2) {
       d.settings.sentence = false;
       d.settings.repeats = 2;
@@ -2204,9 +2202,8 @@ var DB = {
     d.v = CONFIG.schema;
     return d;
   },
-  /* Defect A: a session that was left on a past, unplanned date is moved to the
-     real date, and the weekday is always derived from the date on screen. A
-     published date is never overwritten. */
+  /* Defect A: a stale unplanned date moves to today; a published date never
+     changes. */
   refreshSessionDate: function (d) {
     d = d || this.data;
     var s = d.session, today = U.dateKey(new Date()), planned = (d.plan && d.plan.dates) ? d.plan.dates[s.date] : null;
@@ -2234,10 +2231,8 @@ var DB = {
     try {
       var text = JSON.stringify(this.data);
       Store.set(CONFIG.key, text);
-      /* A7.3/A7.5: the rolling .bak copy costs a second synchronous
-         localStorage write. The hot paths - the per-word dictation snapshot and
-         the dictionary cache - ask for a light save and skip it, so a phone
-         never stalls mid-dictation while every real change keeps a copy. */
+      /* A7.3/A7.5: the .bak copy costs a second synchronous write, so the per-word
+         snapshot asks for a light save and skips it. */
       if (!skipBackup) Store.set(CONFIG.key + ".bak", text);
     } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
   },
@@ -3604,6 +3599,13 @@ var Speech = {
     return a;
   },
   normKey: function (w) { return String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim(); },
+  /* a recorded British source: Oxford/Cambridge gstatic (_gb_), the Free
+     Dictionary UK files (-uk.mp3) or any _gb_/_uk_ name */
+  isBritishAudio: function (url) {
+    if (typeof url !== "string" || !/^https:\/\/[^\s]+\.(mp3|ogg|oga|wav)(?:[?#].*)?$/i.test(url)) return false;
+    var base = url.split("?")[0].split("#")[0].toLowerCase();
+    return /(_gb_|_gb\.|_gb-|-gb\.|-gb_|-uk\.|-uk_|-uk-|_uk\.|_uk_|_uk-|-uk\/|_uk\/)/.test(base);
+  },
   /* Tier 1 source: the word object's own URL, then the dictionary cache,
      then the Cambridge/Oxford UK MP3 pattern for a single word. */
   mp3For: function (text, word) {
@@ -3611,7 +3613,10 @@ var Speech = {
     if (!t || /\s/.test(t) || t.length > 24) return "";
     if (word && String(word).trim().toLowerCase() !== t) return "";
     var cache = DB.data && DB.data.dictCache ? DB.data.dictCache[U.norm(t)] : null;
-    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(cache.audio)) return cache.audio;
+    /* a real British recording always wins; a US/other recording is kept for
+       the dictionary card but never becomes the dictation voice, so the word
+       stays British on a UK speaking exam */
+    if (cache && this.isBritishAudio(cache.audio)) return cache.audio;
     return ukMp3(t);
   },
   streamUrl: function (text) {
@@ -4027,9 +4032,8 @@ var Eng = {
       UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
       return;
     }
-    /* A1: a missing device voice can never block a dictation. The four-tier
-       British engine falls back to dictionary MP3s, then streamed British
-       TTS, then any English voice, so the "No UK voice" sheet is not shown. */
+    /* A1: a missing device voice never blocks a dictation - the four-tier British
+       engine takes over. */
     if (!Speech.audioReady()) {
       UI.toast("This phone has no British audio yet: the word is shown on screen as well.", { icon: "i-info", ms: 6000 });
     }
@@ -4079,9 +4083,8 @@ var Eng = {
     this.runItem(this.idx);
   },
 
-  /* A7.3: a word step is debounced by 400 ms, so a slow phone never writes
-     localStorage on every keystroke. Nothing is lost: the end of a session,
-     a pause and a publish all flush the snapshot immediately. */
+  /* A7.3: a word step is debounced 400 ms; finish, pause and publish flush it
+     immediately. */
   saveSnapshot: function () {
     if (this.st === "idle" || this.st === "finished") return;
     var self = this;
@@ -4202,7 +4205,7 @@ var Eng = {
     this.st = "paused";
     this.status(S.paused);
     this.paint();
-    this.saveSnapshot();
+    this.flushSnapshot();   /* a pause is written at once, never debounced */
     this.releaseWake();
   },
   resume: function () {
@@ -4665,11 +4668,8 @@ Eng.readyScreen = function () {
       return sk;
     })()]
   });
-  /* the greeting is always spoken aloud, in British English, on the tier
-     that this device actually has (dictionary audio / en-GB / cloud / any en) -
-     but never over a run that has already started: say() bumps the speech token,
-     and a greeting fired after Skip countdown would cancel the first beat and the
-     learner would lose the "Number 1." line. */
+  /* the greeting is spoken aloud on whatever British tier this device has, but
+     never over a run that already started (say() bumps the speech token). */
   var greetRun = self.runId;
   setTimeout(function () {
     if (self.runId !== greetRun) return;
@@ -4702,9 +4702,8 @@ function diffChars(a, b) {
   return out;
 }
 
-/* A6: a finished dictation is announced to the class straight away -
-   it shows up in Community under All and Finished with the anonymous nickname,
-   the score and the device line, and it is queued for the cloud. */
+/* A6: a finished dictation is announced to the class at once - anonymous
+   nickname, score and device line. */
 function publishCompletion(rec, action) {
   var d = DB.data, i, c = null;
   if (!rec || !d) return null;
@@ -5200,7 +5199,7 @@ var Dict = {
       example = this.pickExample(e);
       if (meaning.length > 160) meaning = meaning.slice(0, 157) + "\u2026";
       if (!ipa && !meaning && !audio) return null;
-      return { ipa: audio ? ipa : "", meaning: meaning, audio: audio, example: example, pos: pos, ukSource: !!audio };
+      return { ipa: audio ? ipa : "", meaning: meaning, audio: audio, example: example, pos: pos, ukSource: Speech.isBritishAudio(audio) };
     } catch (err) { return null; }
   },
   /* Source 1d + fallback meaning/example: the open Wiktionary REST API. */
@@ -5273,14 +5272,14 @@ var Dict = {
   speak: function (word, rate) {
     var r = rate === undefined ? DB.data.settings.rate : rate;
     var cache = DB.data.dictCache[U.norm(word)];
-    if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
+    if (cache && Speech.isBritishAudio(cache.audio)) {
       Speech.playAudio(cache.audio, r, 5200, function (ok) {
         if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
       });
       return;
     }
     /* wiktionary ships open Ogg British recordings as well as MP3 */
-    if (cache && typeof cache.audioAlt === "string" && /^https:\/\//i.test(cache.audioAlt)) {
+    if (cache && Speech.isBritishAudio(cache.audioAlt)) {
       Speech.playAudio(cache.audioAlt, r, 5200, function (ok) {
         if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
       });
@@ -5938,10 +5937,8 @@ var Admin = {
     return { items: out, problems: problems, dupes: dupes, mode: mode };
   },
 
-  /* ---------- A2.3 automatic meaning & sentence generator --------------
-     1. built-in B1 bank (the 30 leisure words, the previous sample list and
-        common B1 vocabulary), 2. a background dictionary lookup, 3. a clean
-        B1 template so that m and s are never blank. */
+  /* A2.3: B1 bank, then a background dictionary lookup, then a B1 template, so
+     m and s are never blank. */
   tplMeaning: function (w) { return "a B1 word you can use in your own sentence: " + String(w || "").toLowerCase(); },
   tplSentence: function (w) { return "This week we are learning the word \u201c" + w + "\u201d \u2014 can you write your own sentence with it?"; },
   bankHit: function (w) {
@@ -6481,7 +6478,7 @@ Admin.tabWords = function (host) {
     });
   });
   libAct.appendChild(bDup); libAct.appendChild(bRen); libAct.appendChild(bDel);
-  wbox.appendChild(libAct);
+  ed.appendChild(libAct);   /* the list actions stay in the single words card */
 
   /* --- planner --- */
   var pl = this.card(host, "Planner (which list on which day)");
@@ -7232,10 +7229,8 @@ Admin.tabComments = function (host) {
 /* ---------- TAB 5: CLASS STATS ---------- */
 Admin.tabStats = function (host) {
   var d = DB.data;
-  /* Defect B: the class numbers come from real student completions - the live
-     cloud completion events merged with everything this device has received -
-     and never from the lecturer's own single-browser practice history. A device
-     with no results yet honestly shows zero and fills in by itself. */
+  /* Defect B: class numbers are real student completions (live cloud events
+     merged in), never the lecturer's own history. Zero means zero. */
   var rows = (d.results || []).slice(0);
   var students = {}, bySession = {}, devices = {}, noUk = 0, sum = 0;
   rows.forEach(function (r) {
@@ -7775,17 +7770,12 @@ var Cloud = {
   },
 
   /* ======================= v2.0.0 real-time class engine ==================
-     Three public ntfy.sh topics carry the whole class in real time. ntfy is
-     free and open source, needs no account and no API key, allows browser
-     CORS, and both caches the last messages and streams new ones over
-     Server-Sent Events. A student therefore sees the lecturer's list - and the
-     lecturer sees every completion - the second it is published, while the same
-     state is still mirrored to ./data/session.json and to the optional Google
-     Apps Script endpoint when one is configured. */
+     Three public ntfy.sh topics (state / comm / inbox) carry the class in real
+     time: free, open source, no key, CORS-enabled, cached and streamed over
+     SSE. The same state is still mirrored to ./data/session.json. */
   topic: function (name) { return CONFIG.ntfyHost + "/" + name; },
-  /* repoPayload() wraps the state under .session (that is the shape of
-     ./data/session.json). The live topics carry the inner state object, so a
-     phone receives lists, session, plan, announcement and comments directly. */
+  /* repoPayload() wraps the state under .session (the ./data/session.json
+     shape): the live topics carry the inner state object itself. */
   stateOf: function (payload) {
     var body = payload || this.repoPayload();
     if (body && body.session && body.version && !body.lists) body = body.session;
@@ -7919,9 +7909,8 @@ var Cloud = {
     if (UI.tab === "home") Screens.home();
     return changed || 1;
   },
-  /* Defect A: the Hero kicker and the Hero title can never contradict each
-     other. A list called "Session 4 words" drives the session number, and the
-     day is always derived from the real session date. */
+  /* Defect A: "Session 4 words" drives SESSION 4 in the kicker, so kicker and
+     title can never contradict each other. */
   syncSessionHeader: function (d) {
     d = d || DB.data;
     var s = d.session, list = Lib.byId(s.listId) || Lib.current() || d.lists[0];
@@ -8974,10 +8963,8 @@ function boot() {
   }
 
   UI.renderNet();
-  /* A5 + A9: the published session, the cached live state and the live SSE
-     stream are all contacted on every boot - no setup and no waiting for the
-     first tap. Whichever payload is newest wins, so Home always shows the
-     real session while the class is running. */
+  /* A5 + A9: repository JSON, the cached live state and the SSE stream are all
+     contacted on boot; the newest payload wins. */
   Cloud.bootSync();
   UI.setTab("home");
   UI.applyPerf();
