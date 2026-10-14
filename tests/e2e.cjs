@@ -87,7 +87,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.4.0 (2026-10-13)'));
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v1.5.0-rc.1 (2026-10-14)'));
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();

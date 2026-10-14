@@ -166,8 +166,15 @@ test('2.1 detached editing handlers and delayed list rows cannot edit after Lock
 test('2.2 paste handles 120 words, pipes, tabs, CSV quotes and warnings', () => withApp({}, a => {
  const lines=Array.from({length:120},(_,i)=>'word'+String.fromCharCode(97+Math.floor(i/26))+String.fromCharCode(97+i%26)+' | This is a short example sentence for our class today. | meaning');
  assert.equal(a.q.Admin.parseWords(lines.join('\n')).items.length,120);
- const r=a.q.Admin.parseWords('colour\tI like this colour very much today.\ta shade\n"neighbour","Our neighbour, Pat, has a friendly dog today.","nearby person"\ncolor\ncolour\n\n'+ 'a'.repeat(41));
- assert.equal(r.items[1].s,'Our neighbour, Pat, has a friendly dog today.');assert.equal(r.dupes,1);assert(r.problems.some(x=>x.includes('American')));assert(r.problems.some(x=>x.includes('blank')));assert(r.problems.some(x=>x.includes('longer')));
+ const tab=a.q.Admin.parseWords('colour\tI like this colour very much today.\ta shade');
+ assert.equal(tab.items[0].m,'a shade');
+ const csv=a.q.Admin.parseWords('word,sentence,meaning\n"neighbour","Our neighbour, Pat, has a friendly dog today.","nearby person"');
+ assert.equal(csv.items[0].s,'Our neighbour, Pat, has a friendly dog today.');
+ const r=a.q.Admin.parseWords('colour,Colour\n\n'+ 'a'.repeat(41));
+ assert.equal(r.dupes,1);assert.equal(r.problems.length,1);assert(r.problems[0].includes('invalid word'));
+ // Mixed row formats are not guessed individually: ambiguity is flagged.
+ assert(a.q.Admin.parseWords('colour\tA shade\nneighbour,A nearby person').problems.length);
+
 }));
 test('2.2 30-word Saturday assignment, draft isolation and eight-week planner', () => withApp({}, a => {
  enterPin(a,'7898');const list=a.q.DB.data.lists[0];list.name='Saturday class';list.words[0]={w:'Saturdayword',s:'This is a new sentence for our Saturday class.',m:''};list.draft=true;
@@ -246,7 +253,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem('sdp.v1')).history.length);
  assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='appointment').length>=2);
- assert(a.spoken.some(s=>s.text.includes('dentist appointment')));assert.equal(a.q.Errors.items.length,0);
+ assert(!a.spoken.some(s=>s.text.includes('dentist appointment')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
  let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem('sdp.v1');});
@@ -270,7 +277,7 @@ test('2.1 idle/background locks and privileged sheets disappear',()=>withApp({},
 test('2.2 rename/duplicate/reorder/delete with Undo retain list and planner data',()=>withApp({},a=>{
  enterPin(a,'7898');clickText(a,'Duplicate list');assert.equal(a.q.DB.data.lists.length,2);clickText(a,'Rename');a.w.document.querySelector('#sheets input').value='Changed list';clickText(a,'Save');assert.equal(a.q.DB.data.lists[1].name,'Changed list');
  const words=a.q.DB.data.lists[1].words,first=words[0].w,second=words[1].w;const down=a.w.document.querySelector('[aria-label="Move down"]');down.click();assert.equal(words[0].w,second);assert.equal(words[1].w,first);
- a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');clickText(a,'Delete');assert.equal(a.q.DB.data.lists.length,1);
+ a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');Array.from(a.w.document.querySelectorAll('#modals button')).find(b=>b.textContent==='Delete').click();assert.equal(a.q.DB.data.lists.length,1);
  const undo=Array.from(a.w.document.querySelectorAll('#toasts button')).find(b=>b.textContent==='Undo');assert(undo);undo.click();assert.equal(a.q.DB.data.lists.length,2);assert.equal(a.q.DB.data.plan.defaultList,id);
 }));
 test('2.4 announcements, expiry and lecturer moderation stay separate from private inbox',()=>withApp({},a=>{
@@ -308,13 +315,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'1.4.0'); assert.equal(a.w.SDP.build,'2026-10-13'); assert.equal(a.w.SDP.stamp(),'v1.4.0 (2026-10-13)');
+ assert.equal(a.w.SDP.version,'1.5.0-rc.1'); assert.equal(a.w.SDP.build,'2026-10-14'); assert.equal(a.w.SDP.stamp(),'v1.5.0-rc.1 (2026-10-14)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v1.4.0 (2026-10-13)')); assert(txt.includes('My data'));
+ assert(txt.includes('v1.5.0-rc.1 (2026-10-14)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.4.0 (2026-10-13)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v1.5.0-rc.1 (2026-10-14)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
@@ -341,7 +348,7 @@ test('4.5 ready screen speaks the greeting from the tap and can skip the countdo
 test('4.5 greeting text and skippable countdown exist in the ready sheet', () => withApp({voice:'en-GB'}, a => {
  a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list'});
  const sheet=a.w.document.querySelector('#sheets').textContent;
- assert(sheet.includes('Get your pen and paper. Tap Start when you are.'));
+ assert(sheet.includes("Get your pen and paper. Tap I'm ready when you are."));
  assert(Array.from(a.w.document.querySelectorAll('#sheets button')).some(b=>b.textContent.trim()==='Skip countdown'));
 }));
 test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a => {

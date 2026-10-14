@@ -273,7 +273,7 @@ body[data-perf="lite"] .seg .thumb { transition: none; }
   cursor: pointer; white-space: nowrap; touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.seg button[aria-selected="true"] { color: var(--ink); }
+.seg button[aria-selected="true"], .seg button[aria-pressed="true"] { color: var(--ink); }
 
 /* inputs */
 .field { display: block; }
@@ -559,9 +559,10 @@ body[data-perf="lite"] .shake { animation: none; }
 .dots i.on { background: var(--acc); border-color: var(--acc); }
 
 /* admin segmented tabs */
-.admintabs { position: sticky; top: 0; z-index: 5; padding: 8px 0 10px;
+.adminsticky { position: sticky; top: 0; z-index: 6; background: var(--glass-solid); }
+.admintabs { position: relative; padding: 8px 0 10px;
   background: linear-gradient(180deg, var(--bg1) 62%, rgba(0,0,0,0)); }
-.unlockedbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px;
+.unlockedbar { position: relative; display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; border-radius: var(--r1); background: rgba(122,60,240,.14);
   border: 1px solid rgba(122,60,240,.32); font-size: .82rem; font-weight: 640; margin-bottom: 10px; }
 .grid2 { display: grid; gap: 10px; grid-template-columns: 1fr; }
@@ -644,6 +645,37 @@ table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid va
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after { animation: none !important; transition: none !important; }
+
+/* Performance policy: scrolling cards are tinted solids, never blur layers.
+   Only the fixed tabbar and the single top sheet may blur in Full mode. */
+body * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body .blob { display: none; }
+body #grain { display: none; }
+body .glass, body .toast { background: var(--glass-solid); }
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
+    -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    backdrop-filter: blur(12px) saturate(140%) !important;
+  }
+}
+body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after {
+  filter: none !important; box-shadow: none !important; text-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+@media (prefers-reduced-transparency: reduce) {
+  body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
+    background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}
+:root[data-hc="on"] body[data-perf="full"] #tabbar, :root[data-hc="on"] body[data-perf="full"] .sheet {
+  background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.paste-scroll { max-height: 340px; overflow: auto; }
+.paste-scroll table { width: 100%; min-width: 640px; }
+.paste-scroll td { vertical-align: top; }
+.paste-scroll input { font-size: 16px; min-width: 130px; }
+.paste-scroll td:last-child { min-width: 175px; }
+
 </style>
 </head>
 <body data-perf="auto">
@@ -1422,10 +1454,10 @@ function sdpTokens(args) {
 /* ============================================================
    SECTION 1 - CONFIG
    ============================================================ */
-var APP_VERSION = "1.4.0";
+var APP_VERSION = "1.5.0-rc.1";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
-var BUILD_DATE = "2026-10-13";
+var BUILD_DATE = "2026-10-14";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
@@ -1434,7 +1466,7 @@ var CLOUD_URL = "";
 
 var CONFIG = {
   key: "sdp.v1",
-  schema: 1,
+  schema: 2,
   maxHistory: 200,
   maxComments: 200,
   maxInbox: 200,
@@ -1945,7 +1977,7 @@ function defaultData() {
     settings: {
       theme: "auto", size: "m", hc: false, perf: "auto",
       voiceName: "", rate: 0.85, volume: 1,
-      repeats: 2, sentence: true, numbers: true,
+      repeats: 2, sentence: false, numbers: true,
       writeMode: "auto", writeFixed: 12,
       pauseWord: 1.2, pauseSent: 1.6,
       advance: "auto", shuffle: false, mode: "paper", showWord: false,
@@ -2008,17 +2040,17 @@ var DB = {
       try { d = automatic ? JSON.parse(automatic) : null; } catch (err) { d = null; }
       if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
     }
+    if ((!d.v || d.v < 2) && raw && !Store.get(CONFIG.key + ".before-v2")) Store.set(CONFIG.key + ".before-v2", raw);
     d = DB.migrate(d);
     this.data = d;
     if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
     /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
     if (!this.data.admin.pinHash) {
-      var salt = Admin.makeSalt();
-      this.data.admin.pinSalt = salt;
-      this.data.admin.pinHash = Sha.hex("sdp.v1:" + salt + ":7898");
+      Admin.seedPin(this.data.admin);
       this.saveNow();
     }
+    this.saveNow();
     return d;
   },
   migrate: function (d) {
@@ -2040,7 +2072,13 @@ var DB = {
     if (!Array.isArray(d.session.ready)) d.session.ready = base.session.ready;
     if (!Array.isArray(d.session.praise)) d.session.praise = base.session.praise;
     if (!d.v) d.v = 1;
-    /* future migrations go here: if (d.v < 2) { ...; d.v = 2; } */
+    /* One-time default correction, not an every-load preference reset.
+       Preserve an original copy before any schema-1 repair or defaults change. */
+    if (d.v < 2) {
+      d.settings.sentence = false;
+      d.settings.repeats = 2;
+      d.v = 2;
+    }
     for (k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
     for (k in base.settings) { if (d.settings[k] === undefined) d.settings[k] = base.settings[k]; }
     for (k in base.plan) { if (d.plan[k] === undefined) d.plan[k] = base.plan[k]; }
@@ -2100,8 +2138,7 @@ var DB = {
     Store.set(CONFIG.key + ".beforeReset", JSON.stringify(this.data));
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
-    this.data.admin.pinSalt = Admin.makeSalt();
-    this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898");
+    Admin.seedPin(this.data.admin);
     Store.set(CONFIG.key, JSON.stringify(this.data));
   },
   exportAll: function (emergency) {
@@ -2133,7 +2170,7 @@ var DB = {
     }
     if (!d || Array.isArray(d) || !Array.isArray(d.lists) || !d.lists.length) return { ok: false, err: "This backup has no word lists inside." };
     this.data = this.migrate(d);
-    if (!this.data.admin.pinHash) { this.data.admin.pinSalt = Admin.makeSalt(); this.data.admin.pinHash = Sha.hex("sdp.v1:" + this.data.admin.pinSalt + ":7898"); }
+    if (!this.data.admin.pinHash) Admin.seedPin(this.data.admin);
     this.saveNow();
     return { ok: true, lists: this.data.lists.length, results: this.data.history.length };
   }
@@ -2230,7 +2267,7 @@ var UI = {
   autoPerf: function () {
     if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
     if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-    if (U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
+    if (U.deviceType() !== "iPhone" && U.nav("hardwareConcurrency", 0) && U.nav("hardwareConcurrency", 0) <= 2) return "lite";
     if (U.nav("deviceMemory", 0) && U.nav("deviceMemory", 0) <= 2) return "lite";
     try {
       var conn = navigator.connection || navigator.webkitConnection;
@@ -2240,31 +2277,46 @@ var UI = {
   },
   applyPerf: function () {
     var want = DB.data.settings.perf || "auto";
-    var mode = want === "auto" ? (this.autoPerf() || (this.frameMs > 24 ? "lite" : "full")) : want;
+    var mode = want === "auto" ? (this.autoPerf() || (this.autoDowngraded || this.frameMs > 24 ? "lite" : "full")) : want;
     this.perfMode = mode;
     document.documentElement.setAttribute("data-perf", mode);
     document.body.setAttribute("data-perf", mode);
     var bg = U.$("#bg");
     if (bg) bg.setAttribute("data-anim", (mode === "full" && !this.prefers("(prefers-reduced-motion: reduce)")) ? "on" : "off");
   },
-  /* measure 30 frames after first paint; ignore first 10 */
+  /* Watch complete two-second foreground windows throughout use. A single
+     slow window downgrades Auto for this page lifetime, avoiding oscillation. */
   frameProbe: function (cb) {
-    if (!window.requestAnimationFrame) { this.frameMs = 30; cb && cb(); return; }
-    var last = 0, frames = 0, total = 0;
-    var step = function (t) {
-      if (last) {
-        if (frames >= 10) total += (t - last);
-        frames++;
-      }
+    if (!window.requestAnimationFrame) { this.frameMs = 30; this.applyPerf(); cb && cb(); return; }
+    if (this.frameWatchStarted) return;
+    this.frameWatchStarted = true;
+    var last = 0, start = 0, samples = [], request = null, done = false;
+    function step(t) {
+      request = null;
+      if (document.hidden) { last = start = 0; samples = []; return; }
+      if (!start) start = t;
+      if (last) samples.push(t - last);
       last = t;
-      if (frames < 30) { window.requestAnimationFrame(step); }
-      else {
-        UI.frameMs = Math.round((total / Math.max(1, frames - 10)) * 10) / 10;
-        UI.applyPerf();
-        cb && cb();
+      if (t - start >= 2000) {
+        UI.recordFrames(samples);
+        samples = []; start = t;
+        if (!done) { done = true; cb && cb(); }
       }
-    };
-    window.requestAnimationFrame(step);
+      request = window.requestAnimationFrame(step);
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) { if (request !== null) window.cancelAnimationFrame(request); request = null; last = start = 0; samples = []; }
+      else if (request === null) request = window.requestAnimationFrame(step);
+    });
+    request = window.requestAnimationFrame(step);
+  },
+  recordFrames: function (samples) {
+    if (!samples.length) return;
+    samples.sort(function (a, b) { return a - b; });
+    var median = samples[Math.floor(samples.length / 2)];
+    this.frameMs = Math.round(median * 10) / 10;
+    if (median > 24) this.autoDowngraded = true;
+    if (DB.data.settings.perf === "auto") this.applyPerf();
   },
   pauseAnimations: function (paused) {
     var bg = U.$("#bg");
@@ -2319,7 +2371,7 @@ var UI = {
   },
   segSet: function (host, btn) {
     var list = U.$$("button", host);
-    for (var i = 0; i < list.length; i++) list[i].setAttribute("aria-selected", list[i] === btn ? "true" : "false");
+    for (var i = 0; i < list.length; i++) list[i].setAttribute(list[i].getAttribute("role") === "tab" ? "aria-selected" : "aria-pressed", list[i] === btn ? "true" : "false");
     UI.segSync(host);
   },
   segValue: function (host, val) {
@@ -2332,7 +2384,7 @@ var UI = {
   segSync: function (host) {
     var thumb = U.$(".thumb", host);
     if (!thumb) return;
-    var act = U.$('button[aria-selected="true"]', host);
+    var act = U.$('button[aria-selected="true"], button[aria-pressed="true"]', host);
     if (!act) { thumb.style.width = "0px"; return; }
     thumb.style.width = act.offsetWidth + "px";
     thumb.style.transform = "translateX(" + act.offsetLeft + "px)";
@@ -2526,9 +2578,9 @@ var UI = {
    ============================================================ */
 function writeSecs(word) {
   var st = DB.data.settings;
-  if (st.writeMode === "fixed") return U.clamp(st.writeFixed, 3, 60);
+  if (st.writeMode === "fixed") return U.clamp(st.writeFixed, 4, 60);
   var n = String(word || "").length;
-  return U.clamp(Math.round(4 + 0.6 * n), 5, 25);
+  return U.clamp(Math.round(4 + 0.6 * n), 4, 25);
 }
 
 var Lib = {
@@ -2946,7 +2998,7 @@ var Screens = {
         var b = U.el("button", null, v.label);
         b.type = "button";
         b.setAttribute("data-tab", v.id);
-        b.setAttribute("aria-selected", String(cur === v.id));
+        b.setAttribute("aria-pressed", String(cur === v.id));
         seg.appendChild(b);
       });
       UI.segInit(seg, function (val) { onPick(val); });
@@ -3326,6 +3378,10 @@ var Speech = {
     try { this.supported = !!(window.speechSynthesis && window.SpeechSynthesisUtterance); } catch (err) { this.supported = false; }
     var self = this;
     if (!this.supported) return;
+    var firstGesture = function () { self.readVoices(); document.removeEventListener("pointerdown", firstGesture); document.removeEventListener("touchstart", firstGesture); document.removeEventListener("keydown", firstGesture); };
+    document.addEventListener("pointerdown", firstGesture, { passive: true });
+    document.addEventListener("touchstart", firstGesture, { passive: true });
+    document.addEventListener("keydown", firstGesture);
     this.readVoices();
     try {
       window.speechSynthesis.onvoiceschanged = function () { self.readVoices(); };
@@ -3339,13 +3395,20 @@ var Speech = {
   },
 
   normLang: function (l) { return String(l || "").replace(/_/g, "-").toLowerCase(); },
-  isUK: function (v) { return !!v && this.normLang(v.lang) === "en-gb"; },
+  isUK: function (v) {
+    if (!v) return false;
+    var lang = this.normLang(v.lang), name = String(v.name || "");
+    if (/^(?:en|eng)-(?:gb|gbr|uk)(?:-|$)/.test(lang)) return true;
+    /* Names never override a voice explicitly labelled US or another region. */
+    if (lang && !/^(en|eng)$/.test(lang)) return false;
+    return /\b(UK English|British|Daniel|Kate|Serena|Hazel|George|Susan|Libby|Sonia|Ryan)\b/i.test(name);
+  },
 
   readVoices: function () {
     if (!this.supported) return;
     var list = [];
     try { list = window.speechSynthesis.getVoices() || []; } catch (e) { list = []; }
-    if (!list || !list.length) return;
+    if (!list) list = [];
     this.voices = list.slice(0);
     var uks = [];
     for (var i = 0; i < list.length; i++) if (this.isUK(list[i])) uks.push(list[i]);
@@ -3392,6 +3455,7 @@ var Speech = {
 
   /* must be called synchronously inside a user gesture on iOS / Chrome */
   unlock: function () {
+    this.readVoices();
     if (!this.supported || this.textOnly || !this.isUkVoice()) return;
     try {
       var u = new SpeechSynthesisUtterance(" ");
@@ -3526,8 +3590,8 @@ var NoVoice = {
     var dev = U.deviceType();
     var steps = {
       iPhone: "Settings \u203a Accessibility \u203a Spoken Content \u203a Voices \u203a English \u203a United Kingdom \u203a download a voice. On iOS 12: Settings › General › Accessibility › Speech › Voices.",
-      Android: "Settings \u203a search \u201cText-to-speech\u201d \u203a install the English (United Kingdom) voice data.",
-      Windows: "Settings \u203a Time & language \u203a Speech \u203a Add voices \u203a English (United Kingdom).",
+      Android: "Settings \u203a search \u201cText-to-speech\u201d \u203a Text-to-speech engine: Google \u203a install English (UK), then restart the browser.",
+      Windows: "Settings \u203a Time & language \u203a Speech \u203a Add voices \u203a English (United Kingdom), then restart the browser.",
       Mac: "System Settings \u203a Accessibility \u203a Spoken Content \u203a System voice \u203a Manage voices \u203a English (United Kingdom)."
     };
     UI.sheet({
@@ -4195,7 +4259,7 @@ Eng.bindKeys = function () {
 };
 
 Eng.readyScreen = function () {
-  var self = this;
+  var self = this, token = ++this.runId, counting = false;
   var phrases = DB.data.session.ready || [];
   var phrase = phrases.length ? phrases[Math.floor(Math.random() * phrases.length)] : "Are you ready? Let's begin.";
   var sh = UI.sheet({
@@ -4207,7 +4271,7 @@ Eng.readyScreen = function () {
       else vline.textContent = "No UK voice selected yet.";
       b.appendChild(vline);
       b.appendChild(U.el("p", "small muted", S.volumeTip));
-      b.appendChild(U.el("p", "small", "Get your pen and paper. Tap Start when you are."));
+      b.appendChild(U.el("p", "small", "Get your pen and paper. Tap I'm ready when you are."));
       var num = U.el("div", "center", null);
       num.style.margin = "18px 0 6px";
       var big = U.el("div", null, "");
@@ -4222,22 +4286,20 @@ Eng.readyScreen = function () {
     actions: [(function () {
       var b = U.btn(S.imReady, "i-play", "primary xl block");
       U.on(b, "click", function () {
-        /* first speak() must run synchronously inside this tap on iOS */
-        Speech.unlock();
-        self.requestWake();
-        var big = U.$("#readyNum");
-        var rate = DB.data.settings.rate;
-        Speech.say([phrase], { rate: rate, volume: DB.data.settings.volume }, function () {
-          var count = 3;
-          (function step() {
-            if (count <= 0) { UI.closeSheet(); self.st = "speaking"; self.runItem(0); return; }
-            if (big) big.textContent = String(count);
-            Speech.say([String(count)], { rate: Math.min(1.1, rate + 0.15), volume: DB.data.settings.volume }, function () {
-              count--;
-              setTimeout(step, 320);
-            });
-          })();
-        });
+        if (counting || token !== self.runId) return;
+        counting = true; b.disabled = true;
+        /* The gesture unlocks audio on iOS; no automatic dictation on load. */
+        Speech.unlock(); self.requestWake();
+        var big = U.$("#readyNum"), count = 3, rate = DB.data.settings.rate;
+        function active() { return token === self.runId && sh.parentNode; }
+        (function step() {
+          if (!active()) return;
+          if (count <= 0) { UI.closeSheet(); self.st = "speaking"; self.runItem(0); return; }
+          if (big) big.textContent = String(count);
+          Speech.say([String(count)], { rate: Math.min(1.1, rate + 0.15), volume: DB.data.settings.volume }, function () {
+            if (!active()) return; count--; self.after(320, step);
+          });
+        })();
       });
       return b;
     })(), (function () {
@@ -4254,6 +4316,7 @@ Eng.readyScreen = function () {
       return sk;
     })()]
   });
+  Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, function () {});
   return sh;
 };
 
@@ -4837,7 +4900,7 @@ var Comm = {
           var btn = U.el("button", null, s2.label);
           btn.type = "button";
           btn.setAttribute("data-f", s2.id);
-          btn.setAttribute("aria-selected", String(s2.id === status));
+          btn.setAttribute("aria-pressed", String(s2.id === status));
           seg.appendChild(btn);
         });
         UI.segInit(seg, function (val) { status = val; });
@@ -5004,23 +5067,42 @@ var Admin = {
     }
     return new Uint8Array(out);
   },
-  hashPin: function (pin, salt, cb) {
+  seedPin: function (admin) {
+    /* Public convenience lock, NOT an authentication boundary. Legacy seed is
+       upgraded to a device-specific PBKDF2 hash on successful login. */
+    admin.pinSalt = "c56a80f01b264e39";
+    admin.pinHash = "5cc8204af44727a4da3b0d615fb32939b0f86d8b660efaaf9772fde9d753428b";
+    admin.pinKdf = "sha256"; admin.pinRehashed = false;
+  },
+  preferredKdf: function () {
+    try { if (window.crypto && window.crypto.subtle && window.crypto.subtle.deriveBits) return "pbkdf2-sha256"; } catch (e) {}
+    return "sha256";
+  },
+  hashPin: function (pin, salt, cb, algorithm) {
     var text = "sdp.v1:" + salt + ":" + pin;
     var subtle = null;
     try { subtle = window.crypto && window.crypto.subtle ? window.crypto.subtle : null; } catch (err) {}
-    if (subtle && subtle.digest) {
+    if (algorithm === "pbkdf2-sha256") {
+      if (!subtle || !subtle.deriveBits) { cb(null); return; }
       try {
-        subtle.digest("SHA-256", this.toBytes(text)).then(function (buf) {
+        subtle.importKey("raw", this.toBytes(pin), "PBKDF2", false, ["deriveBits"]).then(function (key) {
+          return subtle.deriveBits({ name: "PBKDF2", salt: Admin.toBytes("sdp.v1:" + salt), iterations: 120000, hash: "SHA-256" }, key, 256);
+        }).then(function (buf) {
           var arr = new Uint8Array(buf), hex = "";
           for (var i = 0; i < arr.length; i++) hex += ("0" + arr[i].toString(16)).slice(-2);
           cb(hex);
-        }, function () { cb(Sha.hex(text)); });
+        }, function () { cb(null); });
         return;
-      } catch (e) {}
+      } catch (e) { cb(null); return; }
     }
     cb(Sha.hex(text));
   },
-  makeSalt: function () { return U.uid("s").replace(/[^a-z0-9]/gi, "").slice(0, 16) || "saltsalt"; },
+  makeSalt: function () {
+    try {
+      var bytes = new Uint8Array(16); window.crypto.getRandomValues(bytes);
+      return Array.prototype.map.call(bytes, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    } catch (e) { return U.uid("s").replace(/[^a-z0-9]/gi, ""); }
+  },
 
   /* ---------- entry point ---------- */
   open: function () {
@@ -5121,8 +5203,11 @@ var Admin = {
           }
           if (mode === "confirm") {
             if (pin !== confirmPin) { setMsg("The two PINs did not match. Start again."); shake(); setTimeout(function () { self.pad("create", null); }, 900); return; }
-            var salt = self.makeSalt();
+            var salt = self.makeSalt(), kdf = self.preferredKdf();
             self.hashPin(pin, salt, function (hash) {
+              if (self.authRun !== authRun || !sh.parentNode) return;
+              if (!hash) { setMsg("PIN hashing failed. Please try again in a secure browser."); return; }
+              DB.data.admin.pinKdf = kdf;
               DB.data.admin.pinHash = hash;
               DB.data.admin.pinSalt = salt;
               DB.data.admin.fails = 0;
@@ -5130,7 +5215,7 @@ var Admin = {
               UI.closeSheet();
               self.unlock();
               UI.toast("PIN created. Keep it safe \u2013 it is stored only as a hash on this device.", { icon: "i-check", ms: 6000 });
-            });
+            }, kdf);
             return;
           }
           if (mode === "cloud") {
@@ -5151,13 +5236,23 @@ var Admin = {
           }
           /* local verify */
           var a = DB.data.admin;
+          enter.disabled = true;
           self.hashPin(pin, a.pinSalt, function (hash) {
             if (self.authRun !== authRun || !sh.parentNode) return;
+            enter.disabled = false;
+            if (!hash) { setMsg("This saved PIN needs Web Crypto. Open the HTTPS app in a current browser; your data is safe."); return; }
             if (hash === a.pinHash) {
               a.fails = 0;
-              DB.save();
-              UI.closeSheet();
-              self.unlock();
+              function finish() { DB.saveNow(); UI.closeSheet(); self.unlock(); }
+              if (a.pinKdf !== "pbkdf2-sha256" && (self.preferredKdf() === "pbkdf2-sha256" || !a.pinRehashed)) {
+                enter.disabled = true;
+                var salt = self.makeSalt(), upgradedKdf = self.preferredKdf();
+                self.hashPin(pin, salt, function (newHash) {
+                  if (self.authRun !== authRun || !sh.parentNode) return;
+                  if (newHash) { a.pinSalt = salt; a.pinHash = newHash; a.pinKdf = upgradedKdf; a.pinRehashed = true; }
+                  finish();
+                }, upgradedKdf);
+              } else finish();
             } else {
               a.fails = (a.fails || 0) + 1;
               if (a.fails >= CONFIG.maxFails) {
@@ -5172,7 +5267,7 @@ var Admin = {
               setMsg(S.wrongPin + " \u00b7 " + (CONFIG.maxFails - a.fails) + " " + S.triesLeft);
               shake();
             }
-          });
+          }, a.pinKdf || "sha256");
         }
       }
     });
@@ -5222,46 +5317,83 @@ var Admin = {
   },
 
   /* ---------- messy text parser ---------- */
-  splitRow: function (line) {
-    if (line.indexOf("|") >= 0) return line.split("|");
-    if (line.indexOf("\t") >= 0) return line.split("\t");
-    var cells = [], cell = "", quoted = false;
-    for (var i = 0; i < line.length; i++) {
-      var ch = line.charAt(i);
-      if (ch === '"') {
-        if (quoted && line.charAt(i + 1) === '"') { cell += '"'; i++; }
-        else quoted = !quoted;
-      } else if (ch === "," && !quoted) { cells.push(cell); cell = ""; }
-      else cell += ch;
-    }
-    cells.push(cell); return cells;
+  classDates: function (now) {
+    var dates = [U.dateKey(now)], d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+    while (dates.length < 5) { d.setDate(d.getDate() + 1); if (d.getDay() === 2 || d.getDay() === 3) dates.push(U.dateKey(d)); }
+    return dates;
   },
-  parseWords: function (text) {
-    var lines = String(text || "").split(/\r?\n/);
-    var out = [], problems = [], dupes = 0, seen = Object.create(null);
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      line = line.replace(/^\s*[\u2022\u25cf\u25aa\u25cb\*\-\u2013\u2014\uf0b7]\s*/, "");
-      line = line.replace(/^\s*\d+\s*[\.\)\:\-]\s*/, "");
-      /* CSV quotes are handled by splitRow, not stripped from the whole row. */
-      line = U.trim(line);
-      if (!line) { if (i < lines.length - 1) problems.push("Line " + (i + 1) + ": blank line ignored"); continue; }
-      var bits = this.splitRow(line);
-      var w = U.trim(bits[0]).replace(/[,;]+$/, "");
-      var s = bits[1] ? U.clip(bits[1], 200) : "";
-      var m = bits[2] ? U.clip(bits[2], 120) : "";
-      if (!w) { problems.push("Line " + (i + 1) + ": empty word"); continue; }
-      if (w.length > CONFIG.maxWordChars) { problems.push("\u201c" + w.slice(0, 20) + "\u2026\u201d is longer than " + CONFIG.maxWordChars + " characters"); continue; }
-      if (/[0-9]/.test(w)) { problems.push("\u201c" + w + "\u201d has a number in it"); continue; }
-      if (!/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) { problems.push("\u201c" + w + "\u201d has unusual symbols"); continue; }
-      var key = w.toLowerCase();
-      if (seen[key]) { dupes++; problems.push("Line " + (i + 1) + ": duplicate word removed: " + w); continue; }
-      if (!s) problems.push("Line " + (i + 1) + ": add an example sentence for " + w);
-      if (US_UK[key]) problems.push("Line " + (i + 1) + ": American spelling. UK: " + US_UK[key]);
-      seen[key] = true;
-      out.push({ w: w, s: s, m: m });
+  wordsText: function (words) {
+    return "word,sentence,meaning\n" + words.map(function (x) { return [x.w, x.s || "", x.m || ""].map(U.csvCell).join(","); }).join("\n");
+  },
+  /* A single delimiter decision for the whole paste. Quote-aware, including
+     escaped quotes and embedded newlines. No per-line comma-column guessing. */
+  readRows: function (text, delimiter) {
+    var rows = [], row = [], cell = "", quoted = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      if (ch === '"') {
+        if (quoted && text.charAt(i + 1) === '"') { cell += '"'; i++; }
+        else quoted = !quoted;
+      } else if (!quoted && (ch === delimiter || ch === "\n")) {
+        row.push(cell); cell = "";
+        if (ch === "\n") { rows.push(row); row = []; }
+      } else cell += ch;
     }
-    return { items: out, problems: problems, dupes: dupes };
+    row.push(cell); rows.push(row);
+    return { rows: rows.filter(function (r) { return r.some(function (c) { return U.trim(c); }); }), unclosed: quoted };
+  },
+  splitRow: function (line) {
+    return this.readRows(line, line.indexOf("|") >= 0 ? "|" : line.indexOf("\t") >= 0 ? "\t" : ",").rows[0] || [];
+  },
+  parseWords: function (text, force) {
+    text = String(text || "").replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "")
+      .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
+    var out = [], problems = [], dupes = 0, seen = Object.create(null), self = this;
+    var delimiter = ",", data = this.readRows(text, ","), header = null, mode = "plain list";
+    function consistent(rows) {
+      return rows.length && rows.every(function (r) { return r.length === rows[0].length && r.length >= 2 && r.length <= 3; });
+    }
+    ["|", "\t"].some(function (sep) {
+      var candidate = self.readRows(text, sep);
+      if (consistent(candidate.rows)) { delimiter = sep; data = candidate; mode = "columns"; return true; }
+      return false;
+    });
+    function findHeader(rows) {
+      if (!rows.length) return null;
+      var labels = rows[0].map(function (x) { return U.trim(x).toLowerCase(); });
+      return labels.length > 1 && labels.indexOf("word") >= 0 ? labels : null;
+    }
+    header = findHeader(data.rows);
+    if (header || (consistent(data.rows) && data.rows.every(function (r) { return U.trim(r[1]).split(/\s+/).length >= 4; }))) mode = "columns";
+    if (force === "columns") {
+      mode = "columns";
+      delimiter = text.indexOf("|") >= 0 ? "|" : text.indexOf("\t") >= 0 ? "\t" : ",";
+      data = this.readRows(text, delimiter); header = findHeader(data.rows);
+    } else if (force === "plain") { mode = "plain list"; header = null; }
+    if (mode === "plain list") data = this.readRows(text.replace(/[;\u2022\u25cf\u25aa\u25cb\uf0b7]/g, "\n"), ",");
+    if (data.unclosed) problems.push("Unclosed quote: check the final item.");
+    function add(w, sentence, meaning, rowNo) {
+      if (mode === "plain list" && /[\t|]/.test(w)) { problems.push("Item " + rowNo + ": mixed column separators; use one format for the whole paste."); return; }
+      w = U.trim(w).replace(/^\s*(?:[-*\u2013\u2014]\s+|\d+\s*[.)\-:]\s*)/, "");
+      w = U.trim(w).replace(/^['"]|['"]$/g, "").replace(/\s+/g, " ");
+      if (!w) return;
+      if (w.length > CONFIG.maxWordChars || !/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) {
+        problems.push("Item " + rowNo + ": invalid word: " + w.slice(0, 40)); return;
+      }
+      var key = w.toLowerCase();
+      if (seen[key]) { dupes++; return; }
+      seen[key] = true;
+      out.push({ w: w, s: U.clip(sentence || "", 500), m: U.clip(meaning || "", 500) });
+    }
+    data.rows.forEach(function (row, i) {
+      if (mode === "plain list") { row.forEach(function (cell) { add(cell, "", "", i + 1); }); return; }
+      if (header && i === 0) return;
+      if (row.length > (header ? header.length : 3)) problems.push("Row " + (i + 1) + ": extra columns; switch to plain list if these are words.");
+      var wi = header ? header.indexOf("word") : 0, si = header ? header.indexOf("sentence") : 1, mi = header ? header.indexOf("meaning") : 2;
+      if (!U.trim(row[wi])) problems.push("Row " + (i + 1) + ": empty word.");
+      add(row[wi], row[si], row[mi], i + 1);
+    });
+    return { items: out, problems: problems, dupes: dupes, mode: mode };
   },
 
   /* ---------- the panel ---------- */
@@ -5280,13 +5412,15 @@ var Admin = {
         U.on(lockBtn, "click", function () { self.lock(); });
         rightSlot.appendChild(lockBtn);
 
+        var sticky = U.el("div", "adminsticky", null);
+        body.appendChild(sticky);
         var bar = U.el("div", "unlockedbar", null);
         bar.appendChild(U.icn("i-check", 16));
         bar.appendChild(U.el("span", null, S.unlocked + (Cloud.mode ? " \u00b7 cloud" : " \u00b7 this device only")));
         var lock2 = U.btn("Lock now", null, "sm ghost");
         U.on(lock2, "click", function () { self.lock(); });
         bar.appendChild(lock2);
-        body.appendChild(bar);
+        sticky.appendChild(bar);
 
         var tabs = U.el("div", "admintabs", null);
         var seg = U.el("div", "seg scroll", null);
@@ -5297,11 +5431,11 @@ var Admin = {
           var b = U.el("button", null, n[1]);
           b.type = "button";
           b.setAttribute("data-tab", n[0]);
-          b.setAttribute("aria-selected", String(self.tab === n[0]));
+          b.setAttribute("aria-pressed", String(self.tab === n[0]));
           seg.appendChild(b);
         });
         tabs.appendChild(seg);
-        body.appendChild(tabs);
+        sticky.appendChild(tabs);
 
         var host = U.el("div", null, null);
         host.id = "adminHost";
@@ -5410,49 +5544,91 @@ Admin.tabWords = function (host) {
   if (!list) return;
   this.editListId = list.id;
   var ed = this.card(host, "Editor: " + list.name);
-  var hint = U.el("p", "tiny muted", "Paste one word per line, or word | sentence | meaning. Tabs and CSV commas work too. Check the preview, save a draft, then publish.");
+  var hint = U.el("p", "tiny muted", "1 Paste words (commas or lines). 2 Preview and edit. 3 Pick class dates. 4 Publish. Use pipes, tabs, or a CSV header for sentence and meaning columns.");
   ed.appendChild(hint);
   var ta = U.el("textarea", null, null);
   ta.setAttribute("aria-label", "Word list text");
   ta.style.minHeight = "180px";
   ta.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
   ta.style.fontSize = "16px";
-  ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : list.words.map(function (x) {
-    return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w;
-  }).join("\n");
+  ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : self.wordsText(list.words);
   ed.appendChild(ta);
-  var info = U.el("p", "tiny muted", "");
-  ed.appendChild(info);
-  var preview = U.el("div", null, null);
-  preview.style.marginTop = "6px";
-  ed.appendChild(preview);
-
-  function refresh() {
-    var r = self.parseWords(ta.value);
-    self.draft[list.id] = ta.value; list.draftText = ta.value; DB.save();
-    info.textContent = r.items.length + " words \u00b7 " + r.dupes + " duplicate" + (r.dupes === 1 ? "" : "s") + " removed \u00b7 " + r.problems.length + " problem" + (r.problems.length === 1 ? "" : "s");
-    preview.textContent = "";
-    if (r.problems.length) {
-      var p = U.el("div", "tiny no", null);
-      r.problems.slice(0, 6).forEach(function (x) { p.appendChild(U.el("div", null, "\u2022 " + x)); });
-      preview.appendChild(p);
-    }
-    if (r.items.length) {
-      var scroll = U.el("div", null, null); scroll.style.maxHeight = "220px"; scroll.style.overflow = "auto";
-      var table = U.el("table", "tiny", null); table.style.width = "100%";
-      var head = U.el("tr", null, null);
-      ["Word", "Sentence", "Meaning"].forEach(function (label) { head.appendChild(U.el("th", null, label)); }); table.appendChild(head);
-      r.items.forEach(function (x) { var row = U.el("tr", null, null); [x.w, x.s || "Add a sentence", x.m || "Optional"].forEach(function (value) { row.appendChild(U.el("td", null, value)); }); table.appendChild(row); });
-      scroll.appendChild(table); preview.appendChild(scroll);
-    }
+  var format = list.draftFormat || "auto", parsed = null, generation = 0;
+  var banner = U.el("p", "small", ""); banner.setAttribute("role", "status"); ed.appendChild(banner);
+  var switchFormat = U.btn("Read as columns", null, "sm soft");
+  U.on(switchFormat, "click", function () {
+    format = parsed && parsed.mode === "columns" ? "plain" : "columns"; refresh();
+  }); ed.appendChild(switchFormat);
+  var info = U.el("p", "tiny muted", ""); info.setAttribute("role", "status"); ed.appendChild(info);
+  var preview = U.el("div", "paste-preview", null); preview.style.marginTop = "6px"; ed.appendChild(preview);
+  function remember() {
+    self.draft[list.id] = ta.value; list.draftText = ta.value; list.draftFormat = format; DB.save();
   }
-  U.on(ta, "input", function () { self.draft[list.id] = ta.value; list.draftText = ta.value; DB.saveNow(); });
+  function counter() {
+    banner.textContent = "I read this as: " + parsed.items.length + " words (" + parsed.mode + ")";
+    switchFormat.textContent = parsed.mode === "columns" ? "Read as plain list" : "Read as columns";
+    info.textContent = parsed.items.length + " words \u00b7 " + parsed.dupes + " duplicates removed \u00b7 " + parsed.problems.length + " problems";
+  }
+  function edited() {
+    ta.value = self.wordsText(parsed.items); format = "columns"; parsed.mode = "columns"; remember(); counter();
+  }
+  function renderPreview() {
+    var run = ++generation, items = parsed.items, dragged = -1;
+    preview.textContent = ""; counter();
+    parsed.problems.forEach(function (problem) { preview.appendChild(U.el("p", "tiny no", problem)); });
+    var scroll = U.el("div", "paste-scroll", null);
+    var table = U.el("table", "tiny", null), head = U.el("tr", null, null);
+    ["Word", "Sentence", "Meaning", "Order"].forEach(function (label) { var th = U.el("th", null, label); th.scope = "col"; head.appendChild(th); });
+    table.appendChild(head); scroll.appendChild(table); preview.appendChild(scroll);
+    var offset = 0;
+    function move(from, to) {
+      if (from < 0 || to < 0 || to >= items.length || from === to) return;
+      items.splice(to, 0, items.splice(from, 1)[0]); edited(); renderPreview();
+    }
+    function chunk() {
+      if (run !== generation || !self.unlocked || (offset && !document.documentElement.contains(preview))) return;
+      var end = Math.min(offset + 8, items.length), fragment = document.createDocumentFragment();
+      for (; offset < end; offset++) (function (index) {
+        var item = items[index], row = U.el("tr", null, null);
+        row.setAttribute("data-preview-row", String(index));
+        ["w", "s", "m"].forEach(function (key, col) {
+          var td = U.el("td", null, null), input = U.el("input", null, null);
+          input.value = item[key]; input.maxLength = key === "w" ? CONFIG.maxWordChars : 500;
+          input.setAttribute("aria-label", ["Word", "Sentence", "Meaning"][col] + " " + (index + 1));
+          U.on(input, "input", function () { if (!self.unlocked) return; item[key] = input.value; edited(); });
+          td.appendChild(input); row.appendChild(td);
+        });
+        var controls = U.el("td", null, null), handle = U.btn("Drag", null, "sm ghost");
+        handle.draggable = true; handle.setAttribute("aria-label", "Drag word " + (index + 1));
+        U.on(handle, "dragstart", function (ev) { dragged = index; if (ev.dataTransfer) ev.dataTransfer.setData("text/plain", String(index)); });
+        U.on(row, "dragover", function (ev) { ev.preventDefault(); });
+        U.on(row, "drop", function (ev) { ev.preventDefault(); if (self.unlocked) move(dragged, index); });
+        controls.appendChild(handle);
+        [["Up", -1], ["Down", 1]].forEach(function (spec) {
+          var btn = U.btn(spec[0], null, "sm ghost"); btn.disabled = index + spec[1] < 0 || index + spec[1] >= items.length;
+          btn.setAttribute("aria-label", spec[0] + " word " + (index + 1));
+          U.on(btn, "click", function () { if (self.unlocked) move(index, index + spec[1]); }); controls.appendChild(btn);
+        });
+        var del = U.btn("Delete", null, "sm ghost"); del.setAttribute("aria-label", "Delete word " + (index + 1));
+        U.on(del, "click", function () { if (!self.unlocked) return; items.splice(index, 1); edited(); renderPreview(); }); controls.appendChild(del);
+        row.appendChild(controls); fragment.appendChild(row);
+      })(offset);
+      table.appendChild(fragment);
+      if (offset < items.length) setTimeout(chunk, 16);
+    }
+    chunk();
+  }
+  function refresh() {
+    if (!self.unlocked) return;
+    parsed = self.parseWords(ta.value, format); remember(); renderPreview();
+  }
+  U.on(ta, "input", function () { format = "auto"; remember(); });
   U.on(ta, "input", U.debounce(refresh, 220));
   refresh();
 
   function applyParsed(mode2) {
-    var r = self.parseWords(ta.value);
-    if (!r.items.length) { UI.toast("No valid words found in that text.", { icon: "i-alert" }); return; }
+    var r = self.parseWords(ta.value, format);
+    if (!r.items.length || r.problems.length) { UI.toast("Fix the preview problems before saving. No words have been changed.", { icon: "i-alert" }); return; }
     var old = list.words.slice(0);
     if (mode2 === "replace") list.words = r.items;
     else {
@@ -5467,12 +5643,12 @@ Admin.tabWords = function (host) {
       icon: "i-check",
       undo: function () { list.words = old; DB.saveNow(); self.renderTab(); }
     });
-    delete self.draft[list.id]; delete list.draftText; self.renderTab();
+    delete self.draft[list.id]; delete list.draftText; delete list.draftFormat; self.renderTab();
   }
 
   var brow = U.el("div", "btn-row tight", null);
   brow.style.marginTop = "10px";
-  var bReplace = U.btn("Save draft (replace list)", "i-refresh", "soft");
+  var bReplace = U.btn("Replace this list", "i-refresh", "soft");
   U.on(bReplace, "click", function () {
     UI.confirm({
       title: "Replace the whole list?",
@@ -5481,7 +5657,7 @@ Admin.tabWords = function (host) {
       onOk: function () { applyParsed("replace"); }
     });
   });
-  var bAppend = U.btn("Append", "i-plus", "soft");
+  var bAppend = U.btn("Add to this list", "i-plus", "soft");
   U.on(bAppend, "click", function () { applyParsed("append"); });
   brow.appendChild(bReplace); brow.appendChild(bAppend);
   ed.appendChild(brow);
@@ -5506,11 +5682,11 @@ Admin.tabWords = function (host) {
           try { parsed = JSON.parse(text); } catch (err) { UI.toast("This JSON file could not be read."); return; }
           var words = Array.isArray(parsed) ? parsed : parsed && parsed.words;
           if (!Array.isArray(words)) { UI.toast("This file needs an array of words."); return; }
-          text = words.filter(function (x) { return x && typeof x.w === "string"; }).map(function (x) { return U.csvCell(x.w) + "," + U.csvCell(x.s || "") + "," + U.csvCell(x.m || ""); }).join("\n");
+          text = self.wordsText(words.filter(function (x) { return x && typeof x.w === "string"; }));
         }
-        ta.value = text;
+        ta.value = text; format = "auto";
         refresh();
-        UI.toast("Imported " + f.name + " \u2013 check the preview, then Append or Replace.", { icon: "i-check", ms: 5000 });
+        UI.toast("Imported " + f.name + " \u2013 check the preview, then Add to this list or Replace this list.", { icon: "i-check", ms: 5000 });
       };
       fr.onerror = function () { UI.toast("Could not read that file.", { icon: "i-alert" }); };
       fr.readAsText(f);
@@ -5519,11 +5695,11 @@ Admin.tabWords = function (host) {
   U.on(bImp, "click", function () { fi.click(); });
   var bExp = U.btn("Export list", "i-down", "soft");
   U.on(bExp, "click", function () {
-    var txt = list.words.map(function (x) { return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w; }).join("\n");
+    var txt = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.s || "") + " | " + (x.m || "")) : x.w; }).join("\n");
     if (!U.download(list.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".txt", txt)) U.selectForCopy(txt);
   });
   var csv = U.btn("Export CSV", "i-down", "soft");
-  U.on(csv, "click", function () { var text = U.csv(list.words.map(function (x) { return [x.w, x.s, x.m]; })); if (!U.download("word-list.csv", text, "text/csv")) U.selectForCopy(text); });
+  U.on(csv, "click", function () { var text = self.wordsText(list.words); if (!U.download("word-list.csv", text, "text/csv")) U.selectForCopy(text); });
   var json = U.btn("Export JSON", "i-down", "soft");
   U.on(json, "click", function () { var text = JSON.stringify({ name: list.name, words: list.words }, null, 2); if (!U.download("word-list.json", text, "application/json")) U.selectForCopy(text); });
   brow2.appendChild(bImp); brow2.appendChild(fi); brow2.appendChild(bExp); brow2.appendChild(csv); brow2.appendChild(json);
@@ -5551,7 +5727,7 @@ Admin.tabWords = function (host) {
         bFill.disabled = false;
         prog.textContent = cancel.stop ? "Stopped." : "Done. " + todo.length + " words checked.";
         DB.saveNow();
-        ta.value = list.words.map(function (x) { return x.s ? (x.w + " | " + x.s + (x.m ? " | " + x.m : "")) : x.w; }).join("\n");
+        ta.value = list.words.map(function (x) { return (x.s || x.m) ? (x.w + " | " + (x.s || "") + " | " + (x.m || "")) : x.w; }).join("\n");
         refresh();
         return;
       }
@@ -5771,12 +5947,24 @@ Admin.tabWords = function (host) {
   /* --- publish --- */
   var targetRow = U.el("div", "planrow", null);
   targetRow.appendChild(U.el("span", "small", "Publish for"));
-  var target = U.el("select", null, null); target.id = "publishTarget";
-  [["today", "Today"], ["w5", "Saturday every week"], ["w6", "Sunday every week"], ["date", "A specific date"], ["pinned", "Pin now"]].concat(DAYS.map(function (day, i) { return ["w" + i, day + " every week"]; })).forEach(function (item) {
+  var target = U.el("select", null, null); target.id = "publishTarget"; target.setAttribute("aria-label", "Publish for");
+  [["today", "Today"], ["date", "A specific date"], ["pinned", "Pin now"]].concat(DAYS.map(function (day, i) { return ["w" + i, day + " every week"]; })).forEach(function (item) {
     var option = U.el("option", null, item[1]); option.value = item[0]; target.appendChild(option);
   }); targetRow.appendChild(target);
   var targetDate = U.el("input", null, null); targetDate.type = "date"; targetDate.value = U.dateKey(new Date()); targetDate.setAttribute("aria-label", "Publish date"); targetRow.appendChild(targetDate); pl.appendChild(targetRow);
-  var calendar = U.el("div", null, null); calendar.style.overflowX = "auto";
+  var dateChips = U.el("div", "btn-row tight", null), selectedDates = [];
+  dateChips.setAttribute("aria-label", "Class dates");
+  pl.appendChild(U.el("h3", null, "3 Pick class dates"));
+  self.classDates(new Date()).forEach(function (key, index) {
+    var day = new Date(key + "T12:00:00"), label = (index === 0 ? "Today: " : "") + DAYS_S[U.weekdayIndex(day)] + " " + key;
+    var chip = U.btn(label, null, "sm soft"); chip.setAttribute("aria-pressed", "false");
+    U.on(chip, "click", function () {
+      var at = selectedDates.indexOf(key); if (at < 0) selectedDates.push(key); else selectedDates.splice(at, 1);
+      chip.setAttribute("aria-pressed", String(at < 0));
+    }); dateChips.appendChild(chip);
+  }); pl.appendChild(dateChips);
+  pl.appendChild(U.el("p", "tiny muted", "Choose one or more chips, or use Publish for above. Chips take priority."));
+  var calendar = U.el("div", null, null); calendar.style.overflowX = "auto"; calendar.tabIndex = 0; calendar.setAttribute("role", "region"); calendar.setAttribute("aria-label", "Next eight weeks");
   var grid = U.el("table", "tiny", null); var heading = U.el("tr", null, null);
   DAYS_S.forEach(function (day) { heading.appendChild(U.el("th", null, day)); }); grid.appendChild(heading);
   var monday = new Date(); monday.setDate(monday.getDate() - U.weekdayIndex(monday));
@@ -5794,12 +5982,18 @@ Admin.tabWords = function (host) {
   pub.appendChild(status);
   var pubBtn = U.btn(S.publish, "i-cloud", "primary block");
   U.on(pubBtn, "click", function () {
+    var finalWords = self.parseWords(ta.value, format);
+    if (!finalWords.items.length || finalWords.problems.length) { refresh(); UI.toast("Fix the preview problems before publishing."); return; }
+    var destination = selectedDates.length ? selectedDates.join(", ") : target.value === "date" ? targetDate.value : target.options[target.selectedIndex].textContent;
     UI.confirm({
       title: S.publish + "?",
-      text: "Students will see \u201c" + list.name + "\u201d with " + list.words.length + " words. A session record is saved too.",
+      text: finalWords.items.length + " words \u2192 " + destination + ", Session " + d.session.no + ". This replaces the WHOLE list for those days." + (Cloud.mode ? " Students receive it after sync." : " Local mode: this device only."),
       okLabel: "Publish now",
       onOk: function () {
-        if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
+        if (!selectedDates.length && target.value === "date" && !targetDate.value) { UI.toast("Choose a date first."); return; }
+        list.words = finalWords.items;
+        if (selectedDates.length) selectedDates.forEach(function (key) { d.plan.dates[key] = list.id; });
+        else if (target.value === "today") d.plan.dates[U.dateKey(new Date())] = list.id;
         else if (target.value === "date") { if (!targetDate.value) { UI.toast("Choose a date first."); return; } d.plan.dates[targetDate.value] = list.id; }
         else if (target.value === "pinned") d.plan.pinned = list.id;
         else d.plan.weekdays[Number(target.value.slice(1))] = list.id;
@@ -6448,7 +6642,7 @@ Admin.tabTools = function (host) {
   var c1 = this.card(host, "Lecturer PIN");
   c1.appendChild(U.el("p", "small muted", Cloud.mode
     ? "In cloud mode the PIN is checked on the server only. Change it by editing ADMIN_PIN in the Apps Script project (Project settings \u203a Script properties)."
-    : "In local mode the PIN only locks this device. A salted hash is stored here \u2013 never the PIN itself."));
+    : "A 4-digit PIN in a public page is only a convenience lock, not real security. Only a server-side check protects cloud publishing. A salted hash is stored on this device. Forgot PIN? Export a backup from Settings first; see the README recovery steps."));
   if (!Cloud.mode) {
     var ch = U.btn("Change PIN", "i-key", "soft block");
     ch.style.marginTop = "8px";
@@ -6483,16 +6677,18 @@ Admin.tabTools = function (host) {
             Admin.hashPin(c, d.admin.pinSalt, function (h) {
               if (!Admin.unlocked) return;
               if (h !== d.admin.pinHash) { UI.toast("The current PIN is wrong.", { icon: "i-alert" }); return; }
-              var salt = Admin.makeSalt();
+              var salt = Admin.makeSalt(), kdf = Admin.preferredKdf();
               Admin.hashPin(a, salt, function (h2) {
                 if (!Admin.unlocked) return;
+                if (!h2) { UI.toast("PIN hashing failed. Your old PIN still works."); return; }
+                d.admin.pinKdf = kdf;
                 d.admin.pinHash = h2;
                 d.admin.pinSalt = salt;
                 DB.saveNow();
                 UI.closeSheet();
                 UI.toast("PIN changed", { icon: "i-check" });
-              });
-            });
+              }, kdf);
+            }, d.admin.pinKdf || "sha256");
           });
           return ok;
         })()]
