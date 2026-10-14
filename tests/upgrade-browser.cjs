@@ -43,7 +43,7 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
  for(const [width,height] of viewports)await check(engine+' admin single sticky header '+width+'x'+height+' and reduced viewport',async()=>{
   const {context,page,errors}=await boot(browser,width,'gb',height);
   try{
-   await unlock(page);assert.equal(errors.length,0);
+   await unlock(page);assert.equal(errors.length,0,'page errors: '+errors.join(' | '));
    const assertBars=async()=>{
     const a=await page.locator('.unlockedbar').boundingBox(),b=await page.locator('.admintabs').boundingBox();
     assert(a&&b);assert(a.y+a.height<=b.y+1,JSON.stringify({a,b}));
@@ -79,7 +79,7 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
    const words=Array.from({length:200},(_,i)=>'word'+String.fromCharCode(97+(i/26|0))+String.fromCharCode(97+i%26));
    await ta.fill(words.join(', '));await page.locator('[data-preview-row="199"]').waitFor();assert.equal(await page.locator('[data-preview-row]').count(),200);
    await page.getByRole('button',{name:'Lock now',exact:true}).first().click();await unlock(page);
-   assert.equal(errors.length,0);
+   assert.equal(errors.length,0,'page errors during the admin flow: '+errors.join(' | '));
   }finally{await context.close();}
  });
  for(const scenario of ['us','none','aliases','gb'])await check(engine+' voice scenario '+scenario+' never silently US; default twice; resume',async()=>{
@@ -90,22 +90,40 @@ async function check(name,fn){try{await fn();results.push({test:name,status:'PAS
    if(await textMode.count())await textMode.click();   /* v2.0.0 offers help, it never gates the dictation */
    await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
    await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
-   await page.waitForFunction(()=>/Your turn|tap Next|Next in/.test(document.querySelector('#plStatus').textContent));
-   const spoken=await page.evaluate(()=>window.__spoken),langs=await page.evaluate(()=>window.__langs);
+   /* what should be heard comes from the live list, so the check follows published data */
+   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
+   assert(first.w,'the live list has a first word');
+   const said=()=>page.evaluate(()=>window.__spoken||[]);
+   const langs=()=>page.evaluate(()=>window.__langs||[]);
+   /* v2.0.0 tries the dictionary MP3 and then the cloud stream before the device voice,
+      so the word lands a moment after the player opens: wait for it instead of reading
+      the transcript too early and calling the run a failure. */
+   const heard=n=>page.waitForFunction(`window.__spoken.filter(t=>String(t).trim()===${JSON.stringify(first.w)}).length>=${n}`,null,{timeout:25000}).catch(()=>{});
    if(scenario==='none'){
-    /* no synthesised voice at all: the learner still gets the chime and the text, and
-       nothing is spoken in a foreign accent. */
-    assert.deepEqual(spoken,[]);assert.deepEqual(await page.evaluate(()=>window.__langs),[]);
+    await page.waitForFunction(()=>/Your turn|tap Next/.test((document.querySelector('#plStatus')||{}).textContent||''),null,{timeout:25000}).catch(()=>{});
+    const spoken=await said();
+    /* a device with no usable voice is never handed a foreign accent: the silent iOS
+       prime aside, nothing reaches the synthesiser, and the learner still gets the turn */
+    assert.deepEqual(spoken.map(t=>String(t).trim()).filter(Boolean),[],'nothing is spoken: '+JSON.stringify(spoken));
     assert.match((await page.locator('#plStatus').textContent()).trim(),/Your turn|tap Next|Next in/);
    } else if(scenario==='us'){
-    /* v2.0.0 never blocks: dictionary MP3, then the cloud stream, then the device voice.
-       Every utterance is tagged en-GB, so a US voice is never used silently. */
-    assert.ok(spoken.length>0,'the fallback tiers keep speaking: '+JSON.stringify(spoken.slice(0,3)));
-    assert.ok(langs.length&&langs.every(l=>l==='en-GB'),'every utterance is tagged en-GB: '+JSON.stringify(langs.slice(0,3)));
+    await heard(1);
+    const spoken=await said();
+    /* never blocks: dictionary MP3, then the cloud stream, then the device voice, and
+       every utterance is tagged en-GB, so a US voice is never used silently */
+    assert.ok(spoken.some(t=>String(t).trim()===first.w),'the fallback tiers still say the word: '+JSON.stringify(spoken.slice(0,6)));
+    const usLangs=await langs();
+    assert.ok(usLangs.length&&usLangs.every(l=>l==='en-GB'),'every utterance is tagged en-GB: '+JSON.stringify(usLangs.slice(0,6)));
    } else {
-    assert.equal(spoken.filter(t=>t==='appointment').length,2);
-    assert(spoken.includes('Number 1.'));assert(!spoken.some(t=>t.includes('dentist appointment')));
-    assert.ok(langs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(langs.slice(0,3)));
+    await heard(2);
+    const spoken=await said();
+    const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
+    const phase=spoken.slice(0,until+1);
+    assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
+    assert(phase.indexOf('Number 1.')>=0,'the number is read before the word: '+JSON.stringify(phase));
+    assert(!phase.some(t=>String(t).trim()===first.s.trim()),'the sentence waits for its own stage: '+JSON.stringify(phase));
+    const gbLangs=await langs();
+    assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));
    }
    const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).snapshot);assert.equal(before.index,0);
    await page.reload();await page.locator('#homeTitle').waitFor();
