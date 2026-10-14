@@ -1,6 +1,6 @@
 # Phase 1 candidate: QA and release report
 
-**Status: incomplete, not merged, not deployed.** Chromium ran successfully here. WebKit did not run locally because its executable is absent. A real iPhone, Android phone and Windows PC were not available. The live Pages host could not be reached from this sandbox. Later phases have not started.
+**Status: incomplete, not merged, not deployed.** Chromium ran successfully here. WebKit did not run locally because its executable is absent. Real WebKit subsequently passed on GitHub CI (see below). A real iPhone, Android phone and Windows PC were not available. The live Pages host could not be reached from this sandbox. Later phases have not started.
 
 This report concerns **1.5.0-rc.1 / 2026-10-14**, not the older claims in `QA_REPORT.md`.
 
@@ -92,7 +92,32 @@ curl -I --max-time 15 'https://dictationb1.github.io/?smoke=20261014'
 curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to dictationb1.github.io:443
 ```
 
-The sandbox's outbound allowlist excludes the live Pages host and Playwright's browser download hosts. CI is configured to install and run real WebKit. Until its run is inspected, the configuration alone is not proof of a pass. Even a CI WebKit pass does not verify iOS hardware audio, keyboard, phone calls, Silent mode or lock-screen behaviour.
+The sandbox's outbound allowlist excludes the live Pages host and Playwright's browser download hosts. CI is configured to install and run real WebKit. Its completed CI job was inspected via the GitHub API and passed (details below); the configuration alone was not treated as proof. Even a CI WebKit pass does not verify iOS hardware audio, keyboard, phone calls, Silent mode or lock-screen behaviour.
+
+## GitHub CI evidence
+
+Draft PR: https://github.com/dictationb1/dictationb1.github.io/pull/6
+
+The implementation commit `adbb919e06f8107476676ef55a183399357dc8ef` passed:
+
+```text
+gh pr checks 6
+browsers (chromium)  pass  8m25s
+browsers (webkit)    pass  1m30s
+test                pass  1m10s
+units               pass  14s
+
+gh run view 38510591226 --json headSha,status,conclusion
+{"conclusion":"success","headSha":"adbb919e06f8107476676ef55a183399357dc8ef","status":"completed"}
+```
+
+Run: https://github.com/dictationb1/dictationb1.github.io/actions/runs/38510591226
+
+The WebKit job's step metadata confirms successful actual-browser installation, test execution and artifact upload. The Chromium job includes the complete historical E2E on the implementation commit. Downloading raw CI logs was blocked by the sandbox's log-storage-host allowlist; no additional remote per-case counts are claimed from unavailable logs.
+
+The tested `index.html` SHA-256 is `99a7ebf8888ead63d9bfacd7105f69c1b6eaa3450a47cc48f7ac5f16232e6395` (375024 bytes). Subsequent cleanup only removes default-PIN literals from historical documentation/test fixtures and adds this evidence; the application file is unchanged. The test helper recovers the public four-digit verifier at test time, demonstrating why it is not a security boundary, without committing the PIN text. Git history is not rewritten, and a previously public default cannot be made secret by this cleanup.
+
+Local checks were rerun after fixture cleanup: 75 existing unit/mock records, 68 Node tests, and 11 new Chromium checks passed. Any new CI run on the cleanup commit must be checked separately; the above output identifies exactly which commit was observed green.
 
 ## Performance: interpret cautiously
 
@@ -107,7 +132,7 @@ Home-visible proxy improved from 2,043.5 ms to 1,506.3 ms, and the maximum obser
 - Hot-load Update choice, list-version comparison with Finish old / Start new, and MediaSession controls. Existing running-session pending-state and resume mechanisms are retained, not a complete implementation of the new specification.
 - No-UK voice main audio action awaits the real Phase 2 implementation; no misleading nonfunctional audio button was added.
 - Required fake-cloud two-browser publish visibility within 60 seconds has not been added. No actual remote cloud was exercised.
-- WebKit/real-device verification, complete accessibility audit beyond the tested screens, and performance budgets.
+- Physical-device verification (including the actual iOS keyboard/audio policies), complete accessibility audit beyond the tested screens, and performance budgets. Automated WebKit now has a green CI run, but does not replace these checks.
 - Live Pages deploy and smoke test. No merge/deploy has been attempted, so no rollback was needed.
 
 **Release decision: leave the Phase 1 PR in draft. Do not merge even if its currently implemented CI tests turn green.** Finish the missing requirements and test coverage first; then squash-merge only with green checks and an available live smoke/rollback path. Start Phase 2 only after that merge and smoke pass. Phase 3 Worker setup and Phase 4 extras are intentionally not claimed.

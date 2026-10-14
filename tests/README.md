@@ -40,7 +40,7 @@ LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:e2e --pref
 
 `e2e.cjs` drives the real UI at 390x844, 360x640 and 1280x800 with 4x CPU throttling:
 fresh storage and storage written by the 1.0.0 build, Home render, build stamp in
-Settings, wrong PIN, PIN 7898, Monday list plus session number and day, the
+Settings, wrong PIN, the default PIN, Monday list plus session number and day, the
 "Are you ready?" screen and skippable countdown, every word spoken in order with a
 mocked en-GB `speechSynthesis`, auto-save, reload and resume, an anonymous comment
 with its result badge, the 30-second spam limit, a private lecturer message, and an

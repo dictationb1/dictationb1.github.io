@@ -94,7 +94,7 @@ test('UK voice: vanished voices clear stale selection',()=>{
  a.w.speechSynthesis.getVoices=()=>[];a.q.Speech.readVoices();assert.equal(a.q.Speech.chosen,null);a.q.Speech.supported=false;
 });
 test('PIN: shipped HTML has only precomputed verifier, default still verifies',()=>{
- const pin=[7,8,9,8].join('');assert.equal(html.includes(pin),false);
+ const pin=require('./test-pin.cjs');assert.equal(html.includes(pin),false);
  assert.equal(a.q.DB.data.admin.pinHash,crypto.createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+pin).digest('hex'));
 });
 test('PIN: PBKDF2 matches independent Node derivation and rejects unavailable crypto',async()=>{

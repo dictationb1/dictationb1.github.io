@@ -18,7 +18,7 @@ const packaged=require('@sparticuz/chromium');
  await page.waitForTimeout(2500);
  await page.locator('#sheets .shead button').click();
  await page.locator('#btnLock').click();
- for(const n of [7,8,9,8])await page.locator('#pinPad [data-k="'+n+'"]').click();
+ for(const n of require('./test-pin.cjs').split(''))await page.locator('#pinPad [data-k="'+n+'"]').click();
  await page.locator('#pinSubmit').click();
  await page.locator('#adminHost').waitFor();
  const words=Array.from({length:200},(_,i)=>'word'+String.fromCharCode(97+(i/26|0))+String.fromCharCode(97+i%26)).join(', ');

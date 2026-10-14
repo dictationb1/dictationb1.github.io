@@ -24,7 +24,7 @@ async function boot(browser,width=390,scenario='gb',height=844){
  if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();
  return {context,page,errors};
 }
-async function unlock(page,pin=[7,8,9,8]){
+async function unlock(page,pin=require('./test-pin.cjs').split('')){
  await page.locator('#btnLock').click();
  for(const digit of pin)await page.locator('#pinPad [data-k="'+digit+'"]').click();
  await page.locator('#pinSubmit').click();await page.locator('#adminHost').waitFor();

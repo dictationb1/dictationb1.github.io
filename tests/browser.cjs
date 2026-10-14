@@ -1,3 +1,4 @@
+const DEFAULT_PIN = require('./test-pin.cjs');
 const {chromium}=require('playwright-core');
 const serverChromium=require('@sparticuz/chromium');
 const fs=require('fs'),path=require('path');
@@ -14,7 +15,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.waitForTimeout(1500);
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&requests.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests});
   await page.locator('#sheets .shead button').click();
-  await page.locator('#btnLock').click();for(const n of '7898')await page.locator('#pinPad [data-k="'+n+'"]').click();await page.locator('#pinSubmit').click();
+  await page.locator('#btnLock').click();for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();await page.locator('#pinSubmit').click();
   await page.waitForTimeout(300);results.push({test:'Chromium '+width+'px PIN unlock and no horizontal page overflow',status:await page.locator('#adminHost').isVisible() && await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)?'PASS':'FAIL'});
   await page.getByRole('button',{name:'Session',exact:true}).click();
   await page.getByLabel('Session number',{exact:true}).fill('19');await page.getByRole('button',{name:'Sun',exact:true}).click();
@@ -26,7 +27,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  {
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);await page.waitForTimeout(900);await page.locator('#sheets .shead button').click();
-  await page.locator('#btnLock').click();for(const digit of '7898')await page.locator('#pinPad [data-k="'+digit+'"]').click();await page.locator('#pinSubmit').click();
+  await page.locator('#btnLock').click();for(const digit of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+digit+'"]').click();await page.locator('#pinSubmit').click();
   await page.getByRole('button',{name:'Settings & tools',exact:true}).click();await page.getByRole('button',{name:'Share this list (no server)',exact:true}).click();
   const originals=await page.locator('#sheets textarea').allTextContents();await page.getByRole('button',{name:'Shorter links (newer phones)',exact:true}).click();
   await page.getByRole('heading',{name:'Shorter links — use originals for older phones',exact:true}).waitFor();
