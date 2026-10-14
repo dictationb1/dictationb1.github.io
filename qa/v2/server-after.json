@@ -1,0 +1,30 @@
+[
+  {
+    "id": "D8 every legacy PIN route counts failures, tokens survive attacker lockout",
+    "status": "PASS"
+  },
+  {
+    "id": "D16 public state withholds future lists, plan and sessions",
+    "status": "PASS"
+  },
+  {
+    "id": "C3 escalating lockout, token expiry and unset property fail closed",
+    "status": "PASS"
+  },
+  {
+    "id": "C4 stable result ids, unscored exclusion, final score update",
+    "status": "PASS"
+  },
+  {
+    "id": "C6 comment cleaning, rate limits, id dedupe, honeypot and Unicode",
+    "status": "PASS"
+  },
+  {
+    "id": "C7 secret ids return only own replies, moderation and private message isolation",
+    "status": "PASS"
+  },
+  {
+    "id": "C10 HTTP JSON shim round trip",
+    "status": "PASS"
+  }
+]

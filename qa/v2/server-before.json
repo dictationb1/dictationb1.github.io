@@ -1,0 +1,32 @@
+[
+  {
+    "id": "D8 every legacy PIN route counts failures, tokens survive attacker lockout",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: undefined == 'locked'\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:7:210\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:7:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  },
+  {
+    "id": "D16 public state withholds future lists, plan and sessions",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(!JSON.stringify(state).includes('secretfutureword'))\n\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:8:372\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:8:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  },
+  {
+    "id": "C3 escalating lockout, token expiry and unset property fail closed",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: 300 == 900\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:9:319\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:9:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  },
+  {
+    "id": "C4 stable result ids, unscored exclusion, final score update",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(m.post(r).ok)\n\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:10:217\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:10:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  },
+  {
+    "id": "C6 comment cleaning, rate limits, id dedupe, honeypot and Unicode",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(!m.post({...c,cid:'reserved',name:'Teacher'}).ok)\n\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:11:542\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:11:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  },
+  {
+    "id": "C7 secret ids return only own replies, moderation and private message isolation",
+    "status": "FAIL",
+    "detail": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(m.post({action:'inbox',token,id:secret,op:'reply',text:'private reply 😀'}).ok)\n\n    at /home/user/dictationb1.github.io/tests/server-v2.cjs:12:263\n    at test (/home/user/dictationb1.github.io/tests/server-v2.cjs:4:51)\n    at Object.<anonymous> (/home/user/dictationb1.github.io/tests/server-v2.cjs:12:1)\n    at Module._compile (node:internal/modules/cjs/loader:1781:14)\n    at Object..js (node:internal/modules/cjs/loader:1913:10)\n    at Module.load (node:internal/modules/cjs/loader:1505:32)\n    at Function._load (node:internal/modules/cjs/loader:1309:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n    at node:internal/main/run_main_module:36:49"
+  }
+]

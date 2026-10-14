@@ -847,7 +847,7 @@ function handleGet(e) {
   var action = String(p.action || 'state');
   if (action === 'ver') {
     var ver = Number(getCfg('ver') || 0);
-    return { ok: true, ver: ver };
+    return { ok: true, ver: ver, scriptVersion: 2, serverTime: Date.now(), serverDate: serverDate() };
   }
   if (action === 'state') {
     return readState();
@@ -855,14 +855,7 @@ function handleGet(e) {
   if (action === 'comments') {
     return { ok: true, comments: readComments(true), session: currentSession() };
   }
-  if (action === 'stats') {
-    if (!adminOk(p)) return { ok: false, err: 'unauthorised' };
-    return { ok: true, stats: buildStats() };
-  }
-  if (action === 'inbox') {
-    if (!adminOk(p)) return { ok: false, err: 'unauthorised' };
-    return { ok: true, inbox: readInbox(false), results: readResults() };
-  }
+  // Private reads are POST only: never put a credential in a URL.
   return { ok: false, err: 'unknown action' };
 }
 
@@ -873,28 +866,28 @@ function handlePost(e) {
   var action = String(body.action || '');
   var cid = clip(String(body.cid || ''), 60);
 
-  if (action === 'login') return adminLogin(body);
-  if (action === 'ping') return { ok: true, pong: true, ver: Number(getCfg('ver') || 0) };
-
-  if (action === 'comment') return addComment(body, cid);
-  if (action === 'message') return addMessage(body, cid);
-  if (action === 'result') return addResult(body, cid);
-  if (action === 'report') return reportComment(body, cid);
-
-  if (!adminOk(body)) return { ok: false, err: 'unauthorised' };
+  if (action === 'ping') return { ok: true, pong: true, scriptVersion: 2, serverTime: Date.now(), serverDate: serverDate(), ver: Number(getCfg('ver') || 0) };
+  // Serialise rate-limit counters, duplicate checks and writes together.
   var lock = LockService.getScriptLock();
   try { lock.waitLock(20000); } catch (err2) { return { ok: false, err: 'busy' }; }
   try {
-    if (action === 'readInbox') return { ok: true, inbox: readInbox(true), comments: readComments(false), results: readResults() };
+    if (action === 'login') return adminLogin(body);
+    if (action === 'myReplies') return myReplies(body);
+    if (action === 'comment') return addComment(body, cid);
+    if (action === 'message') return addMessage(body, cid);
+    if (action === 'result') return addResult(body, cid);
+    if (action === 'updateResult') return updateResult(body, cid);
+    if (action === 'report') return reportComment(body, cid);
+    if (!adminOk(body)) return { ok: false, err: 'unauthorised' };
+    if (action === 'stats') return { ok: true, stats: buildStats() };
+    if (action === 'readInbox') return { ok: true, inbox: readInbox(true), comments: readComments(false), results: readResults(), stats: buildStats() };
     if (action === 'publish') return publish(body);
     if (action === 'announce') return setAnnouncement(body);
     if (action === 'moderate') return moderate(body);
     if (action === 'inbox') return inboxAction(body);
     if (action === 'setPin') return { ok: false, err: 'set ADMIN_PIN in Script properties' };
     return { ok: false, err: 'unknown action' };
-  } finally {
-    try { lock.releaseLock(); } catch (err3) {}
-  }
+  } finally { try { lock.releaseLock(); } catch (err3) {} }
 }
 
 /* ---------- shared helpers ---------- */
@@ -991,45 +984,57 @@ function cachePut(key, value, secs) {
 
 /* ---------- admin auth ---------- */
 
+function constantTimeEqual(a, b) {
+  a = String(a || ''); b = String(b || '');
+  var difference = a.length ^ b.length;
+  for (var i = 0; i < Math.max(a.length, b.length); i++) difference |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return difference === 0;
+}
 function adminLogin(body) {
-  var pin = String((body && body.pin) || '');
   var expected = String(PropertiesService.getScriptProperties().getProperty('ADMIN_PIN') || '');
   if (!expected) return { ok: false, err: 'admin_pin_unset' };
-  var fails = Number(cacheGet('adminFails') || 0);
+  // A shared PIN-check budget prevents rotation of claimed device ids bypassing throttling.
+  // Existing random tokens are checked first and are unaffected by this lockout.
   var until = Number(cacheGet('adminUntil') || 0);
-  if (until && until > Date.now()) {
-    return { ok: false, err: 'locked', retrySec: Math.ceil((until - Date.now()) / 1000) };
-  }
-  if (pin !== expected) {
-    fails = fails + 1;
-    if (fails >= 5) { cachePut('adminFails', 0, 3600); cachePut('adminUntil', Date.now() + 300000, 3600); }
-    else { cachePut('adminFails', fails, 3600); }
+  if (until > Date.now()) return { ok: false, err: 'locked', retrySec: Math.ceil((until - Date.now()) / 1000) };
+  if (!constantTimeEqual(body && body.pin, expected)) {
+    var fails = Number(cacheGet('adminFails') || 0) + 1;
+    if (fails >= 5) {
+      var level = Math.min(2, Number(cacheGet('adminLevel') || 0));
+      var seconds = [300, 900, 3600][level];
+      cachePut('adminLevel', level + 1, 21600);
+      cachePut('adminUntil', Date.now() + seconds * 1000, 21600);
+      cachePut('adminFails', 0, 21600);
+    } else cachePut('adminFails', fails, 21600);
     return { ok: false, err: 'bad_pin', triesLeft: Math.max(0, 5 - fails) };
   }
-  cachePut('adminFails', 0, 3600);
-  return { ok: true, token: makeToken(), ver: Number(getCfg('ver') || 0) };
+  cachePut('adminFails', 0, 21600);
+  var token = makeToken();
+  // Binding to a PIN digest revokes tokens when ADMIN_PIN changes; no PIN in cache.
+  cachePut('adminToken:' + token, pinDigest(expected), 21600);
+  return { ok: true, token: token, scriptVersion: 2, ver: Number(getCfg('ver') || 0) };
 }
-
-function makeToken() {
-  var raw = String(PropertiesService.getScriptProperties().getProperty('ADMIN_PIN') || '') + ':' + Date.now();
-  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw)).substring(0, 24);
+function pinDigest(pin) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, pin));
 }
-
+function makeToken() { return Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); }
 function adminOk(body) {
-  var pin = String((body && body.pin) || '');
   var expected = String(PropertiesService.getScriptProperties().getProperty('ADMIN_PIN') || '');
   if (!expected) return false;
-  var until = Number(cacheGet('adminUntil') || 0);
-  if (until && until > Date.now()) return false;
-  return pin === expected;
+  var token = String(body && body.token || '');
+  if (token && constantTimeEqual(cacheGet('adminToken:' + token), pinDigest(expected))) return true;
+  // Compatibility for old POST clients, under exactly the same throttled PIN check.
+  if (body && body.pin !== undefined) return !!adminLogin(body).ok;
+  return false;
 }
+function serverDate() { return Utilities.formatDate(new Date(Date.now()), Session.getScriptTimeZone(), 'yyyy-MM-dd'); }
 
 /* ---------- reads ---------- */
 
 function readState() {
   var cached = cacheGet('state');
   if (cached) {
-    try { return JSON.parse(cached); } catch (err) {}
+    try { var oldState = JSON.parse(cached); if (oldState.serverDate === serverDate()) { oldState.serverTime = Date.now(); return oldState; } } catch (err) {}
   }
   var lists = [], activeVersions = Object.create(null);
   var lr = rows(TAB.Lists);
@@ -1049,11 +1054,25 @@ function readState() {
   var plan = [];
   var pr = rows(TAB.Plan);
   for (var j = 0; j < pr.length; j++) {
-    plan.push({ key: String(pr[j][0]), listId: String(pr[j][1]), pinned: String(pr[j][2]) === 'yes' });
+    plan.push({ key: String(pr[j][0]), listId: String(pr[j][1]), pinned: String(pr[j][2]) === 'yes', sessionNo: String(pr[j][3] || ''), day: String(pr[j][4] || ''), title: String(pr[j][5] || '') });
   }
+  var today = serverDate(), byKey = {}, latest = null;
+  plan.forEach(function (p) { byKey[p.key] = p; if (p.key.charAt(0) === 'd' && p.key.slice(1) <= today && (!latest || p.key > latest.key)) latest = p; });
+  var weekday = (new Date(today + 'T12:00:00Z').getUTCDay() + 6) % 7;
+  var choices = [byKey.pinned, byKey['d' + today], byKey['w' + weekday], latest, byKey.default];
+  var selected = null;
+  for (var c = 0; c < choices.length; c++) if (choices[c] && choices[c].listId) { selected = choices[c]; break; }
+  var allowed = Object.create(null);
+  [selected, byKey.pinned, byKey.default].forEach(function (entry) { if (entry && entry.listId) allowed[entry.listId] = true; });
+  var sessions = lastSessions(10);
+  var publicLists = lists.filter(function (list) { return !!allowed[list.id]; });
+  // Past sessions carry immutable words; exposing their latest list revision could leak a future class.
+  var visiblePlan = plan.filter(function (p) { return p === selected || p.key === 'default' || p.key === 'pinned'; });
+  var session = currentSession();
+  if (selected && selected.key.charAt(0) === 'd') session = { no: selected.sessionNo || (session && session.no) || '', day: selected.day || '', date: selected.key.slice(1), title: selected.title || '', listId: selected.listId, ready: readJsonCfg('sessionExtras').ready, go: readJsonCfg('sessionExtras').go, praise: readJsonCfg('sessionExtras').praise };
   var out = {
-    ok: true, ver: Number(getCfg('ver') || 0), lists: lists, plan: plan,
-    session: currentSession(), announcement: currentAnnouncement(), sessions: lastSessions(10), contact: readJsonCfg('contact'), defaults: readJsonCfg('defaults')
+    ok: true, scriptVersion: 2, serverTime: Date.now(), serverDate: today, ver: Number(getCfg('ver') || 0), lists: publicLists, plan: visiblePlan,
+    session: session, announcement: currentAnnouncement(), sessions: sessions, contact: readJsonCfg('contact'), defaults: readJsonCfg('defaults'), defaultsVersion: Number(getCfg('defaultsVersion') || 0)
   };
   cachePut('state', JSON.stringify(out), 10);
   return out;
@@ -1061,23 +1080,20 @@ function readState() {
 
 function readJsonCfg(key) { try { var obj = JSON.parse(getCfg(key) || '{}'); return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {}; } catch (err) { return {}; } }
 function currentSession() {
-  var r = rows(TAB.Sessions);
-  if (!r.length) return null;
-  var last = r[r.length - 1];
-  return {
-    no: String(last[0] || ''), day: String(last[1] || ''), date: String(last[2] || ''),
-    title: String(last[3] || ''), listId: String(last[4] || ''), ready: readJsonCfg('sessionExtras').ready, praise: readJsonCfg('sessionExtras').praise
-  };
+  var sessions = lastSessions(1);
+  if (!sessions.length) return null;
+  var result = sessions[0], extras = readJsonCfg('sessionExtras');
+  result.ready = extras.ready; result.go = extras.go; result.praise = extras.praise;
+  return result;
 }
-
 function lastSessions(n) {
-  var r = rows(TAB.Sessions);
-  var out = [];
-  for (var i = r.length - 1; i >= 0 && out.length < n; i--) {
-    out.push({
-      no: String(r[i][0] || ''), day: String(r[i][1] || ''), date: String(r[i][2] || ''),
-      title: String(r[i][3] || ''), listId: String(r[i][4] || '')
-    });
+  var r = rows(TAB.Sessions), out = [], today = serverDate(), lr = rows(TAB.Lists);
+  r.sort(function (a,b) { return String(b[2]).localeCompare(String(a[2])); });
+  for (var i = 0; i < r.length && out.length < n; i++) {
+    if (String(r[i][2] || '') > today) continue;
+    var version = Number(r[i][5] || 1), words = [];
+    lr.forEach(function (row) { if (String(row[0]) === String(r[i][4]) && Number(row[3] || 1) === version) { try { words = words.concat(JSON.parse(row[2] || '[]')); } catch (err) {} } });
+    out.push({ no: String(r[i][0] || ''), day: String(r[i][1] || ''), date: String(r[i][2] || ''), title: String(r[i][3] || ''), listId: String(r[i][4] || ''), version: version, words: words });
   }
   return out;
 }
@@ -1132,7 +1148,7 @@ function readResults() {
     out.push({
       id: String(r[i][0]), ts: Number(r[i][1] || 0), sessionNo: String(r[i][2] || ''),
       day: String(r[i][3] || ''), list: String(r[i][4] || ''), mode: String(r[i][5] || ''),
-      words: Number(r[i][6] || 0), score: Number(r[i][7] || 0), secs: Number(r[i][8] || 0),
+      words: Number(r[i][6] || 0), score: r[i][7] === '' || r[i][7] === null ? null : Number(r[i][7]), scoredWords: r[i][12] === '' || r[i][12] === undefined ? Number(r[i][6] || 0) : Number(r[i][12]), secs: Number(r[i][8] || 0),
       voice: String(r[i][9] || ''), uk: String(r[i][10] || ''), device: String(r[i][11] || '')
     });
   }
@@ -1150,8 +1166,9 @@ function buildStats() {
     var k = res[i].sessionNo || 'unknown';
     if (!bySession[k]) bySession[k] = { session: k, count: 0, total: 0, words: 0 };
     bySession[k].count = bySession[k].count + 1;
-    bySession[k].total = bySession[k].total + res[i].score;
-    bySession[k].words = bySession[k].words + res[i].words;
+    if (res[i].score !== null && res[i].scoredWords > 0) {
+      bySession[k].total += res[i].score; bySession[k].words += res[i].scoredWords;
+    }
     var d = res[i].device || 'Other';
     devices[d] = (devices[d] || 0) + 1;
     if (res[i].uk !== 'yes') noUk = noUk + 1;
@@ -1166,7 +1183,7 @@ function buildStats() {
   var sessions = [];
   for (var key in bySession) {
     var b = bySession[key];
-    b.avg = b.words ? Math.round((b.total / b.words) * 100) : 0;
+    b.avg = b.words ? Math.round((b.total / b.words) * 100) : null;
     sessions.push(b);
   }
   return { results: res.length, bySession: sessions, devices: devices, noUkVoice: noUk, comments: counts };
@@ -1198,6 +1215,7 @@ function cleanPublic(text, n) {
 }
 
 function addComment(body, cid) {
+  if (body.website || /\b(lecturer|teacher|admin|sir|miss)\b/i.test(String(body.name || ''))) return {ok:false,err:'bad_public_identity'};
   var old = rows(TAB.Comments); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
   if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
   var status = String(body.status || 'comment');
@@ -1218,14 +1236,30 @@ function addMessage(body, cid) {
 }
 
 function addResult(body, cid) {
-  if (rateLimited(cid, 'r', 10, 60)) return { ok: false, err: 'rate' };
-  if (seen(cid)) return { ok: true, dup: true };
-  var id = 'r' + Date.now() + Math.floor(Math.random() * 1000);
-  append(TAB.Results, ['id', 'ts', 'sessionNo', 'day', 'list', 'mode', 'words', 'score', 'secs', 'voice', 'uk', 'device'],
-    [id, Date.now(), clip(body.sessionNo, 16), clip(body.day, 24), clip(body.list, 60), clip(body.mode, 12),
-      Number(body.words) || 0, Number(body.score) || 0, Number(body.secs) || 0,
-      clip(body.voice, 40), body.uk ? 'yes' : 'no', clip(body.device, 20)]);
-  return { ok: true, id: id };
+  if (!cid) return { ok: false, err: 'missing_id' };
+  var old = rows(TAB.Results);
+  for (var i = 0; i < old.length; i++) if (String(old[i][0]) === cid) return { ok: true, id: cid, dup: true };
+  if (rateLimited(clip(body.deviceId || cid, 60), 'r', 1, 60)) return { ok: false, err: 'rate' };
+  var count = Math.max(0, Number(body.words) || 0);
+  var marked = body.scoredWords === undefined ? count : Math.max(0, Math.min(count, Number(body.scoredWords) || 0));
+  var score = body.score === null || body.score === undefined || !marked ? '' : Math.max(0, Math.min(marked, Number(body.score) || 0));
+  append(TAB.Results, ['id', 'ts', 'sessionNo', 'day', 'list', 'mode', 'words', 'score', 'secs', 'voice', 'uk', 'device', 'scoredWords'],
+    [cid, Date.now(), clip(body.sessionNo, 16), clip(body.day, 24), clip(body.list, 60), clip(body.mode, 12), count, score, Number(body.secs) || 0, clip(body.voice, 40), body.uk ? 'yes' : 'no', clip(body.device, 20), marked]);
+  return { ok: true, id: cid };
+}
+function updateResult(body, cid) {
+  var r = rows(TAB.Results), s = ss().getSheetByName(TAB.Results);
+  for (var i = 0; i < r.length; i++) if (String(r[i][0]) === cid) {
+    var marked = Math.max(0, Math.min(Number(r[i][6]) || 0, Number(body.scoredWords) || 0));
+    s.getRange(i + 2, 8).setValue(body.score === null || !marked ? '' : Math.max(0, Math.min(marked, Number(body.score) || 0)));
+    s.getRange(i + 2, 13).setValue(marked);
+    return { ok: true, id: cid };
+  }
+  return { ok: false, err: 'not_found' };
+}
+function myReplies(body) {
+  var ids = Array.isArray(body.ids) ? body.ids.slice(0, 20).map(function (id) { return clip(id, 60); }) : [];
+  return { ok: true, replies: readInbox(true).filter(function (message) { return ids.indexOf(message.id) >= 0 && message.reply; }).map(function (message) { return { id: message.id, reply: message.reply }; }) };
 }
 
 function publish(body) {
@@ -1253,30 +1287,31 @@ function publish(body) {
   var chunk = [], size = 2;
   for (var item = 0; item < payload.length; item++) {
     var itemSize = JSON.stringify(payload[item]).length + 1;
-    if (chunk.length && size + itemSize > 40000) { s.appendRow([listId, name, JSON.stringify(chunk), version]); chunk = []; size = 2; }
+    if (chunk.length && size + itemSize > 40000) { append(TAB.Lists, [], [listId, name, JSON.stringify(chunk), version]); chunk = []; size = 2; }
     chunk.push(payload[item]); size += itemSize;
   }
-  if (chunk.length) s.appendRow([listId, name, JSON.stringify(chunk), version]);
+  if (chunk.length) append(TAB.Lists, [], [listId, name, JSON.stringify(chunk), version]);
   /* All word chunks exist before moving the pointer; old versions remain recoverable. */
   setCfg('listVer:' + listId, version);
   if (body.contact) setCfg('contact', JSON.stringify(body.contact));
-  if (body.defaults) setCfg('defaults', JSON.stringify(body.defaults));
-  if (body.session) setCfg('sessionExtras', JSON.stringify({ready:body.session.ready,praise:body.session.praise}));
+  if (body.defaults) { setCfg('defaults', JSON.stringify(body.defaults)); setCfg('defaultsVersion', Number(body.defaultsVersion || body.defaults.version || 0)); }
+  if (body.session) setCfg('sessionExtras', JSON.stringify({ready:body.session.ready,go:body.session.go,praise:body.session.praise}));
 
   if (body.session) {
     var se = body.session;
-    append(TAB.Sessions, ['no', 'day', 'date', 'title', 'listId'],
-      [clip(se.no, 16), clip(se.day, 24), clip(se.date, 20), clip(se.title, 80), listId]);
+    append(TAB.Sessions, ['no', 'day', 'date', 'title', 'listId', 'version'],
+      [clip(se.no, 16), clip(se.day, 24), clip(se.date, 20), clip(se.title, 80), listId, version]);
   }
   if (body.plan) {
-    var ps = sheet(TAB.Plan, ['key', 'listId', 'pinned']);
+    var ps = sheet(TAB.Plan, ['key', 'listId', 'pinned', 'sessionNo', 'day', 'title']);
     if (ps.getLastRow() >= 2) ps.deleteRows(2, ps.getLastRow() - 1);
     for (var k = 0; k < body.plan.length; k++) {
       var p = body.plan[k] || {};
-      ps.appendRow([clip(p.key, 20), clip(p.listId, 60), p.pinned ? 'yes' : 'no']);
+      append(TAB.Plan, [], [clip(p.key, 20), clip(p.listId, 60), p.pinned ? 'yes' : 'no', clip(p.sessionNo, 16), clip(p.day, 24), clip(p.title, 80)]);
     }
   }
   bumpVer();
+  cachePut('state', '', 1);
   return { ok: true, version: version, ver: Number(getCfg('ver') || 0) };
 }
 
@@ -2100,6 +2135,7 @@ var DB = {
     if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
     if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
     if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
+    d.outbox.forEach(function (item) { delete item.pin; delete item.token; });
     d.v = CONFIG.schema;
     return d;
   },
@@ -3061,7 +3097,7 @@ var Screens = {
       voiceSel.appendChild(o);
     });
     U.on(voiceSel, "change", function () {
-      st.voiceName = voiceSel.value;
+      d.touchedSettings.voiceName = true; st.voiceName = voiceSel.value;
       DB.save();
       UI.toast("Voice: " + (voiceSel.value || "device default"), { icon: "i-vol" });
     });
@@ -3082,7 +3118,7 @@ var Screens = {
     [["Slow", 0.7], ["Normal", 0.85], ["Natural", 1.0]].forEach(function (p) {
       var b = U.el("button", "btn sm soft", p[0]);
       b.type = "button";
-      U.on(b, "click", function () { st.rate = p[1]; DB.save(); Screens.settings(); });
+      U.on(b, "click", function () { d.touchedSettings.rate = true; st.rate = p[1]; DB.save(); Screens.settings(); });
       presetRow.appendChild(b);
     });
     v.appendChild(presetRow);
@@ -3092,21 +3128,21 @@ var Screens = {
 
     /* ---- Dictation ---- */
     var p = card("Dictation");
-    p.appendChild(segRow("Word repeats", [{ id: 1, label: "Once" }, { id: 2, label: "Twice" }, { id: 3, label: "Three times" }], st.repeats, function (val) { st.repeats = Number(val); DB.save(); }));
-    p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { st.writeMode = val; DB.save(); Screens.settings(); }));
+    p.appendChild(segRow("Word repeats", [{ id: 1, label: "Once" }, { id: 2, label: "Twice" }, { id: 3, label: "Three times" }], st.repeats, function (val) { d.touchedSettings.repeats = true; st.repeats = Number(val); DB.save(); }));
+    p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { d.touchedSettings.writeMode = true; st.writeMode = val; DB.save(); Screens.settings(); }));
     if (st.writeMode === "fixed") p.appendChild(sliderRow("Seconds per word", 3, 60, 1, "writeFixed", function (x) { return x + " s"; }));
     p.appendChild(sliderRow("Pause after the word", 0.4, 3, 0.2, "pauseWord", function (x) { return x.toFixed(1) + " s"; }));
     p.appendChild(sliderRow("Pause after the sentence", 0.4, 3, 0.2, "pauseSent", function (x) { return x.toFixed(1) + " s"; }));
-    p.appendChild(segRow("Moving on", [{ id: "auto", label: "Auto-advance" }, { id: "manual", label: "I tap Next" }], st.advance, function (val) { st.advance = val; DB.save(); }));
+    p.appendChild(segRow("Moving on", [{ id: "auto", label: "Auto-advance" }, { id: "manual", label: "I tap Next" }], st.advance, function (val) { d.touchedSettings.advance = true; st.advance = val; DB.save(); }));
     p.appendChild(switchRow("Shuffle the order", "Same shuffled order every time, so Back still works", "shuffle"));
     p.appendChild(switchRow("Show the word on screen", "Helps weaker learners; hides the spelling challenge", "showWord"));
 
     /* ---- Appearance ---- */
     var ap = card("Appearance");
-    ap.appendChild(segRow("Theme", [{ id: "auto", label: "Auto" }, { id: "light", label: "Light" }, { id: "dark", label: "Dark" }], st.theme, function (val) { st.theme = val; DB.save(); UI.applyTheme(); }));
-    ap.appendChild(segRow("Text size", [{ id: "s", label: "A\u2212" }, { id: "m", label: "A" }, { id: "l", label: "A+" }, { id: "xl", label: "A++" }], st.size, function (val) { st.size = val; DB.save(); UI.applySize(); }));
+    ap.appendChild(segRow("Theme", [{ id: "auto", label: "Auto" }, { id: "light", label: "Light" }, { id: "dark", label: "Dark" }], st.theme, function (val) { d.touchedSettings.theme = true; st.theme = val; DB.save(); UI.applyTheme(); }));
+    ap.appendChild(segRow("Text size", [{ id: "s", label: "A\u2212" }, { id: "m", label: "A" }, { id: "l", label: "A+" }, { id: "xl", label: "A++" }], st.size, function (val) { d.touchedSettings.size = true; st.size = val; DB.save(); UI.applySize(); }));
     ap.appendChild(switchRow("High contrast", "Solid surfaces and stronger lines", "hc", function () { UI.applyHc(); }));
-    ap.appendChild(segRow("Performance", [{ id: "auto", label: "Auto" }, { id: "full", label: "Full glass" }, { id: "lite", label: "Lite (fast)" }], st.perf, function (val) { st.perf = val; DB.save(); UI.applyPerf(); }));
+    ap.appendChild(segRow("Performance", [{ id: "auto", label: "Auto" }, { id: "full", label: "Full glass" }, { id: "lite", label: "Lite (fast)" }], st.perf, function (val) { d.touchedSettings.perf = true; st.perf = val; DB.save(); UI.applyPerf(); }));
     var perfInfo = U.el("p", "tiny muted", "Now: " + UI.perfMode + " mode \u00b7 measured frame " + UI.frameMs + " ms");
     ap.appendChild(perfInfo);
 
@@ -5011,7 +5047,8 @@ var Comm = {
    ============================================================ */
 var Admin = {
   unlocked: false,
-  pin: "",
+  pin: "", // legacy field; credentials are never retained here
+  token: "",
   lastActive: 0,
   idleTimer: null,
   bgSince: 0,
@@ -5048,6 +5085,15 @@ var Admin = {
   },
   makeSalt: function () { return U.uid("s").replace(/[^a-z0-9]/gi, "").slice(0, 16) || "saltsalt"; },
 
+  retainSendingCredential: function () {
+    var count = DB.data.outbox.filter(function (item) { return ["publish", "announce", "moderate", "inbox"].indexOf(item.action) >= 0; }).length;
+    if (count && this.token) UI.toast("Still sending: " + count + ". Keep this phone online", { ms: 8000 });
+    else this.token = "";
+  },
+  offlineAvailable: function () {
+    var a = DB.data.admin;
+    return a.offlineHash && a.offlineUrl === Cloud.url && a.offlineDevice === DB.data.profile.deviceId;
+  },
   /* ---------- entry point ---------- */
   open: function () {
     var a = DB.data.admin;
@@ -5058,8 +5104,8 @@ var Admin = {
     }
     if (Cloud.mode) {
       if (U.nav("onLine", true) === false) {
-        UI.toast("Cloud mode needs the internet. The PIN is checked on the server, so it cannot be unlocked offline.", { icon: "i-cloud", ms: 6000 });
-        return;
+        if (this.offlineAvailable()) { this.pad("offline", null); return; }
+        UI.toast("Connect once and unlock online on this phone before using the offline PIN.", { icon: "i-cloud", ms: 6000 }); return;
       }
       this.pad("cloud", null);
     } else if (a.pinHash) {
@@ -5164,11 +5210,17 @@ var Admin = {
             Cloud.adminLogin(pin, function (res) {
               if (self.authRun !== authRun || !sh.parentNode) return;
               if (res && res.ok) {
-                self.pin = pin;
+                self.token = res.token || "";
+                var a = DB.data.admin;
+                var salt = self.makeSalt() + DB.data.profile.deviceId;
+                self.hashPin(pin, salt, function (hash) {
+                  a.offlineHash = hash; a.offlineSalt = salt; a.offlineUrl = Cloud.url; a.offlineDevice = DB.data.profile.deviceId; DB.saveNow();
+                });
                 UI.closeSheet();
                 self.unlock();
               } else {
                 self.pin = "";
+                if (res && /^(network|timeout|blocked|http )/.test(res.err || "") && self.offlineAvailable()) { self.pad("offline", null); return; }
                 setMsg(res && res.err === "locked" ? ("Locked for " + Math.ceil((res.retrySec || 600) / 60) + " min") : (res && res.err === "admin_pin_unset" ? "ADMIN_PIN is not set in the Apps Script project yet." : "Wrong PIN. Try again."));
                 shake();
               }
@@ -5177,9 +5229,9 @@ var Admin = {
           }
           /* local verify */
           var a = DB.data.admin;
-          self.hashPin(pin, a.pinSalt, function (hash) {
+          self.hashPin(pin, mode === "offline" ? a.offlineSalt : a.pinSalt, function (hash) {
             if (self.authRun !== authRun || !sh.parentNode) return;
-            if (hash === a.pinHash) {
+            if (hash === (mode === "offline" ? a.offlineHash : a.pinHash)) {
               a.fails = 0;
               DB.save();
               UI.closeSheet();
@@ -5208,10 +5260,10 @@ var Admin = {
   unlock: function () {
     this.unlocked = true;
     DB.data.lecturerDevice = true;
-    if (Cloud.mode && this.pin) {
-      Cloud.post({ action: "readInbox", pin: this.pin }, function (res) {
+    if (Cloud.mode && this.token) {
+      Cloud.post({ action: "readInbox", token: this.token }, function (res) {
         if (!Admin.unlocked || !res || !res.ok || !Array.isArray(res.inbox)) return;
-        DB.data.inbox = res.inbox; if (Array.isArray(res.comments)) DB.data.comments = DB.data.comments.filter(function (c) { return c.pending; }).concat(res.comments); if (Array.isArray(res.results)) DB.data.results=res.results; DB.saveNow(); Admin.renderTab();
+        DB.data.inbox = res.inbox; if (Array.isArray(res.comments)) DB.data.comments = DB.data.comments.filter(function (c) { return c.pending; }).concat(res.comments); if (Array.isArray(res.results)) DB.data.results=res.results; if (res.stats) DB.data.classStats=res.stats; DB.saveNow(); Admin.renderTab();
       });
     }
     this.lastActive = Date.now();
@@ -5223,6 +5275,7 @@ var Admin = {
     this.unlocked = false;
     this.authRun = (this.authRun || 0) + 1;
     this.pin = "";
+    this.retainSendingCredential();
     while (UI.closeTop()) {}
     if (this.idleTimer) { clearInterval(this.idleTimer); this.idleTimer = null; }
     var L = this.layer;
@@ -5339,7 +5392,7 @@ var Admin = {
         UI.segInit(seg, function (val) { self.tab = val; self.renderTab(host); });
         self.renderTab(host);
       },
-      onClose: function () { self.layer = null; self.unlocked = false; self.pin = ""; }
+      onClose: function () { self.layer = null; self.unlocked = false; self.pin = ""; self.retainSendingCredential(); }
     });
     this.layer = L;
     return L;
@@ -5862,7 +5915,7 @@ Admin.publish = function (list) {
   Cloud.queue({
     action: "publish", listId: list.id, name: list.name, contact: DB.data.lecturerContact, defaults: JSON.parse(JSON.stringify(DB.data.classDefaults)), defaultsVersion: DB.data.classDefaults.version,
     words: list.words.map(function (x) { return { w: x.w, s: x.s || "", m: x.m || "" }; }),
-    session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "", ready:s.ready, praise:s.praise },
+    session: { no: s.no || "", day: s.day || "", date: s.date || U.dateKey(new Date()), title: s.title || "", ready:s.ready, go:s.go, praise:s.praise },
     plan: (function () {
       var out = [];
       for (var i = 0; i < 7; i++) out.push({ key: "w" + i, listId: DB.data.plan.weekdays[i] || "", pinned: false });
@@ -6012,17 +6065,18 @@ Admin.tabSession = function (host) {
     box.appendChild(addRow);
   }
   phraseBox("\u201cAre you ready?\u201d phrases", "ready");
+  phraseBox("Go phrases (before the countdown)", "go");
   phraseBox("Praise phrases (end of dictation)", "praise");
 
   var timing = self.card(host, "Player timing");
   [["pauseWord", "Pause after word (seconds)", 0, 10, 0.1], ["pauseSent", "Pause after sentence (seconds)", 0, 15, 0.1], ["writeFixed", "Fixed writing time (seconds)", 3, 60, 1]].forEach(function (item) {
     var label = U.el("label", "field", null); label.appendChild(U.el("span", "lbl", item[1]));
     var input = U.el("input", null, null); input.type = "number"; input.min = item[2]; input.max = item[3]; input.step = item[4]; input.value = DB.data.classDefaults[item[0]];
-    U.on(input, "change", function () { DB.data.classDefaults[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
+    U.on(input, "change", function () { DB.data.classDefaults.version++; DB.data.classDefaults[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
   });
   /* default student settings */
-  var c3 = this.card(host, "Default student settings");
-  var st = DB.data.settings;
+  var c3 = this.card(host, "Class defaults (separate from your settings)");
+  var st = DB.data.classDefaults;
   function sw(title, sub, key) {
     var row = U.el("div", "switch", null);
     var t = U.el("div", "txt", null);
@@ -6034,7 +6088,7 @@ Admin.tabSession = function (host) {
     b.setAttribute("aria-checked", String(!!st[key]));
     b.setAttribute("aria-label", title);
     b.appendChild(U.el("i", null, null));
-    U.on(b, "click", function () { st.version = (st.version || 1) + 1; st[key] = !st[key]; b.setAttribute("aria-checked", String(!!st[key])); DB.save(); });
+    U.on(b, "click", function () { st.version = (st.version || 1) + 1; st[key] = !st[key]; b.setAttribute("aria-checked", String(!!st[key])); st.version = (st.version || 1) + 1; DB.save(); });
     row.appendChild(t); row.appendChild(b);
     return row;
   }
@@ -6053,7 +6107,7 @@ Admin.tabSession = function (host) {
     repSel.appendChild(o);
   });
   repSel.setAttribute("aria-label", "Word repeats");
-  U.on(repSel, "change", function () { st.repeats = U.clamp(repSel.value, 1, 3); DB.save(); });
+  U.on(repSel, "change", function () { st.repeats = U.clamp(repSel.value, 1, 3); st.version = (st.version || 1) + 1; DB.save(); });
   repRow.appendChild(repSel);
   c3.appendChild(repRow);
 
@@ -6069,7 +6123,7 @@ Admin.tabSession = function (host) {
     wmSel.appendChild(o);
   });
   wmSel.setAttribute("aria-label", "Writing time mode");
-  U.on(wmSel, "change", function () { st.writeMode = wmSel.value; DB.save(); });
+  U.on(wmSel, "change", function () { st.writeMode = wmSel.value; st.version = (st.version || 1) + 1; DB.save(); });
   wmRow.appendChild(wmSel);
   c3.appendChild(wmRow);
 
@@ -6085,7 +6139,7 @@ Admin.tabSession = function (host) {
     modeSel.appendChild(o);
   });
   modeSel.setAttribute("aria-label", "Answer mode");
-  U.on(modeSel, "change", function () { st.mode = modeSel.value; DB.save(); });
+  U.on(modeSel, "change", function () { st.mode = modeSel.value; st.version = (st.version || 1) + 1; DB.save(); });
   modeRow.appendChild(modeSel);
   c3.appendChild(modeRow);
 
@@ -6101,7 +6155,7 @@ Admin.tabSession = function (host) {
     usSel.appendChild(o);
   });
   usSel.setAttribute("aria-label", "American spelling marking");
-  U.on(usSel, "change", function () { st.usSpelling = usSel.value; DB.save(); });
+  U.on(usSel, "change", function () { st.usSpelling = usSel.value; st.version = (st.version || 1) + 1; DB.save(); });
   usRow.appendChild(usSel);
   c3.appendChild(usRow);
 
@@ -6388,6 +6442,12 @@ Admin.tabStats = function (host) {
   if (Cloud.mode && d.results.length) {
     var cloudStats = this.card(host, "Cloud class results");
     cloudStats.appendChild(U.el("p", "small", d.results.length + " student results received."));
+    var stats = d.classStats;
+    if (stats) {
+      (stats.bySession || []).forEach(function (session) { cloudStats.appendChild(U.el("p", "small", "Session " + session.session + ": " + session.count + " finished; average " + (session.avg === null ? S.unscored : session.avg + "%"))); });
+      cloudStats.appendChild(U.el("p", "small", stats.noUkVoice + " results without a UK voice; " + stats.comments.problem + " problem comments"));
+      Object.keys(stats.devices || {}).forEach(function (device) { cloudStats.appendChild(U.el("p", "small", device + ": " + stats.devices[device])); });
+    }
     var exportCloud = U.btn("Export class results", "i-down", "soft"); U.on(exportCloud,"click",function () { var text=JSON.stringify(d.results,null,2); if (!U.download("class-results.json",text,"application/json")) U.selectForCopy(text); }); cloudStats.appendChild(exportCloud);
   }
   var box = this.card(host, "Class overview");
@@ -6406,8 +6466,7 @@ Admin.tabStats = function (host) {
   d.history.forEach(function (r) {
     var k = r.sessionNo || "?";
     if (!bySession[k]) bySession[k] = { n: 0, sum: 0 };
-    bySession[k].n++;
-    bySession[k].sum += (r.percent || 0);
+    if (r.percent !== null && r.percent !== undefined) { bySession[k].n++; bySession[k].sum += r.percent; }
     var dev = r.deviceType || "Other";
     devices[dev] = (devices[dev] || 0) + 1;
     if (!r.ukVoice) noUk++;
@@ -6722,7 +6781,7 @@ var Cloud = {
   },
   adminLogin: function (pin, cb) {
     if (!this.mode) { cb && cb({ ok: false, err: "no cloud link" }); return; }
-    this.post({ action: "login", pin: String(pin) }, cb);
+    this.post({ action: "login", pin: String(pin), deviceId: DB.data.profile.deviceId }, cb);
   },
 
   queue: function (payload) {
@@ -6745,13 +6804,14 @@ var Cloud = {
   flush: function () {
     var self = this;
     if (!this.mode || this.flushing) return;
-    if (!DB.data.outbox.length) { UI.renderNet(); return; }
+    if (!DB.data.outbox.length) { if (!Admin.unlocked) Admin.token = ""; UI.renderNet(); return; }
     if (U.nav("onLine", true) === false) return;
     this.flushing = true;
     var attempted = [];
     (function stepFn() {
       if (!DB.data.outbox.length) {
         self.flushing = false;
+        if (!Admin.unlocked) Admin.token = "";
         UI.renderNet();
         if (UI.tab === "comm") Screens.comm();
         return;
@@ -6760,16 +6820,21 @@ var Cloud = {
       for (var j = 0; j < DB.data.outbox.length; j++) {
         var candidate = DB.data.outbox[j];
         if (attempted.indexOf(candidate) >= 0 || (candidate.retryAt && candidate.retryAt > Date.now())) continue;
-        if (["publish", "announce", "moderate", "inbox"].indexOf(candidate.action) < 0 || (Admin.unlocked && Admin.pin)) { index = j; break; }
+        if (["publish", "announce", "moderate", "inbox"].indexOf(candidate.action) < 0 || Admin.token) { index = j; break; }
       }
       if (index < 0) { self.flushing = false; UI.renderNet(); self.scheduleFlush(); return; }
       var item = DB.data.outbox[index], request = {};
       attempted.push(item);
-      Object.keys(item).forEach(function (key) { if (key !== "pin") request[key] = item[key]; });
-      if (["publish", "announce", "moderate", "inbox"].indexOf(item.action) >= 0) request.pin = Admin.pin;
+      Object.keys(item).forEach(function (key) { if (["pin", "token", "retryAt", "lastError"].indexOf(key) < 0) request[key] = item[key]; });
+      if (["publish", "announce", "moderate", "inbox"].indexOf(item.action) >= 0) request.token = Admin.token;
       self.post(request, function (res) {
         if (res && res.ok) {
           var sentIndex = DB.data.outbox.indexOf(item); if (sentIndex >= 0) DB.data.outbox.splice(sentIndex, 1);
+          if (item.action === "publish") {
+            var publishedList = Lib.byId(item.listId);
+            if (publishedList) publishedList.syncedAt = Date.now();
+            UI.toast("Live for all students (synced " + U.fmtTime(Date.now()) + ")", { icon: "i-check" });
+          }
           if (item.action === "comment" && res.id) {
             for (var i = 0; i < DB.data.comments.length; i++) {
               if (DB.data.comments[i].id === item.cid) { DB.data.comments[i].pending = false; DB.data.comments[i].sent = true; DB.data.comments[i].serverId = res.id; break; }
@@ -6815,7 +6880,17 @@ var Cloud = {
       if (UI.tab === "home") Screens.home();
     });
   },
+  pullReplies: function () {
+    var mine = DB.data.inbox.filter(function (m) { return m.mine; }).slice(0, 20);
+    if (!mine.length) return;
+    this.post({ action: "myReplies", ids: mine.map(function (m) { return m.id; }) }, function (res) {
+      if (!res || !res.ok || !Array.isArray(res.replies)) return;
+      res.replies.forEach(function (reply) { mine.forEach(function (message) { if (message.id === reply.id && message.reply !== reply.reply) { message.reply = U.clip(reply.reply, 500); message.replyRead = false; } }); });
+      DB.save(); if (UI.tab === "comm") Screens.comm();
+    });
+  },
   pullComments: function () {
+    this.pullReplies();
     this.get({ action: "comments" }, function (res) {
       if (!res || !res.ok || !Array.isArray(res.comments)) return;
       var pending = DB.data.comments.filter(function (c) { return c.pending || (Admin.unlocked && c.hidden); });
@@ -6883,7 +6958,7 @@ var Cloud = {
       if (st.session.date) d.session.date = st.session.date;
       if (st.session.title !== undefined) d.session.title = st.session.title;
     }
-    if (st.session) ["ready","praise"].forEach(function (key) { if (Array.isArray(st.session[key]) && st.session[key].length) d.session[key]=st.session[key].filter(function (x) { return typeof x === "string"; }).map(function (x) { return U.clip(x,160); }); });
+    if (st.session) ["ready","go","praise"].forEach(function (key) { if (Array.isArray(st.session[key]) && st.session[key].length) d.session[key]=st.session[key].filter(function (x) { return typeof x === "string"; }).map(function (x) { return U.clip(x,160); }); });
     if (st.contact && typeof st.contact === "object") d.lecturerContact={whatsapp:U.clip(st.contact.whatsapp,30),email:U.clip(st.contact.email,120)};
     if (st.defaults && Number(st.defaultsVersion || st.defaults.version || 0) > Number(d.defaultsVersion || 0)) {
       var defaults = st.defaults;
@@ -7465,6 +7540,7 @@ function boot() {
     Eng.start({});
   });
   U.delegate(U.$("#segMode"), "click", "button", function (ev, b) {
+    DB.data.touchedSettings.mode = true;
     DB.data.settings.mode = b.getAttribute("data-mode");
     DB.save();
     UI.segSet(U.$("#segMode"), b);
