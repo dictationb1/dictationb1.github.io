@@ -1709,8 +1709,19 @@ U.nav = function (key, fallback) {
   catch (err) { return fallback; }
 };
 
-U.$ = function (sel, root) { return (root || document).querySelector(sel); };
-U.$$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+U.$ = function (sel, root) {
+  /* a timer that fires while the page is being torn down must never throw */
+  try {
+    var r = root || document;
+    return r && r.querySelector ? r.querySelector(sel) : null;
+  } catch (e) { return null; }
+};
+U.$$ = function (sel, root) {
+  try {
+    var r = root || document;
+    return r && r.querySelectorAll ? Array.prototype.slice.call(r.querySelectorAll(sel)) : [];
+  } catch (e) { return []; }
+};
 
 U.el = function (tag, cls, txt) {
   var e = document.createElement(tag);
@@ -2270,24 +2281,25 @@ var DB = {
     for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
     return null;
   },
-  save: function () {
+  save: function (skipBackup) {
     var self = this;
     if (this.saveTimer) return;
     this.saveTimer = setTimeout(function () {
       self.saveTimer = null;
-      self.saveNow();
+      self.saveNow(skipBackup);
     }, 120);
   },
-  saveNow: function (withBackup) {
+  saveNow: function (skipBackup) {
     if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
     this.trimCache();
     try {
       var text = JSON.stringify(this.data);
       Store.set(CONFIG.key, text);
-      /* A7.3/A7.5: the duplicate .bak copy costs a second synchronous
-         localStorage write. It is refreshed on session finish and on admin
-         publish only - never on every dictation word step. */
-      if (withBackup) Store.set(CONFIG.key + ".bak", text);
+      /* A7.3/A7.5: the rolling .bak copy costs a second synchronous
+         localStorage write. The hot paths - the per-word dictation snapshot and
+         the dictionary cache - ask for a light save and skip it, so a phone
+         never stalls mid-dictation while every real change keeps a copy. */
+      if (!skipBackup) Store.set(CONFIG.key + ".bak", text);
     } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
   },
   trimCache: function () {
@@ -2305,9 +2317,7 @@ var DB = {
     this.data = defaultData();
     this.data.profile.nickname = UI.makeNickname();
     Admin.seedPin(this.data.admin);
-    var text = JSON.stringify(this.data);
-    Store.set(CONFIG.key, text);
-    Store.set(CONFIG.key + ".bak", text);
+    Store.set(CONFIG.key, JSON.stringify(this.data));
   },
   exportAll: function (emergency) {
     var full = emergency === true || Admin.unlocked;
@@ -3798,7 +3808,7 @@ var Speech = {
     var online = U.nav("onLine", true) !== false;
     if (this.textOnly && !online && !this.ukVoices.length) { cb && cb({ ok: false, err: "text mode" }); return token; }
     if (!this.ukVoices.length) this.pick();
-    var done = false, qi = 0, streamDead = false;
+    var done = false, qi = 0, streamDead = false, mp3Tried = false;
     function stale() { return token !== self.token; }
     function canceled() { if (stale()) { finish({ ok: false, err: "canceled" }); return true; } return false; }
     function finish(res) {
@@ -3824,10 +3834,11 @@ var Speech = {
       if (qi >= queue.length) { finish({ ok: true }); return; }
       var text = queue[qi];
       var rate = U.clamp(o.rate === undefined ? 0.85 : o.rate, 0.5, 1.6);
-      if (online && o.mp3 !== false) {
+      if (online && o.mp3 !== false && !mp3Tried) {
         var mp3 = o.mp3 || self.mp3For(text, o.word);
         if (mp3) {
           self.lastTier = "dictionary";
+          mp3Tried = true;   /* tier 1 is tried once per call; never retried in a loop */
           self.playAudio(mp3, rate, 5200, function (ok) {
             if (canceled()) return;
             if (ok) { qi++; step(60); return; }
@@ -4106,7 +4117,7 @@ var Eng = {
       startedAt: this.startedAt, savedAt: Date.now(), seed: this.seed, showWord: this.showWord,
       settingsAtStart: JSON.parse(JSON.stringify(DB.data.settings))
     };
-    DB.saveNow();
+    DB.saveNow(true);   /* A7.3: a word step writes one key, never two */
   },
 
   /* ---------- the scheduler ---------- */
@@ -4773,7 +4784,7 @@ var Results = {
     if (DB.data.history.length > CONFIG.maxHistory) DB.data.history.length = CONFIG.maxHistory;
     /* A6 automatic completion post + the once-per-session backup copy (A7.3) */
     publishCompletion(rec);
-    DB.saveNow(true);
+    DB.saveNow();
     /* streak */
     var today = U.dateKey(new Date());
     var st = DB.data.profile.streak;
@@ -5135,7 +5146,7 @@ var Dict = {
         var merged = DB.data.dictCache[key];
         Object.keys(res).forEach(function (k) { if (res[k] !== "" && res[k] !== undefined) merged[k] = res[k]; });
         DB.trimCache();
-        DB.save();
+        DB.save(true);   /* light save: a cached lookup never costs a backup copy */
       }
       cb && cb(res || cache || null);
     }, function () {
@@ -5529,7 +5540,7 @@ var Admin = {
 
   pad: function (mode, confirmPin) {
     var self = this;
-    var entry = "";
+    var entry = "", autoTried = false;
     var authRun = (this.authRun || 0) + 1; this.authRun = authRun;
     var sh = UI.sheet({
       title: mode === "create" ? S.createPin : (mode === "confirm" ? S.confirmPin : (Cloud.mode ? "Lecturer PIN (checked on the server)" : S.enterPin)),
@@ -5582,17 +5593,21 @@ var Admin = {
         paint();
 
         function key(k) {
-          if (k === "del") { entry = entry.slice(0, -1); paint(); return; }
-          if (k === "clear") { entry = ""; paint(); return; }
+          if (k === "del") { entry = entry.slice(0, -1); if (entry.length < CONFIG.minPin) autoTried = false; paint(); return; }
+          if (k === "clear") { entry = ""; autoTried = false; paint(); return; }
           if (k === "enter") { if (enter && !enter.disabled) enter.click(); return; }
           if (!/^[0-9]$/.test(String(k || ""))) return;
           if (entry.length >= CONFIG.maxPin) return;
           entry += k;
           paint();
-          /* auto-unlock the moment the four-digit lecturer PIN is complete */
-          if (mode !== "create" && mode !== "confirm" && entry.length === CONFIG.minPin) {
+          /* auto-unlock the moment the four-digit lecturer PIN is complete.
+             The digits stay in the box so a longer (5-8 digit) PIN can still
+             be typed after the four-digit attempt. */
+          if (!autoTried && mode !== "create" && mode !== "confirm" && entry.length === CONFIG.minPin) {
+            autoTried = true;
             if (DB.data.admin.lockUntil > Date.now()) return;
-            var auto = entry; entry = ""; paint(); submit(auto);
+            paint();
+            submit(entry);
           }
         }
         U.delegate(pad, "click", "button", function (ev, btn) { key(btn.getAttribute("data-k")); });
@@ -5700,7 +5715,8 @@ var Admin = {
         }
       },
       onClose: function () {
-        self.authRun = (self.authRun || 0) + 1;
+        /* only detach the keyboard: Admin.authRun is owned by lock()/pad(), and
+           bumping it here would cancel the next pad that replaces this sheet */
         if (self._pinKey) { document.removeEventListener("keydown", self._pinKey, true); self._pinKey = null; }
       }
     });
@@ -5917,7 +5933,7 @@ var Admin = {
     d.session.listId = list.id;
     if (!d.session.title) d.session.title = list.name;
     this.publish(list, true);
-    DB.saveNow(true);
+    DB.saveNow();
     Screens.home();
     UI.renderNet();
     UI.toast("Saved & published to all students \u00b7 " + list.words.length + " words \u00b7 v" + list.version + (Cloud.mode ? " \u00b7 syncing" : " \u00b7 on this device"), { icon: "i-check", ms: 6000 });
