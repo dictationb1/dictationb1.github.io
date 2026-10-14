@@ -1,0 +1,210 @@
+{
+  "ok": true,
+  "ver": 2,
+  "session": {
+    "no": "1",
+    "day": "Wednesday",
+    "date": "2026-10-14",
+    "title": "B1 Leisure & Hobbies (30 words)",
+    "listId": "list_sample_b1"
+  },
+  "lists": [
+    {
+      "id": "list_sample_b1",
+      "name": "B1 Leisure & Hobbies (30 words)",
+      "version": 2,
+      "published": true,
+      "words": [
+        {
+          "w": "hobbies",
+          "s": "Reading and gardening are two of my favourite weekend hobbies.",
+          "m": "activities that you enjoy doing in your free time",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hobbies--_gb_1.mp3"
+        },
+        {
+          "w": "leisure",
+          "s": "The town has a modern leisure centre with a swimming pool.",
+          "m": "time when you are not working or studying",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/leisure--_gb_1.mp3"
+        },
+        {
+          "w": "barbecue",
+          "s": "We had a lovely family barbecue in the garden on Sunday.",
+          "m": "an outdoor meal or party where food is cooked on a metal frame over fire",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/barbecue--_gb_1.mp3"
+        },
+        {
+          "w": "camping",
+          "s": "They went camping by the lake for three days in July.",
+          "m": "living in a tent on holiday",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/camping--_gb_1.mp3"
+        },
+        {
+          "w": "collection",
+          "s": "My grandfather has a large collection of old British coins.",
+          "m": "a group of objects of one type that have been gathered together",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/collection--_gb_1.mp3"
+        },
+        {
+          "w": "cruise",
+          "s": "My parents booked a two-week cruise around the Mediterranean Sea.",
+          "m": "a holiday on a large ship, visiting different places",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cruise--_gb_1.mp3"
+        },
+        {
+          "w": "dancing",
+          "s": "She goes to salsa dancing classes every Tuesday evening.",
+          "m": "moving your body to music",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/dancing--_gb_1.mp3"
+        },
+        {
+          "w": "drawing",
+          "s": "He is very good at drawing portraits of his friends.",
+          "m": "the art or skill of making pictures using a pencil or pen",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drawing--_gb_1.mp3"
+        },
+        {
+          "w": "facilities",
+          "s": "The hotel has excellent sports facilities, including tennis courts.",
+          "m": "buildings, equipment, or services provided for a particular purpose",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/facilities--_gb_1.mp3"
+        },
+        {
+          "w": "festival",
+          "s": "Thousands of people attended the summer music festival in the park.",
+          "m": "a special event or period with music, art, or celebrations",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/festival--_gb_1.mp3"
+        },
+        {
+          "w": "fiction",
+          "s": "She prefers reading historical fiction rather than science books.",
+          "m": "books and stories about imaginary people and events",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fiction--_gb_1.mp3"
+        },
+        {
+          "w": "gallery",
+          "s": "We visited the national art gallery to see the new exhibition.",
+          "m": "a room or building that shows works of art to the public",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gallery--_gb_1.mp3"
+        },
+        {
+          "w": "go shopping",
+          "s": "We usually go shopping for food and clothes on Saturday morning.",
+          "m": "to visit shops in order to look at and buy things",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/go_shopping--_gb_1.mp3"
+        },
+        {
+          "w": "guitar",
+          "s": "He learned to play the acoustic guitar when he was fifteen.",
+          "m": "a musical instrument with six strings played with your fingers",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guitar--_gb_1.mp3"
+        },
+        {
+          "w": "hire",
+          "s": "You can hire a bicycle at the station for ten pounds a day.",
+          "m": "to pay to use something for a short period of time",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hire--_gb_1.mp3"
+        },
+        {
+          "w": "hike",
+          "s": "We went for a ten-kilometre hike through the forest yesterday.",
+          "m": "a long walk, especially in the countryside or mountains",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hike--_gb_1.mp3"
+        },
+        {
+          "w": "holidays",
+          "s": "Where are you going for your summer holidays this year?",
+          "m": "a period of time when you travel or rest away from work or school",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/holidays--_gb_1.mp3"
+        },
+        {
+          "w": "jogging",
+          "s": "She goes jogging in the local park every morning before breakfast.",
+          "m": "running at a slow, regular speed for exercise",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/jogging--_gb_1.mp3"
+        },
+        {
+          "w": "magazine",
+          "s": "I bought a travel magazine to read on the train journey.",
+          "m": "a thin book with articles and photos published every week or month",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/magazine--_gb_1.mp3"
+        },
+        {
+          "w": "musician",
+          "s": "The street musician played a beautiful tune on his violin.",
+          "m": "someone who plays a musical instrument, especially as a job",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/musician--_gb_1.mp3"
+        },
+        {
+          "w": "nightlife",
+          "s": "The city is famous for its lively nightlife and great restaurants.",
+          "m": "entertainment available in the evening and at night in a town",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/nightlife--_gb_1.mp3"
+        },
+        {
+          "w": "painting",
+          "s": "That oil painting of the harbour hangs in the town museum.",
+          "m": "a picture made using paint, or the activity of making pictures",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/painting--_gb_1.mp3"
+        },
+        {
+          "w": "party",
+          "s": "Are you coming to Sarah's birthday party on Saturday night?",
+          "m": "a social event where people meet to enjoy themselves",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/party--_gb_1.mp3"
+        },
+        {
+          "w": "photograph",
+          "s": "He took a wonderful photograph of the sunset over the sea.",
+          "m": "a picture produced using a camera",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/photograph--_gb_1.mp3"
+        },
+        {
+          "w": "picnic",
+          "s": "It was sunny, so we packed sandwiches and had a picnic.",
+          "m": "an occasion when you take food to eat outdoors",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/picnic--_gb_1.mp3"
+        },
+        {
+          "w": "quiz",
+          "s": "Our team won first prize in the school general knowledge quiz.",
+          "m": "a game or competition in which you answer questions",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/quiz--_gb_1.mp3"
+        },
+        {
+          "w": "sculpture",
+          "s": "There is a modern bronze sculpture outside the main library.",
+          "m": "a work of art made from stone, wood, metal, or clay",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sculpture--_gb_1.mp3"
+        },
+        {
+          "w": "sightseeing",
+          "s": "We spent the whole afternoon sightseeing in the old town.",
+          "m": "the activity of visiting interesting places, especially on holiday",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sightseeing--_gb_1.mp3"
+        },
+        {
+          "w": "sunbathe",
+          "s": "Remember to wear sunscreen if you sunbathe on the beach.",
+          "m": "to sit or lie in the sun so that your skin becomes brown",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sunbathe--_gb_1.mp3"
+        },
+        {
+          "w": "torch",
+          "s": "Take a torch with you because the path is dark at night.",
+          "m": "a small electric light that you carry in your hand",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/torch--_gb_1.mp3"
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "key": "default",
+      "listId": "list_sample_b1",
+      "pinned": true
+    }
+  ],
+  "announcement": null,
+  "comments": []
+}
