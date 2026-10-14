@@ -16,108 +16,97 @@
 <meta name="description" content="Smart Dictation Player - listen to UK English words and write them down.">
 <title>Smart Dictation Player</title>
 <style>
-/* ============================================================
-   1. BASE + TOKENS
-   ============================================================ */
 *, *::before, *::after { box-sizing: border-box; }
-
 :root {
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;
-  --r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;
-  --tap: 44px;
-  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
-  --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
-  --fs: 16px;
-  --dur: 220ms;
-  --ease: cubic-bezier(.22,.75,.28,1);
-  --tabbar: 76px;
+--font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;
+--r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;
+--tap: 44px;
+--safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+--safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
+--fs: 16px;
+--dur: 220ms;
+--ease: cubic-bezier(.22,.75,.28,1);
+--tabbar: 76px;
 }
-
 :root[data-size="s"] { --fs: 14.5px; }
 :root[data-size="m"] { --fs: 16px; }
 :root[data-size="l"] { --fs: 18px; }
 :root[data-size="xl"] { --fs: 20.5px; }
-
 :root[data-theme="light"], :root[data-theme="auto"] {
-  --bg1: #eaf0fb; --bg2: #f6f1ff;
-  --ink: #0d1220; --ink-2: #46506b; --ink-3: #6a748c;
-  --acc: #3a5cf0; --acc-2: #7a3cf0;
-  --good: #0f8a4d; --warn: #a8620a; --bad: #c62c3d;
-  --glass: rgba(255,255,255,.72); --glass-2: rgba(255,255,255,.5); --glass-3: rgba(255,255,255,.42);
-  --glass-solid: #fbfcff; --glass-solid-2: #eef1f8;
-  --line: rgba(255,255,255,.9); --line-2: rgba(13,18,32,.1);
-  --edge: rgba(255,255,255,.85);
-  --shadow1: 0 1px 2px rgba(16,24,48,.06), 0 10px 30px rgba(16,24,48,.10);
-  --shadow2: 0 2px 6px rgba(16,24,48,.07), 0 24px 60px rgba(16,24,48,.16);
-  --inner: inset 0 1px 0 rgba(255,255,255,.9);
-  --ring: rgba(58,92,240,.5);
-  --scr: rgba(13,18,32,.34);
-  --blob1: rgba(58,92,240,.30); --blob2: rgba(122,60,240,.24); --blob3: rgba(255,255,255,.55);
+--bg1: #eaf0fb; --bg2: #f6f1ff;
+--ink: #0d1220; --ink-2: #46506b; --ink-3: #6a748c;
+--acc: #3a5cf0; --acc-2: #7a3cf0;
+--good: #0f8a4d; --warn: #a8620a; --bad: #c62c3d;
+--glass: rgba(255,255,255,.72); --glass-2: rgba(255,255,255,.5); --glass-3: rgba(255,255,255,.42);
+--glass-solid: #fbfcff; --glass-solid-2: #eef1f8;
+--line: rgba(255,255,255,.9); --line-2: rgba(13,18,32,.1);
+--edge: rgba(255,255,255,.85);
+--shadow1: 0 1px 2px rgba(16,24,48,.06), 0 10px 30px rgba(16,24,48,.10);
+--shadow2: 0 2px 6px rgba(16,24,48,.07), 0 24px 60px rgba(16,24,48,.16);
+--inner: inset 0 1px 0 rgba(255,255,255,.9);
+--ring: rgba(58,92,240,.5);
+--scr: rgba(13,18,32,.34);
+--blob1: rgba(58,92,240,.30); --blob2: rgba(122,60,240,.24); --blob3: rgba(255,255,255,.55);
 }
 :root[data-theme="auto"] { }
-
 :root[data-theme="dark"] {
-  --bg1: #080a11; --bg2: #120a1e;
-  --ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
-  --acc: #8ea6ff; --acc-2: #c39bff;
-  --good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
-  --glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
-  --glass-solid: #161a29; --glass-solid-2: #1e2336;
-  --line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
-  --edge: rgba(255,255,255,.22);
-  --shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
-  --shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
-  --inner: inset 0 1px 0 rgba(255,255,255,.1);
-  --ring: rgba(142,166,255,.6);
-  --scr: rgba(0,0,0,.6);
-  --blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
+--bg1: #080a11; --bg2: #120a1e;
+--ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
+--acc: #8ea6ff; --acc-2: #c39bff;
+--good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
+--glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
+--glass-solid: #161a29; --glass-solid-2: #1e2336;
+--line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
+--edge: rgba(255,255,255,.22);
+--shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
+--shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
+--inner: inset 0 1px 0 rgba(255,255,255,.1);
+--ring: rgba(142,166,255,.6);
+--scr: rgba(0,0,0,.6);
+--blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
 }
-
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] {
-    --bg1: #080a11; --bg2: #120a1e;
-    --ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
-    --acc: #8ea6ff; --acc-2: #c39bff;
-    --good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
-    --glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
-    --glass-solid: #161a29; --glass-solid-2: #1e2336;
-    --line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
-    --edge: rgba(255,255,255,.22);
-    --shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
-    --shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
-    --inner: inset 0 1px 0 rgba(255,255,255,.1);
-    --ring: rgba(142,166,255,.6);
-    --scr: rgba(0,0,0,.6);
-    --blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
-  }
+:root[data-theme="auto"] {
+--bg1: #080a11; --bg2: #120a1e;
+--ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
+--acc: #8ea6ff; --acc-2: #c39bff;
+--good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
+--glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
+--glass-solid: #161a29; --glass-solid-2: #1e2336;
+--line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
+--edge: rgba(255,255,255,.22);
+--shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
+--shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
+--inner: inset 0 1px 0 rgba(255,255,255,.1);
+--ring: rgba(142,166,255,.6);
+--scr: rgba(0,0,0,.6);
+--blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
 }
-
-/* high contrast: solid surfaces, stronger lines */
+}
 :root[data-hc="on"] {
-  --glass: var(--glass-solid); --glass-2: var(--glass-solid); --glass-3: var(--glass-solid);
-  --edge: var(--ink); --inner: none;
-  --line-2: var(--ink);
+--glass: var(--glass-solid); --glass-2: var(--glass-solid); --glass-3: var(--glass-solid);
+--edge: var(--ink); --inner: none;
+--line-2: var(--ink);
 }
 :root[data-hc="on"] .glass { background: var(--glass-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 @media (prefers-contrast: more) {
-  .glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
-
 html, body { margin: 0; padding: 0; }
 html { font-size: var(--fs); -webkit-text-size-adjust: 100%; }
 body {
-  font-family: var(--font);
-  font-size: 1rem; line-height: 1.45;
-  color: var(--ink);
-  background: var(--bg1);
-  background-image: linear-gradient(160deg, var(--bg1), var(--bg2));
-  background-attachment: fixed;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+font-family: var(--font);
+font-size: 1rem; line-height: 1.45;
+color: var(--ink);
+background: var(--bg1);
+background-image: linear-gradient(160deg, var(--bg1), var(--bg2));
+background-attachment: fixed;
+min-height: 100vh;
+min-height: -webkit-fill-available;
+min-height: 100dvh;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+text-rendering: optimizeLegibility;
 }
 img, svg { max-width: 100%; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -137,14 +126,9 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 .hr { height: 1px; background: var(--line-2); border: 0; margin: 12px 0; }
 .hidden { display: none !important; }
 .mono { font-variant-numeric: tabular-nums; }
-
 :focus { outline: none; }
 :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 8px; }
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-
-/* ============================================================
-   2. BACKGROUND LAYER (blobs + grain, Full mode only)
-   ============================================================ */
 #bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .blob { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; filter: blur(60px); opacity: .9; will-change: transform; }
 .blob1 { background: var(--blob1); top: -22vmax; left: -14vmax; }
@@ -157,32 +141,27 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 @keyframes drift2 { to { transform: translate3d(-8vmax, -6vmax, 0) scale(1.08); } }
 @keyframes drift3 { to { transform: translate3d(-10vmax, 6vmax, 0) scale(.9); } }
 #grain { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
+background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
 body[data-perf="lite"] #grain, body[data-perf="lite"] .blob { display: none; }
 body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), var(--bg2)); }
-
 @media (prefers-reduced-transparency: reduce) {
-  .glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
-
-/* ============================================================
-   3. GLASS PRIMITIVES
-   ============================================================ */
 .glass {
-  background: var(--glass);
-  border: 1px solid var(--line);
-  border-radius: var(--r3);
-  box-shadow: var(--shadow1), var(--inner);
-  position: relative;
-  contain: content;
+background: var(--glass);
+border: 1px solid var(--line);
+border-radius: var(--r3);
+box-shadow: var(--shadow1), var(--inner);
+position: relative;
+contain: content;
 }
 .glass.strong { background: var(--glass-2); }
 .glass.deep { box-shadow: var(--shadow2), var(--inner); }
 .glass::after {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
-  border-radius: inherit; pointer-events: none;
-  background: linear-gradient(90deg, rgba(255,255,255,0), var(--edge), rgba(255,255,255,0));
-  opacity: .9;
+content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+border-radius: inherit; pointer-events: none;
+background: linear-gradient(90deg, rgba(255,255,255,0), var(--edge), rgba(255,255,255,0));
+opacity: .9;
 }
 :root[data-hc="on"] .glass::after { display: none; }
 .card { padding: 16px; border-radius: var(--r3); }
@@ -190,38 +169,33 @@ body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), v
 .card.pad-s { padding: 12px; }
 .card.r2 { border-radius: var(--r2); }
 .card.r4 { border-radius: var(--r4); }
-
 @supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-  .glass { -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
-  body[data-perf="lite"] .glass {
-    background: var(--glass-solid);
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-    border-color: var(--line-2);
-  }
+.glass { -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+body[data-perf="lite"] .glass {
+background: var(--glass-solid);
+-webkit-backdrop-filter: none; backdrop-filter: none;
+border-color: var(--line-2);
 }
-
-/* ============================================================
-   4. BUTTONS + CONTROLS
-   ============================================================ */
+}
 .btn {
-  -webkit-appearance: none; appearance: none;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: var(--tap); padding: 11px 18px;
-  border-radius: 999px; border: 1px solid var(--line-2);
-  background: var(--glass-3); color: var(--ink);
-  font-weight: 620; font-size: .95rem; text-decoration: none;
-  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  transition: transform 140ms var(--ease), opacity 140ms var(--ease), background 140ms var(--ease);
-  box-shadow: var(--shadow1), var(--inner);
-  user-select: none; -webkit-user-select: none;
+-webkit-appearance: none; appearance: none;
+display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+min-height: var(--tap); padding: 11px 18px;
+border-radius: 999px; border: 1px solid var(--line-2);
+background: var(--glass-3); color: var(--ink);
+font-weight: 620; font-size: .95rem; text-decoration: none;
+cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+transition: transform 140ms var(--ease), opacity 140ms var(--ease), background 140ms var(--ease);
+box-shadow: var(--shadow1), var(--inner);
+user-select: none; -webkit-user-select: none;
 }
 .btn svg { width: 19px; height: 19px; flex: 0 0 auto; }
 .btn:active { transform: scale(.96); }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 .btn.primary {
-  background: linear-gradient(180deg, var(--acc), var(--acc-2));
-  color: #fff; border-color: transparent;
-  box-shadow: 0 2px 8px rgba(58,92,240,.34), 0 14px 34px rgba(90,60,240,.24), inset 0 1px 0 rgba(255,255,255,.34);
+background: linear-gradient(180deg, var(--acc), var(--acc-2));
+color: #fff; border-color: transparent;
+box-shadow: 0 2px 8px rgba(58,92,240,.34), 0 14px 34px rgba(90,60,240,.24), inset 0 1px 0 rgba(255,255,255,.34);
 }
 :root[data-theme="dark"] .btn.primary { color: #0b0d16; }
 .btn.big { min-height: 60px; font-size: 1.1rem; padding: 14px 26px; }
@@ -237,13 +211,12 @@ body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), v
 .btn.icon svg { width: 21px; height: 21px; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .btn-row.tight { gap: 8px; }
-
 .chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  min-height: 30px; padding: 5px 12px; border-radius: 999px;
-  background: var(--glass-3); border: 1px solid var(--line-2);
-  font-size: .78rem; font-weight: 600; color: var(--ink-2);
-  touch-action: manipulation;
+display: inline-flex; align-items: center; gap: 6px;
+min-height: 30px; padding: 5px 12px; border-radius: 999px;
+background: var(--glass-3); border: 1px solid var(--line-2);
+font-size: .78rem; font-weight: 600; color: var(--ink-2);
+touch-action: manipulation;
 }
 button.chip { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button.chip[aria-pressed="true"] { background: linear-gradient(180deg, var(--acc), var(--acc-2)); color: #fff; border-color: transparent; }
@@ -252,146 +225,124 @@ button.chip[aria-pressed="true"] { background: linear-gradient(180deg, var(--acc
 .chip.warn { color: var(--warn); border-color: rgba(168,98,10,.32); }
 .chip.bad { color: var(--bad); border-color: rgba(198,44,61,.32); }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-
-/* pill segmented control with sliding glass thumb */
 .seg {
-  position: relative; display: flex; gap: 2px; padding: 3px;
-  background: var(--glass-2); border: 1px solid var(--line-2);
-  border-radius: 999px; box-shadow: var(--inner);
-  overflow: hidden;
+position: relative; display: flex; gap: 2px; padding: 3px;
+background: var(--glass-2); border: 1px solid var(--line-2);
+border-radius: 999px; box-shadow: var(--inner);
+overflow: hidden;
 }
 .seg.scroll { overflow-x: auto; border-radius: var(--r2); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .seg.scroll::-webkit-scrollbar { display: none; }
 .seg .thumb {
-  position: absolute; top: 3px; bottom: 3px; left: 0; width: 0;
-  background: var(--glass-solid); border-radius: 999px;
-  box-shadow: var(--shadow1); transition: transform var(--dur) var(--ease), width var(--dur) var(--ease);
-  pointer-events: none; z-index: 0;
+position: absolute; top: 3px; bottom: 3px; left: 0; width: 0;
+background: var(--glass-solid); border-radius: 999px;
+box-shadow: var(--shadow1); transition: transform var(--dur) var(--ease), width var(--dur) var(--ease);
+pointer-events: none; z-index: 0;
 }
 :root[data-theme="dark"] .seg .thumb { background: rgba(255,255,255,.14); }
 body[data-perf="lite"] .seg .thumb { transition: none; }
 .seg button {
-  position: relative; z-index: 1; flex: 1 0 auto;
-  min-height: 38px; padding: 8px 14px; border: 0; background: transparent;
-  border-radius: 999px; font-size: .88rem; font-weight: 620; color: var(--ink-2);
-  cursor: pointer; white-space: nowrap; touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+position: relative; z-index: 1; flex: 1 0 auto;
+min-height: 38px; padding: 8px 14px; border: 0; background: transparent;
+border-radius: 999px; font-size: .88rem; font-weight: 620; color: var(--ink-2);
+cursor: pointer; white-space: nowrap; touch-action: manipulation;
+-webkit-tap-highlight-color: transparent;
 }
 .seg button[aria-selected="true"], .seg button[aria-pressed="true"] { color: var(--ink); }
-
-/* inputs */
 .field { display: block; }
 .field > span.lbl { display: block; font-size: .8rem; font-weight: 640; color: var(--ink-2); margin-bottom: 6px; }
 input[type="text"], input[type="number"], input[type="date"], input[type="search"], input[type="password"], textarea, select {
-  width: 100%; min-height: var(--tap);
-  padding: 12px 14px; font-size: 16px; line-height: 1.35;
-  color: var(--ink); background: var(--glass-3);
-  border: 1px solid var(--line-2); border-radius: var(--r1);
-  -webkit-appearance: none; appearance: none;
-  touch-action: manipulation;
+width: 100%; min-height: var(--tap);
+padding: 12px 14px; font-size: 16px; line-height: 1.35;
+color: var(--ink); background: var(--glass-3);
+border: 1px solid var(--line-2); border-radius: var(--r1);
+-webkit-appearance: none; appearance: none;
+touch-action: manipulation;
 }
 textarea { min-height: 110px; resize: vertical; }
 select { background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
-  background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 40px; }
+background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 40px; }
 input:focus, textarea:focus, select:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--ring); }
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; min-height: 34px; background: transparent; }
 input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--line-2); }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
-  background: linear-gradient(180deg, var(--acc), var(--acc-2)); box-shadow: 0 2px 8px rgba(0,0,0,.25); border: 2px solid #fff; }
+background: linear-gradient(180deg, var(--acc), var(--acc-2)); box-shadow: 0 2px 8px rgba(0,0,0,.25); border: 2px solid #fff; }
 input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: var(--line-2); }
 input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--acc); }
-
-/* switch */
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); padding: 6px 0; }
 .switch .txt { flex: 1 1 auto; }
 .switch .txt b { display: block; font-weight: 640; font-size: .94rem; }
 .switch .txt span { font-size: .78rem; color: var(--ink-2); }
 .sw { position: relative; flex: 0 0 auto; width: 52px; height: 32px; border-radius: 999px; border: 1px solid var(--line-2);
-  background: var(--glass-2); cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; }
+background: var(--glass-2); cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; }
 .sw i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
-  background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); transition: transform var(--dur) var(--ease); }
+background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); transition: transform var(--dur) var(--ease); }
 .sw[aria-checked="true"] { background: linear-gradient(180deg, var(--acc), var(--acc-2)); border-color: transparent; }
 .sw[aria-checked="true"] i { transform: translateX(20px); }
 body[data-perf="lite"] .sw i { transition: none; }
-
-/* stepper */
 .stepper { display: inline-flex; align-items: center; gap: 6px; }
 .stepper .val { min-width: 46px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-/* ============================================================
-   5. APP SHELL / SCREENS / TABS
-   ============================================================ */
 #app { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
-  padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(var(--tabbar) + 16px + var(--safe-b)) calc(14px + var(--safe-l));
-  min-height: 100vh; min-height: 100dvh; }
+padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(var(--tabbar) + 16px + var(--safe-b)) calc(14px + var(--safe-l));
+min-height: 100vh; min-height: 100dvh; }
 .screen { animation: screenIn var(--dur) var(--ease) both; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 body[data-perf="lite"] .screen { animation: none; }
-
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .brand .mark { width: 38px; height: 38px; border-radius: 12px; flex: 0 0 auto;
-  background: linear-gradient(150deg, var(--acc), var(--acc-2));
-  display: flex; align-items: center; justify-content: center; color: #fff;
-  box-shadow: 0 4px 14px rgba(80,60,240,.3), inset 0 1px 0 rgba(255,255,255,.4); }
+background: linear-gradient(150deg, var(--acc), var(--acc-2));
+display: flex; align-items: center; justify-content: center; color: #fff;
+box-shadow: 0 4px 14px rgba(80,60,240,.3), inset 0 1px 0 rgba(255,255,255,.4); }
 .brand .mark svg { width: 21px; height: 21px; }
 .brand .t { min-width: 0; }
 .brand .t b { display: block; font-size: 1rem; font-weight: 700; letter-spacing: -.02em; }
 .brand .t span { font-size: .72rem; color: var(--ink-2); }
-
-/* tab bar: floating bottom glass on phones, side rail on wide screens */
 #tabbar {
-  position: fixed; z-index: 40;
-  left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r));
-  bottom: calc(10px + var(--safe-b));
-  display: flex; gap: 2px; padding: 6px;
-  background: var(--glass-2); border: 1px solid var(--line);
-  border-radius: var(--r4); box-shadow: var(--shadow2), var(--inner);
+position: fixed; z-index: 40;
+left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r));
+bottom: calc(10px + var(--safe-b));
+display: flex; gap: 2px; padding: 6px;
+background: var(--glass-2); border: 1px solid var(--line);
+border-radius: var(--r4); box-shadow: var(--shadow2), var(--inner);
 }
 @supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-  #tabbar { -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
-  body[data-perf="lite"] #tabbar { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+#tabbar { -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
+body[data-perf="lite"] #tabbar { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 #tabbar button {
-  flex: 1 1 0; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  border: 0; background: transparent; border-radius: 22px; color: var(--ink-2);
-  font-size: .68rem; font-weight: 640; cursor: pointer; padding: 6px 2px;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  transition: transform 140ms var(--ease);
+flex: 1 1 0; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+border: 0; background: transparent; border-radius: 22px; color: var(--ink-2);
+font-size: .68rem; font-weight: 640; cursor: pointer; padding: 6px 2px;
+touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+transition: transform 140ms var(--ease);
 }
 #tabbar button svg { width: 22px; height: 22px; }
 #tabbar button:active { transform: scale(.94); }
 #tabbar button[aria-selected="true"] { color: var(--acc); background: var(--glass-3); }
 #tabbar button .badge { position: absolute; margin-left: 22px; margin-top: -18px; }
 .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--bad); color: #fff;
-  font-size: .66rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-
+font-size: .66rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 @media (min-width: 900px) {
-  #app { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 18px; align-items: start;
-    padding-top: calc(20px + var(--safe-t)); padding-bottom: 24px; }
-  #tabbar { position: sticky; top: calc(20px + var(--safe-t)); left: auto; right: auto; bottom: auto;
-    grid-column: 1; flex-direction: column; gap: 4px; padding: 8px; border-radius: var(--r3); width: 232px; }
-  #tabbar button { flex-direction: row; justify-content: flex-start; gap: 10px; min-height: 48px; font-size: .9rem; padding: 8px 12px; border-radius: var(--r1); }
-  #tabbar button .badge { position: static; margin: 0 0 0 auto; }
-  .screen { grid-column: 2; }
-  .topbar { grid-column: 2; }
+#app { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 18px; align-items: start;
+padding-top: calc(20px + var(--safe-t)); padding-bottom: 24px; }
+#tabbar { position: sticky; top: calc(20px + var(--safe-t)); left: auto; right: auto; bottom: auto;
+grid-column: 1; flex-direction: column; gap: 4px; padding: 8px; border-radius: var(--r3); width: 232px; }
+#tabbar button { flex-direction: row; justify-content: flex-start; gap: 10px; min-height: 48px; font-size: .9rem; padding: 8px 12px; border-radius: var(--r1); }
+#tabbar button .badge { position: static; margin: 0 0 0 auto; }
+.screen { grid-column: 2; }
+.topbar { grid-column: 2; }
 }
-
-/* ============================================================
-   6. COMPONENTS: hero, list rows, pills, lens button, bars
-   ============================================================ */
 .hero { padding: 18px; border-radius: var(--r4); overflow: hidden; }
 .hero .kicker { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--acc); }
 .hero .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .hero h1 { margin-top: 4px; }
-
 .banner { padding: 12px 14px; border-radius: var(--r2); display: flex; gap: 10px; align-items: flex-start; }
 .banner.info { border-left: 4px solid var(--acc); }
 .banner.warn { border-left: 4px solid var(--warn); }
 .banner.urgent { border-left: 4px solid var(--bad); }
 .banner.good { border-left: 4px solid var(--good); }
 .banner svg { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 1px; }
-
 .listrow { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--line-2); min-height: 52px; }
 .listrow:last-child { border-bottom: 0; }
 .listrow .n { width: 26px; text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: .82rem; flex: 0 0 auto; }
@@ -399,9 +350,8 @@ body[data-perf="lite"] .screen { animation: none; }
 .listrow .a { flex: 0 0 auto; }
 .listrow .w b { font-weight: 620; }
 .ok { color: var(--good); } .no { color: var(--bad); } .mid { color: var(--warn); }
-
 .pill { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; padding: 2px 10px; border-radius: 999px;
-  font-size: .7rem; font-weight: 700; border: 1px solid transparent; }
+font-size: .7rem; font-weight: 700; border: 1px solid transparent; }
 .pill.finished { background: rgba(15,138,77,.14); color: var(--good); }
 .pill.problem { background: rgba(168,98,10,.16); color: var(--warn); }
 .pill.notdone { background: rgba(198,44,61,.14); color: var(--bad); }
@@ -410,26 +360,22 @@ body[data-perf="lite"] .screen { animation: none; }
 :root[data-theme="dark"] .pill.finished { background: rgba(55,192,127,.18); }
 :root[data-theme="dark"] .pill.problem { background: rgba(224,164,74,.18); }
 :root[data-theme="dark"] .pill.notdone { background: rgba(255,114,133,.16); }
-
 .empty { text-align: center; padding: 26px 16px; color: var(--ink-2); }
 .empty svg { width: 40px; height: 40px; opacity: .5; margin-bottom: 8px; }
 .empty b { display: block; color: var(--ink); font-size: 1rem; margin-bottom: 4px; }
-
 .bar { height: 8px; border-radius: 999px; background: var(--line-2); overflow: hidden; }
 .bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--acc), var(--acc-2));
-  transition: width 240ms var(--ease); }
+transition: width 240ms var(--ease); }
 body[data-perf="lite"] .bar > i { transition: none; }
 .bar.thin { height: 5px; }
-
-/* big circular glass lens play button with progress ring */
 .lens { position: relative; width: 148px; height: 148px; flex: 0 0 auto; }
 .lens button {
-  position: absolute; top: 12px; left: 12px; right: 12px; bottom: 12px;
-  border-radius: 50%; border: 0; cursor: pointer; color: #fff;
-  background: linear-gradient(160deg, var(--acc), var(--acc-2));
-  box-shadow: 0 8px 28px rgba(70,60,220,.4), inset 0 2px 0 rgba(255,255,255,.4);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 160ms var(--ease); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+position: absolute; top: 12px; left: 12px; right: 12px; bottom: 12px;
+border-radius: 50%; border: 0; cursor: pointer; color: #fff;
+background: linear-gradient(160deg, var(--acc), var(--acc-2));
+box-shadow: 0 8px 28px rgba(70,60,220,.4), inset 0 2px 0 rgba(255,255,255,.4);
+display: flex; align-items: center; justify-content: center;
+transition: transform 160ms var(--ease); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 :root[data-theme="dark"] .lens button { color: #0b0d16; }
 .lens button:active { transform: scale(.95); }
@@ -439,8 +385,6 @@ body[data-perf="lite"] .bar > i { transition: none; }
 .lens .ring .bg { stroke: var(--line-2); }
 .lens .ring .fg { stroke: var(--acc); transition: stroke-dashoffset 200ms linear; }
 body[data-perf="lite"] .lens .ring .fg { transition: none; }
-
-/* sound bars */
 .bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
 .bars i { width: 4px; height: 6px; border-radius: 2px; background: var(--acc); }
 .bars[data-on="1"] i { animation: bounce 1s ease-in-out infinite; }
@@ -449,42 +393,36 @@ body[data-perf="lite"] .lens .ring .fg { transition: none; }
 @keyframes bounce { 0%,100% { height: 6px; opacity: .55; } 50% { height: 22px; opacity: 1; } }
 body[data-perf="lite"] .bars { display: none; }
 @media (prefers-reduced-motion: reduce) { .bars i { animation: none !important; } }
-
-/* ============================================================
-   7. LAYERS: full-screen sheets, modals, toasts
-   ============================================================ */
 .layer {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 60;
-  display: flex; flex-direction: column;
-  background: var(--bg1);
-  background-image: linear-gradient(160deg, var(--bg1), var(--bg2));
-  animation: layerIn 200ms var(--ease) both;
-  overscroll-behavior: contain;
+position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 60;
+display: flex; flex-direction: column;
+background: var(--bg1);
+background-image: linear-gradient(160deg, var(--bg1), var(--bg2));
+animation: layerIn 200ms var(--ease) both;
+overscroll-behavior: contain;
 }
 @keyframes layerIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
 body[data-perf="lite"] .layer { animation: none; }
 .layer .lhead {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: calc(12px + var(--safe-t)) 14px 10px;
-  border-bottom: 1px solid var(--line-2); flex: 0 0 auto;
+display: flex; align-items: center; justify-content: space-between; gap: 10px;
+padding: calc(12px + var(--safe-t)) 14px 10px;
+border-bottom: 1px solid var(--line-2); flex: 0 0 auto;
 }
 .layer .lbody { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 14px; }
 .layer .lfoot { flex: 0 0 auto; padding: 12px 14px calc(14px + var(--safe-b)); border-top: 1px solid var(--line-2); }
-
-/* bottom sheet */
 .sheet {
-  position: fixed; z-index: 70; left: 0; right: 0; bottom: 0;
-  max-height: 88vh; display: flex; flex-direction: column;
-  background: var(--glass-solid);
-  border-radius: var(--r4) var(--r4) 0 0;
-  border-top: 1px solid var(--line);
-  box-shadow: var(--shadow2);
-  animation: sheetUp 240ms var(--ease) both;
-  padding-bottom: var(--safe-b);
+position: fixed; z-index: 70; left: 0; right: 0; bottom: 0;
+max-height: 88vh; display: flex; flex-direction: column;
+background: var(--glass-solid);
+border-radius: var(--r4) var(--r4) 0 0;
+border-top: 1px solid var(--line);
+box-shadow: var(--shadow2);
+animation: sheetUp 240ms var(--ease) both;
+padding-bottom: var(--safe-b);
 }
 @supports (backdrop-filter: blur(28px)) or (-webkit-backdrop-filter: blur(28px)) {
-  .sheet { background: var(--glass-2); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
-  body[data-perf="lite"] .sheet { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sheet { background: var(--glass-2); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
+body[data-perf="lite"] .sheet { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @keyframes sheetUp { from { transform: translateY(14%); opacity: .4; } to { transform: none; opacity: 1; } }
 body[data-perf="lite"] .sheet { animation: none; }
@@ -493,45 +431,37 @@ body[data-perf="lite"] .sheet { animation: none; }
 .sheet .sbody { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 18px; }
 .sheet .sfoot { flex: 0 0 auto; padding: 10px 16px calc(12px + var(--safe-b)); border-top: 1px solid var(--line-2); }
 @media (min-width: 720px) {
-  .sheet { left: 50%; transform: translateX(-50%); width: 620px; border-radius: var(--r4); bottom: 20px; }
-  @keyframes sheetUp { from { transform: translate(-50%, 14%); opacity: .4; } to { transform: translate(-50%, 0); opacity: 1; } }
+.sheet { left: 50%; transform: translateX(-50%); width: 620px; border-radius: var(--r4); bottom: 20px; }
+@keyframes sheetUp { from { transform: translate(-50%, 14%); opacity: .4; } to { transform: translate(-50%, 0); opacity: 1; } }
 }
 .scrim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 65; background: var(--scr);
-  animation: fade 200ms var(--ease) both; }
+animation: fade 200ms var(--ease) both; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 body[data-perf="lite"] .scrim { animation: none; }
-
-/* modal card */
 .modal { position: fixed; z-index: 80; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: 92vw; max-width: 420px; width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
-  background: var(--glass-solid); border-radius: var(--r3); border: 1px solid var(--line);
-  box-shadow: var(--shadow2); padding: 18px; animation: pop 200ms var(--ease) both; }
+width: 92vw; max-width: 420px; width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
+background: var(--glass-solid); border-radius: var(--r3); border: 1px solid var(--line);
+box-shadow: var(--shadow2); padding: 18px; animation: pop 200ms var(--ease) both; }
 @keyframes pop { from { opacity: 0; transform: translate(-50%,-46%) scale(.96); } to { opacity: 1; transform: translate(-50%,-50%); } }
-/* Flex-centred cards must not use the translated modal animation. */
 .modal.flex-card { position: relative; top: auto; left: auto; transform: none;
-  width: 100%; max-width: 440px; animation: pop-flex 200ms var(--ease) both; }
+width: 100%; max-width: 440px; animation: pop-flex 200ms var(--ease) both; }
 @keyframes pop-flex { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 body[data-perf="lite"] .modal { animation: none; }
-
 #toasts { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: calc(96px + var(--safe-b));
-  display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 460px; width: min(100%, 460px);
-  padding: 12px 14px; border-radius: var(--r2); background: var(--glass-solid);
-  border: 1px solid var(--line); box-shadow: var(--shadow2); font-size: .9rem;
-  animation: toastIn 200ms var(--ease) both; }
+padding: 12px 14px; border-radius: var(--r2); background: var(--glass-solid);
+border: 1px solid var(--line); box-shadow: var(--shadow2); font-size: .9rem;
+animation: toastIn 200ms var(--ease) both; }
 @supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-  .toast { background: var(--glass-2); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
-  body[data-perf="lite"] .toast { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.toast { background: var(--glass-2); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+body[data-perf="lite"] .toast { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @keyframes toastIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 body[data-perf="lite"] .toast { animation: none; }
 .toast .msg { flex: 1 1 auto; }
 .toast.out { animation: toastOut 180ms var(--ease) both; }
 @keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
-
-/* ============================================================
-   8. PLAYER
-   ============================================================ */
 .playerwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
 .wordcard { width: 100%; max-width: 520px; width: min(100%, 520px); padding: 22px 18px; border-radius: var(--r4); }
 .wordbig { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
@@ -542,7 +472,7 @@ body[data-perf="lite"] .toast { animation: none; }
 .countdown .cd-bg { stroke: var(--line-2); }
 .countdown .cd-fg { stroke: var(--acc-2); transition: stroke-dashoffset 200ms linear; }
 .countdown .num { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 body[data-perf="lite"] .countdown .cd-fg { transition: none; }
 .ansinput { font-size: 1.25rem; text-align: center; min-height: 58px; letter-spacing: .01em; }
 .ctrlgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; width: 100%; max-width: 520px; }
@@ -551,24 +481,20 @@ body[data-perf="lite"] .countdown .cd-fg { transition: none; }
 .shake { animation: shake 380ms ease; }
 @keyframes shake { 10%,90% { transform: translateX(-3px); } 30%,70% { transform: translateX(5px); } 50% { transform: translateX(-6px); } }
 body[data-perf="lite"] .shake { animation: none; }
-
-/* PIN pad */
 .pinpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 14px auto 0; }
 .pinpad button { min-height: 66px; font-size: 1.5rem; font-weight: 650; border-radius: var(--r2);
-  border: 1px solid var(--line-2); background: var(--glass-3); cursor: pointer;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 120ms var(--ease); }
+border: 1px solid var(--line-2); background: var(--glass-3); cursor: pointer;
+touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 120ms var(--ease); }
 .pinpad button:active { transform: scale(.94); }
 .dots { display: flex; gap: 12px; justify-content: center; margin: 8px 0 2px; }
 .dots i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--ink-3); }
 .dots i.on { background: var(--acc); border-color: var(--acc); }
-
-/* admin segmented tabs */
 .adminsticky { position: sticky; top: 0; z-index: 6; background: var(--glass-solid); }
 .admintabs { position: relative; padding: 8px 0 10px;
-  background: linear-gradient(180deg, var(--bg1) 62%, rgba(0,0,0,0)); }
+background: linear-gradient(180deg, var(--bg1) 62%, rgba(0,0,0,0)); }
 .unlockedbar { position: relative; display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; border-radius: var(--r1); background: rgba(122,60,240,.14);
-  border: 1px solid rgba(122,60,240,.32); font-size: .82rem; font-weight: 640; margin-bottom: 10px; }
+padding: 8px 12px; border-radius: var(--r1); background: rgba(122,60,240,.14);
+border: 1px solid rgba(122,60,240,.32); font-size: .82rem; font-weight: 640; margin-bottom: 10px; }
 .grid2 { display: grid; gap: 10px; grid-template-columns: 1fr; }
 @media (min-width: 760px) { .grid2 { grid-template-columns: 1fr 1fr; } }
 .grid3 { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -579,30 +505,24 @@ body[data-perf="lite"] .shake { animation: none; }
 .statbar { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 8px 0; }
 .statbar .col { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; min-width: 0; }
 .statbar .col i { display: block; width: 100%; max-width: 34px; border-radius: 6px 6px 3px 3px;
-  background: linear-gradient(180deg, var(--acc), var(--acc-2)); }
+background: linear-gradient(180deg, var(--acc), var(--acc-2)); }
 .statbar .col span { font-size: .64rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .planrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-2); }
 .planrow .d { flex: 0 0 auto; width: 44px; font-weight: 640; font-size: .86rem; }
 .planrow select { flex: 1 1 auto; }
-
-/* diff letters */
 .diff b { color: var(--good); font-weight: 700; }
 .diff s { color: var(--bad); text-decoration: line-through; }
 .confetti { position: fixed; top: -10px; width: 9px; height: 14px; z-index: 95; pointer-events: none; border-radius: 2px; }
-
-/* score ring */
 .scorering { width: 132px; height: 132px; position: relative; margin: 0 auto; }
 .scorering svg { transform: rotate(-90deg); }
 .scorering circle { fill: none; stroke-width: 11; stroke-linecap: round; }
 .scorering .bg { stroke: var(--line-2); }
 .scorering .fg { stroke: var(--good); transition: stroke-dashoffset 700ms var(--ease); }
 .scorering .lbl { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; }
+align-items: center; justify-content: center; }
 .scorering .lbl b { font-size: 1.7rem; font-weight: 750; line-height: 1; }
 .scorering .lbl span { font-size: .7rem; color: var(--ink-2); }
 body[data-perf="lite"] .scorering .fg { transition: none; }
-
-/* diagnostic rows */
 .diagrow { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
 .diagrow .ic { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .diagrow .ic svg { width: 14px; height: 14px; }
@@ -612,29 +532,22 @@ body[data-perf="lite"] .scorering .fg { transition: none; }
 .diagrow .tx { flex: 1 1 auto; min-width: 0; }
 .diagrow .tx b { display: block; font-weight: 640; font-size: .92rem; }
 .diagrow .tx span { font-size: .78rem; color: var(--ink-2); }
-
 kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--line-2);
-  background: var(--glass-3); font-size: .74rem; font-family: inherit; }
-
-/* ============================================================
-   9. PRINT VIEW (A4 numbered word list with writing lines)
-   ============================================================ */
+background: var(--glass-3); font-size: .74rem; font-family: inherit; }
 #printview { display: none; }
 @media print {
-  body { background: #fff; }
-  #bg, #tabbar, #toasts, .noprint { display: none !important; }
-  #app { display: block; padding: 0; }
-  .screen, .layer, .sheet, .modal, .scrim { display: none !important; }
-  #printview { display: block; color: #000; font-size: 12pt; }
-  #printview h1 { font-size: 18pt; margin-bottom: 6pt; }
-  #printview .pv-sub { font-size: 10pt; margin-bottom: 14pt; }
-  #printview ol { margin: 0; padding-left: 26pt; }
-  #printview li { margin-bottom: 4pt; font-size: 11.5pt; }
-  #printview .lines { margin: 6pt 0 12pt 0; }
-  #printview .lines i { display: block; border-bottom: 1px solid #666; height: 22pt; }
+body { background: #fff; }
+#bg, #tabbar, #toasts, .noprint { display: none !important; }
+#app { display: block; padding: 0; }
+.screen, .layer, .sheet, .modal, .scrim { display: none !important; }
+#printview { display: block; color: #000; font-size: 12pt; }
+#printview h1 { font-size: 18pt; margin-bottom: 6pt; }
+#printview .pv-sub { font-size: 10pt; margin-bottom: 14pt; }
+#printview ol { margin: 0; padding-left: 26pt; }
+#printview li { margin-bottom: 4pt; font-size: 11.5pt; }
+#printview .lines { margin: 6pt 0 12pt 0; }
+#printview .lines i { display: block; border-bottom: 1px solid #666; height: 22pt; }
 }
-
-/* Device safety overrides: old Safari ignores min(), gap and :focus-visible. */
 input, textarea, select { font-size: 16px; }
 :root[data-size="l"] input, :root[data-size="l"] textarea, :root[data-size="l"] select { font-size: 18px; }
 :root[data-size="xl"] input, :root[data-size="xl"] textarea, :root[data-size="xl"] select { font-size: 20.5px; }
@@ -646,63 +559,56 @@ input[type="checkbox"] { width: 24px; min-width: 24px; height: 24px; }
 button:focus, a:focus, input:focus, textarea:focus, select:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
 table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+*, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after { animation: none !important; transition: none !important; }
-
-/* Performance policy: scrolling cards are tinted solids, never blur layers.
-   Only the fixed tabbar and the single top sheet may blur in Full mode. */
 body * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 body .blob { display: none; }
 body #grain { display: none; }
 body .glass, body .toast { background: var(--glass-solid); }
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
-  body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
-    -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
-    backdrop-filter: blur(12px) saturate(140%) !important;
-  }
+body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
+-webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+backdrop-filter: blur(12px) saturate(140%) !important;
+}
 }
 body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after {
-  filter: none !important; box-shadow: none !important; text-shadow: none !important;
-  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+filter: none !important; box-shadow: none !important; text-shadow: none !important;
+-webkit-backdrop-filter: none !important; backdrop-filter: none !important;
 }
 @media (prefers-reduced-transparency: reduce) {
-  body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
-    background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-  }
+body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
+background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
 }
 :root[data-hc="on"] body[data-perf="full"] #tabbar, :root[data-hc="on"] body[data-perf="full"] .sheet {
-  background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
 }
 .paste-scroll { max-height: 340px; overflow: auto; }
 .paste-scroll table { width: 100%; min-width: 640px; }
 .paste-scroll td { vertical-align: top; }
 .paste-scroll input { font-size: 16px; min-width: 130px; }
 .paste-scroll td:last-child { min-width: 175px; }
-
-
-/* v2.0.0 (A7): auto-lite keeps a crisp translucent "liquid glass" look using
-   gradients and a specular top edge instead of backdrop-filter repaints. */
 html[data-perf="lite"] .glass,
 html[data-perf="lite"] .card,
 html[data-perf="lite"] .sheet,
 html[data-perf="lite"] #topbar,
 html[data-perf="lite"] #tabbar {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(240,245,255,.70));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 24px rgba(20,28,55,.10);
+-webkit-backdrop-filter: none !important;
+backdrop-filter: none !important;
+background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(240,245,255,.70));
+box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 24px rgba(20,28,55,.10);
 }
 html[data-perf="lite"] .scrollme { will-change: auto; }
 @media (prefers-color-scheme: dark) {
-  html[data-perf="lite"] .glass,
-  html[data-perf="lite"] .card,
-  html[data-perf="lite"] .sheet,
-  html[data-perf="lite"] #topbar,
-  html[data-perf="lite"] #tabbar {
-    background: linear-gradient(180deg, rgba(40,46,70,.90), rgba(22,26,42,.76));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 24px rgba(0,0,0,.30);
-  }
+html[data-perf="lite"] .glass,
+html[data-perf="lite"] .card,
+html[data-perf="lite"] .sheet,
+html[data-perf="lite"] #topbar,
+html[data-perf="lite"] #tabbar {
+background: linear-gradient(180deg, rgba(40,46,70,.90), rgba(22,26,42,.76));
+box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 24px rgba(0,0,0,.30);
+}
 }
 .chip.good { color: #0a6b3d; background: rgba(15,138,77,.12); }
 html[data-theme="dark"] .chip.good { color: #7fe0ac; }
@@ -710,7 +616,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 </head>
 <body data-perf="auto">
 <!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
-<audio id="sdpAudio" preload="auto" playsinline></audio>
+<audio id="sdpAudio" preload="auto" playsinline crossorigin="anonymous"></audio>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -1521,6 +1427,9 @@ var CONFIG = {
   pollMs: 20000,
   netTimeout: 8000,
   dictHost: "https://api.dictionaryapi.dev/api/v2/entries/en/",
+  wikiDefHost: "https://en.wiktionary.org/api/rest_v1/page/definition/",
+  wikiMediaHost: "https://en.wiktionary.org/api/rest_v1/page/media-list/",
+  ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
   oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
   ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
   maxDictCache: 200,
@@ -1531,6 +1440,14 @@ var CONFIG = {
   cambridge: "https://dictionary.cambridge.org/dictionary/english/",
   gasPrefix: "https://script.google.com/macros/s/",
   gasSuffix: "/exec",
+  /* A9 v2.0.0 real-time transport: free, open-source ntfy.sh topics. No key,
+     no account and no server of our own; the browser streams them with SSE. */
+  ntfyHost: "https://ntfy.sh",
+  ntfyState: "sdp_dictationb1_state_v2",
+  ntfyComm: "sdp_dictationb1_comm_v2",
+  ntfyInbox: "sdp_dictationb1_inbox_v2",
+  sseRetryMs: 15000,
+  livePollMs: 45000,
   ratePostMs: 30000,
   ratePostHour: 5,
   commentLen: 280,
@@ -2190,6 +2107,7 @@ var DB = {
     d = DB.migrate(d);
     this.data = d;
     if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
+    DB.refreshSessionDate(this.data);
     if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
     /* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
     if (!this.data.admin.pinHash) {
@@ -2285,6 +2203,17 @@ var DB = {
     if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
     d.v = CONFIG.schema;
     return d;
+  },
+  /* Defect A: a session that was left on a past, unplanned date is moved to the
+     real date, and the weekday is always derived from the date on screen. A
+     published date is never overwritten. */
+  refreshSessionDate: function (d) {
+    d = d || this.data;
+    var s = d.session, today = U.dateKey(new Date()), planned = (d.plan && d.plan.dates) ? d.plan.dates[s.date] : null;
+    if (!s.date || (!planned && s.date < today)) { s.date = today; s.day = DAYS[U.weekdayIndex(new Date())]; return true; }
+    var day = new Date(s.date + "T12:00:00");
+    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+    return false;
   },
   findList: function (d, id) {
     var arr = (d || this.data).lists;
@@ -3668,6 +3597,7 @@ var Speech = {
       a.id = "sdpAudio";
       a.setAttribute("preload", "auto");
       a.setAttribute("playsinline", "");
+      try { a.crossOrigin = "anonymous"; } catch (e1) {}
       try { document.body.appendChild(a); } catch (e) {}
     }
     this.audio = a;
@@ -3687,6 +3617,12 @@ var Speech = {
   streamUrl: function (text) {
     return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=" + encodeURIComponent(text);
   },
+  /* Source 3 (backup): the same free British voice through a second, fully
+     open stream host, used automatically when the first one is blocked. */
+  backupUrl: function (text) {
+    return CONFIG.ttsBackupHost + encodeURIComponent(text);
+  },
+  streamSources: function (text) { return [this.streamUrl(text), this.backupUrl(text)]; },
   anyEnglish: function () {
     for (var i = 0; i < this.voices.length; i++) if (/^en/i.test(this.normLang(this.voices[i].lang))) return this.voices[i];
     return null;
@@ -3694,6 +3630,16 @@ var Speech = {
   /* one <audio> element for every spoken sound: iOS only lets an element that
      has already played inside a tap be started again from a timer. */
   playAudio: function (src, rate, ms, cb) {
+    var self = this, done = U.once(cb || function () {});
+    /* the shared element asks for a CORS-friendly copy first (crossorigin
+       ="anonymous"); if a host does not send the headers the same file is
+       played once more without them, so no word is ever silenced. */
+    this.playOnce(src, rate, ms, function (ok) {
+      if (ok) { done(true); return; }
+      self.playOnce(src, rate, ms, done, true);
+    });
+  },
+  playOnce: function (src, rate, ms, cb, plain) {
     var self = this;
     cb = U.once(cb || function () {});
     var a = this.el();
@@ -3709,6 +3655,7 @@ var Speech = {
     }
     var timer = setTimeout(function () { try { a.pause(); } catch (e) {} done(false); }, Math.max(2200, ms || 6000));
     try { a.pause(); } catch (e) {}
+    if (plain) { try { a.removeAttribute("crossorigin"); a.crossOrigin = null; } catch (e2) {} }
     a.src = src;
     a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
     try { a.playbackRate = U.clamp(rate === undefined ? 0.85 : rate, 0.6, 1.2); } catch (e) {}
@@ -3744,8 +3691,8 @@ var Speech = {
   audioLabel: function () {
     var online = U.nav("onLine", true) !== false;
     if (this.ukVoices.length) return "UK Audio Ready (British Voice" + (online ? " + Dictionary Audio)" : ")");
-    if (online) return "UK Audio Ready (Dictionary Audio + Cloud British Voice)";
-    if (this.anyEnglish()) return "UK Audio: English device voice (offline)";
+    if (online) return "UK Audio Ready: British Dictionary Recording + Cloud British Voice";
+    if (this.anyEnglish()) return "UK Audio Ready: English device voice (offline)";
     return "No British audio on this device - words are shown";
   },
   audioReady: function () { return !!(this.ukVoices.length || U.nav("onLine", true) !== false || this.anyEnglish()); },
@@ -3760,6 +3707,7 @@ var Speech = {
       if (a) {
         a.muted = false;
         a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
+        try { a.removeAttribute("crossorigin"); a.crossOrigin = null; } catch (e0) {}
         a.src = this.SILENT;
         var self = this;
         var p = a.play();
@@ -3903,18 +3851,32 @@ var Speech = {
       try { window.speechSynthesis.speak(u); }
       catch (e3) { end({ err: "speak-failed" }); }
     }
+    /* Source 3: every free British TTS stream is tried in turn, then the
+       device voice, so a blocked host can never silence a dictation. */
     function stream(text, rate) {
-      self.lastTier = "cloud";
-      var ms = 1500 + String(text).length * 110;
-      self.playAudio(self.streamUrl(text), rate, ms, function (ok) {
+      var sources = self.streamSources(text);
+      var ms = 1600 + String(text).length * 120;
+      var attempt = 0;
+      function tryNext() {
         if (canceled()) return;
-        if (ok) { qi++; step(60); return; }
-        streamDead = true;
-        if (self.supported && !self.textOnly && self.anyEnglish()) { voice(text, rate); return; }
-        qi++;
-        if (qi >= queue.length) { self.chime(); finish({ ok: false, err: "no audio" }); return; }
-        step(60);
-      });
+        if (attempt >= sources.length) {
+          streamDead = true;
+          self.lastTier = "none";
+          if (self.supported && !self.textOnly && self.anyEnglish()) { voice(text, rate); return; }
+          qi++;
+          if (qi >= queue.length) { self.chime(); finish({ ok: false, err: "no audio" }); return; }
+          step(60);
+          return;
+        }
+        var src = sources[attempt++];
+        self.lastTier = attempt === 1 ? "cloud" : "cloud-backup";
+        self.playAudio(src, rate, ms, function (ok) {
+          if (canceled()) return;
+          if (ok) { qi++; step(60); return; }
+          tryNext();
+        });
+      }
+      tryNext();
     }
     /* iOS needs a short gap after a cancel before the next speak */
     setTimeout(next, 90);
@@ -4117,8 +4079,18 @@ var Eng = {
     this.runItem(this.idx);
   },
 
+  /* A7.3: a word step is debounced by 400 ms, so a slow phone never writes
+     localStorage on every keystroke. Nothing is lost: the end of a session,
+     a pause and a publish all flush the snapshot immediately. */
   saveSnapshot: function () {
     if (this.st === "idle" || this.st === "finished") return;
+    var self = this;
+    if (this.snapshotTimer) clearTimeout(this.snapshotTimer);
+    this.snapshotTimer = setTimeout(function () { self.snapshotTimer = null; self.flushSnapshot(); }, 400);
+  },
+  flushSnapshot: function () {
+    if (this.st === "idle" || this.st === "finished") return;
+    if (this.snapshotTimer) { clearTimeout(this.snapshotTimer); this.snapshotTimer = null; }
     DB.data.snapshot = {
       listId: this.listId, listName: this.listName, listVersion: this.listVersion,
       words: this.words.slice(0), index: this.idx, order: this.order.slice(0),
@@ -4745,12 +4717,14 @@ function publishCompletion(rec, action) {
   if (action === "update") return null;
   c = {
     id: U.uid("c"), ts: rec.ts || Date.now(), name: d.profile.nickname || "Student", status: "finished",
-    text: text, meta: meta, pinned: false, hidden: false, reply: "", pending: !Cloud.mode, sent: false, mine: true, auto: true
+    text: text, meta: meta, pinned: false, hidden: false, reply: "", pending: !(Cloud.mode || Cloud.liveOn()), sent: false, mine: true, auto: true
   };
   d.comments.unshift(c);
   if (d.comments.length > CONFIG.maxComments) d.comments.length = CONFIG.maxComments;
   rec.commId = c.id;
   Cloud.queue({ action: "comment", cid: c.id, name: c.name, status: c.status, text: c.text, meta: c.meta });
+  /* the Community tab of every phone updates the second a student finishes */
+  Cloud.postCompletion(rec);
   return c;
 }
 
@@ -4799,6 +4773,13 @@ var Results = {
     };
     DB.data.history.unshift(rec);
     if (DB.data.history.length > CONFIG.maxHistory) DB.data.history.length = CONFIG.maxHistory;
+    /* Every real completion is recorded locally as a student result too, so
+       the lecturer's Class stats can only ever show numbers that happened. */
+    Cloud.mergeResults([{
+      id: rec.id, ts: rec.ts, sessionNo: rec.sessionNo, wordCount: rec.wordCount,
+      score: Math.round(rec.score), percent: rec.percent, deviceType: rec.deviceType,
+      ukVoice: rec.ukVoice, mode: rec.mode, name: (DB.data.profile && DB.data.profile.nickname) || "Student"
+    }]);
     /* A6 automatic completion post + the once-per-session backup copy (A7.3) */
     publishCompletion(rec);
     DB.saveNow();
@@ -5088,6 +5069,7 @@ Eng.finish = function (early) {
   var self = this;
   if (this.st === "finished") return;
   this.captureAnswer();
+  this.flushSnapshot();
   this.runId++;
   this.clearTimers();
   Speech.stop();
@@ -5157,13 +5139,15 @@ var Dict = {
       done = true;
       clearTimeout(timer);
       var res = Dict.parse(json);
-      if (res) {
-        res.ts = Date.now();
-        if (!DB.data.dictCache[key]) DB.data.dictCache[key] = {};
-        var merged = DB.data.dictCache[key];
-        Object.keys(res).forEach(function (k) { if (res[k] !== "" && res[k] !== undefined) merged[k] = res[k]; });
-        DB.trimCache();
-        DB.save(true);   /* light save: a cached lookup never costs a backup copy */
+      if (res) Dict.store(key, res);
+      /* the free Dictionary API sometimes has no example sentence: Wiktionary
+         fills the gap, and its open British recordings become an extra source */
+      if (!res || !U.trim(res.example) || !res.audio) {
+        Dict.wikiLookup(key, function (extra) {
+          if (extra) Dict.store(key, extra);
+          cb && cb(DB.data.dictCache[key] || res || cache || null);
+        });
+        return;
       }
       cb && cb(res || cache || null);
     }, function () {
@@ -5174,34 +5158,115 @@ var Dict = {
     });
   },
 
+  /* every real example sentence the dictionary returns counts: the primary
+     sense first, then the other senses. Nothing is thrown away because of a
+     word-count rule. */
+  pickExample: function (entry) {
+    var ms = (entry && entry.meanings) || [], i, j;
+    for (i = 0; i < ms.length; i++) {
+      var defs = (ms[i] && ms[i].definitions) || [];
+      for (j = 0; j < defs.length; j++) {
+        var ex = defs[j] && defs[j].example;
+        if (ex && U.trim(ex)) return U.clip(String(ex), 400);
+      }
+    }
+    return "";
+  },
+  /* Source 1c: any British recording the entry advertises, UK first. */
+  pickAudio: function (entry) {
+    var ph = (entry && entry.phonetics) || [], best = "", rank = 9, ipa = "";
+    for (var i = 0; i < ph.length; i++) {
+      var a = ph[i] && ph[i].audio;
+      if (typeof a !== "string" || !/^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(a)) continue;
+      var r = /-uk\.mp3/i.test(a) ? 0 : (/[_-]gb[_-]/i.test(a) ? 1 : 2);
+      if (r < rank) { rank = r; best = a; ipa = ph[i].text ? String(ph[i].text).replace(/^\//, "").replace(/\/$/, "") : ""; }
+    }
+    return { audio: best, ipa: ipa };
+  },
   parse: function (json) {
     try {
       if (!json || !json.length) return null;
       var e = json[0];
-      var ipa = "";
-      var audio = "";
-      var i;
-      var ph = e.phonetics || [];
-      for (i = 0; i < ph.length; i++) {
-        if (!audio && ph[i] && typeof ph[i].audio === "string" && /^https:\/\/[^\s]+-uk\.mp3(?:[?#].*)?$/i.test(ph[i].audio)) {
-          audio = ph[i].audio;
-          ipa = ph[i].text ? String(ph[i].text).replace(/^\//, "").replace(/\/$/, "") : "";
-        }
-      }
-      if (audio && !/^https:\/\//i.test(audio)) audio = "";
+      var found = this.pickAudio(e);
+      var audio = found.audio, ipa = found.ipa;
       var meaning = "", example = "", pos = "";
       var ms = e.meanings || [];
-      for (i = 0; i < ms.length && !meaning; i++) {
+      for (var i = 0; i < ms.length && !meaning; i++) {
         var defs = (ms[i] && ms[i].definitions) || [];
         if (defs.length && defs[0].definition) {
-          meaning = String(defs[0].definition); pos = U.clip(ms[i].partOfSpeech,40);
-          example = U.clip(defs[0].example,200);
+          meaning = String(defs[0].definition); pos = U.clip(ms[i].partOfSpeech, 40);
         }
       }
+      example = this.pickExample(e);
       if (meaning.length > 160) meaning = meaning.slice(0, 157) + "\u2026";
       if (!ipa && !meaning && !audio) return null;
       return { ipa: audio ? ipa : "", meaning: meaning, audio: audio, example: example, pos: pos, ukSource: !!audio };
     } catch (err) { return null; }
+  },
+  /* Source 1d + fallback meaning/example: the open Wiktionary REST API. */
+  wikiLookup: function (word, cb) {
+    cb = U.once(cb || function () {});
+    if (!window.fetch || U.nav("onLine", true) === false) { cb(null); return; }
+    var out = null, done = false;
+    function finish() { if (done) return; done = true; cb(out); }
+    var timer = setTimeout(finish, 4000);
+    var jobs = 2, left = jobs;
+    function one() { left--; if (left <= 0) { clearTimeout(timer); finish(); } }
+    function merge(patch) {
+      if (!patch) return;
+      if (!out) out = {};
+      Object.keys(patch).forEach(function (k) { if (patch[k] && !out[k]) out[k] = patch[k]; });
+    }
+    try {
+      fetch(CONFIG.wikiDefHost + encodeURIComponent(word), { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.json();
+      }).then(function (json) {
+        var en = json && json.en ? json.en : [];
+        for (var i = 0; i < en.length; i++) {
+          var defs = (en[i] && en[i].definitions) || [];
+          for (var j = 0; j < defs.length; j++) {
+            var d = defs[j] || {};
+            if (!out || !out.meaning) merge({ meaning: d.definition ? U.clip(String(d.definition), 300) : "" });
+            var ex = "";
+            if (Array.isArray(d.examples) && d.examples.length) ex = d.examples[0];
+            else if (Array.isArray(d.parsedExamples) && d.parsedExamples.length) ex = (d.parsedExamples[0] || {}).example;
+            if (ex) merge({ example: U.clip(String(ex), 400) });
+          }
+        }
+        one();
+      }, one);
+      fetch(CONFIG.wikiMediaHost + encodeURIComponent(word), { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.json();
+      }).then(function (json) {
+        var items = (json && json.items) || [];
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i] || {};
+          var title = String(it.title || "");
+          if (!/\.(mp3|ogg|oga|wav)$/i.test(title)) continue;
+          if (!/(en[-_]uk|uk[-_]|british)/i.test(title)) continue;
+          var src = (it.srcset && it.srcset.length ? it.srcset[0].src : it.url) || "";
+          if (!src) continue;
+          src = String(src).indexOf("//") === 0 ? "https:" + src : src;
+          if (!/^https:\/\//.test(src)) continue;
+          if (/\.mp3$/i.test(src)) merge({ audio: src }); else merge({ audioAlt: src });
+          break;
+        }
+        one();
+      }, one);
+    } catch (e) { clearTimeout(timer); finish(); }
+  },
+
+  store: function (key, res) {
+    if (!res) return null;
+    res.ts = res.ts || Date.now();
+    if (!DB.data.dictCache[key]) DB.data.dictCache[key] = {};
+    var merged = DB.data.dictCache[key];
+    Object.keys(res).forEach(function (k) { if (res[k] !== "" && res[k] !== undefined) merged[k] = res[k]; });
+    DB.trimCache();
+    DB.save(true);   /* light save: a cached lookup never costs a backup copy */
+    return merged;
   },
 
   /* UK audio file when the lookup has one, otherwise the four-tier engine */
@@ -5210,6 +5275,13 @@ var Dict = {
     var cache = DB.data.dictCache[U.norm(word)];
     if (cache && typeof cache.audio === "string" && /^https:\/\/[^\s]+\.mp3(?:[?#].*)?$/i.test(cache.audio)) {
       Speech.playAudio(cache.audio, r, 5200, function (ok) {
+        if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
+      });
+      return;
+    }
+    /* wiktionary ships open Ogg British recordings as well as MP3 */
+    if (cache && typeof cache.audioAlt === "string" && /^https:\/\//i.test(cache.audioAlt)) {
+      Speech.playAudio(cache.audioAlt, r, 5200, function (ok) {
         if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
       });
       return;
@@ -5948,12 +6020,39 @@ var Admin = {
     if (!d.session.date) d.session.date = now;
     if (dates && dates.length) { var day = new Date(dates[0] + "T12:00:00"); d.session.date = dates[0]; d.session.day = DAYS[U.weekdayIndex(day)]; d.session.autoDay = false; }
     d.session.listId = list.id;
-    if (!d.session.title) d.session.title = list.name;
+    this.syncSessionFromList(list);
     this.publish(list, true);
+    this.flushDraft(list);
     DB.saveNow();
+    /* A9: one live broadcast. Every phone that is open in class repaints with
+       the new words, session number, day, date and title immediately. */
+    var sent = Cloud.publishLive(Cloud.repoPayload(), function (res) {
+      if (res && res.ok) UI.toast("Live broadcast sent to all open phones.", { icon: "i-cloud", ms: 5000 });
+    });
     Screens.home();
     UI.renderNet();
-    UI.toast("Saved & published to all students \u00b7 " + list.words.length + " words \u00b7 v" + list.version + (Cloud.mode ? " \u00b7 syncing" : " \u00b7 on this device"), { icon: "i-check", ms: 6000 });
+    UI.toast("Published " + list.words.length + " words \u00b7 Session " + (d.session.no || "1") + " \u00b7 v" + list.version + (sent ? " \u00b7 live sync" : " \u00b7 will send when online"), { icon: "i-check", ms: 6000 });
+  },
+  /* Defect A: a list called "Session 4 words" always drives "SESSION 4" in the
+     Hero kicker, so the kicker and the title can never contradict each other. */
+  syncSessionFromList: function (list) {
+    var d = DB.data, s = d.session;
+    var m = /^Session\s+(\d+[A-Za-z]?)\b/i.exec(String((list && list.name) || ""));
+    if (m && !this.manualSession) s.no = m[1];
+    if (!s.date) s.date = U.dateKey(new Date());
+    var day = new Date(s.date + "T12:00:00");
+    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+    if (list) { s.listId = list.id; if (!s.title) s.title = list.name; }
+    s.autoDay = false;
+    this.manualSession = false;
+    return s;
+  },
+  /* the kept draft copy is dropped once a list is live (A7.3 storage) */
+  flushDraft: function (list) {
+    if (!list) return;
+    delete list.draftText; delete list.draftFormat;
+    if (this.draft) delete this.draft[list.id];
+    Eng.flushSnapshot();
   },
   /* ---------- the panel ---------- */
   layer: null,
@@ -6116,6 +6215,15 @@ Admin.tabWords = function (host) {
   ta.style.fontSize = "16px";
   ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : self.wordsText(list.words);
   ed.appendChild(ta);
+  /* A4: one tap right under the paste box does the whole job - save, sync the
+     session header, publish for students and broadcast live. */
+  var livePub = U.btn("Save & Publish Live (" + list.words.length + " words)", "i-cloud", "primary block xl");
+  livePub.style.marginTop = "8px";
+  livePub.style.position = "sticky";
+  livePub.style.bottom = "8px";
+  livePub.style.zIndex = "3";
+  U.on(livePub, "click", function () { publishNow(); });
+  ed.appendChild(livePub);
   var format = list.draftFormat || "auto", parsed = null, generation = 0;
   var banner = U.el("p", "small", ""); banner.setAttribute("role", "status"); ed.appendChild(banner);
   var switchFormat = U.btn("Read as columns", null, "sm soft");
@@ -6184,6 +6292,15 @@ Admin.tabWords = function (host) {
   function refresh() {
     if (!self.unlocked) return;
     parsed = self.parseWords(ta.value, format); remember(); renderPreview(); self.setBadge(badge, parsed);
+  }
+  /* one code path for both publish buttons: parse what is in the box right
+     now, refuse to publish a broken list, save + sync + broadcast on success. */
+  function publishNow() {
+    var finalWords = self.parseWords(ta.value, format);
+    self.setBadge(badge, finalWords);
+    if (!finalWords.items.length || finalWords.problems.length) { refresh(); UI.toast("Fix the preview problems before publishing."); return; }
+    var dates = selectedDates.length ? selectedDates.slice(0) : (target.value === "date" && targetDate.value ? [targetDate.value] : (target.value === "today" ? [U.dateKey(new Date())] : []));
+    self.saveAll(list, finalWords.items, dates, dates.length ? null : target);
   }
   U.on(ta, "input", function () { format = "auto"; remember(); });
   U.on(ta, "input", U.debounce(refresh, 220));
@@ -6299,7 +6416,9 @@ Admin.tabWords = function (host) {
       Dict.lookup(w.w, function (res) {
         if (!self.unlocked) return;
         if (res && res.meaning && !w.m) w.m = U.clip(res.meaning, 120);
-        if (res && res.example && !w.s && res.example.split(/\s+/).length >= 8 && res.example.split(/\s+/).length <= 14) w.s = U.clip(res.example, 200);
+        /* any real dictionary example sentence is kept - the old 8-to-14 word
+           filter threw away three quarters of the real sentences. */
+        if (res && res.example && !w.s) w.s = U.clip(res.example, 400);
         list.draft = true;
         setTimeout(stepFn, 120);
       });
@@ -6308,55 +6427,8 @@ Admin.tabWords = function (host) {
   brow3.appendChild(bFill); brow3.appendChild(prog);
   ed.appendChild(brow3);
 
-  /* reorder + delete words */
-  var wbox = this.card(host, "Reorder words (" + list.words.length + ")");
-  var wl = U.el("div", null, null);
-  wbox.appendChild(wl);
-  renderChunked(wl, list.words, function (x, i) {
-    var row = U.el("div", "listrow", null);
-    row.draggable = true;
-    U.on(row, "dragstart", function (ev) { if (ev.dataTransfer) ev.dataTransfer.setData("text/plain", String(i)); });
-    U.on(row, "dragover", function (ev) { ev.preventDefault(); });
-    U.on(row, "drop", function (ev) {
-      ev.preventDefault(); if (!ev.dataTransfer) return;
-      var from = Number(ev.dataTransfer.getData("text/plain"));
-      if (!isFinite(from) || from < 0 || from >= list.words.length || from === i) return;
-      var moved = list.words.splice(from, 1)[0]; list.words.splice(i, 0, moved);
-      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
-    });
-    row.appendChild(U.el("div", "n", String(i + 1)));
-    var w = U.el("div", "w", null);
-    w.appendChild(U.el("b", null, x.w));
-    if (x.s) w.appendChild(U.el("div", "tiny muted", x.s));
-    row.appendChild(w);
-    var up = U.btn("", "i-up", "sm ghost icon");
-    up.setAttribute("aria-label", "Move up");
-    var dn = U.btn("", "i-down", "sm ghost icon");
-    dn.setAttribute("aria-label", "Move down");
-    var del = U.btn("", "i-trash", "sm ghost icon");
-    del.setAttribute("aria-label", "Remove this word");
-    up.disabled = i === 0;
-    dn.disabled = i === list.words.length - 1;
-    U.on(up, "click", function () {
-      var t = list.words[i]; list.words[i] = list.words[i - 1]; list.words[i - 1] = t;
-      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
-    });
-    U.on(dn, "click", function () {
-      var t = list.words[i]; list.words[i] = list.words[i + 1]; list.words[i + 1] = t;
-      list.draft = true; delete list.draftText; delete self.draft[list.id]; DB.saveNow(); self.renderTab();
-    });
-    U.on(del, "click", function () {
-      var copy = list.words.slice(0);
-      list.words.splice(i, 1);
-      delete list.draftText; delete self.draft[list.id];
-      list.draft = true;
-      DB.saveNow();
-      UI.toast("\u201c" + x.w + "\u201d removed", { icon: "i-trash", undo: function () { list.words = copy; DB.saveNow(); self.renderTab(); } });
-      self.renderTab();
-    });
-    row.appendChild(up); row.appendChild(dn); row.appendChild(del);
-    wl.appendChild(row);
-  });
+  /* A8: the second 30-row table is gone. Reordering, deleting and editing all
+     happen in the one table above, so a low-end phone builds far fewer nodes. */
   var libAct = U.el("div", "btn-row tight", null);
   libAct.style.marginTop = "8px";
   var bDup = U.btn("Duplicate list", "i-copy", "sm soft");
@@ -6559,6 +6631,7 @@ Admin.tabWords = function (host) {
     var n = parseInt(String(d.session.no).replace(/[^0-9]/g, ""), 10);
     if (!isFinite(n)) n = 1;
     d.session.no = String(Math.max(1, n + delta)) + String(d.session.no || "").replace(/^[0-9]+/, "");
+    self.manualSession = true;   /* never re-derived from a list name after this */
     sessNo.textContent = d.session.no;
     DB.saveNow();
     Screens.home();
@@ -6579,6 +6652,7 @@ Admin.tabWords = function (host) {
       d.session.date = key;
       d.session.day = DAYS[U.weekdayIndex(day)];
       d.session.autoDay = false;
+      self.manualSession = true;
       DB.saveNow();
       self.renderTab();
     });
@@ -6593,13 +6667,7 @@ Admin.tabWords = function (host) {
   else status.textContent = S.unpublished;
   pub.appendChild(status);
   var pubBtn = U.btn("Save & Publish to All Students", "i-cloud", "primary block xl");
-  U.on(pubBtn, "click", function () {
-    var finalWords = self.parseWords(ta.value, format);
-    self.setBadge(badge, finalWords);
-    if (!finalWords.items.length || finalWords.problems.length) { refresh(); UI.toast("Fix the preview problems before publishing."); return; }
-    var dates = selectedDates.length ? selectedDates.slice(0) : (target.value === "date" && targetDate.value ? [targetDate.value] : (target.value === "today" ? [U.dateKey(new Date())] : []));
-    self.saveAll(list, finalWords.items, dates, dates.length ? null : target);
-  });
+  U.on(pubBtn, "click", function () { publishNow(); });
   pub.appendChild(pubBtn);
   var advanced = document.createElement("details");
   advanced.style.marginTop = "8px";
@@ -7164,33 +7232,36 @@ Admin.tabComments = function (host) {
 /* ---------- TAB 5: CLASS STATS ---------- */
 Admin.tabStats = function (host) {
   var d = DB.data;
-  if (Cloud.mode && d.results.length) {
-    var cloudStats = this.card(host, "Cloud class results");
-    cloudStats.appendChild(U.el("p", "small", d.results.length + " student results received."));
-    var exportCloud = U.btn("Export class results", "i-down", "soft"); U.on(exportCloud,"click",function () { var text=JSON.stringify(d.results,null,2); if (!U.download("class-results.json",text,"application/json")) U.selectForCopy(text); }); cloudStats.appendChild(exportCloud);
-  }
-  var box = this.card(host, "Class overview");
-  var counts = { finished: 0, problem: 0, notdone: 0, comment: 0 };
-  d.comments.forEach(function (c) { if (counts[c.status] !== undefined) counts[c.status]++; });
-  var grid = U.el("div", "grid3", null);
-  grid.appendChild(UI.statBox("finished", String(counts.finished)));
-  grid.appendChild(UI.statBox("had problems", String(counts.problem)));
-  grid.appendChild(UI.statBox("did not finish", String(counts.notdone)));
-  grid.appendChild(UI.statBox("results saved", String(d.history.length)));
-  box.appendChild(grid);
-
-  var bySession = {};
-  var devices = {};
-  var noUk = 0;
-  d.history.forEach(function (r) {
+  /* Defect B: the class numbers come from real student completions - the live
+     cloud completion events merged with everything this device has received -
+     and never from the lecturer's own single-browser practice history. A device
+     with no results yet honestly shows zero and fills in by itself. */
+  var rows = (d.results || []).slice(0);
+  var students = {}, bySession = {}, devices = {}, noUk = 0, sum = 0;
+  rows.forEach(function (r) {
+    students[r.name || r.deviceType || "Student"] = 1;
     var k = r.sessionNo || "?";
     if (!bySession[k]) bySession[k] = { n: 0, sum: 0 };
-    bySession[k].n++;
-    bySession[k].sum += (r.percent || 0);
-    var dev = r.deviceType || "Other";
-    devices[dev] = (devices[dev] || 0) + 1;
+    bySession[k].n++; bySession[k].sum += (r.percent || 0);
+    devices[r.deviceType || "Other"] = (devices[r.deviceType || "Other"] || 0) + 1;
     if (!r.ukVoice) noUk++;
+    sum += (r.percent || 0);
   });
+  var names = Object.keys(students).length;
+  var box = this.card(host, "Class overview");
+  box.appendChild(U.el("p", "small " + (rows.length ? "" : "muted"),
+    rows.length
+      ? rows.length + " student completion" + (rows.length === 1 ? "" : "s") + " from " + names + " student" + (names === 1 ? "" : "s") + ", received live over the class channel."
+      : "No student results yet. Nothing is counted until a student really finishes a session."));
+  var finished = 0;
+  d.comments.forEach(function (c) { if (c.status === "finished") finished++; });
+  var grid = U.el("div", "grid3", null);
+  grid.appendChild(UI.statBox("students finished", String(rows.length)));
+  grid.appendChild(UI.statBox("average score", rows.length ? Math.round(sum / rows.length) + "%" : "\u2013"));
+  grid.appendChild(UI.statBox("community posts", String(finished)));
+  box.appendChild(grid);
+  box.appendChild(U.el("p", "tiny muted", "Your own practice on this device is kept separate: " + (d.history || []).length + " personal session(s), never counted as class results."));
+
   var keys = Object.keys(bySession);
   if (keys.length) {
     var b2 = this.card(host, "Average score by session");
@@ -7201,40 +7272,38 @@ Admin.tabStats = function (host) {
       var bar = U.el("i", null, null);
       bar.style.height = Math.max(4, avg) + "%";
       col.appendChild(bar);
-      col.appendChild(U.el("span", null, k + " \u00b7 " + avg + "%"));
+      col.appendChild(U.el("span", null, k + " \u00b7 " + avg + "% \u00b7 " + bySession[k].n));
       bars.appendChild(col);
     });
     b2.appendChild(bars);
   }
   var b3 = this.card(host, "Devices");
   var dkeys = Object.keys(devices);
-  if (!dkeys.length) b3.appendChild(U.el("p", "small muted", "No results yet."));
+  if (!dkeys.length) b3.appendChild(U.el("p", "small muted", "No student devices yet."));
+  var maxN = 1;
+  dkeys.forEach(function (k) { maxN = Math.max(maxN, devices[k]); });
   dkeys.forEach(function (k) {
     var row = U.el("div", "listrow", null);
     row.appendChild(U.el("div", "w small", k));
     var bar = U.el("div", "bar thin", null);
     bar.style.width = "90px";
     var f = U.el("i", null, null);
-    var maxN = 1;
-    dkeys.forEach(function (k2) { maxN = Math.max(maxN, devices[k2]); });
     f.style.width = Math.round((devices[k] / maxN) * 100) + "%";
     bar.appendChild(f);
     row.appendChild(bar);
     row.appendChild(U.el("span", "small mono", String(devices[k])));
     b3.appendChild(row);
   });
-  var ukRow = U.el("p", "small", "Devices without a UK voice: " + noUk + " of " + d.history.length);
+  var ukRow = U.el("p", "small", rows.length ? "Student devices without a British voice: " + noUk + " of " + rows.length : "British voice coverage appears here once results arrive.");
   ukRow.style.marginTop = "8px";
   b3.appendChild(ukRow);
 
   var b4 = this.card(host, null);
-  var csv = U.btn("Export stats as CSV", "i-down", "soft block");
+  var csv = U.btn("Export these class results as CSV", "i-down", "soft block");
   U.on(csv, "click", function () {
-    var rows = [["id", "date", "session", "day", "list", "mode", "words", "score", "percent", "seconds", "voice", "ukVoice", "device"]];
-    d.history.forEach(function (r) {
-      rows.push([r.id, U.fmtDate(r.ts), r.sessionNo, r.sessionDay, r.listName, r.mode, r.wordCount, r.score, r.percent, r.durationSec, r.voiceName, r.ukVoice ? "yes" : "no", r.deviceType]);
-    });
-    U.download("class-stats.csv", U.csv(rows), "text/csv");
+    var out = [["id", "date", "session", "words", "score", "percent", "student", "device", "ukVoice"]];
+    rows.forEach(function (r) { out.push([r.id, U.fmtDate(r.ts), r.sessionNo, r.wordCount, r.score, r.percent, r.name || "", r.deviceType || "", r.ukVoice ? "yes" : "no"]); });
+    if (!U.download("class-results.csv", U.csv(out), "text/csv")) U.selectForCopy(U.csv(out));
   });
   b4.appendChild(csv);
 };
@@ -7405,6 +7474,11 @@ var Cloud = {
   pollTimer: null,
   flushing: false,
   pendingState: null,
+  /* verified live-channel bookkeeping (never a hardcoded badge) */
+  syncedAt: 0,
+  stateAt: 0,
+  live: { sse: null, ok: false, at: 0, err: "", retry: null, timer: null, posting: false, flushing: false },
+  liveMode: false,
 
   valid: function (u) {
     return typeof u === "string" && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,200}\/exec$/.test(u);
@@ -7511,8 +7585,9 @@ var Cloud = {
     payload.deviceId = DB.data.profile.deviceId;
     DB.data.outbox.push(payload);
     DB.save();
-    if (this.mode && U.nav("onLine", true) !== false) this.flush();
-    else this.scheduleFlush();
+    if (U.nav("onLine", true) === false) { this.scheduleFlush(); return; }
+    if (this.mode) this.flush();
+    else this.flushLive();
   },
   scheduleFlush: function () {
     var self = this;
@@ -7525,9 +7600,12 @@ var Cloud = {
   },
   flush: function () {
     var self = this;
-    if (!this.mode || this.flushing) return;
+    if (this.flushing) return;
+    if (U.nav("onLine", true) === false) { UI.renderNet(); return; }
+    /* no Apps Script link configured: the free ntfy live channel does the
+       sending, so a job in the outbox never stays "1 waiting" forever. */
+    if (!this.mode) { this.flushLive(); return; }
     if (!DB.data.outbox.length) { UI.renderNet(); return; }
-    if (U.nav("onLine", true) === false) return;
     this.flushing = true;
     (function stepFn() {
       if (!DB.data.outbox.length) {
@@ -7694,6 +7772,315 @@ var Cloud = {
     this.applyState(st);
     Eng.st = keep;
     if (UI.tab === "home") Screens.home();
+  },
+
+  /* ======================= v2.0.0 real-time class engine ==================
+     Three public ntfy.sh topics carry the whole class in real time. ntfy is
+     free and open source, needs no account and no API key, allows browser
+     CORS, and both caches the last messages and streams new ones over
+     Server-Sent Events. A student therefore sees the lecturer's list - and the
+     lecturer sees every completion - the second it is published, while the same
+     state is still mirrored to ./data/session.json and to the optional Google
+     Apps Script endpoint when one is configured. */
+  topic: function (name) { return CONFIG.ntfyHost + "/" + name; },
+  /* repoPayload() wraps the state under .session (that is the shape of
+     ./data/session.json). The live topics carry the inner state object, so a
+     phone receives lists, session, plan, announcement and comments directly. */
+  stateOf: function (payload) {
+    var body = payload || this.repoPayload();
+    if (body && body.session && body.version && !body.lists) body = body.session;
+    return body;
+  },
+  liveOn: function () {
+    try { return typeof window.fetch === "function" && U.nav("onLine", true) !== false; }
+    catch (e) { return false; }
+  },
+  /* ---- send ------------------------------------------------------------ */
+  postLive: function (body, topic, cb) {
+    cb = U.once(cb || function () {});
+    var self = this, text = "";
+    if (!this.liveOn()) { cb({ ok: false, err: "offline" }); return; }
+    try { text = JSON.stringify(body); } catch (e) { cb({ ok: false, err: "bad payload" }); return; }
+    try {
+      fetch(this.topic(topic || CONFIG.ntfyState), { method: "POST", cache: "no-store", body: text }).then(function (r) {
+        if (!r || !r.ok) { self.live.err = "http " + (r && r.status); cb({ ok: false, err: self.live.err }); return; }
+        self.live.ok = true; self.live.at = Date.now(); self.syncedAt = self.live.at; self.liveMode = true;
+        UI.renderNet();
+        cb({ ok: true, at: self.live.at });
+      }, function () { self.live.err = "network"; self.live.ok = false; cb({ ok: false, err: "network" }); });
+    } catch (e2) { cb({ ok: false, err: "blocked" }); }
+  },
+  /* ---- receive --------------------------------------------------------- */
+  readFeed: function (text, onItem) {
+    var lines = String(text || "").split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var line = U.trim(lines[i]);
+      if (!line) continue;
+      var item = null;
+      try { item = JSON.parse(line); } catch (e) { item = null; }
+      if (item && item.event === "message" && item.message) onItem(item);
+    }
+  },
+  pollTopic: function (topic, cb) {
+    var self = this;
+    cb = U.once(cb || function () {});
+    if (!this.liveOn()) { cb(false); return; }
+    try {
+      fetch(this.topic(topic) + "/json?poll=1&since=all", { cache: "no-store" }).then(function (r) {
+        if (!r || !r.ok) throw new Error("http " + (r && r.status));
+        return r.text();
+      }).then(function (text) {
+        self.live.ok = true; self.live.at = Date.now(); self.syncedAt = self.live.at; self.liveMode = true;
+        self.readFeed(text, function (item) { self.liveBody(item.message); });
+        UI.renderNet();
+        cb(true);
+      }, function () { self.live.ok = false; self.live.err = "poll"; UI.renderNet(); cb(false); });
+    } catch (e) { cb(false); }
+  },
+  liveBody: function (message) {
+    var body = null;
+    try { body = JSON.parse(message); } catch (e) { return false; }
+    if (!body || typeof body !== "object") return false;
+    if (body.kind === "comm") return this.mergeComm(body) > 0;
+    if (body.kind === "inbox") return this.mergeInbox(body) > 0;
+    return this.applyLiveState(body, "live") > 0;
+  },
+  liveMessage: function (data) {
+    var item = null;
+    try { item = JSON.parse(data); } catch (e) { return; }
+    if (!item || item.event !== "message" || !item.message) return;
+    this.live.at = Date.now(); this.live.ok = true; this.syncedAt = this.live.at; this.liveMode = true;
+    this.liveBody(item.message);
+    UI.renderNet();
+  },
+  liveOpen: function () {
+    if (this.live.sse || !window.EventSource || !this.liveOn()) return;
+    var self = this;
+    try {
+      var es = new EventSource(this.topic(CONFIG.ntfyState + "," + CONFIG.ntfyComm) + "/sse");
+      this.live.sse = es;
+      es.onopen = function () { self.live.ok = true; self.live.at = Date.now(); self.syncedAt = self.live.at; self.liveMode = true; UI.renderNet(); };
+      es.onmessage = function (ev) { self.liveMessage(ev && ev.data); };
+      es.onerror = function () { self.live.ok = false; self.live.err = "sse"; self.liveClose(); self.liveRetry(); UI.renderNet(); };
+    } catch (e) { this.live.sse = null; this.liveRetry(); }
+  },
+  liveClose: function () {
+    if (this.live.sse) { try { this.live.sse.close(); } catch (e) {} }
+    this.live.sse = null;
+  },
+  liveRetry: function () {
+    var self = this;
+    if (this.live.retry) return;
+    this.live.retry = setTimeout(function () {
+      self.live.retry = null;
+      if (DB.data && self.liveOn()) { self.liveOpen(); self.pullLive(); }
+    }, CONFIG.sseRetryMs);
+  },
+  pullLive: function (cb) {
+    var self = this;
+    cb = U.once(cb || function () {});
+    if (!this.liveOn()) { cb(false); return; }
+    var done = 0, okAny = false;
+    [CONFIG.ntfyState, CONFIG.ntfyComm].forEach(function (topic) {
+      self.pollTopic(topic, function (ok) {
+        done++;
+        if (ok) okAny = true;
+        if (done === 2) { UI.renderNet(); cb(okAny); }
+      });
+    });
+  },
+  livePoll: function () {
+    var self = this;
+    if (this.live.timer) return;
+    this.live.timer = setInterval(function () {
+      if (!self.liveOn()) { UI.renderNet(); return; }
+      if (!self.live.sse) self.liveOpen();
+      self.pullLive();
+      self.flushLive();
+    }, CONFIG.livePollMs);
+  },
+  /* whichever payload is newest wins, so the Home screen always shows the
+     real published session number, day, date, title and words. */
+  /* renamed from applyState: the Apps Script state reader already owns that
+     name, and two keys with one name are an ES5 syntax error. */
+  applyLiveState: function (s, source) {
+    if (!s || typeof s !== "object" || Array.isArray(s)) return 0;
+    var d = DB.data;
+    var stamp = Number(s.publishedAt || s.updatedAt || 0) || Number(s.ver || 0) || 0;
+    if (stamp && stamp < this.stateAt && !s.force) return 0;
+    var changed = this.applyRepo(s);
+    if (Array.isArray(s.results) && s.results.length) changed += this.mergeResults(s.results);
+    this.syncSessionHeader(d);
+    if (stamp) this.stateAt = Math.max(this.stateAt, stamp);
+    this.updatedAt = Date.now();
+    this.live.at = Date.now(); this.syncedAt = this.live.at; this.live.ok = true; this.liveMode = true;
+    DB.save(true);
+    UI.renderNet();
+    if (UI.tab === "home") Screens.home();
+    return changed || 1;
+  },
+  /* Defect A: the Hero kicker and the Hero title can never contradict each
+     other. A list called "Session 4 words" drives the session number, and the
+     day is always derived from the real session date. */
+  syncSessionHeader: function (d) {
+    d = d || DB.data;
+    var s = d.session, list = Lib.byId(s.listId) || Lib.current() || d.lists[0];
+    var m = /^Session\s+(\d+[A-Za-z]?)\b/i.exec(String((list && list.name) || ""));
+    if (m) s.no = m[1];
+    if (!s.date) s.date = U.dateKey(new Date());
+    var day = new Date(s.date + "T12:00:00");
+    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+    else { s.date = U.dateKey(new Date()); s.day = DAYS[U.weekdayIndex(new Date())]; }
+    if (!s.title) s.title = (list && list.name) || "";
+    s.listId = (list && list.id) || s.listId;
+    s.autoDay = false;
+    return s;
+  },
+  mergeResults: function (rows) {
+    var d = DB.data, added = 0;
+    rows.forEach(function (r) {
+      if (!r || typeof r !== "object" || !r.id) return;
+      var id = String(r.id);
+      for (var i = 0; i < d.results.length; i++) if (d.results[i].id === id) return;
+      d.results.push({
+        id: U.clip(id, 40), ts: Number(r.ts) || Date.now(), sessionNo: U.clip(r.sessionNo || "", 12),
+        wordCount: Number(r.wordCount) || 0, score: Number(r.score) || 0, percent: Number(r.percent) || 0,
+        deviceType: U.clip(r.deviceType || "Other", 24), ukVoice: !!r.ukVoice,
+        mode: U.clip(r.mode || "", 12), name: U.clip(r.name || "Student", 40)
+      });
+      added++;
+    });
+    if (d.results.length > CONFIG.maxComments) d.results.length = CONFIG.maxComments;
+    return added;
+  },
+  mergeComm: function (body) {
+    var d = DB.data, added = this.mergeResults(body.results || []);
+    (body.comments || []).forEach(function (c) {
+      if (!c || typeof c !== "object" || !c.id) return;
+      for (var i = 0; i < d.comments.length; i++) if (d.comments[i].id === c.id) return;
+      d.comments.push({
+        id: U.clip(c.id, 40), ts: Number(c.ts) || Date.now(), name: U.clip(c.name || "Student", 40),
+        status: c.status || "comment", text: U.clip(c.text || "", CONFIG.commentLen), meta: U.clip(c.meta || "", 160),
+        pinned: !!c.pinned, hidden: false, mine: false, sent: true
+      });
+      added++;
+    });
+    if (d.comments.length > CONFIG.maxComments) d.comments.length = CONFIG.maxComments;
+    if (added) { DB.save(true); if (UI.tab === "comm") Screens.comm(); if (UI.tab === "home") Screens.home(); UI.renderNet(); }
+    return added;
+  },
+  mergeInbox: function (body) {
+    var d = DB.data, added = 0;
+    (body.inbox || []).forEach(function (m) {
+      if (!m || typeof m !== "object" || !m.id) return;
+      for (var i = 0; i < d.inbox.length; i++) if (d.inbox[i].id === m.id) return;
+      d.inbox.push({
+        id: U.clip(m.id, 40), ts: Number(m.ts) || Date.now(), name: U.clip(m.name || "Student", 40),
+        text: U.clip(m.text || "", CONFIG.messageLen), contact: U.clip(m.contact || "", 120), read: false, mine: false
+      });
+      added++;
+    });
+    if (d.inbox.length > CONFIG.maxInbox) d.inbox.length = CONFIG.maxInbox;
+    if (added) DB.save(true);
+    return added;
+  },
+  /* ---- the lecturer publishes: one POST fans out to every phone --------- */
+  publishLive: function (payload, cb) {
+    var body = this.stateOf(payload);
+    var now = Date.now();
+    body.kind = "state";
+    body.publishedAt = now;
+    body.ver = CONFIG.schema;
+    this.stateAt = Math.max(this.stateAt, now);
+    this.liveMode = true;
+    if (!this.liveOn()) { cb && cb({ ok: false, err: "offline" }); return false; }
+    this.postLive(body, CONFIG.ntfyState, function (res) { cb && cb(res); });
+    return true;
+  },
+  postCompletion: function (rec, cb) {
+    var d = DB.data;
+    var body = {
+      kind: "comm", publishedAt: Date.now(),
+      results: [{ id: rec.id, ts: rec.ts || Date.now(), sessionNo: rec.sessionNo || "", wordCount: rec.wordCount || 0, score: rec.score || 0, percent: rec.percent || 0, deviceType: rec.deviceType || U.deviceType(), ukVoice: !!rec.ukVoice, mode: rec.mode || "", name: (d.profile && d.profile.nickname) || "Student" }],
+      comments: d.comments.filter(function (c) { return c && c.id && c.auto; }).slice(0, 3)
+    };
+    this.postLive(body, CONFIG.ntfyComm, function (res) { cb && cb(res); });
+  },
+  /* ---- outbox flush over the live channel (the "1 waiting" fix) --------- */
+  liveJobs: function () {
+    var stateIds = [], commIds = [], inboxIds = [];
+    DB.data.outbox.forEach(function (job) {
+      if (!job || typeof job !== "object") return;
+      if (job.action === "publish" || job.action === "announce") stateIds.push(job.id);
+      else if (job.action === "inbox") inboxIds.push(job.id);
+      else if (job.action === "comment" || job.action === "result" || job.action === "moderate") commIds.push(job.id);
+    });
+    var out = [], now = Date.now();
+    if (stateIds.length) {
+      var payload = this.stateOf(null);
+      payload.kind = "state"; payload.publishedAt = now; payload.ver = CONFIG.schema;
+      out.push({ topic: CONFIG.ntfyState, body: payload, ids: stateIds });
+    }
+    if (commIds.length) out.push({ topic: CONFIG.ntfyComm, body: { kind: "comm", publishedAt: now, results: DB.data.results.slice(0, 20), comments: DB.data.comments.filter(function (c) { return !c.hidden; }).slice(0, 20) }, ids: commIds });
+    if (inboxIds.length) out.push({ topic: CONFIG.ntfyInbox, body: { kind: "inbox", publishedAt: now, inbox: DB.data.inbox.slice(0, 10) }, ids: inboxIds });
+    return out;
+  },
+  clearJobs: function (ids) {
+    var kept = [], self = this, removed = 0;
+    DB.data.outbox.forEach(function (job) {
+      if (job && ids.indexOf(job.id) >= 0) {
+        if (job.action === "comment" || job.action === "result") self.markSent(job.cid);
+        removed++;
+        return;
+      }
+      kept.push(job);
+    });
+    DB.data.outbox = kept;
+    return removed;
+  },
+  markSent: function (cid) {
+    if (!cid) return;
+    for (var i = 0; i < DB.data.comments.length; i++) if (DB.data.comments[i].id === cid) { DB.data.comments[i].pending = false; DB.data.comments[i].sent = true; }
+  },
+  flushLive: function (cb) {
+    var self = this;
+    cb = U.once(cb || function () {});
+    if (this.live.posting || this.live.flushing) { cb({ ok: false, busy: true }); return; }
+    if (!DB.data || !DB.data.outbox.length) { UI.renderNet(); cb({ ok: true, sent: 0 }); return; }
+    if (!this.liveOn()) { this.scheduleFlush(); UI.renderNet(); cb({ ok: false, sent: 0 }); return; }
+    var jobs = this.liveJobs();
+    if (!jobs.length) { UI.renderNet(); cb({ ok: true, sent: 0 }); return; }
+    this.live.posting = true;
+    UI.renderNet();
+    var i = 0, sent = 0;
+    (function stepFn() {
+      if (i >= jobs.length) {
+        self.live.posting = false;
+        /* anything that did not go through stays queued and retries with the
+           backoff, so the counter always empties by itself */
+        if (DB.data.outbox.length) self.scheduleFlush();
+        DB.save(true);
+        UI.renderNet();
+        if (sent && UI.tab === "comm") Screens.comm();
+        cb({ ok: true, sent: sent });
+        return;
+      }
+      var job = jobs[i++];
+      self.postLive(job.body, job.topic, function (res) {
+        if (res && res.ok) sent += self.clearJobs(job.ids);
+        setTimeout(stepFn, 140);
+      });
+    })();
+  },
+  /* ---- boot: repository JSON + cached ntfy state + live SSE, at once ---- */
+  bootSync: function () {
+    var self = this;
+    if (this.repoServed()) this.fetchRepo(function (ok) { if (ok && Eng.st === "idle") Screens.home(); });
+    if (!this.liveOn()) { UI.renderNet(); return; }
+    this.liveMode = true;
+    this.liveOpen();
+    this.pullLive(function () { self.flushLive(); });
+    this.livePoll();
   },
 
   urlSheet: function () {
@@ -8004,14 +8391,14 @@ Cloud.repoPayload = function () {
   var now = Date.now();
   return {
     session: {
-      ok: true, ver: 2, updatedAt: now,
+      ok: true, ver: CONFIG.schema, updatedAt: now,
       session: { no: d.session.no || "1", day: d.session.day || "", date: d.session.date || U.dateKey(new Date()), title: d.session.title || (list ? list.name : ""), listId: (list && list.id) || "" },
       lists: [{ id: (list && list.id) || SAMPLE_LIST_ID, name: (list && list.name) || SAMPLE_LIST_NAME, version: (list && list.version) || 2, published: true, words: words }],
       plan: plan,
       announcement: d.announcement && d.announcement.text ? d.announcement : null,
       comments: d.comments.filter(function (c) { return !c.hidden && !c.pending; }).slice(0, 40)
     },
-    version: { ver: 2, version: APP_VERSION, buildDate: BUILD_DATE, updatedAt: now }
+    version: { ver: CONFIG.schema, version: APP_VERSION, buildDate: BUILD_DATE, updatedAt: now }
   };
 };
 Cloud.ghPublish = function (cb) {
@@ -8278,17 +8665,26 @@ UI.renderNet = function () {
   var online = U.nav("onLine", true) !== false;
   var outbox = DB.data ? DB.data.outbox.length : 0;
   var waiting = outbox ? " \u00b7 " + outbox + " waiting" : "";
-  var label, good = false;
+  /* the real, verified time of the last successful sync - never a fixed text */
+  var live = Cloud.syncedAt || Cloud.live.at || 0;
+  var synced = live ? " \u00b7 Synced " + U.relTime(live) : "";
+  var label = "", good = false;
   chip.className = "chip";
-  if (Cloud.mode && online && !Cloud.fails) { label = "Online \u00b7 Cloud Synced" + (Cloud.updatedAt ? " \u00b7 " + U.relTime(Cloud.updatedAt) : "") + waiting; good = true; }
-  else if (Cloud.mode && !online) { label = S.offline + waiting; }
-  else if (Cloud.mode) { label = "Cloud not reachable \u00b7 retrying" + waiting; }
-  else if (online) {
-    /* the static repo files are the live session: never say "local mode" here */
-    label = "Online \u00b7 Live B1 Session" + (Cloud.repoVer ? " v" + Cloud.repoVer : "") + waiting;
+  if (!online) {
+    label = "Offline \u00b7 Saved on device" + waiting;
+  } else if (Cloud.live.posting) {
+    label = "Syncing\u2026" + waiting;
+    good = true;
+  } else if (Cloud.mode) {
+    if (!Cloud.fails) { label = "Online \u00b7 Cloud Synced" + (Cloud.updatedAt ? " \u00b7 " + U.relTime(Cloud.updatedAt) : "") + waiting; good = true; }
+    else label = "Cloud not reachable \u00b7 retrying" + waiting;
+  } else {
+    /* the published session and the ntfy live channel are the class channel:
+       never say "local mode" here, and show how long ago we really synced. */
+    label = "Online \u00b7 Live B1 Session" + (Cloud.repoVer ? " v" + Cloud.repoVer : "") +
+      ((Cloud.live.ok || Cloud.repoOnline || Cloud.liveMode) ? synced : "") + waiting;
     good = true;
   }
-  else label = "Offline \u00b7 saved list on this device" + waiting;
   txt.textContent = label;
   if (good) U.setCls(chip, "good", true);
   chip.setAttribute("aria-label", label);
@@ -8531,9 +8927,20 @@ function boot() {
       if (Eng.wakeLock === null && (Eng.st === "speaking" || Eng.st === "waiting")) Eng.requestWake();
     }
   });
-  U.on(window, "online", function () { if (syncStarted) Cloud.flush(); UI.renderNet(); UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" }); });
+  U.on(window, "online", function () {
+    /* a reconnect re-opens the live stream and sends the whole outbox at once */
+    Cloud.liveClose(); Cloud.liveOpen();
+    Cloud.pullLive(function () { Cloud.flush(); });
+    Cloud.flush();
+    UI.renderNet();
+    UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" });
+  });
   U.on(window, "offline", function () { UI.renderNet(); });
-  U.on(window, "focus", function () { if (syncStarted && Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); } });
+  U.on(window, "focus", function () {
+    if (!Cloud.live.sse) Cloud.liveOpen();
+    if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); }
+    Cloud.flush();
+  });
   U.on(window, "resize", U.debounce(function () { U.$$(".seg").forEach(UI.segSync); }, 200));
   U.on(document, "keydown", function (e) {
     if (e.key === "Escape") {
@@ -8567,17 +8974,22 @@ function boot() {
   }
 
   UI.renderNet();
-  /* A5: the published session is fetched on every boot - no setup needed */
-  if (Cloud.repoServed()) { Cloud.fetchRepo(function (ok) { if (ok && Eng.st === "idle") Screens.home(); }); }
+  /* A5 + A9: the published session, the cached live state and the live SSE
+     stream are all contacted on every boot - no setup and no waiting for the
+     first tap. Whichever payload is newest wins, so Home always shows the
+     real session while the class is running. */
+  Cloud.bootSync();
   UI.setTab("home");
   UI.applyPerf();
   UI.frameProbe(function () { UI.applyPerf(); });
   /* Opening the file makes no network requests. Sync begins on the first user tap. */
   var syncStarted = false;
   function beginSync() {
-    if (syncStarted || !Cloud.mode) return;
+    if (syncStarted) return;
     syncStarted = true;
-    Cloud.poll(); Cloud.flush(); Cloud.pullState(); Cloud.pullComments();
+    Cloud.bootSync();
+    if (Cloud.mode) { Cloud.poll(); Cloud.pullState(); Cloud.pullComments(); }
+    Cloud.flush();
   }
   U.on(document, "click", beginSync);
   U.on(document, "touchstart", beginSync);

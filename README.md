@@ -10,7 +10,7 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 1. Unlock **Lecturer mode → Words & planner**. Paste the whole list: commas, semicolons, bullets, or one word per line. Multi-word entries such as “go shopping” stay together. For columns, use `word | sentence | meaning`, tabs, or CSV with a `word,sentence,meaning` header.
 2. Check **“I read this as…”** and the counter. Use the one-tap format switch if necessary. Edit any preview cell, delete a row, or reorder using Drag / Up / Down (Up / Down work on phones). Correct all reported problems. Choose class-date chips (today plus the next four Tuesday/Wednesday dates), or another date/weekday in **Publish for**.
-3. Tap **Publish to students** and check the word count, dates, and session number before confirming. It publishes the current preview, not the previous saved list. **Local mode means this device only.** Without a configured backend, send a list link/file to students; publishing does not magically distribute it.
+3. Tap **Publish to students** (or the sticky **Save & Publish Live** button) and check the word count, dates, and session number before confirming. It publishes the current preview, not the previous saved list, and a list called `Session 4 words` sets the session number to 4 by itself so the hero kicker and title always agree. Students need no setup at all: the published session is broadcast over the free ntfy.sh class channel, so every open phone updates within a second, and it is also written to `data/session.json` for the next page load.
 
 **Replace this list** and **Add to this list** are optional draft actions. Each preserves the existing short-lived Undo. The full requested published version-history/Undo workflow is still outstanding.
 
@@ -45,6 +45,20 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
    Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
 
 This does not reset the PIN on an Apps Script or future Worker server. Server recovery must happen in that service's secret settings.
+
+## Live class channel (v2.0.0)
+
+Three public [ntfy.sh](https://ntfy.sh) topics carry the class in real time. ntfy is free, open source, needs no account and no API key, allows browser CORS, and both caches the last messages and streams new ones over Server-Sent Events:
+
+| Topic | What travels on it |
+| --- | --- |
+| `sdp_dictationb1_state_v2` | the published session: number, day, date, title, the 30 words and the plan |
+| `sdp_dictationb1_comm_v2` | community posts and every student completion (`Completed Session 4 · Score: 27/30 (90%)`) |
+| `sdp_dictationb1_inbox_v2` | a student's private message to the lecturer |
+
+On load the app fetches `./data/session.json?t=…`, polls `…/json?poll=1&since=all` for the cached messages and opens one `EventSource` stream; whichever payload is newest (`publishedAt`/`ver`) wins. Publishing from Admin mode posts once and every open phone repaints. If a network blocks ntfy, the repository JSON still updates students on their next load, and the status chip says exactly which state the device is in (`Online · Live B1 Session v2.0.0 · Synced …`, `Syncing…`, `Offline · Saved on device`).
+
+**Privacy:** these topics are public, like any free ntfy channel. Only the words, the session header, anonymous nicknames and the score summary travel on them — never the PIN, never a name or a phone number, and never anything typed into a private reply.
 
 ## Cloud: current adapter versus planned Worker
 

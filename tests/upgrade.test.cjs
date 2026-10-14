@@ -421,13 +421,20 @@ test('v2: repository data files match the app', () => {
   const fs = require('node:fs'), path = require('node:path');
   const read = f => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../data/' + f), 'utf8'));
   const version = read('version.json'), cfg = read('config.json'), session = read('session.json');
-  assert.deepEqual(version, { ver: 2, version: '2.0.0', buildDate: '2026-10-14', updatedAt: 1791957352000 });
+  assert.deepEqual(version, { ver: 3, version: '2.0.0', buildDate: '2026-10-14', updatedAt: 1791957352000 });
   assert.equal(cfg.appName, 'Smart Dictation');
   assert.equal(cfg.level, 'B1');
   assert.deepEqual(cfg.classDays, ['Tuesday', 'Wednesday']);
   assert.deepEqual(cfg.defaults, { sentence: false, repeats: 2, rate: 0.85, numbers: true });
+  assert.equal(cfg.ver, 3);
+  assert.equal(cfg.version, '2.0.0');
+  assert.deepEqual(cfg.live, {
+    state: 'https://ntfy.sh/sdp_dictationb1_state_v2',
+    community: 'https://ntfy.sh/sdp_dictationb1_comm_v2',
+    inbox: 'https://ntfy.sh/sdp_dictationb1_inbox_v2'
+  });
   assert.equal(session.ok, true);
-  assert.equal(session.ver, 2);
+  assert.equal(session.ver, 3);
   assert.equal(session.session.no, '1');
   assert.equal(session.session.day, 'Wednesday');
   assert.equal(session.session.date, '2026-10-14');
@@ -556,6 +563,276 @@ test('v2: the DOM token guard splits, trims and never throws on any input', () =
   el.classList.remove('two');
   assert.deepEqual(Array.from(el.classList), ['one', 'three'], 'multiple tokens per call still work');
   assert.equal(hostile.className, 'keep me');
+});
+
+/* ================= v2.0.0 live class channel (ntfy.sh) ================= */
+function stubFetch(w, handler) {
+  const calls = [];
+  const before = w.fetch;
+  w.fetch = (url, opts) => {
+    calls.push({ url: String(url), opts: opts || {} });
+    return Promise.resolve(handler(String(url), opts || {}));
+  };
+  return { calls, restore() { w.fetch = before; } };
+}
+const flush = async (a, ms = 300, rounds = 4) => {
+  for (let i = 0; i < rounds; i++) { a.clock.tick(ms); await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); }
+};
+
+test('live: publishing posts the whole session to the state topic', async () => {
+  const { Cloud, DB } = a.q;
+  setOnline(a.w, true);
+  const body = { kind: 'state', publishedAt: Date.now(), ver: 3, session: { no: '4' }, lists: [{ id: 'x', words: [] }] };
+  let sent = null;
+  const f = stubFetch(a.w, () => { sent = null; return { ok: true, text: () => Promise.resolve('') }; });
+  try {
+    await new Promise(resolve => Cloud.publishLive(body, resolve));
+    const call = f.calls[f.calls.length - 1];
+    assert.equal(call.url, 'https://ntfy.sh/sdp_dictationb1_state_v2');
+    assert.equal(call.opts.method, 'POST');
+    assert.equal(call.opts.cache, 'no-store');
+    const payload = JSON.parse(call.opts.body);
+    assert.equal(payload.kind, 'state');
+    assert.equal(typeof payload.publishedAt, 'number');
+    assert(payload.publishedAt > 0);
+  } finally { f.restore(); }
+  assert(Cloud.syncedAt > 0, 'a verified sync time is recorded');
+});
+
+test('live: the newest published payload wins and drives the Home header', async () => {
+  const { Cloud, DB, Lib } = a.q;
+  setOnline(a.w, true);
+  const older = { kind: 'state', publishedAt: 1000, ver: 3,
+    session: { no: '2', day: 'Monday', date: '2026-10-05', title: 'Old list', listId: 'list_live' },
+    lists: [{ id: 'list_live', name: 'Old list', version: 1, published: true, words: [{ w: 'old', s: '', m: '' }] }], plan: [] };
+  const newer = { kind: 'state', publishedAt: 5000, ver: 3,
+    session: { no: '4', day: 'Wednesday', date: '2026-10-14', title: 'Session 4 words', listId: 'list_live' },
+    lists: [{ id: 'list_live', name: 'Session 4 words', version: 7, published: true, words: [{ w: 'hobbies', s: 'x.', m: 'y.' }, { w: 'torch', s: 'z.', m: 'w.' }] }], plan: [] };
+  const feed = [older, newer].map(m => JSON.stringify({ id: 'i', event: 'message', topic: 'sdp_dictationb1_state_v2', message: JSON.stringify(m) })).join('\n');
+  const f = stubFetch(a.w, url => url.indexOf('/json?poll=1&since=all') > 0 ? { ok: true, text: () => Promise.resolve(feed), json: () => Promise.resolve({}) } : { ok: true, text: () => Promise.resolve('') });
+  try {
+    Cloud.stateAt = 0;
+    await new Promise(resolve => Cloud.pollTopic('sdp_dictationb1_state_v2', resolve));
+  } finally { f.restore(); }
+  assert.equal(DB.data.session.no, '4', 'the newer payload wins, the cached older one never overwrites it');
+  assert.equal(DB.data.session.day, 'Wednesday');
+  assert.equal(DB.data.session.title, 'Session 4 words');
+  assert.equal(a.q.DB.findList(DB.data, 'list_live').words.length, 2);
+  assert(/^Session 4/.test(Lib.sessionLabel()), Lib.sessionLabel());
+  assert.equal(Cloud.stateAt, 5000);
+  DB.data.lists = DB.data.lists.filter(l => l.id !== 'list_live');
+  DB.data.plan.defaultList = 'list_sample_b1';
+  DB.data.session.no = '1'; DB.data.session.title = 'B1 Leisure & Hobbies (30 words)';
+  DB.data.session.listId = 'list_sample_b1'; DB.data.session.date = '2026-10-14';
+  DB.saveNow();
+});
+
+test('live: the SSE stream is opened on both topics and merges a completion', async () => {
+  const { Cloud, DB } = a.q;
+  setOnline(a.w, true);
+  const seen = [];
+  const before = a.w.EventSource;
+  const f = stubFetch(a.w, () => ({ ok: true, text: () => Promise.resolve('') }));
+  a.w.EventSource = function (url) {
+    seen.push(String(url));
+    this.close = () => { this.closed = true; };
+    a.w.__es = this;
+  };
+  try {
+    Cloud.live.sse = null;
+    Cloud.liveOpen();
+    assert.equal(seen.length, 1);
+    assert(seen[0].startsWith('https://ntfy.sh/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2/sse'), seen[0]);
+    const comm = { kind: 'comm', publishedAt: 9000, results: [{ id: 'cloud-res-1', ts: 9000, sessionNo: '1', wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: true, name: 'Student Q' }], comments: [{ id: 'cloud-c-1', ts: 9000, name: 'Student Q', status: 'finished', text: 'Completed Session 1 \u00b7 Score: 27/30 (90%)', meta: 'Android' }] };
+    a.w.__es.onmessage({ data: JSON.stringify({ event: 'message', topic: 'sdp_dictationb1_comm_v2', message: JSON.stringify(comm) }) });
+    assert(DB.data.results.some(r => r.id === 'cloud-res-1'), 'the live completion is stored as a real student result');
+    assert(DB.data.comments.some(c => c.id === 'cloud-c-1'), 'and it appears in Community straight away');
+    assert(Cloud.syncedAt > 0);
+    DB.data.results = DB.data.results.filter(r => r.id !== 'cloud-res-1');
+    DB.data.comments = DB.data.comments.filter(c => c.id !== 'cloud-c-1');
+    Cloud.liveClose();
+  } finally { a.w.EventSource = before; f.restore(); DB.saveNow(); }
+});
+
+test('live: the outbox is flushed over the live topics, never stuck at 1 waiting', async () => {
+  const { Cloud, DB } = a.q;
+  setOnline(a.w, true);
+  Cloud.mode = false;
+  const wasOutbox = DB.data.outbox;
+  DB.data.outbox = [{ id: 'j1', action: 'publish', listId: 'list_sample_b1' }, { id: 'j2', action: 'comment', cid: 'c-x' }, { id: 'j3', action: 'inbox' }];
+  const f = stubFetch(a.w, () => ({ ok: true, text: () => Promise.resolve('') }));
+  try {
+    Cloud.flushLive();
+    await flush(a, 200, 6);
+  } finally { f.restore(); }
+  const topics = f.calls.map(c => c.url);
+  assert(topics.includes('https://ntfy.sh/sdp_dictationb1_state_v2'), topics.join(','));
+  assert(topics.includes('https://ntfy.sh/sdp_dictationb1_comm_v2'), topics.join(','));
+  assert(topics.includes('https://ntfy.sh/sdp_dictationb1_inbox_v2'), topics.join(','));
+  assert.equal(DB.data.outbox.length, 0, 'nothing is left waiting');
+  DB.data.outbox = wasOutbox;
+  Cloud.live.posting = false;
+  DB.saveNow();
+});
+
+test('live: the status chip tells the truth in every state', async () => {
+  const { UI, Cloud, DB } = a.q;
+  const text = () => a.w.document.getElementById('chipNetText').textContent;
+  const wasOutbox = DB.data.outbox;
+  DB.data.outbox = [];
+  Cloud.url = ''; Cloud.mode = false; Cloud.fails = 0; Cloud.syncedAt = 0; Cloud.live.at = 0; Cloud.live.posting = false;
+  setOnline(a.w, true);
+  UI.renderNet();
+  assert(/^Online \u00b7 Live B1 Session/.test(text()), text());
+  assert(a.w.document.getElementById('chipNet').className.includes('good'));
+  Cloud.syncedAt = a.w.Date.now() - 5000;   /* the app clock, not the Node clock */
+  UI.renderNet();
+  assert(/Synced (just now|[0-9]+ min ago)/.test(text()), text());
+  DB.data.outbox = [{ id: 'w1', action: 'comment' }];
+  UI.renderNet();
+  assert(/1 waiting/.test(text()), text());
+  DB.data.outbox = [];
+  Cloud.live.posting = true;
+  UI.renderNet();
+  assert(/^Syncing\u2026/.test(text()), text());
+  Cloud.live.posting = false;
+  setOnline(a.w, false);
+  UI.renderNet();
+  assert.equal(text(), 'Offline \u00b7 Saved on device');
+  setOnline(a.w, true);
+  DB.data.outbox = wasOutbox;
+  DB.saveNow();
+});
+
+test('live: a list named "Session 4 words" drives the session number, a manual one is kept', () => {
+  const { Admin, DB, Lib } = a.q;
+  const wasUnlocked = Admin.unlocked; Admin.unlocked = true;
+  const list = { id: 'list_s4', name: 'Session 4 words', words: [], version: 1, published: false, draft: true };
+  DB.data.lists.push(list);
+  const wasOutbox = DB.data.outbox; DB.data.outbox = [];
+  try {
+    Admin.saveAll(list, [{ w: 'hobbies', s: 'x.', m: 'y.', audio: a.q.ukMp3('hobbies') }], ['2026-10-14'], null);
+    assert.equal(DB.data.session.no, '4');
+    assert(/^Session 4/.test(Lib.sessionLabel()), Lib.sessionLabel());
+    assert(DB.data.session.day, 'the weekday is real');
+    Admin.manualSession = true;
+    const manual = { id: 'list_s5', name: 'Session 5 words', words: [], version: 1, published: false, draft: true };
+    DB.data.lists.push(manual);
+    DB.data.session.no = '9';
+    Admin.saveAll(manual, [{ w: 'torch', s: 'x.', m: 'y.', audio: a.q.ukMp3('torch') }], [], null);
+    assert.equal(DB.data.session.no, '9', 'a session number set with the +/- buttons is never overwritten');
+    assert.equal(Admin.manualSession, false, 'the flag is one-shot');
+  } finally {
+    DB.data.lists = DB.data.lists.filter(l => l.id !== 'list_s4' && l.id !== 'list_s5');
+    DB.data.plan.defaultList = 'list_sample_b1';
+    DB.data.session.listId = 'list_sample_b1';
+    DB.data.session.no = '1';
+    DB.data.outbox = wasOutbox;
+    Admin.unlocked = wasUnlocked;
+    DB.saveNow();
+  }
+});
+
+test('audio: a blocked British TTS host fails over to the open backup stream', async () => {
+  const { Speech } = a.q;
+  setOnline(a.w, true);
+  const seen = [];
+  const orig = Speech.playAudio;
+  const wasSupported = Speech.supported, wasVoices = Speech.ukVoices, wasTextOnly = Speech.textOnly;
+  Speech.playAudio = (src, rate, ms, cb) => { seen.push(src); cb(seen.length > 1); };
+  Speech.supported = false; Speech.ukVoices = []; Speech.textOnly = false;
+  try {
+    assert.deepEqual(Array.from(Speech.streamSources('torch')), [
+      'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=torch',
+      'https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=torch'
+    ]);
+    let res = null;
+    Speech.say(['torch'], { mp3: false }, r => { res = r; });
+    a.clock.tick(400);
+    assert.equal(seen.length, 2, seen.join(' | '));
+    assert(seen[1].indexOf('streamelements') > 0);
+    assert(res && res.ok === true, 'the fallback stream still counts as success');
+  } finally {
+    Speech.playAudio = orig; Speech.supported = wasSupported; Speech.ukVoices = wasVoices; Speech.textOnly = wasTextOnly;
+  }
+});
+
+test('dictionary: every real example sentence is kept, not just 8-to-14 word ones', () => {
+  const { Dict } = a.q;
+  const short = Dict.parse([{ word: 'torch', phonetics: [{ audio: 'https://x.test/torch-uk.mp3', text: '/t\u0254\u02d0t\u0283/' }],
+    meanings: [{ partOfSpeech: 'noun', definitions: [{ definition: 'a small light you carry', example: 'Take a torch.' }] }] }]);
+  assert.equal(short.example, 'Take a torch.', 'a short real sentence is not thrown away');
+  assert.equal(short.audio, 'https://x.test/torch-uk.mp3');
+  assert.equal(short.ipa, 't\u0254\u02d0t\u0283');
+  const secondary = Dict.parse([{ word: 'torch', meanings: [
+    { definitions: [{ definition: 'a light' }] },
+    { definitions: [{ definition: 'a stick with fire', example: 'They carried a burning torch through the village at night.' }] }
+  ] }]);
+  assert.equal(secondary.example, 'They carried a burning torch through the village at night.', 'a secondary sense supplies the example');
+  assert(Dict.parse([{ word: 'x', phonetics: [], meanings: [] }]) === null);
+});
+
+test('performance: the per-word snapshot is debounced and flushed, never doubled', () => {
+  const { Eng, DB } = a.q;
+  const src = html.match(/saveSnapshot: function \(\) \{[\s\S]*?\n  \},/)[0];
+  assert.equal(src.includes('.bak'), false);
+  assert(/setTimeout/.test(src) && /flushSnapshot/.test(src));
+  const wasSt = Eng.st;
+  delete DB.data.snapshot;
+  Eng.st = 'waiting';
+  try {
+    Eng.saveSnapshot();
+    a.clock.tick(200);
+    assert.equal(DB.data.snapshot, undefined, 'nothing is written inside the debounce window');
+    a.clock.tick(400);
+    assert(DB.data.snapshot && DB.data.snapshot.words, 'the snapshot lands after the debounce');
+    delete DB.data.snapshot;
+    Eng.saveSnapshot();
+    Eng.flushSnapshot();
+    assert(DB.data.snapshot && DB.data.snapshot.savedAt, 'a finish or publish flushes it immediately');
+  } finally { Eng.st = wasSt; delete DB.data.snapshot; DB.saveNow(); }
+});
+
+test('class stats: real student completions only, never the lecturer history', () => {
+  const { Admin, DB } = a.q;
+  const wasUnlocked = Admin.unlocked; Admin.unlocked = true;
+  const wasResults = DB.data.results, wasHistory = DB.data.history;
+  const host = a.w.document.createElement('div');
+  try {
+    DB.data.results = [];
+    DB.data.history = [{ id: 'own-1', ts: Date.now(), score: 30, wordCount: 30, percent: 100, sessionNo: '1', deviceType: 'Mac', ukVoice: true }];
+    Admin.tabStats(host);
+    assert(/No student results yet/.test(host.textContent), host.textContent.slice(0, 200));
+    assert.equal(host.querySelectorAll('.statbar').length, 0, 'no invented session bars');
+    DB.data.results = [
+      { id: 'r1', ts: Date.now(), name: 'A', sessionNo: '1', wordCount: 30, score: 24, percent: 80, deviceType: 'Android', ukVoice: false },
+      { id: 'r2', ts: Date.now(), name: 'B', sessionNo: '1', wordCount: 30, score: 30, percent: 100, deviceType: 'iPhone', ukVoice: true }
+    ];
+    const host2 = a.w.document.createElement('div');
+    Admin.tabStats(host2);
+    assert(/2 student completions from 2 students/.test(host2.textContent), host2.textContent.slice(0, 300));
+    assert(/90%/.test(host2.textContent), 'the real average 90% is shown');
+    assert(/never counted as class results/.test(host2.textContent), 'the lecturer history is labelled, not mixed in');
+    assert.equal(host2.querySelectorAll('.statbar .col').length, 1, 'one real session bar');
+  } finally {
+    DB.data.results = wasResults; DB.data.history = wasHistory; Admin.unlocked = wasUnlocked; DB.saveNow();
+  }
+});
+
+test('static: the live engine, the shared audio element and the single word table ship in ES5', () => {
+  const script = Array.from(a.w.document.scripts).find(s => !s.type && s.textContent.includes('var APP_VERSION')).textContent;
+  require('acorn').parse(script, { ecmaVersion: 5 });
+  assert(html.includes('ntfy.sh'), 'the free live channel is wired in');
+  assert.equal((html.match(/EventSource\(/g) || []).length, 1);
+  assert(html.includes('/json?poll=1&since=all'));
+  assert(html.includes('crossorigin="anonymous"'));
+  assert(!/Reorder words \(/.test(html), 'the duplicate 30-row table is gone');
+  assert(html.includes('Save & Publish Live'));
+  const words = html.match(/Admin\.tabWords = function \(host\) \{[\s\S]*?\nAdmin\.publish = function/)[0];
+  assert(words.includes('Save & Publish to All Students'));
+  assert(words.includes('self.setBadge(badge, parsed)'));
+  assert(!/8 <= /.test(html) && !/length >= 8/.test(html), 'the 8-to-14 word sentence filter is gone');
+  assert(Buffer.byteLength(html) < 450000);
 });
 
 test.after(()=>a.close());

@@ -11,6 +11,14 @@ npm test --prefix tests
 
 `phase1.cjs` includes boot regression tests, before/after fixtures from commit `7577968`, PIN and editor checks, sharing checks, and fake-timer dictation flows. It instruments the app **only in memory**, using a VM; the delivered page does not expose the test internals. `server.cjs` runs the embedded Apps Script with mock Sheet, Cache, Properties and Lock services. These mocks do **not** verify Google's deployment, quotas, permissions, redirects or live network behaviour.
 
+## Live lab (real-time sync)
+
+```sh
+npm run test:live --prefix tests
+```
+
+`live-lab.cjs` starts a real HTTP server for the repository and an in-process emulator of the free ntfy.sh API (POST, `/json?poll=1&since=all`, `/sse`), then boots **two independent devices** with jsdom: the lecturer publishes `Session 4 words` and the student device — already open — must receive the 30 words, the session number and the title over the live stream, with an empty outbox. It also checks the honest status chip (`Offline · Saved on device`), the community completion round trip and that Class stats shows the real student completion rather than the lecturer's own history. It needs no browser and no network access.
+
 ## Chromium / Playwright
 
 ```sh
