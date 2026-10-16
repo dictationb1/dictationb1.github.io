@@ -48,5 +48,29 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('cacheGet and cachePut utility functions handle hit, miss, expiry, default TTL, and exceptions',()=>{
+ assert.equal(context.cacheGet('nonexistent'),null);
+ context.cachePut('testKey','hello',5);
+ assert.equal(context.cacheGet('testKey'),'hello');
+
+ now+=6000;
+ assert.equal(context.cacheGet('testKey'),null);
+
+ context.cachePut('defaultTtlKey','defaultVal');
+ assert.equal(context.cacheGet('defaultTtlKey'),'defaultVal');
+ now+=9000;
+ assert.equal(context.cacheGet('defaultTtlKey'),'defaultVal');
+ now+=2000;
+ assert.equal(context.cacheGet('defaultTtlKey'),null);
+
+ const cacheService=context.CacheService;
+ context.CacheService={
+  getScriptCache:()=>{throw new Error('Simulated CacheService error');}
+ };
+ assert.doesNotThrow(()=>context.cachePut('errKey','val'));
+ assert.equal(context.cacheGet('errKey'),null);
+
+ context.CacheService=cacheService;
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
