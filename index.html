@@ -8265,9 +8265,15 @@ Cloud.fetchRepo = function (cb) {
 Cloud.applyRepo = function (s) {
   var d = DB.data, changed = 0;
   if (!s || !Array.isArray(s.lists) || !s.lists.length) return 0;
+  var listMap = Object.create(null);
+  if (Array.isArray(d.lists)) {
+    for (var i = 0; i < d.lists.length; i++) {
+      if (d.lists[i] && d.lists[i].id) listMap[d.lists[i].id] = d.lists[i];
+    }
+  }
   s.lists.forEach(function (remote) {
     if (!remote || !remote.id || !Array.isArray(remote.words)) return;
-    var local = DB.findList(d, remote.id);
+    var local = listMap[remote.id] || null;
     var stamp = Number(remote.version || remote.publishedVersion || 0);
     if (local && (local.version || 0) >= stamp && !remote.force) return;
     var words = remote.words.filter(function (x) { return x && typeof x.w === "string" && U.trim(x.w); }).map(function (x) {
@@ -8276,7 +8282,7 @@ Cloud.applyRepo = function (s) {
       return o;
     });
     if (!words.length) return;
-    if (!local) { local = { id: remote.id, version: 0 }; d.lists.push(local); }
+    if (!local) { local = { id: remote.id, version: 0 }; d.lists.push(local); listMap[remote.id] = local; }
     local.name = U.clip(remote.name || local.name || SAMPLE_LIST_NAME, 120);
     local.words = words;
     local.version = stamp || (local.version || 1);
@@ -8300,7 +8306,7 @@ Cloud.applyRepo = function (s) {
   }
   if (Array.isArray(s.plan)) {
     s.plan.forEach(function (row) {
-      if (!row || !row.key || !row.listId || !DB.findList(d, row.listId)) return;
+      if (!row || !row.key || !row.listId || !listMap[row.listId]) return;
       if (/^w[0-6]$/.test(row.key)) d.plan.weekdays[Number(row.key.slice(1))] = row.listId;
       else if (row.key === "pinned") { d.plan.pinned = row.listId; }
       else if (row.key === "default") d.plan.defaultList = row.listId;
