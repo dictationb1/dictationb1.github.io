@@ -48,5 +48,31 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server lastSessions retrieves most recent sessions in reverse order with default fallbacks',()=>{
+ delete tables[context.TAB.Sessions];
+ assert.deepEqual(context.lastSessions(5), []);
+ const sSheet = sheet(context.TAB.Sessions);
+ sSheet.appendRow(['no', 'day', 'date', 'title', 'listId']);
+ sSheet.appendRow(['1', 'Monday', '2026-10-12', 'Session 1', 'list-1']);
+ sSheet.appendRow(['2', 'Tuesday', '2026-10-13', 'Session 2', 'list-2']);
+ sSheet.appendRow(['3', 'Wednesday', '2026-10-14', 'Session 3', 'list-3']);
+ sSheet.appendRow(['4', 'Thursday', '2026-10-15', 'Session 4', 'list-4']);
+
+ const last2 = context.lastSessions(2);
+ assert.equal(last2.length, 2);
+ assert.deepEqual(last2[0], { no: '4', day: 'Thursday', date: '2026-10-15', title: 'Session 4', listId: 'list-4' });
+ assert.deepEqual(last2[1], { no: '3', day: 'Wednesday', date: '2026-10-14', title: 'Session 3', listId: 'list-3' });
+
+ const last10 = context.lastSessions(10);
+ assert.equal(last10.length, 4);
+ assert.equal(last10[0].no, '4');
+ assert.equal(last10[3].no, '1');
+
+ assert.deepEqual(context.lastSessions(0), []);
+
+ sSheet.appendRow([null, undefined, '2026-10-16']);
+ const lastIncomplete = context.lastSessions(1);
+ assert.deepEqual(lastIncomplete[0], { no: '', day: '', date: '2026-10-16', title: '', listId: '' });
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
