@@ -9,13 +9,15 @@
     "sentence": false,
     "repeats": 2,
     "rate": 0.85,
-    "numbers": true
+    "numbers": true,
+    "writeMode": "fixed",
+    "writeFixed": 5
   },
-  "ver": 3,
+  "ver": 4,
   "version": "2.0.0",
   "live": {
-    "state": "https://ntfy.sh/sdp_dictationb1_state_v2",
-    "community": "https://ntfy.sh/sdp_dictationb1_comm_v2",
-    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v2"
+    "state": "https://ntfy.sh/sdp_dictationb1_state_v4",
+    "community": "https://ntfy.sh/sdp_dictationb1_comm_v4",
+    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v4"
   }
 }

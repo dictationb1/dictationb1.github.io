@@ -1,3 +1,4 @@
 # Development test dependencies and local browser output (not app assets)
 tests/node_modules/
 tests/artifacts/
+node_modules/
