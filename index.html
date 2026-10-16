@@ -7939,9 +7939,14 @@ var Cloud = {
   },
   mergeComm: function (body) {
     var d = DB.data, added = this.mergeResults(body.results || []);
+    var existing = Object.create(null);
+    for (var i = 0; i < d.comments.length; i++) {
+      if (d.comments[i] && d.comments[i].id) existing[d.comments[i].id] = true;
+    }
     (body.comments || []).forEach(function (c) {
       if (!c || typeof c !== "object" || !c.id) return;
-      for (var i = 0; i < d.comments.length; i++) if (d.comments[i].id === c.id) return;
+      if (existing[c.id]) return;
+      existing[c.id] = true;
       d.comments.push({
         id: U.clip(c.id, 40), ts: Number(c.ts) || Date.now(), name: U.clip(c.name || "Student", 40),
         status: c.status || "comment", text: U.clip(c.text || "", CONFIG.commentLen), meta: U.clip(c.meta || "", 160),
