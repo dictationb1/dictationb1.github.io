@@ -6,7 +6,7 @@ const source=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\
 const tables={},cache={},properties={ADMIN_PIN:DEFAULT_PIN};
 let now=Date.UTC(2026,9,13,12);
 function sheet(name){if(tables[name])return tables[name];const rows=[];
- const s={getLastRow:()=>rows.length,getLastColumn:()=>Math.max(0,...rows.map(r=>r.length)),setFrozenRows(){},appendRow:r=>rows.push(r.slice()),deleteRow:r=>rows.splice(r-1,1),deleteRows:(r,n)=>rows.splice(r-1,n),getRange(r,c,n=1,m=1){return{getValues(){return Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>(rows[r+i-1]||[])[c+j-1]===undefined?'':rows[r+i-1][c+j-1]));},setValues(values){values.forEach((line,i)=>{if(!rows[r+i-1])rows[r+i-1]=[];line.forEach((v,j)=>rows[r+i-1][c+j-1]=v);});},setValue(v){if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}}},_rows:rows};tables[name]=s;return s;}
+ const s={getLastRow:()=>rows.length,getLastColumn:()=>Math.max(0,...rows.map(r=>r.length)),setFrozenRows(n){s._frozenRows=n;},appendRow:r=>rows.push(r.slice()),deleteRow:r=>rows.splice(r-1,1),deleteRows:(r,n)=>rows.splice(r-1,n),getRange(r,c,n=1,m=1){return{getValues(){return Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>(rows[r+i-1]||[])[c+j-1]===undefined?'':rows[r+i-1][c+j-1]));},setValues(values){values.forEach((line,i)=>{if(!rows[r+i-1])rows[r+i-1]=[];line.forEach((v,j)=>rows[r+i-1][c+j-1]=v);});},setValue(v){if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}}},_rows:rows};tables[name]=s;return s;}
 class DateMock extends Date {static now(){return now;}}
 const context=vm.createContext({Date:DateMock,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]})},CacheService:{getScriptCache:()=>({get:k=>cache[k]&&cache[k].until>now?cache[k].value:null,put:(k,v,secs)=>{cache[k]={value:String(v),until:now+secs*1000};}})},SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>tables[n]||null,insertSheet:sheet})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Utilities:{base64EncodeWebSafe:()=> 'mock-token',computeDigest:()=>[],DigestAlgorithm:{SHA_256:'SHA_256'}}});
 vm.runInContext(source,context);
@@ -47,6 +47,24 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert.throws(()=>post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Failed version',words}),/quota/);
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
+});
+test('Server sheet utility handles new sheet creation with or without headers and existing sheet lookup',()=>{
+ const s1=context.sheet('UnitHeaders',['colA','colB']);
+ assert.equal(s1._rows.length,1);
+ assert.deepEqual(s1._rows[0],['colA','colB']);
+ assert.equal(s1._frozenRows,1);
+
+ const s1_again=context.sheet('UnitHeaders',['diffA','diffB']);
+ assert.strictEqual(s1_again,s1);
+ assert.deepEqual(s1._rows[0],['colA','colB']);
+
+ const s2=context.sheet('UnitNoHeaders');
+ assert.equal(s2._rows.length,0);
+ assert.equal(s2._frozenRows,undefined);
+
+ const s3=context.sheet('UnitEmptyHeaders',[]);
+ assert.equal(s3._rows.length,0);
+ assert.equal(s3._frozenRows,undefined);
 });
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
