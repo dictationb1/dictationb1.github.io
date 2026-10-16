@@ -44,7 +44,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.getByLabel('Session number',{exact:true}).fill('19');await page.getByRole('button',{name:'Sun',exact:true}).click();
   await page.getByRole('button',{name:'Lock now',exact:true}).first().click();
   console.log("homeHero text:", await page.locator('#homeHero').textContent());
-  results.push({test:'Chromium '+width+'px session update visible on Home',status:(await page.locator('#homeHero').textContent()).includes('19')&&(await page.locator('#homeHero').textContent()).includes('Sunday')?'PASS':'FAIL'});
+  results.push({test:'Chromium '+width+'px session update visible on Home',status:(await page.locator('#homeHero').textContent()).includes('19')&&(await page.locator('#homeHero').textContent()).toLowerCase().includes('sunday')?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'home-390.png'),fullPage:true});
   await context.close();
  }
