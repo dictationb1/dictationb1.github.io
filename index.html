@@ -2740,9 +2740,13 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
-    var a = U.$("#sdpAudio");
-    if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
-    return a;
+    var s = DB.data.session;
+    var no = s.no || "";
+    var day = s.day || "";
+    if (no && day) return "Session " + no + " · " + day;
+    if (no) return "Session " + no;
+    if (day) return day;
+    return "Session";
   },
   /* shuffle with a seed so Back always works */
   shuffleSeeded: function (n, seed) {
