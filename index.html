@@ -1172,7 +1172,7 @@ function addComment(body, cid) {
   if (rateLimited(clip(body.deviceId || cid, 60), 'c', 30, 5)) return { ok: false, err: 'rate' };
   var status = String(body.status || 'comment');
   if (['finished', 'problem', 'notdone', 'comment'].indexOf(status) < 0) status = 'comment';
-  var id = cid || 'c' + Date.now() + Math.floor(Math.random() * 1000);
+  var id = cid || ('c_' + Utilities.getUuid());
   append(TAB.Comments, ['id', 'ts', 'name', 'status', 'text', 'meta', 'pinned', 'reported', 'hidden', 'reply'],
     [id, Date.now(), cleanPublic(body.name, 24), status, cleanPublic(body.text, 280), clip(body.meta, 200), 'no', 'no', 'no', '']);
   return { ok: true, id: id };
@@ -1181,7 +1181,7 @@ function addComment(body, cid) {
 function addMessage(body, cid) {
   var old = rows(TAB.Inbox); for (var oi=0;oi<old.length;oi++) if (String(old[oi][0]) === cid) return {ok:true,id:cid,dup:true};
   if (rateLimited(clip(body.deviceId || cid, 60), 'm', 30, 5)) return { ok: false, err: 'rate' };
-  var id = cid || 'm' + Date.now() + Math.floor(Math.random() * 1000);
+  var id = cid || ('m_' + Utilities.getUuid());
   append(TAB.Inbox, ['id', 'ts', 'name', 'cat', 'text', 'contact', 'read', 'meta'],
     [id, Date.now(), cleanPublic(body.name, 24), clip(body.cat, 20), clip(body.text, 600), clip(body.contact, 120), 'no', clip(body.meta, 200)]);
   return { ok: true, id: id };
@@ -1190,7 +1190,7 @@ function addMessage(body, cid) {
 function addResult(body, cid) {
   if (rateLimited(cid, 'r', 10, 60)) return { ok: false, err: 'rate' };
   if (seen(cid)) return { ok: true, dup: true };
-  var id = 'r' + Date.now() + Math.floor(Math.random() * 1000);
+  var id = 'r_' + Utilities.getUuid();
   append(TAB.Results, ['id', 'ts', 'sessionNo', 'day', 'list', 'mode', 'words', 'score', 'secs', 'voice', 'uk', 'device'],
     [id, Date.now(), clip(body.sessionNo, 16), clip(body.day, 24), clip(body.list, 60), clip(body.mode, 12),
       Number(body.words) || 0, Number(body.score) || 0, Number(body.secs) || 0,
