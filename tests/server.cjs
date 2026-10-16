@@ -1,6 +1,6 @@
 const DEFAULT_PIN = require('./test-pin.cjs');
 'use strict';
-const fs=require('fs'),vm=require('vm'),assert=require('assert'),acorn=require('acorn');
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),acorn=require('acorn'),crypto=require('crypto');
 const html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8');
 const source=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];
 const tables={},cache={},properties={ADMIN_PIN:DEFAULT_PIN};
@@ -8,7 +8,7 @@ let now=Date.UTC(2026,9,13,12);
 function sheet(name){if(tables[name])return tables[name];const rows=[];
  const s={getLastRow:()=>rows.length,getLastColumn:()=>Math.max(0,...rows.map(r=>r.length)),setFrozenRows(){},appendRow:r=>rows.push(r.slice()),deleteRow:r=>rows.splice(r-1,1),deleteRows:(r,n)=>rows.splice(r-1,n),getRange(r,c,n=1,m=1){return{getValues(){return Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>(rows[r+i-1]||[])[c+j-1]===undefined?'':rows[r+i-1][c+j-1]));},setValues(values){values.forEach((line,i)=>{if(!rows[r+i-1])rows[r+i-1]=[];line.forEach((v,j)=>rows[r+i-1][c+j-1]=v);});},setValue(v){if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}}},_rows:rows};tables[name]=s;return s;}
 class DateMock extends Date {static now(){return now;}}
-const context=vm.createContext({Date:DateMock,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]})},CacheService:{getScriptCache:()=>({get:k=>cache[k]&&cache[k].until>now?cache[k].value:null,put:(k,v,secs)=>{cache[k]={value:String(v),until:now+secs*1000};}})},SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>tables[n]||null,insertSheet:sheet})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Utilities:{base64EncodeWebSafe:()=> 'mock-token',computeDigest:()=>[],DigestAlgorithm:{SHA_256:'SHA_256'}}});
+const context=vm.createContext({Date:DateMock,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]})},CacheService:{getScriptCache:()=>({get:k=>cache[k]&&cache[k].until>now?cache[k].value:null,put:(k,v,secs)=>{cache[k]={value:String(v),until:now+secs*1000};}})},SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>tables[n]||null,insertSheet:sheet})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Utilities:{DigestAlgorithm:{SHA_256:'SHA_256'},computeDigest:(algo,value)=>{if(algo!=='SHA_256')throw new Error('Unsupported algorithm');return Array.from(crypto.createHash('sha256').update(value).digest());},base64EncodeWebSafe:data=>{const buf=Buffer.isBuffer(data)?data:Buffer.from(data);return buf.toString('base64').replace(/\+/g,'-').replace(/\//g,'_');}}});
 vm.runInContext(source,context);
 const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
@@ -20,8 +20,46 @@ test('Server rejects unauthenticated publish/inbox/moderation; public reads excl
  const state=context.handleGet({parameter:{action:'state'}});assert(!state.inbox);assert(!context.handleGet({parameter:{action:'comments'}}).inbox);
 });
 test('Server PIN: correct PIN succeeds, five wrong tries lock for five minutes',()=>{
- assert(post({action:'login',pin:DEFAULT_PIN}).ok);for(let i=0;i<5;i++)assert(!post({action:'login',pin:'0000'}).ok);
+ const loginRes = post({action:'login',pin:DEFAULT_PIN});
+ assert(loginRes.ok);
+ assert.equal(typeof loginRes.token, 'string');
+ assert.equal(loginRes.token.length, 24);
+ assert(/^[A-Za-z0-9_-]{24}$/.test(loginRes.token));
+ for(let i=0;i<5;i++)assert(!post({action:'login',pin:'0000'}).ok);
  assert.equal(post({action:'login',pin:DEFAULT_PIN}).err,'locked');now+=300001;assert(post({action:'login',pin:DEFAULT_PIN}).ok);
+});
+
+test('makeToken unit tests: format, determinism, time/pin sensitivity, and empty pin handling',()=>{
+ const token1=context.makeToken();
+ assert.equal(typeof token1,'string');
+ assert.equal(token1.length,24);
+ assert(/^[A-Za-z0-9_-]{24}$/.test(token1),'Token should contain only web-safe base64 characters');
+
+ // Deterministic output for same PIN and timestamp
+ const token1Repeat=context.makeToken();
+ assert.equal(token1Repeat,token1);
+
+ // Output changes when timestamp changes
+ now+=1000;
+ const tokenTimeChange=context.makeToken();
+ assert.notEqual(tokenTimeChange,token1);
+ assert.equal(tokenTimeChange.length,24);
+
+ // Output changes when ADMIN_PIN changes
+ properties.ADMIN_PIN='9999';
+ const tokenPinChange=context.makeToken();
+ assert.notEqual(tokenPinChange,tokenTimeChange);
+ assert.equal(tokenPinChange.length,24);
+
+ // Output when ADMIN_PIN is empty/missing
+ delete properties.ADMIN_PIN;
+ const tokenNoPin=context.makeToken();
+ assert.equal(typeof tokenNoPin,'string');
+ assert.equal(tokenNoPin.length,24);
+ assert(/^[A-Za-z0-9_-]{24}$/.test(tokenNoPin));
+
+ // Restore ADMIN_PIN
+ properties.ADMIN_PIN=DEFAULT_PIN;
 });
 test('Server 1200-word list stores multiple cells under 40K, reads all words/version/plan/session',()=>{
  const words=Array.from({length:1200},(_,i)=>({w:'word'+i,s:'This is a useful sentence for the class today.',m:'a useful word'}));
