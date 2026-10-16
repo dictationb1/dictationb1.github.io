@@ -48,5 +48,19 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server append utility creates sheet, appends rows, escapes formula triggers, and returns last row index',()=>{
+ const last1=context.append('TestAppend',['Header1','Header2','Header3'],['=SUM(A1:A5)','+100','-50']);
+ assert.equal(last1,2);
+ assert.equal(tables.TestAppend._rows.length,2);
+ assert.deepStrictEqual(tables.TestAppend._rows[0],['Header1','Header2','Header3']);
+ assert.deepStrictEqual(tables.TestAppend._rows[1],["'=SUM(A1:A5)","'+100","'-50"]);
+ const last2=context.append('TestAppend',['Header1','Header2','Header3'],['@admin','safe text',12345]);
+ assert.equal(last2,3);
+ assert.equal(tables.TestAppend._rows.length,3);
+ assert.deepStrictEqual(tables.TestAppend._rows[2],["'@admin",'safe text',12345]);
+ const last3=context.append('TestAppend',['Header1','Header2','Header3'],[true,false,null]);
+ assert.equal(last3,4);
+ assert.deepStrictEqual(tables.TestAppend._rows[3],[true,false,null]);
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
