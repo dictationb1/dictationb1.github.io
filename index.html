@@ -2740,9 +2740,11 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
-    var a = U.$("#sdpAudio");
-    if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
-    return a;
+    var s = DB.data ? DB.data.session : null;
+    if (!s) return "Session";
+    var parts = ["Session " + (s.no || "1")];
+    if (s.day) parts.push(s.day);
+    return parts.join(" \u00b7 ");
   },
   /* shuffle with a seed so Back always works */
   shuffleSeeded: function (n, seed) {
@@ -2824,7 +2826,7 @@ var Screens = {
     U.widget("home-hero", function () {
 
     /* hero */
-    U.$("#homeKicker").textContent = (Lib.sessionLabel() || "Session").toUpperCase();
+    U.$("#homeKicker").textContent = Lib.sessionLabel() || "Session";
     U.$("#homeTitle").textContent = list ? list.name : "No list published yet";
     var wc = list && list.words ? list.words.length : 0;
     var est = Math.max(1, Math.round(Lib.estSeconds(list) / 60));
