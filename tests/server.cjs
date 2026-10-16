@@ -48,5 +48,27 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server append helper creates sheet with headers, sanitizes formula prefixes, and returns row count',()=>{
+ const sheetName = 'QA_Append_Sheet';
+ const headers = ['ColA', 'ColB', 'ColC', 'ColD'];
+
+ // 1. Initial append on new sheet: sets headers on row 1, appends data on row 2, returns 2
+ const row1 = context.append(sheetName, headers, ['=CMD()', '+100', '-50', '@SUM()']);
+ assert.equal(row1, 2);
+ const s = tables[sheetName];
+ assert.deepEqual(s._rows[0], headers);
+ assert.deepEqual(s._rows[1], ["'=CMD()", "'+100", "'-50", "'@SUM()"]);
+
+ // 2. Second append on existing sheet: appends data on row 3, returns 3
+ // Non-formula strings and formula symbols inside strings (not at start) remain untouched
+ const row2 = context.append(sheetName, headers, ['normal string', 'a=b+c', 123, true]);
+ assert.equal(row2, 3);
+ assert.deepEqual(s._rows[2], ['normal string', 'a=b+c', 123, true]);
+
+ // 3. Third append with null and undefined values
+ const row3 = context.append(sheetName, headers, [null, undefined, 0, false]);
+ assert.equal(row3, 4);
+ assert.deepEqual(s._rows[3], [null, undefined, 0, false]);
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
