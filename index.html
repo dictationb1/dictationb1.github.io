@@ -2204,9 +2204,9 @@ var DB = {
   refreshSessionDate: function (d) {
     d = d || this.data;
     var s = d.session, today = U.dateKey(new Date()), planned = (d.plan && d.plan.dates) ? d.plan.dates[s.date] : null;
-    if (!s.date || (!planned && s.date < today)) { s.date = today; s.day = DAYS[U.weekdayIndex(new Date())]; return true; }
+    if (!s.date || (!planned && s.date < today)) { s.date = today; if (s.autoDay !== false) s.day = DAYS[U.weekdayIndex(new Date())]; return true; }
     var day = new Date(s.date + "T12:00:00");
-    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+    if (isFinite(day.getTime()) && s.autoDay !== false) s.day = DAYS[U.weekdayIndex(day)];
     return false;
   },
   findList: function (d, id) {
@@ -2740,9 +2740,11 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
-    var a = U.$("#sdpAudio");
-    if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
-    return a;
+    var s = DB.data ? DB.data.session : null;
+    if (!s) return "Session";
+    var lbl = "Session " + (s.no || "");
+    if (s.day) lbl += " \u00b7 " + s.day;
+    return lbl;
   },
   /* shuffle with a seed so Back always works */
   shuffleSeeded: function (n, seed) {
@@ -2824,7 +2826,7 @@ var Screens = {
     U.widget("home-hero", function () {
 
     /* hero */
-    U.$("#homeKicker").textContent = (Lib.sessionLabel() || "Session").toUpperCase();
+    U.$("#homeKicker").textContent = Lib.sessionLabel() || "Session";
     U.$("#homeTitle").textContent = list ? list.name : "No list published yet";
     var wc = list && list.words ? list.words.length : 0;
     var est = Math.max(1, Math.round(Lib.estSeconds(list) / 60));
@@ -7912,12 +7914,13 @@ var Cloud = {
     var m = /^Session\s+(\d+[A-Za-z]?)\b/i.exec(String((list && list.name) || ""));
     if (m) s.no = m[1];
     if (!s.date) s.date = U.dateKey(new Date());
-    var day = new Date(s.date + "T12:00:00");
-    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
-    else { s.date = U.dateKey(new Date()); s.day = DAYS[U.weekdayIndex(new Date())]; }
+    if (s.autoDay !== false) {
+      var day = new Date(s.date + "T12:00:00");
+      if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+      else { s.date = U.dateKey(new Date()); s.day = DAYS[U.weekdayIndex(new Date())]; }
+    }
     if (!s.title) s.title = (list && list.name) || "";
     s.listId = (list && list.id) || s.listId;
-    s.autoDay = false;
     return s;
   },
   mergeResults: function (rows) {
