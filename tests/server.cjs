@@ -14,6 +14,19 @@ const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 function post(body){return context.handlePost({postData:{contents:JSON.stringify(body)}});}
 test('Apps Script ES2017 syntax',()=>acorn.parse(source,{ecmaVersion:2017}));
+test('rows(name) returns empty array when sheet does not exist or has <2 rows, and returns data rows otherwise',()=>{
+ assert.deepEqual(context.rows('NonExistentSheet'),[]);
+ sheet('EmptySheet');
+ assert.deepEqual(context.rows('EmptySheet'),[]);
+ const headerOnly=sheet('HeaderOnlySheet');
+ headerOnly.appendRow(['Header1','Header2']);
+ assert.deepEqual(context.rows('HeaderOnlySheet'),[]);
+ const dataSheet=sheet('DataSheet');
+ dataSheet.appendRow(['ColA','ColB']);
+ dataSheet.appendRow(['ValA1','ValB1']);
+ dataSheet.appendRow(['ValA2','ValB2']);
+ assert.deepEqual(context.rows('DataSheet'),[['ValA1','ValB1'],['ValA2','ValB2']]);
+});
 test('Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox',()=>{
  assert.equal(post(null).err,'unauthorised');assert.equal(post([]).err,'unauthorised');
  for(const action of ['publish','readInbox','moderate','inbox','announce'])assert.equal(post({action}).err,'unauthorised');
