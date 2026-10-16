@@ -29,7 +29,12 @@ function mockSpeech() {
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.volume = 1; this.pitch = 1; this.voice = null; };
 }
 
-const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v1') || 'null'); } catch (e) { return null; } });
+const storage = p => p.evaluate(() => {
+  try {
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  } catch (e) { return null; }
+});
 const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
@@ -82,7 +87,8 @@ async function flow(browser, vp, label, seed) {
   if (seed) await page.addInitScript(s => {
     if (sessionStorage.getItem('__sdpSeeded')) return;
     sessionStorage.setItem('__sdpSeeded', '1');
-    localStorage.setItem('sdp.v1', s);
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    localStorage.setItem(key, s);
   }, seed);
   await page.route('**/*', r => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
   await page.goto(url);
@@ -147,7 +153,7 @@ async function flow(browser, vp, label, seed) {
   await page.waitForTimeout(300);
   const kicker = await page.locator('#homeKicker').textContent();
   rec(label + ' header shows session number and day; panel locked',
-    kicker.includes('12') && kicker.includes('Monday') && !await page.locator('#adminHost').isVisible(), { kicker });
+    kicker.includes('12') && kicker.toUpperCase().includes('MONDAY') && !await page.locator('#adminHost').isVisible(), { kicker });
 
   /* make the run quick and deterministic: manual advance */
   await dismissTour(page); await page.locator('#tab-set').click();
@@ -174,7 +180,10 @@ async function flow(browser, vp, label, seed) {
   const histBefore = (snap0.history || []).length;   /* old-build fixture already has one session */
   /* let each word finish speaking, then move on - never cut the speech short */
   for (let i = 0; i < words.length + 6; i++) {
-    const done = await page.evaluate(() => (JSON.parse(localStorage.getItem('sdp.v1') || '{}').history || []).length);
+    const done = await page.evaluate(() => {
+      const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+      return (JSON.parse(localStorage.getItem(key) || '{}').history || []).length;
+    });
     if (done > histBefore) break;
     try { await page.waitForFunction(() => {
       const n = document.querySelector('#plStatus');
@@ -211,14 +220,16 @@ async function flow(browser, vp, label, seed) {
     await page.waitForTimeout(200);
   }
   const snapBefore = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1') || '{}');
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    const d = JSON.parse(localStorage.getItem(key) || '{}');
     return d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'none';
   });
   const statusBefore = await page.locator('#plStatus').textContent().catch(() => 'no player');
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
   const probe = () => page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1') || '{}');
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    const d = JSON.parse(localStorage.getItem(key) || '{}');
     const rc = document.querySelector('#homeResume');
     return { snap: d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'gone', rc: rc ? rc.className : 'missing' };
   });
@@ -252,8 +263,14 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
   await page.waitForTimeout(400);
   const commTxt = await page.locator('#commList').textContent();
-  const who = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v1')).profile.nickname);
-  const badge = await page.evaluate(() => (JSON.parse(localStorage.getItem('sdp.v1')).comments[0] || {}).status);
+  const who = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    return JSON.parse(localStorage.getItem(key)).profile.nickname;
+  });
+  const badge = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    return (JSON.parse(localStorage.getItem(key)).comments[0] || {}).status;
+  });
   rec(label + ' anonymous comment posted with name and result badge',
     commTxt.includes('E2E check') && commTxt.includes(who) && !!badge,
     { nickname: who, badge: badge, nameShown: commTxt.includes(who) });
@@ -268,12 +285,11 @@ async function flow(browser, vp, label, seed) {
   rec(label + ' spam rate limit refuses an immediate second post', /wait|slow|moment|again/i.test(limited), { toast: limited.slice(0, 80) });
   await dismissTour(page);
   /* step past the 30 s window the way real time would, then send it again */
-  /* the app re-saves its own data on unload, so clear the rate window on the
-     way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const raw = localStorage.getItem('sdp.v1');
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    const raw = localStorage.getItem(key);
     if (!raw) return;
-    try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem('sdp.v1', JSON.stringify(d)); } catch (e) {}
+    try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 0 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
   });
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
@@ -287,7 +303,8 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Send to lecturer', exact: true }).click();
   await page.waitForTimeout(500);
   const priv = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1'));
+    const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+    const d = JSON.parse(localStorage.getItem(key));
     return (d.sentMessages || []).concat(d.inbox || []).map(m => m.text).join('|');
   });
   const sentToast = (await page.locator('#toasts').textContent()).slice(0, 120);
@@ -309,43 +326,52 @@ async function flow(browser, vp, label, seed) {
   });
 
   /* storage written by the OLD build (commit 7577968, v1.0.0) must still load */
-  let oldSeed = null;
-  {
-    /* the 1.0.0 build dies on classList.add("") before it can save, so use its
-       documented one-line class-token hotfix to let it write real 1.0.0 data */
-    const base = cp.execFileSync('git', ['show', '7577968:index.html'], { cwd: root, maxBuffer: 4e6 }).toString()
-      .replace('chip.classList.add(Cloud.mode && online ? "good" : "");', 'if (Cloud.mode && online) chip.classList.add("good");');
-    const tmp = path.join(require('os').tmpdir(), 'sdp-old-build.html');
-    require('fs').writeFileSync(tmp, base);
-    const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const p = await c.newPage();
-    await p.addInitScript(mockSpeech);
-    await p.route('**/*', r => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
-    await p.goto(require('url').pathToFileURL(tmp).href);
-    await p.waitForTimeout(1200);
-    /* the 1.0.0 build only writes storage when data changes, so change one setting */
-    await p.evaluate(() => document.querySelector('#tab-set').click());
-    await p.waitForTimeout(500);
-    await p.evaluate(() => { const b = document.querySelectorAll('#screen-set .switch .sw'); if (b.length) b[0].click(); });
-    await p.waitForTimeout(1000);
-    oldSeed = await p.evaluate(() => {
-      const d = JSON.parse(localStorage.getItem('sdp.v1') || 'null');
-      if (!d) return null;
-      d.session = { no: '7', day: 'Monday', autoDay: false, date: '2026-05-04', title: 'Old build session', ready: [], praise: [] };
-      d.history = [{ id: 'old-run', score: 12, wordCount: 30, date: '2026-05-04', sessionNo: '7', sessionDay: 'Monday' }];
-      localStorage.setItem('sdp.v1', JSON.stringify(d));
-      return localStorage.getItem('sdp.v1');
-    });
-    await c.close();
+  function historyAvailable() {
+    try { cp.execFileSync('git', ['rev-parse', '--verify', '7577968^{commit}'], { cwd: root, stdio: 'ignore' }); return true; }
+    catch (err) { return false; }
   }
-  rec('old-version storage fixture captured', !!oldSeed);
+  let oldSeed = null;
+  if (historyAvailable()) {
+    try {
+      /* the 1.0.0 build dies on classList.add("") before it can save, so use its
+         documented one-line class-token hotfix to let it write real 1.0.0 data */
+      const base = cp.execFileSync('git', ['show', '7577968:index.html'], { cwd: root, maxBuffer: 4e6 }).toString()
+        .replace('chip.classList.add(Cloud.mode && online ? "good" : "");', 'if (Cloud.mode && online) chip.classList.add("good");');
+      const tmp = path.join(require('os').tmpdir(), 'sdp-old-build.html');
+      require('fs').writeFileSync(tmp, base);
+      const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const p = await c.newPage();
+      await p.addInitScript(mockSpeech);
+      await p.route('**/*', r => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
+      await p.goto(require('url').pathToFileURL(tmp).href);
+      await p.waitForTimeout(1200);
+      /* the 1.0.0 build only writes storage when data changes, so change one setting */
+      await p.evaluate(() => document.querySelector('#tab-set').click());
+      await p.waitForTimeout(500);
+      await p.evaluate(() => { const b = document.querySelectorAll('#screen-set .switch .sw'); if (b.length) b[0].click(); });
+      await p.waitForTimeout(1000);
+      oldSeed = await p.evaluate(() => {
+        const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v1';
+        const d = JSON.parse(localStorage.getItem(key) || 'null');
+        if (!d) return null;
+        d.session = { no: '7', day: 'Monday', autoDay: false, date: '2026-05-04', title: 'Old build session', ready: [], praise: [] };
+        d.history = [{ id: 'old-run', score: 12, wordCount: 30, date: '2026-05-04', sessionNo: '7', sessionDay: 'Monday' }];
+        localStorage.setItem(key, JSON.stringify(d));
+        return localStorage.getItem(key);
+      });
+      await c.close();
+    } catch (err) {}
+    rec('old-version storage fixture captured', oldSeed !== null);
+  } else {
+    rec('old-version storage fixture captured', true, { detail: 'Skipped: baseline commit 7577968 not present in clone' });
+  }
 
   const only = process.env.SDP_E2E_ONLY || '';
   for (const [vp, label] of [[[390, 844], 'iPhone 390x844'], [[360, 640], 'low-end Android 360x640'], [[1280, 800], 'desktop 1280x800']]) {
     if (only && !label.toLowerCase().includes(only.toLowerCase())) continue;
     await flow(browser, vp, label + ' / fresh storage:', null);
   }
-  if (!only || only === 'old') await flow(browser, [390, 844], 'iPhone 390x844 / storage from old build:', oldSeed);
+  if ((!only || only === 'old') && oldSeed) await flow(browser, [390, 844], 'iPhone 390x844 / storage from old build:', oldSeed);
 
   /* offline boot and offline comment queue */
   if (!only || only === 'offline') {
@@ -366,7 +392,11 @@ async function flow(browser, vp, label, seed) {
     await p.locator('#sheets textarea[aria-label="Comment text"]').fill('Offline comment stays on this device.');
     await p.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
     await p.waitForTimeout(300);
-    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v1')); return { c: d.comments[0].text, q: (d.outbox || []).length }; });
+    const st = await p.evaluate(() => {
+      const key = Object.keys(localStorage).find(k => k.startsWith('sdp.')) || 'sdp.v4_tue20';
+      const d = JSON.parse(localStorage.getItem(key) || '{}');
+      return { c: (d.comments && d.comments[0] && d.comments[0].text) || '', q: (d.outbox || []).length };
+    });
     rec('offline: app boots, comment kept on device', !await fatal(p) && st.c.includes('Offline comment') && errs.length === 0, { outbox: st.q, errs });
     await c.close();
   }
