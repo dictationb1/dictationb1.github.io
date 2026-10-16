@@ -8,7 +8,17 @@ let now=Date.UTC(2026,9,13,12);
 function sheet(name){if(tables[name])return tables[name];const rows=[];
  const s={getLastRow:()=>rows.length,getLastColumn:()=>Math.max(0,...rows.map(r=>r.length)),setFrozenRows(){},appendRow:r=>rows.push(r.slice()),deleteRow:r=>rows.splice(r-1,1),deleteRows:(r,n)=>rows.splice(r-1,n),getRange(r,c,n=1,m=1){return{getValues(){return Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>(rows[r+i-1]||[])[c+j-1]===undefined?'':rows[r+i-1][c+j-1]));},setValues(values){values.forEach((line,i)=>{if(!rows[r+i-1])rows[r+i-1]=[];line.forEach((v,j)=>rows[r+i-1][c+j-1]=v);});},setValue(v){if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}}},_rows:rows};tables[name]=s;return s;}
 class DateMock extends Date {static now(){return now;}}
-const context=vm.createContext({Date:DateMock,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]})},CacheService:{getScriptCache:()=>({get:k=>cache[k]&&cache[k].until>now?cache[k].value:null,put:(k,v,secs)=>{cache[k]={value:String(v),until:now+secs*1000};}})},SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>tables[n]||null,insertSheet:sheet})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Utilities:{base64EncodeWebSafe:()=> 'mock-token',computeDigest:()=>[],DigestAlgorithm:{SHA_256:'SHA_256'}}});
+class TextOutputMock {
+  constructor(content) { this._content = content; this._mimeType = null; }
+  getContent() { return this._content; }
+  getMimeType() { return this._mimeType; }
+  setMimeType(mime) { this._mimeType = mime; return this; }
+}
+const ContentServiceMock = {
+  MimeType: { JSON: 'JSON' },
+  createTextOutput: (content) => new TextOutputMock(content)
+};
+const context=vm.createContext({Date:DateMock,ContentService:ContentServiceMock,PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]})},CacheService:{getScriptCache:()=>({get:k=>cache[k]&&cache[k].until>now?cache[k].value:null,put:(k,v,secs)=>{cache[k]={value:String(v),until:now+secs*1000};}})},SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>tables[n]||null,insertSheet:sheet})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Utilities:{base64EncodeWebSafe:()=> 'mock-token',computeDigest:()=>[],DigestAlgorithm:{SHA_256:'SHA_256'}}});
 vm.runInContext(source,context);
 const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
@@ -47,6 +57,37 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert.throws(()=>post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Failed version',words}),/quota/);
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
+});
+
+test('Server respond formats JSON output and handles falsy fallback defaults',()=>{
+ const out1=context.respond({ok:true,ver:1});
+ assert.equal(out1.getMimeType(),'JSON');
+ assert.equal(out1.getContent(),JSON.stringify({ok:true,ver:1}));
+
+ const outNull=context.respond(null);
+ assert.equal(outNull.getMimeType(),'JSON');
+ assert.equal(outNull.getContent(),JSON.stringify({ok:false}));
+
+ const outUndefined=context.respond(undefined);
+ assert.equal(outUndefined.getMimeType(),'JSON');
+ assert.equal(outUndefined.getContent(),JSON.stringify({ok:false}));
+
+ const outFalse=context.respond(false);
+ assert.equal(outFalse.getMimeType(),'JSON');
+ assert.equal(outFalse.getContent(),JSON.stringify({ok:false}));
+
+ const getOut=context.doGet({parameter:{action:'ver'}});
+ assert.equal(getOut.getMimeType(),'JSON');
+ const getObj=JSON.parse(getOut.getContent());
+ assert.equal(getObj.ok,true);
+ assert(typeof getObj.ver === 'number');
+
+ const postOut=context.doPost({postData:{contents:JSON.stringify({action:'ping'})}});
+ assert.equal(postOut.getMimeType(),'JSON');
+ const postObj=JSON.parse(postOut.getContent());
+ assert.equal(postObj.ok,true);
+ assert.equal(postObj.pong,true);
+ assert(typeof postObj.ver === 'number');
 });
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
