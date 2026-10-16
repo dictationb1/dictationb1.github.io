@@ -48,5 +48,21 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('setCfg and getCfg correctly retrieve, create, update, and bump version in Config sheet',()=>{
+ assert.equal(context.getCfg('non_existent_key'), '');
+ const initialVer = Number(context.getCfg('ver') || 0);
+ context.setCfg('myTestKey', 'initialValue');
+ assert.equal(context.getCfg('myTestKey'), 'initialValue');
+ const ver1 = Number(context.getCfg('ver'));
+ assert.equal(ver1, initialVer + 1);
+ context.setCfg('myTestKey', 'updatedValue');
+ assert.equal(context.getCfg('myTestKey'), 'updatedValue');
+ const ver2 = Number(context.getCfg('ver'));
+ assert.equal(ver2, ver1 + 1);
+ context.setCfg('numericKey', 42);
+ assert.equal(context.getCfg('numericKey'), 42);
+ context.setCfg('myTestKey', '');
+ assert.equal(context.getCfg('myTestKey'), '');
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
