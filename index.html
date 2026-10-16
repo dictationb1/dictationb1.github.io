@@ -2740,9 +2740,10 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
-    var a = U.$("#sdpAudio");
-    if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
-    return a;
+    var s = DB.data ? DB.data.session : null;
+    if (!s) return "Session";
+    var no = s.no || "1", day = s.day || "";
+    return "Session " + no + (day ? " \u00b7 " + day : "");
   },
   /* shuffle with a seed so Back always works */
   shuffleSeeded: function (n, seed) {
@@ -2824,7 +2825,7 @@ var Screens = {
     U.widget("home-hero", function () {
 
     /* hero */
-    U.$("#homeKicker").textContent = (Lib.sessionLabel() || "Session").toUpperCase();
+    U.$("#homeKicker").textContent = Lib.sessionLabel() || "Session";
     U.$("#homeTitle").textContent = list ? list.name : "No list published yet";
     var wc = list && list.words ? list.words.length : 0;
     var est = Math.max(1, Math.round(Lib.estSeconds(list) / 60));
@@ -7939,9 +7940,14 @@ var Cloud = {
   },
   mergeComm: function (body) {
     var d = DB.data, added = this.mergeResults(body.results || []);
+    var existing = Object.create(null);
+    for (var i = 0; i < d.comments.length; i++) {
+      if (d.comments[i] && d.comments[i].id) existing[d.comments[i].id] = true;
+    }
     (body.comments || []).forEach(function (c) {
       if (!c || typeof c !== "object" || !c.id) return;
-      for (var i = 0; i < d.comments.length; i++) if (d.comments[i].id === c.id) return;
+      if (existing[c.id]) return;
+      existing[c.id] = true;
       d.comments.push({
         id: U.clip(c.id, 40), ts: Number(c.ts) || Date.now(), name: U.clip(c.name || "Student", 40),
         status: c.status || "comment", text: U.clip(c.text || "", CONFIG.commentLen), meta: U.clip(c.meta || "", 160),
