@@ -13,6 +13,24 @@ vm.runInContext(source,context);
 const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 function post(body){return context.handlePost({postData:{contents:JSON.stringify(body)}});}
+test('Server setCfg/getCfg creates new keys, updates existing keys in place, and bumps version',()=>{
+ assert.equal(context.getCfg('non_existent_key'),'');
+ context.setCfg('test_key','initial_value');
+ assert.equal(context.getCfg('test_key'),'initial_value');
+ const ver1=Number(context.getCfg('ver'));
+ assert(ver1>0,'version should be bumped on setCfg');
+ const configRows1=tables.Config._rows.length;
+ context.setCfg('test_key','updated_value');
+ assert.equal(context.getCfg('test_key'),'updated_value');
+ const ver2=Number(context.getCfg('ver'));
+ assert.equal(ver2,ver1+1,'version should bump on update');
+ const configRows2=tables.Config._rows.length;
+ assert.equal(configRows2,configRows1,'updating existing key should not add new row for that key');
+ context.setCfg('another_key',12345);
+ assert.equal(context.getCfg('another_key'),12345);
+ assert.equal(context.getCfg('test_key'),'updated_value');
+ assert.equal(Number(context.getCfg('ver')),ver2+1);
+});
 test('Apps Script ES2017 syntax',()=>acorn.parse(source,{ecmaVersion:2017}));
 test('Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox',()=>{
  assert.equal(post(null).err,'unauthorised');assert.equal(post([]).err,'unauthorised');
