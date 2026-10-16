@@ -48,5 +48,21 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server getCfg reads config key values, handles missing sheets/keys, and supports setCfg updates',()=>{
+ delete tables.Config;
+ assert.equal(context.getCfg('ver'),'');
+ const cfgSheet=sheet('Config');
+ assert.equal(context.getCfg('ver'),'');
+ cfgSheet.appendRow(['key','value']);
+ assert.equal(context.getCfg('ver'),'');
+ cfgSheet.appendRow(['foo','bar']);
+ assert.equal(context.getCfg('nonexistent'),'');
+ context.setCfg('testKey','10');
+ assert.equal(context.getCfg('testKey'),'10');
+ context.setCfg('testKey','11');
+ assert.equal(context.getCfg('testKey'),'11');
+ cfgSheet.appendRow([100,'numericKeyVal']);
+ assert.equal(context.getCfg('100'),'numericKeyVal');
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
