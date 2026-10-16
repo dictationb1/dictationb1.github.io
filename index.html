@@ -1001,7 +1001,7 @@ function readState() {
   if (cached) {
     try { return JSON.parse(cached); } catch (err) {}
   }
-  var lists = [], activeVersions = Object.create(null);
+  var lists = [], activeVersions = Object.create(null), listMap = Object.create(null);
   var lr = rows(TAB.Lists);
   for (var i = 0; i < lr.length; i++) {
     var items = [];
@@ -1011,10 +1011,13 @@ function readState() {
     if (!Object.prototype.hasOwnProperty.call(activeVersions, listKey)) activeVersions[listKey] = getCfg('listVer:' + listKey);
     var committed = activeVersions[listKey];
     if (committed !== '' && Number(lr[i][3] || 1) !== Number(committed)) continue;
-    var existing = null;
-    for (var li = 0; li < lists.length; li++) if (lists[li].id === String(lr[i][0])) existing = lists[li];
+    var existing = listMap[listKey];
     if (existing) existing.words = existing.words.concat(items);
-    else lists.push({ id: String(lr[i][0]), name: String(lr[i][1]), version: Number(lr[i][3] || 1), words: items });
+    else {
+      existing = { id: listKey, name: String(lr[i][1]), version: Number(lr[i][3] || 1), words: items };
+      listMap[listKey] = existing;
+      lists.push(existing);
+    }
   }
   var plan = [];
   var pr = rows(TAB.Plan);
