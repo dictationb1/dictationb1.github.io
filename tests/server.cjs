@@ -40,6 +40,21 @@ test('Server message stays private; authorised inbox read/reply/mark read/delete
  assert(post({action:'inbox',pin:DEFAULT_PIN,op:'reply',id:r.id,text:'Private reply'}).ok);const inbox=post({action:'readInbox',pin:DEFAULT_PIN}).inbox;assert.equal(inbox[0].reply,'Private reply');
  assert(post({action:'inbox',pin:DEFAULT_PIN,op:'read',id:r.id}).ok);assert(post({action:'readInbox',pin:DEFAULT_PIN}).inbox[0].read);assert(post({action:'inbox',pin:DEFAULT_PIN,op:'delete',id:r.id}).ok);assert.equal(post({action:'readInbox',pin:DEFAULT_PIN}).inbox.length,0);
 });
+test('Server rows helper returns empty array for non-existent or header-only sheet, and data rows when present',()=>{
+ assert.deepEqual(context.rows('NonExistentSheet'), []);
+ context.sheet('EmptySheet');
+ assert.deepEqual(context.rows('EmptySheet'), []);
+ context.sheet('HeaderOnlySheet', ['Header1', 'Header2']);
+ assert.deepEqual(context.rows('HeaderOnlySheet'), []);
+ const dataSheet = context.sheet('DataSheet', ['Col1', 'Col2']);
+ dataSheet.appendRow(['val1', 'val2']);
+ dataSheet.appendRow(['val3', 'val4']);
+ assert.deepEqual(context.rows('DataSheet'), [
+   ['val1', 'val2'],
+   ['val3', 'val4']
+ ]);
+});
+
 test('Server failed multi-cell publish leaves committed words/version intact and can retry',()=>{
  const table=tables.Lists,original=table.appendRow;let count=0;
  table.appendRow=function(row){count++;if(count===2)throw Error('Simulated Google quota failure');return original(row);};
