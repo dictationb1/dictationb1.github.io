@@ -15,6 +15,7 @@ test('v2.0.0 is cleanly integrated', () => {
   assert(html.includes('writeFixed: 5'));
   assert(html.includes('cancelAnimationFrame'));
   assert(html.includes('sdpAudio'));
+
 });
 
 test('v2.0.0 repository data files match the app', () => {
