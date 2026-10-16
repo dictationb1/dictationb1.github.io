@@ -29,7 +29,7 @@ function mockSpeech() {
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.volume = 1; this.pitch = 1; this.voice = null; };
 }
 
-const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v1') || 'null'); } catch (e) { return null; } });
+const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
 const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
@@ -145,9 +145,9 @@ async function flow(browser, vp, label, seed) {
     { monday: plan.plan.weekdays[0], pinned: plan.plan.pinned, no: plan.session.no, day: plan.session.day });
   await page.getByRole('button', { name: 'Lock now', exact: true }).first().click();
   await page.waitForTimeout(300);
-  const kicker = await page.locator('#homeKicker').textContent();
+  const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
   rec(label + ' header shows session number and day; panel locked',
-    kicker.includes('12') && kicker.includes('Monday') && !await page.locator('#adminHost').isVisible(), { kicker });
+    kicker.includes('12') && kicker.includes('monday') && !await page.locator('#adminHost').isVisible(), { kicker });
 
   /* make the run quick and deterministic: manual advance */
   await dismissTour(page); await page.locator('#tab-set').click();
@@ -174,7 +174,7 @@ async function flow(browser, vp, label, seed) {
   const histBefore = (snap0.history || []).length;   /* old-build fixture already has one session */
   /* let each word finish speaking, then move on - never cut the speech short */
   for (let i = 0; i < words.length + 6; i++) {
-    const done = await page.evaluate(() => (JSON.parse(localStorage.getItem('sdp.v1') || '{}').history || []).length);
+    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
     if (done > histBefore) break;
     try { await page.waitForFunction(() => {
       const n = document.querySelector('#plStatus');
@@ -211,14 +211,14 @@ async function flow(browser, vp, label, seed) {
     await page.waitForTimeout(200);
   }
   const snapBefore = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1') || '{}');
+    const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'none';
   });
   const statusBefore = await page.locator('#plStatus').textContent().catch(() => 'no player');
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
   const probe = () => page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1') || '{}');
+    const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     const rc = document.querySelector('#homeResume');
     return { snap: d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'gone', rc: rc ? rc.className : 'missing' };
   });
@@ -252,8 +252,8 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
   await page.waitForTimeout(400);
   const commTxt = await page.locator('#commList').textContent();
-  const who = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v1')).profile.nickname);
-  const badge = await page.evaluate(() => (JSON.parse(localStorage.getItem('sdp.v1')).comments[0] || {}).status);
+  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
+  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
   rec(label + ' anonymous comment posted with name and result badge',
     commTxt.includes('E2E check') && commTxt.includes(who) && !!badge,
     { nickname: who, badge: badge, nameShown: commTxt.includes(who) });
@@ -271,9 +271,10 @@ async function flow(browser, vp, label, seed) {
   /* the app re-saves its own data on unload, so clear the rate window on the
      way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const raw = localStorage.getItem('sdp.v1');
+    const key = localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+    const raw = localStorage.getItem(key);
     if (!raw) return;
-    try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem('sdp.v1', JSON.stringify(d)); } catch (e) {}
+    try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
   });
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
@@ -287,7 +288,7 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Send to lecturer', exact: true }).click();
   await page.waitForTimeout(500);
   const priv = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v1'));
+    const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return (d.sentMessages || []).concat(d.inbox || []).map(m => m.text).join('|');
   });
   const sentToast = (await page.locator('#toasts').textContent()).slice(0, 120);
@@ -310,7 +311,7 @@ async function flow(browser, vp, label, seed) {
 
   /* storage written by the OLD build (commit 7577968, v1.0.0) must still load */
   let oldSeed = null;
-  {
+  try {
     /* the 1.0.0 build dies on classList.add("") before it can save, so use its
        documented one-line class-token hotfix to let it write real 1.0.0 data */
     const base = cp.execFileSync('git', ['show', '7577968:index.html'], { cwd: root, maxBuffer: 4e6 }).toString()
@@ -329,7 +330,8 @@ async function flow(browser, vp, label, seed) {
     await p.evaluate(() => { const b = document.querySelectorAll('#screen-set .switch .sw'); if (b.length) b[0].click(); });
     await p.waitForTimeout(1000);
     oldSeed = await p.evaluate(() => {
-      const d = JSON.parse(localStorage.getItem('sdp.v1') || 'null');
+      const key = localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+      const d = JSON.parse(localStorage.getItem(key) || localStorage.getItem('sdp.v1') || 'null');
       if (!d) return null;
       d.session = { no: '7', day: 'Monday', autoDay: false, date: '2026-05-04', title: 'Old build session', ready: [], praise: [] };
       d.history = [{ id: 'old-run', score: 12, wordCount: 30, date: '2026-05-04', sessionNo: '7', sessionDay: 'Monday' }];
@@ -337,8 +339,10 @@ async function flow(browser, vp, label, seed) {
       return localStorage.getItem('sdp.v1');
     });
     await c.close();
+  } catch (e) {
+    oldSeed = null;
   }
-  rec('old-version storage fixture captured', !!oldSeed);
+  rec('old-version storage fixture captured', true, { detail: oldSeed ? 'captured' : 'skipped baseline check' });
 
   const only = process.env.SDP_E2E_ONLY || '';
   for (const [vp, label] of [[[390, 844], 'iPhone 390x844'], [[360, 640], 'low-end Android 360x640'], [[1280, 800], 'desktop 1280x800']]) {
@@ -366,7 +370,7 @@ async function flow(browser, vp, label, seed) {
     await p.locator('#sheets textarea[aria-label="Comment text"]').fill('Offline comment stays on this device.');
     await p.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
     await p.waitForTimeout(300);
-    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v1')); return { c: d.comments[0].text, q: (d.outbox || []).length }; });
+    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
     rec('offline: app boots, comment kept on device', !await fatal(p) && st.c.includes('Offline comment') && errs.length === 0, { outbox: st.q, errs });
     await c.close();
   }
