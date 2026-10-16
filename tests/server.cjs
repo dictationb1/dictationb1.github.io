@@ -48,5 +48,44 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server bumpVer creates, updates, and increments version counter across all sheet states',()=>{
+ delete tables.Config;
+ context.bumpVer();
+ assert.equal(context.getCfg('ver'),1);
+ assert.equal(tables.Config._rows.length,2);
+ assert.deepEqual(tables.Config._rows[0],['key','value']);
+ assert.deepEqual(tables.Config._rows[1],['ver',1]);
+
+ context.bumpVer();
+ assert.equal(context.getCfg('ver'),2);
+ assert.equal(tables.Config._rows.length,2);
+ assert.deepEqual(tables.Config._rows[1],['ver',2]);
+
+ context.bumpVer();
+ assert.equal(context.getCfg('ver'),3);
+ assert.equal(tables.Config._rows.length,2);
+ assert.deepEqual(tables.Config._rows[1],['ver',3]);
+
+ delete tables.Config;
+ const cfgSheet=context.sheet('Config',['key','value']);
+ cfgSheet.appendRow(['otherKey','otherVal']);
+ assert.equal(cfgSheet.getLastRow(),2);
+ assert.equal(context.getCfg('ver'),'');
+
+ context.bumpVer();
+ assert.equal(context.getCfg('ver'),1);
+ assert.equal(tables.Config._rows.length,3);
+ assert.deepEqual(tables.Config._rows[1],['otherKey','otherVal']);
+ assert.deepEqual(tables.Config._rows[2],['ver',1]);
+
+ context.bumpVer();
+ assert.equal(context.getCfg('ver'),2);
+ assert.equal(tables.Config._rows.length,3);
+ assert.deepEqual(tables.Config._rows[2],['ver',2]);
+
+ context.setCfg('testKey','testVal');
+ assert.equal(context.getCfg('testKey'),'testVal');
+ assert.equal(context.getCfg('ver'),3);
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
