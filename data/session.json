@@ -1,199 +1,199 @@
 {
   "ok": true,
-  "ver": 3,
+  "ver": 4,
   "session": {
     "no": "1",
-    "day": "Wednesday",
-    "date": "2026-10-14",
-    "title": "B1 Leisure & Hobbies (30 words)",
-    "listId": "list_sample_b1"
+    "day": "Tuesday",
+    "date": "2026-10-20",
+    "title": "Tuesday 20th dictation session",
+    "listId": "list_tue_20_sport"
   },
   "lists": [
     {
-      "id": "list_sample_b1",
-      "name": "B1 Leisure & Hobbies (30 words)",
-      "version": 2,
+      "id": "list_tue_20_sport",
+      "name": "Tuesday 20th dictation session",
+      "version": 1,
       "published": true,
       "words": [
         {
-          "w": "hobbies",
-          "s": "Reading and gardening are two of my favourite weekend hobbies.",
-          "m": "activities that you enjoy doing in your free time",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hobbies--_gb_1.mp3"
+          "w": "athlete",
+          "s": "She is an Olympic athlete who trains six days a week.",
+          "m": "a person who is very good at sports or physical exercise, especially one who competes in events",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athlete--_gb_1.mp3"
         },
         {
-          "w": "leisure",
-          "s": "The town has a modern leisure centre with a swimming pool.",
-          "m": "time when you are not working or studying",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/leisure--_gb_1.mp3"
+          "w": "athletics",
+          "s": "Our school athletics team won four gold medals on Tuesday.",
+          "m": "the general name for sports such as running, jumping, and throwing",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athletics--_gb_1.mp3"
         },
         {
-          "w": "barbecue",
-          "s": "We had a lovely family barbecue in the garden on Sunday.",
-          "m": "an outdoor meal or party where food is cooked on a metal frame over fire",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/barbecue--_gb_1.mp3"
+          "w": "badminton",
+          "s": "We play badminton in the sports hall every Wednesday evening.",
+          "m": "a sport in which two or four players hit a shuttlecock over a high net with rackets",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/badminton--_gb_1.mp3"
         },
         {
-          "w": "camping",
-          "s": "They went camping by the lake for three days in July.",
-          "m": "living in a tent on holiday",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/camping--_gb_1.mp3"
+          "w": "champion",
+          "s": "He became the national swimming champion at the age of eighteen.",
+          "m": "someone or a team that has won a competition, especially in sport",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/champion--_gb_1.mp3"
         },
         {
-          "w": "collection",
-          "s": "My grandfather has a large collection of old British coins.",
-          "m": "a group of objects of one type that have been gathered together",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/collection--_gb_1.mp3"
+          "w": "climbing",
+          "s": "Rock climbing in the mountains requires strong ropes and a helmet.",
+          "m": "the sport or activity of climbing rocks or mountains",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/climbing--_gb_1.mp3"
         },
         {
-          "w": "cruise",
-          "s": "My parents booked a two-week cruise around the Mediterranean Sea.",
-          "m": "a holiday on a large ship, visiting different places",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cruise--_gb_1.mp3"
+          "w": "competitor",
+          "s": "Every competitor in the marathon received a medal at the finish.",
+          "m": "a person, team, or company that is competing against others",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/competitor--_gb_1.mp3"
         },
         {
-          "w": "dancing",
-          "s": "She goes to salsa dancing classes every Tuesday evening.",
-          "m": "moving your body to music",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/dancing--_gb_1.mp3"
+          "w": "cycling",
+          "s": "Cycling along the country lanes is a great way to keep fit.",
+          "m": "the sport or activity of riding a bicycle",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cycling--_gb_1.mp3"
         },
         {
-          "w": "drawing",
-          "s": "He is very good at drawing portraits of his friends.",
-          "m": "the art or skill of making pictures using a pencil or pen",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drawing--_gb_1.mp3"
+          "w": "cyclist",
+          "s": "Each cyclist must wear a safety helmet during the road race.",
+          "m": "someone who rides a bicycle",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cyclist--_gb_1.mp3"
         },
         {
-          "w": "facilities",
-          "s": "The hotel has excellent sports facilities, including tennis courts.",
-          "m": "buildings, equipment, or services provided for a particular purpose",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/facilities--_gb_1.mp3"
+          "w": "diving",
+          "s": "She won first prize in the ten-metre platform diving competition.",
+          "m": "the sport of jumping into water head first or swimming underwater",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/diving--_gb_1.mp3"
         },
         {
-          "w": "festival",
-          "s": "Thousands of people attended the summer music festival in the park.",
-          "m": "a special event or period with music, art, or celebrations",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/festival--_gb_1.mp3"
+          "w": "extreme sports",
+          "s": "My brother loves extreme sports like mountain biking and skydiving.",
+          "m": "sports that are very exciting and dangerous, such as skydiving or bungee jumping",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/extreme_sports--_gb_1.mp3"
         },
         {
-          "w": "fiction",
-          "s": "She prefers reading historical fiction rather than science books.",
-          "m": "books and stories about imaginary people and events",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fiction--_gb_1.mp3"
+          "w": "fitness",
+          "s": "She joined an evening fitness class to improve her health.",
+          "m": "the condition of being physically strong and healthy",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fitness--_gb_1.mp3"
         },
         {
-          "w": "gallery",
-          "s": "We visited the national art gallery to see the new exhibition.",
-          "m": "a room or building that shows works of art to the public",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gallery--_gb_1.mp3"
+          "w": "goalkeeper",
+          "s": "The goalkeeper made a brilliant save in the final minute.",
+          "m": "the player whose job is to stop the ball going into the goal",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/goalkeeper--_gb_1.mp3"
         },
         {
-          "w": "go shopping",
-          "s": "We usually go shopping for food and clothes on Saturday morning.",
-          "m": "to visit shops in order to look at and buy things",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/go_shopping--_gb_1.mp3"
+          "w": "gymnastics",
+          "s": "She has practised gymnastics at the local club since she was six.",
+          "m": "physical exercises and movements that need skill, strength, and control",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gymnastics--_gb_1.mp3"
         },
         {
-          "w": "guitar",
-          "s": "He learned to play the acoustic guitar when he was fifteen.",
-          "m": "a musical instrument with six strings played with your fingers",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guitar--_gb_1.mp3"
+          "w": "ice hockey",
+          "s": "Ice hockey is one of the fastest and most exciting winter sports.",
+          "m": "a game played on ice between two teams who try to hit a puck into a goal",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ice_hockey--_gb_1.mp3"
         },
         {
-          "w": "hire",
-          "s": "You can hire a bicycle at the station for ten pounds a day.",
-          "m": "to pay to use something for a short period of time",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hire--_gb_1.mp3"
+          "w": "instructor",
+          "s": "Our skiing instructor showed us how to stop safely on the slope.",
+          "m": "a person whose job is to teach a practical skill or sport",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/instructor--_gb_1.mp3"
         },
         {
-          "w": "hike",
-          "s": "We went for a ten-kilometre hike through the forest yesterday.",
-          "m": "a long walk, especially in the countryside or mountains",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hike--_gb_1.mp3"
+          "w": "league",
+          "s": "Their football team finished at the top of the local league.",
+          "m": "a group of sports clubs or teams that play matches against each other",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/league--_gb_1.mp3"
         },
         {
-          "w": "holidays",
-          "s": "Where are you going for your summer holidays this year?",
-          "m": "a period of time when you travel or rest away from work or school",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/holidays--_gb_1.mp3"
+          "w": "motor-racing",
+          "s": "He watched the British motor-racing championship at Silverstone.",
+          "m": "the sport of racing fast cars on a special track",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/motor-racing--_gb_1.mp3"
         },
         {
-          "w": "jogging",
-          "s": "She goes jogging in the local park every morning before breakfast.",
-          "m": "running at a slow, regular speed for exercise",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/jogging--_gb_1.mp3"
+          "w": "practice",
+          "s": "Football practice starts at four o'clock on the school pitch.",
+          "m": "noun: regular training or activity done to improve your skill at a sport",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practice--_gb_1.mp3"
         },
         {
-          "w": "magazine",
-          "s": "I bought a travel magazine to read on the train journey.",
-          "m": "a thin book with articles and photos published every week or month",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/magazine--_gb_1.mp3"
+          "w": "practise",
+          "s": "You need to practise your serve every day before the tennis match.",
+          "m": "verb: to do an activity regularly in order to become better at it",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practise--_gb_1.mp3"
         },
         {
-          "w": "musician",
-          "s": "The street musician played a beautiful tune on his violin.",
-          "m": "someone who plays a musical instrument, especially as a job",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/musician--_gb_1.mp3"
+          "w": "reserve",
+          "s": "He started the match on the bench as a reserve for the team.",
+          "m": "noun: an extra player who is ready to play if another team member cannot",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/reserve--_gb_1.mp3"
         },
         {
-          "w": "nightlife",
-          "s": "The city is famous for its lively nightlife and great restaurants.",
-          "m": "entertainment available in the evening and at night in a town",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/nightlife--_gb_1.mp3"
+          "w": "sailing",
+          "s": "They went sailing across the bay in a small wooden boat.",
+          "m": "the sport or activity of travelling on water in a boat with sails",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sailing--_gb_1.mp3"
         },
         {
-          "w": "painting",
-          "s": "That oil painting of the harbour hangs in the town museum.",
-          "m": "a picture made using paint, or the activity of making pictures",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/painting--_gb_1.mp3"
+          "w": "skiing",
+          "s": "We go skiing in the mountains every winter holiday.",
+          "m": "the sport or activity of moving over snow on skis",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/skiing--_gb_1.mp3"
         },
         {
-          "w": "party",
-          "s": "Are you coming to Sarah's birthday party on Saturday night?",
-          "m": "a social event where people meet to enjoy themselves",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/party--_gb_1.mp3"
+          "w": "snowboarding",
+          "s": "Snowboarding is very popular with young people at winter resorts.",
+          "m": "the sport of moving over snow while standing on a wide board",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/snowboarding--_gb_1.mp3"
         },
         {
-          "w": "photograph",
-          "s": "He took a wonderful photograph of the sunset over the sea.",
-          "m": "a picture produced using a camera",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/photograph--_gb_1.mp3"
+          "w": "sports centre",
+          "s": "We booked a badminton court at the local sports centre.",
+          "m": "a building where the public can go to play different indoor sports",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sports_centre--_gb_1.mp3"
         },
         {
-          "w": "picnic",
-          "s": "It was sunny, so we packed sandwiches and had a picnic.",
-          "m": "an occasion when you take food to eat outdoors",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/picnic--_gb_1.mp3"
+          "w": "squash",
+          "s": "Playing squash for half an hour is a very fast workout.",
+          "m": "a game for two players who hit a small rubber ball against the walls of a court",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/squash--_gb_1.mp3"
         },
         {
-          "w": "quiz",
-          "s": "Our team won first prize in the school general knowledge quiz.",
-          "m": "a game or competition in which you answer questions",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/quiz--_gb_1.mp3"
+          "w": "surf",
+          "s": "They learned how to surf on the big waves in Cornwall.",
+          "m": "to ride on waves in the sea on a special board",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surf--_gb_1.mp3"
         },
         {
-          "w": "sculpture",
-          "s": "There is a modern bronze sculpture outside the main library.",
-          "m": "a work of art made from stone, wood, metal, or clay",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sculpture--_gb_1.mp3"
+          "w": "surfboarding",
+          "s": "Surfboarding at the beach is her favourite summer activity.",
+          "m": "the sport or activity of riding waves while standing on a surfboard",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surfboarding--_gb_1.mp3"
         },
         {
-          "w": "sightseeing",
-          "s": "We spent the whole afternoon sightseeing in the old town.",
-          "m": "the activity of visiting interesting places, especially on holiday",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sightseeing--_gb_1.mp3"
+          "w": "swimming",
+          "s": "Swimming fifty lengths of the pool is great exercise.",
+          "m": "the sport or activity of moving through water by moving your arms and legs",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/swimming--_gb_1.mp3"
         },
         {
-          "w": "sunbathe",
-          "s": "Remember to wear sunscreen if you sunbathe on the beach.",
-          "m": "to sit or lie in the sun so that your skin becomes brown",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sunbathe--_gb_1.mp3"
+          "w": "table tennis",
+          "s": "We played two games of table tennis in the youth club.",
+          "m": "an indoor game played on a table with small bats and a light plastic ball",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/table_tennis--_gb_1.mp3"
         },
         {
-          "w": "torch",
-          "s": "Take a torch with you because the path is dark at night.",
-          "m": "a small electric light that you carry in your hand",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/torch--_gb_1.mp3"
+          "w": "throw",
+          "s": "How far can you throw the ball across the cricket field?",
+          "m": "verb: to send an object such as a ball through the air using your hand",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/throw--_gb_1.mp3"
         }
       ]
     }
@@ -201,7 +201,7 @@
   "plan": [
     {
       "key": "default",
-      "listId": "list_sample_b1",
+      "listId": "list_tue_20_sport",
       "pinned": true
     }
   ],
