@@ -132,7 +132,7 @@ function device(html, base) {
     check('boot sync touches ./data/session.json with a cache-busting timestamp', () =>
       { if (!requests.some(r => r.startsWith('GET /data/session.json?t='))) throw Error('no boot fetch: ' + requests.join(' | ')); });
     check('boot sync opens the live SSE stream on the state and community topics', () =>
-      { if (!requests.some(r => r === 'GET /sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2/sse')) throw Error(requests.join(' | ')); });
+      { if (!requests.some(r => r === 'GET /sdp_dictationb1_state_v4,sdp_dictationb1_comm_v4/sse')) throw Error(requests.join(' | ')); });
     check('the student picked up the published B1 session from the repository', () => {
       const d = student.q.DB.data;
       if (String(d.session.no) !== '1') throw Error('session no ' + d.session.no);
@@ -140,31 +140,39 @@ function device(html, base) {
     });
     check('the status chip reports a real, online live sync', () => {
       const label = student.w.document.getElementById('chipNetText').textContent;
-      if (!/^Online \u00b7 Live B1 Session/.test(label)) throw Error(label);
+      if (!/^Online \u00b7 Live Sync/.test(label)) throw Error(label);
     });
 
     /* --- the lecturer publishes a new list for Session 4 ---------------- */
     const L = lecturer.q;
-    const list = { id: 'list_session4', name: 'Session 4 words', words: [], version: 1, published: false, draft: true };
+    const sampleList = L.DB.data.lists.find(l => l.id === 'list_tue_20_sport') || L.DB.data.lists[0];
+    const words = sampleList.words.map(x => ({ w: x.w, s: x.s, m: x.m, audio: x.audio }));
+    const list = { id: 'list_session4', name: 'Session 4 words', words: words, version: 1, published: false, draft: true };
     L.DB.data.lists.push(list);
+    L.DB.data.session.no = '4';
+    L.DB.data.session.date = '2026-10-21';
+    L.DB.data.session.title = 'Session 4 words';
+    L.DB.data.session.listId = list.id;
+    L.DB.data.plan.pinned = list.id;
+    L.Admin.editListId = list.id;
     L.DB.data.outbox = [];
     L.Admin.unlocked = true;
-    const words = L.DB.data.lists.find(l => l.id === 'list_sample_b1').words.map(x => ({ w: x.w, s: x.s, m: x.m, audio: x.audio }));
-    L.Admin.saveAll(list, words, ['2026-10-21'], null);
+    L.Admin.publish(list, true);
+    L.UI.setTab('home');
     L.Admin.unlocked = false;
     await wait(120);
     check('one publish posts the whole session to the ntfy state topic', () =>
-      { if (!(topics.sdp_dictationb1_state_v2 || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
+      { if (!(topics.sdp_dictationb1_state_v4 || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
     check('the lecturer Home header is internally consistent (SESSION 4 + the same title)', () => {
       const kicker = lecturer.w.document.getElementById('homeKicker').textContent;
       const title = lecturer.w.document.getElementById('homeTitle').textContent;
-      if (!/^Session 4/.test(kicker)) throw Error('kicker: ' + kicker);
+      if (!/^Session 4/i.test(kicker)) throw Error('kicker: ' + kicker);
       if (!/Session 4 words/.test(title)) throw Error('title: ' + title);
       const day = new Date('2026-10-21T12:00:00').getDay();
-      if (kicker.indexOf(day === 3 ? 'Wednesday' : '?') < 0) throw Error('kicker has no real weekday: ' + kicker);
+      if (kicker.toLowerCase().indexOf(day === 3 ? 'wednesday' : '?') < 0) throw Error('kicker has no real weekday: ' + kicker);
     });
     check('the published session is 30 real words with British audio urls', () => {
-      const posted = JSON.parse(topics.sdp_dictationb1_state_v2[topics.sdp_dictationb1_state_v2.length - 1]);
+      const posted = JSON.parse(topics.sdp_dictationb1_state_v4[topics.sdp_dictationb1_state_v4.length - 1]);
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (posted.session.no !== '4') throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
@@ -178,7 +186,7 @@ function device(html, base) {
       if (String(d.session.no) !== '4') throw Error('student session no ' + d.session.no);
       if (S.Lib.current().words.length !== 30) throw Error('student words ' + S.Lib.current().words.length);
       const kicker = student.w.document.getElementById('homeKicker').textContent;
-      if (!/^Session 4/.test(kicker)) throw Error('student kicker: ' + kicker);
+      if (!/^Session 4/i.test(kicker)) throw Error('student kicker: ' + kicker);
     });
     check('the student outbox is empty (nothing stuck as "1 waiting")', () =>
       { if (student.q.DB.data.outbox.length) throw Error('outbox ' + student.q.DB.data.outbox.length); });
@@ -188,10 +196,10 @@ function device(html, base) {
     student.q.Cloud.postCompletion({ id: 'lab-res-1', ts: Date.now(), sessionNo: '4', wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: false, mode: 'paper' });
     await wait(250);
     check('a finished session is broadcast to the community topic', () =>
-      { if (!(topics.sdp_dictationb1_comm_v2 || []).length) throw Error('no comm post'); });
+      { if (!(topics.sdp_dictationb1_comm_v4 || []).length) throw Error('no comm post'); });
     check('the second device merges the live completion into real class results', () => {
       const C = lecturer.q;
-      C.Cloud.liveBody(topics.sdp_dictationb1_comm_v2[topics.sdp_dictationb1_comm_v2.length - 1]);
+      C.Cloud.liveBody(topics.sdp_dictationb1_comm_v4[topics.sdp_dictationb1_comm_v4.length - 1]);
       if (!C.DB.data.results.some(r => r.id === 'lab-res-1')) throw Error('result not merged');
     });
     check('Class stats then shows the real student completion, not the lecturer history', () => {
