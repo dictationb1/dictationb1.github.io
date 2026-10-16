@@ -48,5 +48,33 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('Server currentAnnouncement handles empty, invalid JSON, non-object JSON, and expiration boundaries',()=>{
+ context.setCfg('announcement','');
+ assert.strictEqual(context.currentAnnouncement(), null);
+ context.setCfg('announcement','not valid json');
+ assert.strictEqual(context.currentAnnouncement(), null);
+ context.setCfg('announcement','12345');
+ assert.strictEqual(context.currentAnnouncement(), null);
+ context.setCfg('announcement','"string"');
+ assert.strictEqual(context.currentAnnouncement(), null);
+ context.setCfg('announcement','true');
+ assert.strictEqual(context.currentAnnouncement(), null);
+ const validNoExpiry = { title: 'Notice', text: 'Class notice' };
+ context.setCfg('announcement', JSON.stringify(validNoExpiry));
+ assert.deepEqual(context.currentAnnouncement(), validNoExpiry);
+ const nowObj = new Date(now);
+ const pastDate = new Date(nowObj.getTime() - 2 * 86400000).toISOString().slice(0, 10);
+ const futureDate = new Date(nowObj.getTime() + 2 * 86400000).toISOString().slice(0, 10);
+ const todayDate = nowObj.toISOString().slice(0, 10);
+ const expiredAnnouncement = { title: 'Notice', text: 'Expired', expires: pastDate };
+ context.setCfg('announcement', JSON.stringify(expiredAnnouncement));
+ assert.strictEqual(context.currentAnnouncement(), null);
+ const activeAnnouncement = { title: 'Notice', text: 'Active', expires: futureDate };
+ context.setCfg('announcement', JSON.stringify(activeAnnouncement));
+ assert.deepEqual(context.currentAnnouncement(), activeAnnouncement);
+ const sameDayAnnouncement = { title: 'Notice', text: 'Same Day', expires: todayDate };
+ context.setCfg('announcement', JSON.stringify(sameDayAnnouncement));
+ assert.deepEqual(context.currentAnnouncement(), sameDayAnnouncement);
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
