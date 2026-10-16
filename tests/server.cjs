@@ -48,5 +48,26 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  table.appendRow=original;delete cache.state;let state=context.readState();assert.equal(state.lists[0].words.length,30);assert.equal(state.lists[0].version,2);
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
+test('cachePut and cacheGet store, expire, set default TTL, and handle CacheService errors gracefully',()=>{
+ context.cachePut('default_key', 'hello');
+ assert.equal(context.cacheGet('default_key'), 'hello');
+ now += 11000;
+ assert.equal(context.cacheGet('default_key'), null);
+
+ context.cachePut('custom_key', 'world', 30);
+ assert.equal(context.cacheGet('custom_key'), 'world');
+ now += 15000;
+ assert.equal(context.cacheGet('custom_key'), 'world');
+ now += 16000;
+ assert.equal(context.cacheGet('custom_key'), null);
+
+ const origCache = context.CacheService;
+ context.CacheService = {
+  getScriptCache: () => { throw new Error('Simulated CacheService error'); }
+ };
+ assert.doesNotThrow(() => context.cachePut('err_key', 'val'));
+ assert.equal(context.cacheGet('err_key'), null);
+ context.CacheService = origCache;
+});
 
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
