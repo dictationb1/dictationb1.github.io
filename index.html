@@ -2739,10 +2739,14 @@ var Lib = {
     }
     return Math.round(per);
   },
-  sessionLabel: function () {
+  audio: function () {
     var a = U.$("#sdpAudio");
     if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
     return a;
+  },
+  sessionLabel: function () {
+    var s = DB.data ? DB.data.session : null;
+    return s ? "Session " + (s.no || "") + (s.day ? " \u00b7 " + s.day : "") : "Session";
   },
   /* shuffle with a seed so Back always works */
   shuffleSeeded: function (n, seed) {
