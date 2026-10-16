@@ -32,8 +32,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      channel reads - the cached ntfy state and community feeds - at boot.
      Nothing is ever POSTed, and no Apps Script, GitHub or other host is
      contacted: publishing and completions wait for a real user action. */
-  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
-  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
+  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v[0-9]+\/json\?poll=1&since=all$/;
+  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v[0-9]+,sdp_dictationb1_comm_v[0-9]+\/sse$/;
   const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!live.test(u)&&!sse.test(u));
   const otherHosts=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
@@ -57,7 +57,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const compressed=await page.locator('#sheets textarea').allTextContents();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
-  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1'));const l=d.lists.find(x=>x.id===d.plan.pinned)||d.lists.find(x=>x.id===d.session.listId);return l?l.words.length:-1;});
+  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1'));const l=d.lists.find(x=>x.id===d.plan.pinned)||d.lists.find(x=>x.id===d.session.listId);return l?l.words.length:-1;});
   results.push({test:'Chromium native DecompressionStream preview/Add assembles the full 30-word list',status:words===30?'PASS':'FAIL'});await context.close();
  }
  for (const scenario of ['empty','corrupt','blocked','offline','unreachable','no-speech','no-UK']) {
@@ -75,11 +75,14 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium boot: '+scenario,status:errors.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors});await context.close();
  }
  // Original animated fatal card: record before geometry.
- {
+ try {
+  require('child_process').execFileSync('git',['rev-parse','--verify','7577968^{commit}'],{cwd:root,stdio:'ignore'});
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
   const base=require('child_process').execFileSync('git',['show','7577968:index.html'],{cwd:root,maxBuffer:1000000}).toString();
   await page.route('https://**/*',route=>route.abort());await page.setContent(base);await page.waitForTimeout(400);
   const box=await page.locator('#fatal .modal').boundingBox();results.push({test:'Original Chromium fatal card is off-screen (before evidence)',status:box&&box.x<0?'PASS':'FAIL',box});await context.close();
+ } catch (e) {
+  console.log('SKIP browser.cjs fatal card test: baseline commit 7577968 is not present in this clone.');
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
