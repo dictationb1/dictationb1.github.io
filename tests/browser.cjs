@@ -32,8 +32,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      channel reads - the cached ntfy state and community feeds - at boot.
      Nothing is ever POSTed, and no Apps Script, GitHub or other host is
      contacted: publishing and completions wait for a real user action. */
-  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
-  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
+  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v4\/json\?poll=1&since=all$/;
+  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v4,sdp_dictationb1_comm_v4\/sse$/;
   const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!live.test(u)&&!sse.test(u));
   const otherHosts=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
