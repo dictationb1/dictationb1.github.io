@@ -14,6 +14,18 @@ const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 function post(body){return context.handlePost({postData:{contents:JSON.stringify(body)}});}
 test('Apps Script ES2017 syntax',()=>acorn.parse(source,{ecmaVersion:2017}));
+test('Server clip function sanitizes whitespace, removes control characters, and truncates length',()=>{
+  const clip = context.clip;
+  assert.equal(clip(null, 10), '');
+  assert.equal(clip(undefined, 10), '');
+  assert.equal(clip(12345, 3), '123');
+  assert.equal(clip(true, 10), 'true');
+  assert.equal(clip('  hello   world  ', 20), 'hello world');
+  assert.equal(clip('a\u0000b\u0007c\u001fd\u007fe', 10), 'a b c d e');
+  assert.equal(clip('Hello World', 5), 'Hello');
+  assert.equal(clip('Hello World', 20), 'Hello World');
+  assert.equal(clip('Hello World', 11), 'Hello World');
+});
 test('Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox',()=>{
  assert.equal(post(null).err,'unauthorised');assert.equal(post([]).err,'unauthorised');
  for(const action of ['publish','readInbox','moderate','inbox','announce'])assert.equal(post({action}).err,'unauthorised');
