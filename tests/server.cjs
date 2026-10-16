@@ -49,4 +49,60 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
+test('Server readComments unit tests for filtering, sorting, default handling, and length limit',()=>{
+ const commentsSheet = sheet('Comments');
+ const headers = ['id', 'ts', 'name', 'status', 'text', 'meta', 'pinned', 'reported', 'hidden', 'reply'];
+ commentsSheet._rows.length = 0;
+ commentsSheet.appendRow(headers);
+
+ // 1. publicOnly filtering and property mapping/defaults
+ commentsSheet.appendRow(['c1', 1000, 'Alice', 'finished', 'Great lesson', 'Session 1', 'no', 'no', 'no', 'Thanks!']);
+ commentsSheet.appendRow(['c2', 2000, '', '', '', '', 'no', 'yes', 'yes', '']);
+ commentsSheet.appendRow(['c3', 1500, 'Charlie', 'comment', 'Pinned item', 'Session 1', 'yes', 'no', 'no', '']);
+
+ const publicComments = context.readComments(true);
+ assert.equal(publicComments.length, 2);
+ // Pinned comment (c3) should be first despite timestamp
+ assert.equal(publicComments[0].id, 'c3');
+ assert.equal(publicComments[0].pinned, true);
+ assert.equal(publicComments[0].reported, false);
+ assert.equal(publicComments[0].hidden, false);
+
+ assert.equal(publicComments[1].id, 'c1');
+ assert.equal(publicComments[1].name, 'Alice');
+ assert.equal(publicComments[1].reply, 'Thanks!');
+ assert.equal(publicComments[1].pinned, false);
+
+ // Non-public (publicOnly = false) should include hidden comment c2
+ const allComments = context.readComments(false);
+ assert.equal(allComments.length, 3);
+ const hiddenComment = allComments.find(c => c.id === 'c2');
+ assert(hiddenComment);
+ assert.equal(hiddenComment.hidden, true);
+ assert.equal(hiddenComment.reported, true);
+ assert.equal(hiddenComment.name, '');
+ assert.equal(hiddenComment.text, '');
+
+ // 2. Timestamp sorting within pinned and unpinned
+ commentsSheet._rows.length = 0;
+ commentsSheet.appendRow(headers);
+ commentsSheet.appendRow(['u1', 100, 'Unpinned 100', '', '', '', 'no', 'no', 'no', '']);
+ commentsSheet.appendRow(['p1', 200, 'Pinned 200', '', '', '', 'yes', 'no', 'no', '']);
+ commentsSheet.appendRow(['u2', 300, 'Unpinned 300', '', '', '', 'no', 'no', 'no', '']);
+ commentsSheet.appendRow(['p2', 400, 'Pinned 400', '', '', '', 'yes', 'no', 'no', '']);
+
+ const sorted = context.readComments(false);
+ assert.deepEqual(sorted.map(c => c.id), ['p2', 'p1', 'u2', 'u1']);
+
+ // 3. 200-item limit cap
+ commentsSheet._rows.length = 0;
+ commentsSheet.appendRow(headers);
+ for (let i = 0; i < 250; i++) {
+   commentsSheet.appendRow(['c' + i, i * 10, 'User' + i, '', '', '', 'no', 'no', 'no', '']);
+ }
+ const capped = context.readComments(false);
+ assert.equal(capped.length, 200);
+ assert.equal(capped[0].id, 'c249');
+});
+
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
