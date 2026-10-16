@@ -57,7 +57,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const compressed=await page.locator('#sheets textarea').allTextContents();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
-  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1'));const l=d.lists.find(x=>x.id===d.plan.pinned)||d.lists.find(x=>x.id===d.session.listId);return l?l.words.length:-1;});
+  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'{}')||{};const lists=Array.isArray(d.lists)?d.lists:[];const pinnedId=d.plan&&d.plan.pinned;const sessionId=d.session&&d.session.listId;const l=lists.find(x=>x.id===pinnedId)||lists.find(x=>x.id===sessionId)||lists[0];return l&&Array.isArray(l.words)?l.words.length:-1;});
   results.push({test:'Chromium native DecompressionStream preview/Add assembles the full 30-word list',status:words===30?'PASS':'FAIL'});await context.close();
  }
  for (const scenario of ['empty','corrupt','blocked','offline','unreachable','no-speech','no-UK']) {
