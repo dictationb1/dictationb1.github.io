@@ -7955,9 +7955,13 @@ var Cloud = {
   },
   mergeInbox: function (body) {
     var d = DB.data, added = 0;
+    var seen = new Set();
+    for (var i = 0; i < d.inbox.length; i++) {
+      if (d.inbox[i] && d.inbox[i].id) seen.add(d.inbox[i].id);
+    }
     (body.inbox || []).forEach(function (m) {
-      if (!m || typeof m !== "object" || !m.id) return;
-      for (var i = 0; i < d.inbox.length; i++) if (d.inbox[i].id === m.id) return;
+      if (!m || typeof m !== "object" || !m.id || seen.has(m.id)) return;
+      seen.add(m.id);
       d.inbox.push({
         id: U.clip(m.id, 40), ts: Number(m.ts) || Date.now(), name: U.clip(m.name || "Student", 40),
         text: U.clip(m.text || "", CONFIG.messageLen), contact: U.clip(m.contact || "", 120), read: false, mine: false

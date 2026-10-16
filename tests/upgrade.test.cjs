@@ -30,5 +30,35 @@ test('v2.0.0 repository data files match the app', () => {
   assert(session.lists[0].words.every(w => w.m && w.s));
 });
 
+test('mergeInbox deduplicates correctly and respects constraints', () => {
+  const { harness: testHarness } = require('./app-harness.cjs');
+  const { q, close } = testHarness();
+  q.DB.data.inbox = [
+    { id: 'msg_1', ts: 1000, name: 'Alice', text: 'Hello', contact: 'alice@test.com', read: true, mine: false }
+  ];
+
+  const body = {
+    inbox: [
+      { id: 'msg_1', ts: 1001, name: 'Alice Duplicate', text: 'Dup text' },
+      { id: 'msg_2', ts: 2000, name: 'Bob', text: 'Hi there', contact: 'bob@test.com' },
+      { id: 'msg_2', ts: 2001, name: 'Bob Dup in Body', text: 'Dup in body' },
+      null,
+      'invalid item',
+      { no_id: true }
+    ]
+  };
+
+  const added = q.Cloud.mergeInbox(body);
+  assert.equal(added, 1);
+  assert.equal(q.DB.data.inbox.length, 2);
+  assert.equal(q.DB.data.inbox[0].id, 'msg_1');
+  assert.equal(q.DB.data.inbox[1].id, 'msg_2');
+  assert.equal(q.DB.data.inbox[1].name, 'Bob');
+  assert.equal(q.DB.data.inbox[1].read, false);
+  assert.equal(q.DB.data.inbox[1].mine, false);
+
+  close();
+});
+
 test.after(()=>a.close());
 module.exports={sample: expected.join(',')};
