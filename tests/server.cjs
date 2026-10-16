@@ -14,6 +14,21 @@ const results=[];
 function test(name,fn){try{fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}}
 function post(body){return context.handlePost({postData:{contents:JSON.stringify(body)}});}
 test('Apps Script ES2017 syntax',()=>acorn.parse(source,{ecmaVersion:2017}));
+test('Server ss() and spreadsheet utility functions work correctly',()=>{
+ const active = context.ss();
+ assert(active);
+ assert.equal(typeof active.getSheetByName, 'function');
+ assert.equal(typeof active.insertSheet, 'function');
+ const s1 = context.sheet('TestSheet', ['Col1', 'Col2']);
+ assert(s1);
+ assert.equal(context.ss().getSheetByName('TestSheet'), s1);
+ const s2 = context.sheet('TestSheet', ['Col1', 'Col2']);
+ assert.equal(s2, s1);
+ assert.deepEqual(context.rows('NonExistentSheet'), []);
+ context.append('TestSheet', ['Col1', 'Col2'], ['val1', 'val2']);
+ assert.equal(context.rows('TestSheet').length, 1);
+ assert.deepEqual(context.rows('TestSheet')[0], ['val1', 'val2']);
+});
 test('Server rejects unauthenticated publish/inbox/moderation; public reads exclude inbox',()=>{
  assert.equal(post(null).err,'unauthorised');assert.equal(post([]).err,'unauthorised');
  for(const action of ['publish','readInbox','moderate','inbox','announce'])assert.equal(post({action}).err,'unauthorised');
