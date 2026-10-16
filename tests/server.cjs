@@ -23,6 +23,29 @@ test('Server PIN: correct PIN succeeds, five wrong tries lock for five minutes',
  assert(post({action:'login',pin:DEFAULT_PIN}).ok);for(let i=0;i<5;i++)assert(!post({action:'login',pin:'0000'}).ok);
  assert.equal(post({action:'login',pin:DEFAULT_PIN}).err,'locked');now+=300001;assert(post({action:'login',pin:DEFAULT_PIN}).ok);
 });
+test('Server adminOk unit tests verify authorization, lockouts, and edge cases',()=>{
+ assert.strictEqual(context.adminOk({pin:DEFAULT_PIN}), true, 'valid pin returns true');
+ assert.strictEqual(context.adminOk({pin:Number(DEFAULT_PIN)}), true, 'numeric pin coercion');
+ assert.strictEqual(context.adminOk({pin:'wrong'}), false, 'wrong pin returns false');
+ assert.strictEqual(context.adminOk({}), false, 'missing pin returns false');
+ assert.strictEqual(context.adminOk(null), false, 'null body returns false');
+ assert.strictEqual(context.adminOk(undefined), false, 'undefined body returns false');
+
+ // Lockout scenario
+ cache.adminUntil = { value: String(now + 60000), until: now + 60000 };
+ assert.strictEqual(context.adminOk({pin:DEFAULT_PIN}), false, 'returns false when locked out');
+
+ // Lockout expired scenario
+ cache.adminUntil = { value: String(now - 1000), until: now - 1000 };
+ assert.strictEqual(context.adminOk({pin:DEFAULT_PIN}), true, 'returns true when lockout expires');
+ delete cache.adminUntil;
+
+ // Unset ADMIN_PIN scenario
+ const origPin = properties.ADMIN_PIN;
+ properties.ADMIN_PIN = '';
+ assert.strictEqual(context.adminOk({pin:DEFAULT_PIN}), false, 'returns false when ADMIN_PIN is unset');
+ properties.ADMIN_PIN = origPin;
+});
 test('Server 1200-word list stores multiple cells under 40K, reads all words/version/plan/session',()=>{
  const words=Array.from({length:1200},(_,i)=>({w:'word'+i,s:'This is a useful sentence for the class today.',m:'a useful word'}));
  const result=post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'QA class',words,session:{no:'42',day:'Saturday',date:'2026-10-17',title:'Class test',ready:['Ready?'],praise:['Well done']},contact:{whatsapp:'441234567890',email:'teacher@example.test'},defaults:{pauseWord:2},plan:[{key:'w5',listId:'qa-list'},{key:'default',listId:'qa-list'}]});assert(result.ok);
