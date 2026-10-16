@@ -2740,6 +2740,10 @@ var Lib = {
     return Math.round(per);
   },
   sessionLabel: function () {
+    var s = DB.data ? DB.data.session : {};
+    return "Session " + (s.no || "1") + (s.day ? " \u00b7 " + s.day : "");
+  },
+  audio: function () {
     var a = U.$("#sdpAudio");
     if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
     return a;
