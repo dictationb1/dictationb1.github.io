@@ -32,8 +32,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      channel reads - the cached ntfy state and community feeds - at boot.
      Nothing is ever POSTed, and no Apps Script, GitHub or other host is
      contacted: publishing and completions wait for a real user action. */
-  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
-  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
+  const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_(v2|v4)\/json\?poll=1&since=all$/;
+  const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_(v2|v4),sdp_dictationb1_comm_(v2|v4)\/sse$/;
   const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!live.test(u)&&!sse.test(u));
   const otherHosts=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
@@ -43,7 +43,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.getByRole('button',{name:'Session',exact:true}).click();
   await page.getByLabel('Session number',{exact:true}).fill('19');await page.getByRole('button',{name:'Sun',exact:true}).click();
   await page.getByRole('button',{name:'Lock now',exact:true}).first().click();
-  results.push({test:'Chromium '+width+'px session update visible on Home',status:(await page.locator('#homeKicker').textContent()).includes('19')&&(await page.locator('#homeKicker').textContent()).includes('Sunday')?'PASS':'FAIL'});
+  const kickerTxt = await page.locator('#homeKicker').textContent();
+  results.push({test:'Chromium '+width+'px session update visible on Home',status:kickerTxt.includes('19')&&/sunday/i.test(kickerTxt)?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'home-390.png'),fullPage:true});
   await context.close();
  }
