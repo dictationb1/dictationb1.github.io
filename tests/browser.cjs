@@ -57,14 +57,14 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const compressed=await page.locator('#sheets textarea').allTextContents();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
-  const words=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1'));const l=d.lists.find(x=>x.id===d.plan.pinned)||d.lists.find(x=>x.id===d.session.listId);return l?l.words.length:-1;});
+  const words=await page.evaluate(()=>{const key=Object.keys(localStorage).find(k=>k.startsWith('sdp.v'))||'sdp.v4_tue20';const raw=localStorage.getItem(key);const d=raw?JSON.parse(raw):null;const l=d?((d.lists||[]).find(x=>x.id===(d.plan&&d.plan.pinned))||(d.lists||[]).find(x=>x.id===(d.session&&d.session.listId))||(d.lists||[])[0]):null;return l?l.words.length:-1;});
   results.push({test:'Chromium native DecompressionStream preview/Add assembles the full 30-word list',status:words===30?'PASS':'FAIL'});await context.close();
  }
  for (const scenario of ['empty','corrupt','blocked','offline','unreachable','no-speech','no-UK']) {
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt')localStorage.setItem('sdp.v1','{broken');
+   if(scenario==='corrupt')localStorage.setItem('sdp.v4_tue20','{broken');
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -77,7 +77,12 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  // Original animated fatal card: record before geometry.
  {
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
-  const base=require('child_process').execFileSync('git',['show','7577968:index.html'],{cwd:root,maxBuffer:1000000}).toString();
+  let base;
+  try {
+   base=require('child_process').execFileSync('git',['show','7577968:index.html'],{cwd:root,maxBuffer:1000000}).toString();
+  } catch(e) {
+   base=require('child_process').execFileSync('git',['show','v1.4.0-before-v2:index.html'],{cwd:root,maxBuffer:1000000}).toString();
+  }
   await page.route('https://**/*',route=>route.abort());await page.setContent(base);await page.waitForTimeout(400);
   const box=await page.locator('#fatal .modal').boundingBox();results.push({test:'Original Chromium fatal card is off-screen (before evidence)',status:box&&box.x<0?'PASS':'FAIL',box});await context.close();
  }
