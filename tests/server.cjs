@@ -23,6 +23,90 @@ test('Server PIN: correct PIN succeeds, five wrong tries lock for five minutes',
  assert(post({action:'login',pin:DEFAULT_PIN}).ok);for(let i=0;i<5;i++)assert(!post({action:'login',pin:'0000'}).ok);
  assert.equal(post({action:'login',pin:DEFAULT_PIN}).err,'locked');now+=300001;assert(post({action:'login',pin:DEFAULT_PIN}).ok);
 });
+test('adminLogin unit test coverage: unset PIN, bad PIN progression, lockout retrySec, fail counter reset, valid token return, and edge case inputs',()=>{
+ const origPin=properties.ADMIN_PIN;
+ try {
+  properties.ADMIN_PIN='';
+  const unsetRes=context.adminLogin({pin:'1234'});
+  assert.strictEqual(unsetRes.ok,false);
+  assert.strictEqual(unsetRes.err,'admin_pin_unset');
+
+  properties.ADMIN_PIN=origPin;delete cache.adminFails;delete cache.adminUntil;
+
+  const successRes=context.adminLogin({pin:origPin});
+  assert.strictEqual(successRes.ok,true);
+  assert.strictEqual(typeof successRes.token,'string');
+  assert.ok(successRes.token.length>0);
+  assert.strictEqual(typeof successRes.ver,'number');
+
+  delete cache.adminFails;delete cache.adminUntil;
+  const fail1=context.adminLogin({pin:'wrong'});
+  assert.strictEqual(fail1.ok,false);
+  assert.strictEqual(fail1.err,'bad_pin');
+  assert.strictEqual(fail1.triesLeft,4);
+
+  const fail2=context.adminLogin({pin:'wrong'});
+  assert.strictEqual(fail2.ok,false);
+  assert.strictEqual(fail2.err,'bad_pin');
+  assert.strictEqual(fail2.triesLeft,3);
+
+  const fail3=context.adminLogin({pin:'wrong'});
+  assert.strictEqual(fail3.ok,false);
+  assert.strictEqual(fail3.err,'bad_pin');
+  assert.strictEqual(fail3.triesLeft,2);
+
+  const resetLogin=context.adminLogin({pin:origPin});
+  assert.strictEqual(resetLogin.ok,true);
+
+  const failAfterReset=context.adminLogin({pin:'wrong'});
+  assert.strictEqual(failAfterReset.ok,false);
+  assert.strictEqual(failAfterReset.err,'bad_pin');
+  assert.strictEqual(failAfterReset.triesLeft,4);
+
+  context.adminLogin({pin:'wrong'});
+  context.adminLogin({pin:'wrong'});
+  context.adminLogin({pin:'wrong'});
+  const fail5=context.adminLogin({pin:'wrong'});
+  assert.strictEqual(fail5.ok,false);
+  assert.strictEqual(fail5.err,'bad_pin');
+  assert.strictEqual(fail5.triesLeft,0);
+
+  const lockedRes=context.adminLogin({pin:origPin});
+  assert.strictEqual(lockedRes.ok,false);
+  assert.strictEqual(lockedRes.err,'locked');
+  assert.strictEqual(lockedRes.retrySec,300);
+
+  now+=300001;
+  const postLockoutRes=context.adminLogin({pin:origPin});
+  assert.strictEqual(postLockoutRes.ok,true);
+
+  delete cache.adminFails;delete cache.adminUntil;
+  const nullBody=context.adminLogin(null);
+  assert.strictEqual(nullBody.ok,false);
+  assert.strictEqual(nullBody.err,'bad_pin');
+  assert.strictEqual(nullBody.triesLeft,4);
+
+  const undefBody=context.adminLogin(undefined);
+  assert.strictEqual(undefBody.ok,false);
+  assert.strictEqual(undefBody.err,'bad_pin');
+  assert.strictEqual(undefBody.triesLeft,3);
+
+  const emptyBody=context.adminLogin({});
+  assert.strictEqual(emptyBody.ok,false);
+  assert.strictEqual(emptyBody.err,'bad_pin');
+  assert.strictEqual(emptyBody.triesLeft,2);
+
+  delete cache.adminFails;
+  if(/^\d+$/.test(origPin)){
+   const numPinRes=context.adminLogin({pin:Number(origPin)});
+   assert.strictEqual(numPinRes.ok,true);
+  }
+ } finally {
+  properties.ADMIN_PIN=origPin;
+  delete cache.adminFails;
+  delete cache.adminUntil;
+ }
+});
 test('Server 1200-word list stores multiple cells under 40K, reads all words/version/plan/session',()=>{
  const words=Array.from({length:1200},(_,i)=>({w:'word'+i,s:'This is a useful sentence for the class today.',m:'a useful word'}));
  const result=post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'QA class',words,session:{no:'42',day:'Saturday',date:'2026-10-17',title:'Class test',ready:['Ready?'],praise:['Well done']},contact:{whatsapp:'441234567890',email:'teacher@example.test'},defaults:{pauseWord:2},plan:[{key:'w5',listId:'qa-list'},{key:'default',listId:'qa-list'}]});assert(result.ok);
