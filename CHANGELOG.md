@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.0.0 (v8) — 2026-10-22 (Session 7 · Travel & Transport · strictly two repeats)
+
+- **The word is spoken exactly twice.** `Eng.buildBeats()` now emits
+  `st.repeats` word-say beats (2 by default) and nothing else: no extra leading
+  word beat, no repeat loop that can reach 3 or 4. `CONFIG.key` is
+  `sdp.v8_session7`, `CONFIG.schema`/`settingsRev` are `8`, and the live topics
+  are `sdp_dictationb1_state_v8` / `_comm_v8` / `_inbox_v8`.
+- **One engine per utterance.** `Speech.say()` gained a strict single-engine
+  lock: every part stops the shared `#sdpAudio` element and the synthesiser
+  before it starts, a beat that has actually produced sound (`audioStarted`)
+  is never repeated by `speechSynthesis`, the failed-utterance retry and the
+  queue rewind are gone, and only a failure *before* playback may fall to the
+  next tier (2200 ms connection timeout, 6000 ms completion timeout).
+- **Studio British female professor voice.** Oxford/Cambridge UK MP3 first, then
+  Polly **Amy** (en-GB), Polly **Emma**, then Google en-GB through the unlocked
+  `#sdpAudio`; device voices rank Natural/Online British female first
+  (Sonia, Libby, Maisie, Google UK English Female, Serena, Kate, Martha,
+  Stephanie, Shelley, Hazel) with `rate 0.88` and `pitch 1.05`. The next word's
+  audio is preloaded during the 5 second writing timer.
+- **Session 7 (22/10/2026, CCBE Galle Branch).** 30 Cambridge B1 Travel &
+  Transport words, `writeMode: "fixed"`, `writeFixed: 5`, `sentence: false`,
+  `repeats: 2`, `rate: 0.88`, `numbers: true`, `mode: "paper"`.
+- **Credits and the bilingual shell.** “Created by Hansana · Idea given by
+  Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini” (and its Sinhala
+  form) in the header subtitle, Home, Settings → About and the Welcome Guide,
+  with the one-tap `EN | සිංහල` switch and a `Guide / උපදෙස්` button.
+
 ## 2.0.0 (v7) — 2026-10-22 (Session 7 · Travel & Transport)
 
 - **Session 7 replaces every older list.** 30 Cambridge B1 *Travel & Transport*
