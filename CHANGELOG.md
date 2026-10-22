@@ -1,5 +1,52 @@
 # Changelog
 
+## 2.0.0 (v6) — 2026-10-22 (Session 6)
+
+- **Every older word list is gone.** Session 6 — *Travel & Transport* is the only
+  list in `index.html`, `data/session.json` and `data/config.json`: 30 Cambridge B1
+  words (`travel` … `guest`, including `boarding pass`, `capital city`,
+  `driver's licence`, `exchange rate`), each pre-filled with a British meaning, a B1
+  example sentence and a UK dictionary MP3. `CONFIG.key` is `sdp.v6_travel`,
+  `CONFIG.schema` and `settingsRev` are `6`, and the live topics are
+  `sdp_dictationb1_state_v6` / `_comm_v6` / `_inbox_v6`.
+- **Migration drops the old cache on every phone.** `DB.load()` and `DB.migrate()`
+  overwrite `lists`, `plan` and `session` and delete `snapshot`, `sessions` and
+  `outbox` whenever `settingsRev < 6`, so no leisure, hobby or sport word can survive
+  an update. Class results, comments and personal history are kept.
+- **5 second timer only.** Writing time is `writeMode: "fixed"` / `writeFixed: 5`
+  (`writeSecs()` returns 5), with `sentence: false`, `repeats: 2`, `rate: 0.85`,
+  `numbers: true`, `mode: "paper"`, `pauseWord: 1.2`, `pauseSent: 1.6`.
+- **Paper self-check actually renders.** The Results screen now inserts every one of
+  the 30 tap-to-mark rows (`Correct` / `Missed`) — the rows were built but never
+  attached to the checklist — and the score ring, history entry and the
+  `status: "finished"` community post update live.
+- **Four-tier British audio, word by word.** Tier 1 walks the recorded UK sources in
+  order (the word's own MP3, cached dictionary audio, the Oxford/Cambridge CDN, the
+  Free Dictionary `-uk.mp3`, then the Wiktionary `En-uk-` recording), Tier 2 uses an
+  installed `en-GB` voice (Daniel, Martha, Arthur, Kate, Serena, Google UK English,
+  Microsoft Sonia/Ryan/Hazel), Tier 3 streams Google `tl=en-GB` (then StreamElements
+  Amy) through the shared `#sdpAudio` element when no UK voice exists, and Tier 4
+  speaks with any English voice tagged `en-GB`. Prompts with no dictionary entry
+  (greetings, `Number 3`) go straight to the voice instead of hunting a recording.
+- **Paste pipeline.** `Admin.parseWords` strips trailing part-of-speech tags
+  (`driver's licence(n)` → `driver's licence`), auto-fills `m`/`s` from the
+  built-in B1 lexicon plus `api.dictionaryapi.dev` and the Wiktionary REST API, and
+  the single lag-free table keeps the one-tap **Save & Publish Live Now** button.
+- **Marking understands UK spellings.** `driver's licence`, `drivers licence` and
+  `driver's license` all count (the last with the UK spelling note), apostrophes are
+  ignored when comparing, and every other word is marked word by word.
+- **Honest sync chip.** `#chipNet` reads `Online · Live Sync` only after a real
+  HTTP 200 or an open `EventSource`, `Syncing…` while a post or the first connection
+  is in flight, and `Offline · Saved on device` when the device is offline.
+- **Home hero.** `SESSION 6 · 19 OCT 2026` / `Session 6 - Travel & Transport` /
+  `30 words · 5s timer`, straight from the active session.
+- `tests/upgrade.test.cjs` was rewritten from scratch for v6 (13 tests: data files,
+  in-app defaults, migration, timer, paste tags, UK marking, audio candidates, the
+  network chip and the 30-row paper checklist). `tests/phase1.cjs` (68 checks) and
+  `tests/upgrade-browser.cjs` were updated to the v6 storage key, build stamp, live
+  topics and publish label; the browser suite now skips with an explicit message when
+  no runnable browser exists in the environment instead of failing on library issues.
+
 ## 2.0.0 — 2026-10-14 (released to GitHub Pages)
 
 - **CI fix (third pass).** With the full history checked out, the real browser suites ran: `tests/browser.cjs` counts every http(s) request made at boot, so the live channel is now explicitly allowlisted there (the two cached reads plus the one SSE stream — all read-only GETs; any POST, any Apps Script or GitHub call and any other host is still a failure). The publish toast keeps its `Saved & published to all students …` wording that `tests/upgrade-browser.cjs` waits for, with the session number and live-sync state appended.

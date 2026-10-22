@@ -1,199 +1,199 @@
 {
   "ok": true,
-  "ver": 4,
+  "ver": 6,
   "session": {
-    "no": "1",
+    "no": "6",
     "day": "Tuesday",
-    "date": "2026-10-20",
-    "title": "Tuesday 20th dictation session",
-    "listId": "list_tue_20_sport"
+    "date": "2026-10-19",
+    "title": "Session 6 - Travel & Transport",
+    "listId": "list_session_6_travel"
   },
   "lists": [
     {
-      "id": "list_tue_20_sport",
-      "name": "Tuesday 20th dictation session",
-      "version": 1,
+      "id": "list_session_6_travel",
+      "name": "Session 6 - Travel & Transport",
+      "version": 2,
       "published": true,
       "words": [
         {
-          "w": "athlete",
-          "s": "She is an Olympic athlete who trains six days a week.",
-          "m": "a person who is very good at sports or physical exercise, especially one who competes in events",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athlete--_gb_1.mp3"
+          "w": "travel",
+          "s": "We usually travel to the city by train every morning.",
+          "m": "to make a journey from one place to another",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/travel--_gb_1.mp3"
         },
         {
-          "w": "athletics",
-          "s": "Our school athletics team won four gold medals on Tuesday.",
-          "m": "the general name for sports such as running, jumping, and throwing",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athletics--_gb_1.mp3"
+          "w": "transport",
+          "s": "Public transport in London includes buses and the underground.",
+          "m": "a system of vehicles, such as buses and trains, for getting from one place to another",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/transport--_gb_1.mp3"
         },
         {
-          "w": "badminton",
-          "s": "We play badminton in the sports hall every Wednesday evening.",
-          "m": "a sport in which two or four players hit a shuttlecock over a high net with rackets",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/badminton--_gb_1.mp3"
+          "w": "abroad",
+          "s": "She hopes to study abroad for a year after finishing school.",
+          "m": "in or to a foreign country",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/abroad--_gb_1.mp3"
         },
         {
-          "w": "champion",
-          "s": "He became the national swimming champion at the age of eighteen.",
-          "m": "someone or a team that has won a competition, especially in sport",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/champion--_gb_1.mp3"
+          "w": "accommodation",
+          "s": "The price of the tour includes flights and hotel accommodation.",
+          "m": "a place to live, work, or stay in, especially on holiday",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/accommodation--_gb_1.mp3"
         },
         {
-          "w": "climbing",
-          "s": "Rock climbing in the mountains requires strong ropes and a helmet.",
-          "m": "the sport or activity of climbing rocks or mountains",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/climbing--_gb_1.mp3"
+          "w": "ambulance",
+          "s": "Someone called an ambulance immediately after the road accident.",
+          "m": "a special vehicle used to take sick or injured people to hospital",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ambulance--_gb_1.mp3"
         },
         {
-          "w": "competitor",
-          "s": "Every competitor in the marathon received a medal at the finish.",
-          "m": "a person, team, or company that is competing against others",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/competitor--_gb_1.mp3"
+          "w": "announcement",
+          "s": "We listened carefully to the platform announcement at the station.",
+          "m": "something that someone says officially, giving information about something",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/announcement--_gb_1.mp3"
         },
         {
-          "w": "cycling",
-          "s": "Cycling along the country lanes is a great way to keep fit.",
-          "m": "the sport or activity of riding a bicycle",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cycling--_gb_1.mp3"
+          "w": "arrival",
+          "s": "Please wait in the terminal building for the arrival of flight BA102.",
+          "m": "the fact of arriving somewhere",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/arrival--_gb_1.mp3"
         },
         {
-          "w": "cyclist",
-          "s": "Each cyclist must wear a safety helmet during the road race.",
-          "m": "someone who rides a bicycle",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cyclist--_gb_1.mp3"
+          "w": "astronaut",
+          "s": "The astronaut spent six months living on the space station.",
+          "m": "a person who has been trained for travelling in space",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/astronaut--_gb_1.mp3"
         },
         {
-          "w": "diving",
-          "s": "She won first prize in the ten-metre platform diving competition.",
-          "m": "the sport of jumping into water head first or swimming underwater",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/diving--_gb_1.mp3"
+          "w": "backpacking",
+          "s": "They went backpacking across Europe during their summer holidays.",
+          "m": "travelling or camping while carrying your clothes and equipment in a backpack",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/backpacking--_gb_1.mp3"
         },
         {
-          "w": "extreme sports",
-          "s": "My brother loves extreme sports like mountain biking and skydiving.",
-          "m": "sports that are very exciting and dangerous, such as skydiving or bungee jumping",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/extreme_sports--_gb_1.mp3"
+          "w": "baggage",
+          "s": "We waited twenty minutes at the airport to collect our baggage.",
+          "m": "all the suitcases and bags that you take with you when you travel",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/baggage--_gb_1.mp3"
         },
         {
-          "w": "fitness",
-          "s": "She joined an evening fitness class to improve her health.",
-          "m": "the condition of being physically strong and healthy",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fitness--_gb_1.mp3"
+          "w": "boarding pass",
+          "s": "Please show your passport and boarding pass at the departure gate.",
+          "m": "a card that a passenger must have to be allowed to get on an aircraft or ship",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/boarding_pass--_gb_1.mp3"
         },
         {
-          "w": "goalkeeper",
-          "s": "The goalkeeper made a brilliant save in the final minute.",
-          "m": "the player whose job is to stop the ball going into the goal",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/goalkeeper--_gb_1.mp3"
+          "w": "brochure",
+          "s": "We picked up a holiday brochure from the local travel agent.",
+          "m": "a type of small magazine that contains pictures and information about a product or holiday",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/brochure--_gb_1.mp3"
         },
         {
-          "w": "gymnastics",
-          "s": "She has practised gymnastics at the local club since she was six.",
-          "m": "physical exercises and movements that need skill, strength, and control",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gymnastics--_gb_1.mp3"
+          "w": "canal",
+          "s": "We took a quiet boat trip along the historic city canal.",
+          "m": "a long, narrow stretch of water that has been made for boats to travel along",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/canal--_gb_1.mp3"
         },
         {
-          "w": "ice hockey",
-          "s": "Ice hockey is one of the fastest and most exciting winter sports.",
-          "m": "a game played on ice between two teams who try to hit a puck into a goal",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ice_hockey--_gb_1.mp3"
+          "w": "capital city",
+          "s": "London is the capital city of the United Kingdom.",
+          "m": "the most important city in a country or state, where the government is based",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/capital_city--_gb_1.mp3"
         },
         {
-          "w": "instructor",
-          "s": "Our skiing instructor showed us how to stop safely on the slope.",
-          "m": "a person whose job is to teach a practical skill or sport",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/instructor--_gb_1.mp3"
+          "w": "crossroads",
+          "s": "Turn left at the traffic lights when you reach the main crossroads.",
+          "m": "a place where two roads meet and cross each other",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/crossroads--_gb_1.mp3"
         },
         {
-          "w": "league",
-          "s": "Their football team finished at the top of the local league.",
-          "m": "a group of sports clubs or teams that play matches against each other",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/league--_gb_1.mp3"
+          "w": "currency",
+          "s": "You can change your money into local currency at the airport.",
+          "m": "the money that is used in a particular country",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/currency--_gb_1.mp3"
         },
         {
-          "w": "motor-racing",
-          "s": "He watched the British motor-racing championship at Silverstone.",
-          "m": "the sport of racing fast cars on a special track",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/motor-racing--_gb_1.mp3"
+          "w": "customs",
+          "s": "It took us ten minutes to walk through customs at the airport.",
+          "m": "the place at a port or airport where officials check goods brought into a country",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/customs--_gb_1.mp3"
         },
         {
-          "w": "practice",
-          "s": "Football practice starts at four o'clock on the school pitch.",
-          "m": "noun: regular training or activity done to improve your skill at a sport",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practice--_gb_1.mp3"
+          "w": "delayed",
+          "s": "Our morning train was delayed by thirty minutes because of rain.",
+          "m": "happening at a later time than expected or intended",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/delayed--_gb_1.mp3"
         },
         {
-          "w": "practise",
-          "s": "You need to practise your serve every day before the tennis match.",
-          "m": "verb: to do an activity regularly in order to become better at it",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practise--_gb_1.mp3"
+          "w": "deliver",
+          "s": "The postman will deliver the parcel before twelve o'clock tomorrow.",
+          "m": "to take goods, letters, or parcels to people's houses or places of work",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/deliver--_gb_1.mp3"
         },
         {
-          "w": "reserve",
-          "s": "He started the match on the bench as a reserve for the team.",
-          "m": "noun: an extra player who is ready to play if another team member cannot",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/reserve--_gb_1.mp3"
+          "w": "departure",
+          "s": "Please check the screen in the departure lounge for your gate number.",
+          "m": "the fact of a person or vehicle, especially an aircraft, leaving a place",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/departure--_gb_1.mp3"
         },
         {
-          "w": "sailing",
-          "s": "They went sailing across the bay in a small wooden boat.",
-          "m": "the sport or activity of travelling on water in a boat with sails",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sailing--_gb_1.mp3"
+          "w": "destination",
+          "s": "After a six-hour flight, we finally reached our holiday destination.",
+          "m": "the place where someone is going or where something is being sent",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/destination--_gb_1.mp3"
         },
         {
-          "w": "skiing",
-          "s": "We go skiing in the mountains every winter holiday.",
-          "m": "the sport or activity of moving over snow on skis",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/skiing--_gb_1.mp3"
+          "w": "direction",
+          "s": "The sign pointed in the direction of the nearest railway station.",
+          "m": "the position towards which someone or something moves or faces",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/direction--_gb_1.mp3"
         },
         {
-          "w": "snowboarding",
-          "s": "Snowboarding is very popular with young people at winter resorts.",
-          "m": "the sport of moving over snow while standing on a wide board",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/snowboarding--_gb_1.mp3"
+          "w": "documents",
+          "s": "Keep your travel documents and tickets safe in your hand luggage.",
+          "m": "official papers or files that give information or proof of something",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/documents--_gb_1.mp3"
         },
         {
-          "w": "sports centre",
-          "s": "We booked a badminton court at the local sports centre.",
-          "m": "a building where the public can go to play different indoor sports",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sports_centre--_gb_1.mp3"
+          "w": "driver's licence",
+          "s": "You must show your driver's licence when you hire a car.",
+          "m": "noun: an official document that shows you are legally allowed to drive",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drivers_licence--_gb_1.mp3"
         },
         {
-          "w": "squash",
-          "s": "Playing squash for half an hour is a very fast workout.",
-          "m": "a game for two players who hit a small rubber ball against the walls of a court",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/squash--_gb_1.mp3"
+          "w": "embassy",
+          "s": "If you lose your passport abroad, contact your national embassy.",
+          "m": "the group of officials who represent their country in a foreign country, or the building they work in",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/embassy--_gb_1.mp3"
         },
         {
-          "w": "surf",
-          "s": "They learned how to surf on the big waves in Cornwall.",
-          "m": "to ride on waves in the sea on a special board",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surf--_gb_1.mp3"
+          "w": "exchange rate",
+          "s": "The bank offered a very good exchange rate for British pounds.",
+          "m": "the value of the money of one country compared to that of another country",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/exchange_rate--_gb_1.mp3"
         },
         {
-          "w": "surfboarding",
-          "s": "Surfboarding at the beach is her favourite summer activity.",
-          "m": "the sport or activity of riding waves while standing on a surfboard",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surfboarding--_gb_1.mp3"
+          "w": "ferry",
+          "s": "We caught the early morning ferry across the channel to France.",
+          "m": "a boat or ship for taking passengers and often vehicles across an area of water",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ferry--_gb_1.mp3"
         },
         {
-          "w": "swimming",
-          "s": "Swimming fifty lengths of the pool is great exercise.",
-          "m": "the sport or activity of moving through water by moving your arms and legs",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/swimming--_gb_1.mp3"
+          "w": "flight",
+          "s": "Have a pleasant flight and thank you for travelling with us.",
+          "m": "a journey in an aircraft",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/flight--_gb_1.mp3"
         },
         {
-          "w": "table tennis",
-          "s": "We played two games of table tennis in the youth club.",
-          "m": "an indoor game played on a table with small bats and a light plastic ball",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/table_tennis--_gb_1.mp3"
+          "w": "foreign",
+          "s": "Learning a foreign language makes travelling much more enjoyable.",
+          "m": "belonging or connected to a country that is not your own",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/foreign--_gb_1.mp3"
         },
         {
-          "w": "throw",
-          "s": "How far can you throw the ball across the cricket field?",
-          "m": "verb: to send an object such as a ball through the air using your hand",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/throw--_gb_1.mp3"
+          "w": "guest",
+          "s": "Every hotel guest receives a free breakfast in the dining room.",
+          "m": "a person who is staying at a hotel or visiting someone's home",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guest--_gb_1.mp3"
         }
       ]
     }
@@ -201,8 +201,17 @@
   "plan": [
     {
       "key": "default",
-      "listId": "list_tue_20_sport",
+      "listId": "list_session_6_travel",
       "pinned": true
+    },
+    {
+      "key": "pinned",
+      "listId": "list_session_6_travel",
+      "pinned": true
+    },
+    {
+      "key": "d2026-10-19",
+      "listId": "list_session_6_travel"
     }
   ],
   "announcement": null,

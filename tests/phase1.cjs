@@ -96,8 +96,8 @@ function bootTraffic(a) {
      the documented free live channel: the two cached ntfy reads (the published
      state and the community feed) next to the two static ./data files. A POST,
      an Apps Script call or any other host is still a failure. */
-  const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v2\/json\?poll=1&since=all$/;
-  const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v2,sdp_dictationb1_comm_v2\/sse$/;
+  const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v6\/json\?poll=1&since=all$/;
+  const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v6,sdp_dictationb1_comm_v6\/sse$/;
   const staticFile = /^\.\/data\/(version|session)\.json\?t=\d+$/;
   return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url) || sse.test(r.url))) &&
     !a.requests.some(r => r.method !== 'fetch') &&
@@ -357,7 +357,7 @@ test('2.2 rename/duplicate/reorder/delete with Undo retain list and planner data
  /* v2.0.0 has ONE word table: reorder the row in it, then publish the list */
  const down=a.w.document.querySelector('[aria-label="Down word 1"]');assert(down,'the single table offers a Down control');down.click();
  assert(!words[0].w||words[0].w===first,'the draft reorder does not touch the published list before saving');
- clickText(a,'Save & Publish to All Students');
+ clickText(a,'Save & Publish Live Now');
  const republished=a.q.DB.data.lists[1].words;
  assert.equal(republished[0].w,second);assert.equal(republished[1].w,first);
  a.q.DB.data.plan.defaultList=a.q.DB.data.lists[1].id;const id=a.q.DB.data.plan.defaultList;clickText(a,'Delete list');Array.from(a.w.document.querySelectorAll('#modals button')).find(b=>b.textContent==='Delete').click();assert.equal(a.q.DB.data.lists.length,1);
@@ -398,13 +398,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'2.0.0'); assert.equal(a.w.SDP.build,'2026-10-14'); assert.equal(a.w.SDP.stamp(),'v2.0.0 (2026-10-14)');
+ assert.equal(a.w.SDP.version,'2.0.0'); assert.equal(a.w.SDP.build,'2026-10-22'); assert.equal(a.w.SDP.stamp(),'v2.0.0 (2026-10-22)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v2.0.0 (2026-10-14)')); assert(txt.includes('My data'));
+ assert(txt.includes('v2.0.0 (2026-10-22)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.0.0 (2026-10-14)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.0.0 (2026-10-22)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
