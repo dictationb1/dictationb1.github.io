@@ -1,8 +1,9 @@
 {
-  "ver": 6,
+  "ver": 7,
   "version": "2.0.0",
   "buildDate": "2026-10-22",
-  "session": "6",
-  "title": "Session 6 - Travel & Transport",
-  "updatedAt": 1792634197634
+  "session": "7",
+  "title": "Session 7 - Travel & Transport",
+  "settingsRev": 7,
+  "updatedAt": 1792662300060
 }

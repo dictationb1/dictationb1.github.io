@@ -96,8 +96,8 @@ function bootTraffic(a) {
      the documented free live channel: the two cached ntfy reads (the published
      state and the community feed) next to the two static ./data files. A POST,
      an Apps Script call or any other host is still a failure. */
-  const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v6\/json\?poll=1&since=all$/;
-  const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v6,sdp_dictationb1_comm_v6\/sse$/;
+  const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v7\/json\?poll=1&since=all$/;
+  const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v7,sdp_dictationb1_comm_v7\/sse$/;
   const staticFile = /^\.\/data\/(version|session)\.json\?t=\d+$/;
   return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url) || sse.test(r.url))) &&
     !a.requests.some(r => r.method !== 'fetch') &&

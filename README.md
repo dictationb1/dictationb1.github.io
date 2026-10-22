@@ -4,7 +4,7 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Release status
 
-**2.0.0 (v6, 2026-10-22) is the released upgrade**: Session 6 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer), the four-tier British audio chain on every device, the one-tap **Save & Publish Live Now** editor, Tuesday/Wednesday scheduling, always-on online mode through `data/*.json` and the ntfy live channel, and the auto-lite performance work. An older install drops its cached lists, plan and snapshot on first load and lands on Session 6. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
+**2.0.0 (v7, 2026-10-22) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the four-tier British **female professor** audio chain on every device, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, creator credits (Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini), the one-tap **Save & Publish Live Now** editor, always-on online mode through `data/*.json` and the v7 ntfy live channel, and the auto-lite performance work. An older install drops its cached lists, plan, session and snapshot on first load (`settingsRev < 7`), shows the Welcome Guide again and lands on Session 7. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
 
 ## Add next week's words in three steps (candidate)
 
