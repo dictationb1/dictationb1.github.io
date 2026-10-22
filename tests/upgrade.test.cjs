@@ -1,15 +1,24 @@
-/* Release 2.0.0 (ver 8) - Session 7 "Travel & Transport" (22/10/2026).
-   Written from scratch for v8. It locks down the three root causes of the
-   "word is spoken 3 or 4 times" bug:
-     1. Eng.buildBeats() emits EXACTLY st.repeats word-say beats (2 by default)
-        and never one leading word beat plus a repeat loop;
-     2. Speech.say() keeps a strict single-engine lock per utterance, so a
-        beat that already produced sound is never re-spoken by the device
-        synthesiser, and the old retry never rewinds the queue;
-     3. a started British recording owns its beat (no fallback echo).
-   It also pins the studio British female voice (Polly Amy en-GB), the zero
-   lag preload, the 5 second timer, the bilingual shell, the credits and the
-   real-time ntfy sync. */
+/* Release 2.0.0 (ver 9) - Session 7 "Travel & Transport" (22/10/2026).
+   Written from scratch with fs.writeFileSync for the v9 unified-voice release.
+
+   v9 locks 100% of the dictation audio to ONE single British female
+   professor voice (AWS Polly "Amy", en-GB) so a male and a female speaker
+   can never alternate inside a dictation:
+     1. Speech.say / Dict.speak / Speech.spell route EVERY utterance -
+        "Are you ready?", "3", "2", "1", "Number 1.", single words,
+        multi-word phrases and spelling letters - through #sdpAudio with
+        the voice=Amy Streamelements URL; the only failover is the Google
+        Translate en-GB female TTS, and only if "Amy" fails to load;
+     2. Oxford/dictionary MP3s are never played during dictation (half of
+        those recordings are spoken by a man), and window.speechSynthesis
+        is only the offline/last-resort fallback with male voices purged;
+     3. Eng.buildBeats() emits EXACTLY st.repeats word-say beats (2 by
+        default - never 3 or 4) and Speech.say() keeps the strict
+        single-engine mutex (partDone / audioStarted, no qi-- retry), so
+        #sdpAudio and window.speechSynthesis never both speak one beat;
+     4. the next word's voice=Amy URL is preloaded during the 5-second
+        writing countdown, so every word plays with 0 ms delay. */
+'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -37,7 +46,7 @@ const TRAVEL = [
 const APP = 'Session 7 - Travel & Transport';
 const LIST_ID = 'list_session_7_travel';
 const CREDIT = 'Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu) \u00b7 Lecturer in Charge: Sumodya Sewmini';
-const CREDIT_SI = '\u0db1\u0dd2\u0dbb\u0dca\u0db8\u0dcf\u0dab\u0dba: Hansana \u00b7 \u0d85\u0daf\u0dc4\u0dc3: Ayya01 (Lesandu) \u00b7 \u0db7\u0dcf\u0dbb\u0d9a\u0dcf\u0dbb \u0d9a\u0dae\u0dd2\u0d9a\u0dcf\u0da0\u0dcf\u0dbb\u0dca\u0dba: Sumodya Sewmini';
+const UNIFIED_VOICE = 'British Female Professor Voice (Amy \u00b7 en-GB)';
 
 const sayBeats = function (beats) {
   return Array.from(beats).filter(function (b) { return b.t === 'say'; });
@@ -45,16 +54,23 @@ const sayBeats = function (beats) {
 const wordBeats = function (beats) {
   return Array.from(beats).filter(function (b) { return b.t === 'say' && b.isWord; });
 };
+/* every source the unified engine is allowed to use */
+const isUnifiedFemaleUrl = function (src) {
+  return /voice=Amy|translate_tts/.test(src);
+};
+const isMaleOrDictionaryUrl = function (src) {
+  return /ssl\.gstatic|dictionaryapi|wikimedia|_gb_1|-uk\.mp3|voice=Emma|Daniel|Ryan|George/i.test(src);
+};
 
-test('release metadata: version 2.0.0, data ver 8, Session 7 defaults', function () {
+test('release metadata: version 2.0.0, data ver 9+, Session 7 defaults', function () {
   assert.equal(versionJson.version, '2.0.0');
-  assert.ok(Number(versionJson.ver) >= 8, 'data ver is 8 or newer');
-  assert.ok(Number(versionJson.settingsRev) >= 8, 'settings revision is 8 or newer');
+  assert.ok(Number(versionJson.ver) >= 9, 'data ver is 9 or newer');
+  assert.ok(Number(versionJson.settingsRev) >= 9, 'settings revision is 9 or newer');
   assert.equal(versionJson.session, '7');
   assert.equal(versionJson.title, APP);
 
   assert.equal(configJson.version, '2.0.0');
-  assert.ok(Number(configJson.ver) >= 8);
+  assert.ok(Number(configJson.ver) >= 9);
   assert.equal(configJson.listId, LIST_ID);
   assert.equal(configJson.session.no, '7');
   assert.equal(configJson.session.date, '2026-10-22');
@@ -69,13 +85,14 @@ test('release metadata: version 2.0.0, data ver 8, Session 7 defaults', function
   assert.equal(configJson.defaults.mode, 'paper');
   assert.match(configJson.credits.en, /Created by Hansana/);
   assert.equal(configJson.credits.lecturerInCharge, 'Sumodya Sewmini');
+  assert.match(String(configJson.tts.primary), /Amy/);
   assert.match(configJson.live.state, /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v8$/);
   assert.match(configJson.live.community, /^https:\/\/ntfy\.sh\/sdp_dictationb1_comm_v8$/);
   assert.match(configJson.live.inbox, /^https:\/\/ntfy\.sh\/sdp_dictationb1_inbox_v8$/);
 });
 
 test('session.json holds exactly the 30 Travel & Transport words', function () {
-  assert.ok(Number(sessionJson.ver) >= 8);
+  assert.ok(Number(sessionJson.ver) >= 9);
   assert.equal(sessionJson.session.no, '7');
   assert.equal(sessionJson.session.date, '2026-10-22');
   assert.equal(sessionJson.session.title, APP);
@@ -89,7 +106,6 @@ test('session.json holds exactly the 30 Travel & Transport words', function () {
     assert.ok(word.s && word.s.length > 15, word.w + ' has a B1 example sentence');
     assert.match(word.audio, /^https:\/\/.+\.mp3$/, word.w + ' has a UK audio URL');
   }
-  /* only Session 7 survives: no older list, plan date or word is left behind */
   const words = sessionJson.lists.map(function (l) { return l.words.map(function (w) { return w.w; }); }).flat();
   for (const gone of ['athlete', 'hobbies', 'appointment', 'badminton', 'rainbow']) {
     assert.ok(words.indexOf(gone) < 0, 'old word removed: ' + gone);
@@ -99,6 +115,7 @@ test('session.json holds exactly the 30 Travel & Transport words', function () {
 
 test('all 30 words are in both session.json and index.html', function () {
   for (const word of TRAVEL) {
+    assert.ok(sessionJson.lists[0].words.some(function (w) { return w.w === word; }), 'session.json has ' + word);
     assert.ok(html.includes(word), 'index.html has ' + word);
   }
   assert.ok(html.includes(APP), 'index.html names the session');
@@ -106,12 +123,12 @@ test('all 30 words are in both session.json and index.html', function () {
   assert.ok(html.includes('CCBE Galle Branch'), 'index.html names the branch');
 });
 
-test('index.html carries the v8 key, schema, timer, credits, Amy voice and sync hooks', function () {
+test('index.html carries the v9 key, schema, unified Amy voice, credits and sync hooks', function () {
   assert.ok(html.includes('APP_VERSION = "2.0.0"'));
-  assert.ok(html.includes('key: "sdp.v8_session7",'));
-  assert.ok(html.includes('schema: 8,'));
-  assert.ok(html.includes('settingsRev: 8,'));
-  assert.ok(html.includes('settingsRev < 8'));
+  assert.ok(html.includes('key: "sdp.v9_session7",'));
+  assert.ok(html.includes('schema: 9,'));
+  assert.ok(html.includes('settingsRev: 9,'));
+  assert.ok(html.includes('settingsRev < 9'));
   assert.ok(html.includes('writeFixed: 5'));
   assert.ok(html.includes('sentence: false'));
   assert.ok(html.includes('repeats: 2'));
@@ -119,16 +136,20 @@ test('index.html carries the v8 key, schema, timer, credits, Amy voice and sync 
   assert.ok(html.includes('id="sdpAudio"'));
   assert.ok(html.includes('preload="auto"'));
   assert.ok(html.includes('playsinline'));
-  assert.ok(html.includes('voice=Amy'), 'primary British female Polly voice');
-  assert.ok(html.includes('voice=Emma'), 'British female failover');
-  assert.ok(html.includes('translate.google.com/translate_tts'));
+  /* the one unified British female professor voice */
+  assert.ok(html.includes('voice=Amy'), 'primary unified British female voice');
   assert.ok(html.includes('api.streamelements.com/kappa/v2/speech'));
-  assert.ok(html.includes('api.dictionaryapi.dev'));
+  assert.ok(html.includes('translate.google.com/translate_tts'), 'female en-GB failover');
+  assert.ok(html.includes('tl=en-GB'));
+  assert.ok(html.indexOf('voice=Emma') < 0, 'no second TTS voice in the chain');
+  assert.ok(html.includes('British Female Professor Voice (Amy \\u00b7 en-GB)'), 'Settings shows the unified voice');
+  /* real-time ntfy.sh sync */
   assert.ok(html.includes('ntfy.sh'));
   assert.ok(html.includes('sdp_dictationb1_state_v8'));
   assert.ok(html.includes('EventSource'));
   assert.ok(html.includes('cancelAnimationFrame'));
   assert.ok(html.includes('Save & Publish Live Now'));
+  /* creator credits */
   assert.ok(html.includes('Hansana'));
   assert.ok(html.includes('Ayya01'));
   assert.ok(html.includes('Lesandu'));
@@ -136,16 +157,18 @@ test('index.html carries the v8 key, schema, timer, credits, Amy voice and sync 
   assert.ok(html.includes('\u0dc3\u0dd2\u0d82\u0dc4\u0dbd'));
   /* Sinhala is stored as \u escapes inside the single-file app */
   assert.ok(html.includes('\\u0db7\\u0dcf\\u0dbb\\u0d9a\\u0dcf\\u0dbb \\u0d9a\\u0dae\\u0dd2\\u0d9a\\u0dcf\\u0da0\\u0dcf\\u0dbb\\u0dca\\u0dba'),
-    'the full Sinhala credit line (' + CREDIT_SI + ')');
+    'the full Sinhala credit line');
+  /* Admin PIN 7898 stays the seeded convenience-lock PIN */
+  assert.equal(require('./test-pin.cjs'), '7898');
 });
 
 test('in-app defaults: Session 7 list, 5 second timer, 2 repeats, paper mode', function () {
   const a = harness();
   try {
     const q = a.q, d = q.DB.data;
-    assert.equal(q.CONFIG.key, 'sdp.v8_session7');
-    assert.equal(q.CONFIG.schema, 8);
-    assert.equal(d.settingsRev, 8);
+    assert.equal(q.CONFIG.key, 'sdp.v9_session7');
+    assert.equal(q.CONFIG.schema, 9);
+    assert.equal(d.settingsRev, 9);
     assert.equal(d.lists.length, 1);
     assert.equal(d.lists[0].id, LIST_ID);
     assert.equal(d.lists[0].name, APP);
@@ -180,7 +203,7 @@ test('Home hero, header subtitle and About show the Session 7 credits', function
   } finally { a.close(); }
 });
 
-test('migrate: any pre-v8 cache is replaced and the guide is shown again', function () {
+test('migrate: pre-v9 caches are reinstalled and male device voices are purged', function () {
   const a = harness();
   try {
     const q = a.q;
@@ -188,6 +211,7 @@ test('migrate: any pre-v8 cache is replaced and the guide is shown again', funct
     old.settingsRev = 7;
     old.v = 7;
     old.tourSeen = true;
+    old.settings.voiceName = 'Daniel';
     old.lists = [{ id: 'list_session_6_travel', name: 'Session 6 - Travel & Transport', version: 2, published: true,
       words: [{ w: 'travel', s: 'We travel by train every day.', m: 'to make a journey' }] }];
     old.plan = { weekdays: ['', '', '', '', '', '', ''], dates: { '2026-10-19': 'list_session_6_travel' }, pinned: 'list_session_6_travel', defaultList: 'list_session_6_travel' };
@@ -196,8 +220,8 @@ test('migrate: any pre-v8 cache is replaced and the guide is shown again', funct
     old.sessions = [{ id: 'past' }];
     old.outbox = [{ action: 'comment' }];
     const d = q.DB.migrate(old);
-    assert.equal(d.settingsRev, 8);
-    assert.equal(d.v, 8);
+    assert.equal(d.settingsRev, 9);
+    assert.equal(d.v, 9);
     assert.equal(d.lists.length, 1);
     assert.equal(d.lists[0].name, APP);
     assert.equal(d.lists[0].words.length, 30);
@@ -213,7 +237,28 @@ test('migrate: any pre-v8 cache is replaced and the guide is shown again', funct
     assert.ok(!('snapshot' in d), 'snapshot dropped');
     assert.equal(d.sessions.length, 0);
     assert.equal(d.outbox.length, 0);
-    assert.ok(!d.lists.some(function (l) { return l.words.some(function (w) { return w.w === 'athlete'; }); }));
+    assert.equal(d.settings.voiceName, '', 'the male Daniel voice is purged');
+
+    /* every mandated male name is purged, on every migrate() */
+    for (const male of ['Daniel', 'Oliver', 'Arthur', 'George', 'Ryan', 'Male UK voice', 'David', 'Mark', 'James', 'Thomas', 'Fred', 'Alex', 'Aaron']) {
+      const d2 = q.DB.migrate(JSON.parse(JSON.stringify(q.defaultData())));
+      d2.settings.voiceName = male;
+      const done = q.DB.migrate(d2);
+      assert.equal(done.settings.voiceName, '', 'male voice purged: ' + male);
+      assert.equal(done.settingsRev, 9);
+    }
+    /* a women's voice is NEVER purged - "Female" contains "male" but must survive */
+    for (const female of ['Microsoft Sonia', 'Google UK English Female', 'Microsoft Libby', 'Maisie']) {
+      const d3 = q.DB.migrate(JSON.parse(JSON.stringify(q.defaultData())));
+      d3.settings.voiceName = female;
+      const done = q.DB.migrate(d3);
+      assert.equal(done.settings.voiceName, female, 'female voice kept: ' + female);
+    }
+    assert.equal(q.Speech.isMaleName('Daniel'), true);
+    assert.equal(q.Speech.isMaleName('Ryan'), true);
+    assert.equal(q.Speech.isMaleName('George'), true);
+    assert.equal(q.Speech.isMaleName('Google UK English Female'), false);
+    assert.equal(q.Speech.isMaleName('Microsoft Sonia'), false);
   } finally { a.close(); }
 });
 
@@ -221,6 +266,8 @@ test('BUG 1: buildBeats() says the word EXACTLY twice and never 3 or 4 times', f
   const a = harness();
   try {
     const q = a.q;
+    assert.equal(q.DB.data.settings.repeats, 2, 'default repeats is 2');
+    assert.equal(q.DB.data.settings.sentence, false, 'default sentence is off');
     q.Eng.words = Array.from(q.DB.data.lists[0].words);
     q.Eng.order = q.Eng.words.map(function (_, i) { return i; });
     const beats = q.Eng.buildBeats(0);
@@ -236,12 +283,14 @@ test('BUG 1: buildBeats() says the word EXACTLY twice and never 3 or 4 times', f
     assert.equal(sayBeats(beats).length, 3, 'number + the word twice');
     assert.ok(!sayBeats(beats).some(function (b) { return b.text === q.DB.data.lists[0].words[0].s; }),
       'the sentence waits for its own stage');
-    /* a pause between the two readings, then the 5 second writing timer */
+    /* say Number -> wait 400 -> say word -> wait 1200 -> say word -> write 5s */
     const seq = Array.from(beats, function (b) { return b.t; });
     assert.deepEqual(seq, ['say', 'wait', 'say', 'wait', 'say', 'write']);
+    assert.equal(beats[1].ms, 400, '400 ms after the number prompt');
+    assert.equal(beats[3].ms, 1200, 'pauseWord (1.2 s) between the two readings');
     const write = beats[beats.length - 1];
     assert.equal(write.t, 'write');
-    assert.equal(write.secs, 5);
+    assert.equal(write.secs, 5, '5-second writing countdown');
     /* "tyre/tire" is spoken as "tyre", never "tyre slash tire" */
     q.Eng.order = [25];
     const tyre = wordBeats(q.Eng.buildBeats(25));
@@ -264,14 +313,93 @@ test('BUG 1: buildBeats() says the word EXACTLY twice and never 3 or 4 times', f
     const order = Array.from(sayBeats(withSentence), function (b) { return b.isNum ? 'N' : (b.isSentence ? 'S' : 'W'); });
     assert.deepEqual(order, ['N', 'W', 'W', 'S']);
     assert.equal(wordBeats(withSentence).length, 2, 'the sentence never adds a third word reading');
+    q.DB.data.settings.sentence = false;
   } finally { a.close(); }
 });
 
-test('BUG 2: one engine per utterance - no retry rewind, no fallback echo', function () {
+test('UNIFIED VOICE: every part is spoken by the one Amy female voice on #sdpAudio', function () {
+  const a = harness();
+  try {
+    const q = a.q, w = a.w;
+    /* the device synthesiser must stay completely silent while online audio works */
+    const deviceSpoken = [];
+    Object.defineProperty(w, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        getVoices: function () { return [{ name: 'Microsoft Sonia', lang: 'en-GB', localService: true }]; },
+        speak: function (u) { deviceSpoken.push(u.text); w.setTimeout(function () { if (u.onend) u.onend(); }, 5); },
+        cancel: function () {}, pause: function () {}, resume: function () {}
+      }
+    });
+    w.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    q.Speech.supported = true;
+    q.Speech.textOnly = false;
+    q.Speech.ukVoices = [{ name: 'Microsoft Sonia', lang: 'en-GB', localService: true }];
+    q.Speech.chosen = q.Speech.ukVoices[0];
+    const played = [];
+    q.Speech.playAudio = function (src, rate, ms, cb) { played.push(src); cb(true, true); };
+
+    const parts = [
+      'Are you ready?', '3', '2', '1', 'Number 1.', 'guidebook', 'on business',
+      'tourist information centre', 'tyre/tire',
+      'Well done! That is the end of the dictation. Now check your answers.'
+    ];
+    for (let i = 0; i < parts.length; i++) {
+      q.Speech.say([parts[i]], {}, function () {});
+      a.clock.tick(3000);
+    }
+    q.Speech.spell('visa', function () {});
+    a.clock.tick(3000);
+
+    /* one play per part (6 spelling parts: word + 4 letters + word) */
+    assert.equal(played.length, parts.length + 6, 'played ' + played.length + ' sources');
+    for (const src of played) {
+      assert.ok(isUnifiedFemaleUrl(src), 'unified female source: ' + src);
+      assert.ok(!isMaleOrDictionaryUrl(src), 'no male/dictionary source: ' + src);
+    }
+    assert.ok(played.every(function (src) { return /voice=Amy/.test(src); }),
+      'voice=Amy leads every single utterance');
+    assert.ok(played.some(function (src) { return /text=tyre/.test(src); }), '"tyre/tire" is spoken as "tyre"');
+    assert.ok(played.some(function (src) { return /text=Number%201\./.test(src); }), 'the number prompt uses Amy');
+    assert.ok(played.some(function (src) { return /text=tourist%20information%20centre/.test(src); }), 'phrases use Amy');
+    assert.ok(played.some(function (src) { return /text=vee/.test(src); }), 'spelling letters use Amy');
+    assert.deepEqual(deviceSpoken, [], 'window.speechSynthesis never speaks while online audio works');
+    assert.equal(q.Speech.lastTier, 'polly-amy');
+  } finally { a.close(); }
+});
+
+test('UNIFIED VOICE: Amy failover is only the Google en-GB female TTS', function () {
+  const a = harness();
+  try {
+    const q = a.q;
+    const sources = q.Speech.streamSources('Number 3.');
+    assert.equal(sources.length, 2, 'exactly two unified sources');
+    assert.match(sources[0], /voice=Amy/);
+    assert.match(sources[1], /translate_tts/);
+    const wordSources = q.Speech.streamSources('tyre/tire');
+    assert.match(wordSources[0], /text=tyre/);
+    assert.match(wordSources[1], /[?&]q=tyre/);
+    /* an attached Oxford MP3 URL can never enter the playback chain */
+    assert.equal(q.Speech.streamSources('guidebook').length, 2);
+    assert.ok(!q.Speech.streamSources('guidebook').some(isMaleOrDictionaryUrl));
+
+    /* Amy fails to load: only then does the Google female failover play */
+    const played = [];
+    q.Speech.playAudio = function (src, rate, ms, cb) {
+      played.push(src);
+      if (/voice=Amy/.test(src)) cb(false, false); else cb(true, true);
+    };
+    q.Speech.say(['Number 2.'], {}, function () {});
+    a.clock.tick(3000);
+    assert.equal(played.length, 2, 'Amy once, Google failover once - nothing else');
+    assert.match(played[0], /voice=Amy/);
+    assert.match(played[1], /translate_tts/);
+  } finally { a.close(); }
+});
+
+test('BUG 2: one engine per beat - no retry rewind, no fallback echo', function () {
   /* the old bug: a retry rewound the queue index and spoke the same item again */
   assert.ok(html.indexOf('qi--') < 0, 'the queue is never rewound');
-  assert.ok(!/if\s*\(res && res\.err && res\.err !== "canceled" && online/.test(html),
-    'the failed device utterance no longer re-enters the streaming tier');
   /* the strict single-engine lock is present */
   assert.ok(html.includes('audioStarted'));
   assert.ok(html.includes('partDone'));
@@ -285,22 +413,21 @@ test('BUG 2: one engine per utterance - no retry rewind, no fallback echo', func
     const q = a.q;
     let played = [];
     let calls = 0;
-    /* a British recording really starts: the device voice must stay silent */
+    /* unified audio really starts: the device voice must stay silent */
     q.Speech.playAudio = function (src, rate, ms, cb) { played.push(src); cb(true, true); };
     q.Speech.say(['guidebook'], { word: 'guidebook' }, function () { calls++; });
     a.clock.tick(4000);
     assert.equal(calls, 1, 'the completion callback runs once');
-    assert.equal(played.length, 1, 'exactly one recording was played');
-    assert.equal(q.Speech.lastTier, 'dictionary');
+    assert.equal(played.length, 1, 'exactly one source was played');
 
-    /* nothing played: every source is offered once and the sentence moves on */
+    /* nothing played: both unified sources are offered once and the part moves on */
     played = [];
     calls = 0;
     q.Speech.playAudio = function (src, rate, ms, cb) { played.push(src); cb(false, false); };
     q.Speech.say(['harbour'], { word: 'harbour' }, function () { calls++; });
     a.clock.tick(4000);
     assert.equal(calls, 1);
-    assert.equal(played.length, 6, 'dictionary MP3, -uk.mp3, Wiktionary, Amy, Emma, Google - each once');
+    assert.equal(played.length, 2, 'Amy and the Google failover - each once');
 
     /* sound started and then errored: it must NOT be spoken a second time */
     played = [];
@@ -320,7 +447,7 @@ test('BUG 2: one engine per utterance - no retry rewind, no fallback echo', func
     assert.equal(played.length, 3);
     assert.equal(calls, 1);
 
-    /* the recording is sounding when the 2400 ms guard expires: the device
+    /* the audio is sounding when the 2400 ms guard expires: the device
        voice must stay silent even though the beat has not ended yet. */
     const w = a.w;
     const deviceSpoken = [];
@@ -349,45 +476,71 @@ test('BUG 2: one engine per utterance - no retry rewind, no fallback echo', func
   } finally { a.close(); }
 });
 
-test('British female professor audio: dictionary MP3, Polly Amy, Emma, Google en-GB', function () {
+test('Speech.pick() excludes male voices whenever a female voice exists', function () {
   const a = harness();
   try {
     const q = a.q;
-    const list = q.Speech.mp3Candidates('', 'guidebook', 'guidebook');
-    assert.match(list[0], /oxford\/guidebook--_gb_1\.mp3$/);
-    assert.ok(list.some(function (u) { return /api\.dictionaryapi\.dev\/.*-uk\.mp3$/.test(u); }));
-    assert.ok(list.some(function (u) { return /wikimedia\.org\/.*En-uk-guidebook\.ogg$/.test(u); }));
-
-    const sources = q.Speech.streamSources('guidebook', 'guidebook');
-    assert.match(sources[0], /oxford\/guidebook--_gb_1\.mp3$/);
-    const amy = sources.findIndex(function (u) { return /voice=Amy/.test(u); });
-    const emma = sources.findIndex(function (u) { return /voice=Emma/.test(u); });
-    const google = sources.findIndex(function (u) { return /translate_tts/.test(u); });
-    assert.ok(amy > 0 && emma > amy && google > emma, 'the British female chain is ordered');
-
-    const prompt = q.Speech.streamSources('Number 3.', '');
-    assert.match(prompt[0], /voice=Amy/);
-    assert.match(prompt[1], /voice=Emma/);
-    assert.match(prompt[2], /translate_tts/);
-
-    /* the British female beats a male en-GB voice */
+    /* British female beats a male en-GB voice */
     q.Speech.voices = [{ name: 'Daniel', lang: 'en-GB', localService: true }, { name: 'Microsoft Sonia', lang: 'en-GB', localService: true }];
     q.Speech.ukVoices = q.Speech.voices.slice(0);
     assert.equal(q.Speech.pick().name, 'Microsoft Sonia');
-    /* a Natural / Online neural British female wins over everything else */
-    q.Speech.ukVoices = [{ name: 'Microsoft Sonia', lang: 'en-GB', localService: true }, { name: 'Microsoft Maisie Online (Natural)', lang: 'en-GB', localService: false }, { name: 'Daniel', lang: 'en-GB', localService: true }];
-    assert.equal(q.Speech.pick().name, 'Microsoft Maisie Online (Natural)');
-    /* Tier 4 prefers an English female voice, even outside the UK */
-    q.Speech.voices = [{ name: 'Alex', lang: 'en-US', localService: true }, { name: 'Samantha', lang: 'en-US', localService: true }];
-    assert.equal(q.Speech.anyEnglish().name, 'Samantha');
+    /* the mandated British female ranking decides between women */
+    q.Speech.ukVoices = [
+      { name: 'Daniel', lang: 'en-GB', localService: true },
+      { name: 'Microsoft Maisie Online (Natural)', lang: 'en-GB', localService: false },
+      { name: 'Microsoft Libby', lang: 'en-GB', localService: true }
+    ];
+    assert.equal(q.Speech.pick().name, 'Microsoft Libby', 'the rank order is Sonia > Libby > Maisie > ...');
+    q.Speech.ukVoices = [
+      { name: 'Ryan', lang: 'en-GB', localService: true },
+      { name: 'Google UK English Female', lang: 'en-GB', localService: false }
+    ];
+    assert.equal(q.Speech.pick().name, 'Google UK English Female');
+    /* a saved male voiceName is never honoured */
+    q.DB.data.settings.voiceName = 'Daniel';
+    q.Speech.ukVoices = [{ name: 'Daniel', lang: 'en-GB', localService: true }, { name: 'Microsoft Hazel', lang: 'en-GB', localService: true }];
+    assert.equal(q.Speech.pick().name, 'Microsoft Hazel');
+    q.DB.data.settings.voiceName = '';
+    /* only when the device has NO female voice at all may a male en-GB
+       voice keep the dictation from going silent */
+    q.Speech.ukVoices = [{ name: 'Daniel', lang: 'en-GB', localService: true }];
+    assert.equal(q.Speech.pick().name, 'Daniel');
+    /* the rank list itself is exactly the mandated one */
+    assert.deepEqual(Array.from(q.Speech.femaleRank), [
+      'Microsoft Sonia', 'Microsoft Libby', 'Maisie', 'Google UK English Female',
+      'Serena', 'Kate', 'Martha', 'Stephanie', 'Shelley', 'Microsoft Hazel'
+    ]);
+  } finally { a.close(); }
+});
 
-    assert.equal(q.Speech.speakText('tyre/tire'), 'tyre');
-    assert.ok(html.includes('u.pitch = o.pitch === undefined ? 1.05 : o.pitch'), 'a warm British female pitch');
-    assert.ok(html.includes('U.clamp(rate || 0.88, 0.65, 1.15)'), 'a natural, never sluggish cadence');
-    assert.ok(html.includes('u.lang = "en-GB"'));
-    /* zero-lag preload of the next word */
-    assert.ok(html.includes('preload: function (text, explicit)'));
-    assert.ok(html.includes('this.preloadNext();'));
+test('Settings \u2192 Voice shows the unified British Female Professor voice', function () {
+  const a = harness();
+  try {
+    const q = a.q, doc = a.w.document;
+    q.UI.setTab('set');
+    const text = doc.querySelector('#screen-set').textContent;
+    assert.ok(text.indexOf(UNIFIED_VOICE) >= 0, 'the active unified voice is shown');
+    assert.ok(text.indexOf('Offline device voice (fallback only)') >= 0, 'the device picker is only a fallback');
+  } finally { a.close(); }
+});
+
+test('preload: the next word is fetched as a voice=Amy URL during the write countdown', function () {
+  assert.ok(html.includes('preload: function (text)'));
+  assert.ok(html.includes('this.preloadNext();'), 'the write beat starts the preload');
+  assert.ok(html.includes('U.clamp(o.rate || (DB.data ? DB.data.settings.rate : 0.88), 0.65, 1.15)'),
+    'sdpAudio.playbackRate uses the unified clamp');
+  const a = harness();
+  try {
+    const q = a.q;
+    const el = q.Speech.preload('guidebook');
+    assert.ok(el, 'a preload element is created');
+    assert.match(String(el.src || ''), /voice=Amy/, 'the preloaded URL is the unified Amy voice');
+    q.Eng.words = Array.from(q.DB.data.lists[0].words);
+    q.Eng.order = q.Eng.words.map(function (_, i) { return i; });
+    q.Eng.idx = 0;
+    q.Eng.preloadNext();
+    assert.ok(q.Speech.preloadCache['handlebars'], 'the next word is preloaded during the writing step');
+    assert.match(String(q.Speech.preloadCache['handlebars'].src || ''), /voice=Amy/);
   } finally { a.close(); }
 });
 
