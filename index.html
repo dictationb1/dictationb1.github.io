@@ -314,6 +314,7 @@ box-shadow: 0 4px 14px rgba(80,60,240,.3), inset 0 1px 0 rgba(255,255,255,.4); }
 .brand .t { min-width: 0; }
 .brand .t b { display: block; font-size: 1rem; font-weight: 700; letter-spacing: -.02em; }
 .brand .t span { font-size: .72rem; color: var(--ink-2); }
+.brand .t #brandCredit { display: block; font-size: .6rem; line-height: 1.3; font-weight: 600; color: var(--ink-2); white-space: normal; }
 #tabbar {
 position: fixed; z-index: 40;
 left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r));
@@ -697,7 +698,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
   <header class="topbar">
     <div class="brand">
       <span class="mark" aria-hidden="true"><svg width="21" height="21"><use xlink:href="#i-mic" href="#i-mic"></use></svg></span>
-      <span class="t"><b id="brandName">Smart Dictation</b><span id="brandSub">UK English &middot; B1</span></span>
+      <span class="t"><b id="brandName">Smart Dictation</b><span id="brandSub">UK English &middot; B1</span><span id="brandCredit" class="credit">Created by Hansana &middot; Idea given by Ayya01 (Lesandu) &middot; Lecturer in Charge: Sumodya Sewmini</span></span>
     </div>
     <div class="row">
       <button type="button" id="btnLang" class="chip langchip" aria-label="Switch language" aria-pressed="false">EN | සිංහල</button>
@@ -1441,8 +1442,8 @@ Leave it empty for local-only mode (everything still works on one device). */
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v7_session7",
-schema: 7,
+key: "sdp.v8_session7",
+schema: 8,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1462,7 +1463,7 @@ ttsEmmaHost: "https://api.streamelements.com/kappa/v2/speech?voice=Emma&text=",
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 7,
+settingsRev: 8,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -1472,9 +1473,9 @@ gasSuffix: "/exec",
 /* A9 v2.0.0 real-time transport: free, open-source ntfy.sh topics. No key,
 no account and no server of our own; the browser streams them with SSE. */
 ntfyHost: "https://ntfy.sh",
-ntfyState: "sdp_dictationb1_state_v7",
-ntfyComm: "sdp_dictationb1_comm_v7",
-ntfyInbox: "sdp_dictationb1_inbox_v7",
+ntfyState: "sdp_dictationb1_state_v8",
+ntfyComm: "sdp_dictationb1_comm_v8",
+ntfyInbox: "sdp_dictationb1_inbox_v8",
 sseRetryMs: 15000,
 livePollMs: 45000,
 ratePostMs: 30000,
@@ -1601,7 +1602,7 @@ navComm: "Community",
 navSet: "Settings",
 listenPaper: "Listen & write on paper",
 typeAnswers: "Type my answers",
-guide: "Guide",
+guide: "Guide / \u0d8b\u0db4\u0daf\u0dd9\u0dc3\u0dca",
 guideLong: "Complete user guide",
 pause: "Pause",
 creditFull: "Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu) \u00b7 Lecturer in Charge: Sumodya Sewmini",
@@ -1658,7 +1659,7 @@ return STRINGS_EN[key] !== undefined ? STRINGS_EN[key] : String(key);
 var GUIDE = {
 en: {
 title: "Welcome & Complete User Guide",
-credit: "Welcome to Smart Dictation Player! Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu)",
+credit: "Welcome to Smart Dictation Player! Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu) \u00b7 Lecturer in Charge: Sumodya Sewmini",
 steps: [
 { t: "Step 1 - Prepare", b: "Choose \u201cListen & write on paper\u201d or \u201cType my answers\u201d, then tap \u201cStart dictation\u201d." },
 { t: "Step 2 - British female professor voice", b: "Tap \u201cI\u2019m ready\u201d. After a 3-2-1 countdown, a clear 25-30 year old British female lecturer voice speaks each word twice (Word \u00d7 2), followed by a 5-second writing timer." },
@@ -1668,7 +1669,7 @@ steps: [
 },
 si: {
 title: "\u0dc3\u0dcf\u0daf\u0dbb\u0dba\u0dd9\u0db1\u0dca \u0db4\u0dd2\u0dc5\u0dd2\u0d9c\u0db1\u0dd2\u0db8\u0dd4 \u0dc3\u0dc4 \u0dc3\u0db8\u0dca\u0db4\u0dd6\u0dbb\u0dca\u0dab \u0db4\u0dbb\u0dd2\u0dc1\u0dd3\u0dbd\u0d9a \u0db8\u0dcf\u0dbb\u0dca\u0d9c\u0ddd\u0db4\u0daf\u0dda\u0dc1\u0dba",
-credit: "Smart Dictation Player \u0dc0\u0dd9\u0dad \u0dc3\u0dcf\u0daf\u0dbb\u0dba\u0dd9\u0db1\u0dca \u0db4\u0dd2\u0dc5\u0dd2\u0d9c\u0db1\u0dd2\u0db8\u0dd4! \u0db1\u0dd2\u0dbb\u0dca\u0db8\u0dcf\u0dab\u0dba: Hansana \u00b7 \u0d85\u0daf\u0dc4\u0dc3: Ayya01 (Lesandu)",
+credit: "Smart Dictation Player \u0dc0\u0dd9\u0dad \u0dc3\u0dcf\u0daf\u0dbb\u0dba\u0dd9\u0db1\u0dca \u0db4\u0dd2\u0dc5\u0dd2\u0d9c\u0db1\u0dd2\u0db8\u0dd4! \u0db1\u0dd2\u0dbb\u0dca\u0db8\u0dcf\u0dab\u0dba: Hansana \u00b7 \u0d85\u0daf\u0dc4\u0dc3: Ayya01 (Lesandu) \u00b7 \u0db7\u0dcf\u0dbb\u0d9a\u0dcf\u0dbb \u0d9a\u0da8\u0dd2\u0d9a\u0dcf\u0da0\u0dcf\u0dbb\u0dca\u0dba: Sumodya Sewmini",
 steps: [
 { t: "\u0db4\u0dd2\u0dba\u0dc0\u0dbb 1 - \u0dc3\u0dd6\u0daf\u0dcf\u0db1\u0db8\u0dca \u0dc0\u0dd3\u0db8", b: "\u0db4\u0dc5\u0db8\u0dd4\u0dc0 \u201c\u0d85\u0dc3\u0dcf \u0d9a\u0ddc\u0dc5\u0dba\u0d9a \u0dbd\u0dd2\u0dba\u0db1\u0dca\u0db1\u201d \u0dc4\u0ddd \u201c\u0db4\u0dd2\u0dc5\u0dd2\u0dad\u0dd4\u0dbb\u0dd4 \u0da7\u0dba\u0dd2\u0db4\u0dca \u0d9a\u0dbb\u0db1\u0dca\u0db1\u201d \u0dad\u0ddd\u0dbb\u0db1\u0dca\u0db1. \u0d89\u0db1\u0dca\u0db4\u0dc3\u0dd4 \u201c\u0da9\u0dd2\u0d9a\u0dca\u0da7\u0dda\u0dc2\u0db1\u0dca \u0d86\u0dbb\u0db8\u0dca\u0db7 \u0d9a\u0dbb\u0db1\u0dca\u0db1\u201d \u0d94\u0db6\u0db1\u0dca\u0db1." },
 { t: "\u0db4\u0dd2\u0dba\u0dc0\u0dbb 2 - \u0db6\u0dca\u200d\u0dbb\u0dd2\u0dad\u0dcf\u0db1\u0dca\u0dba \u0d9a\u0dcf\u0db1\u0dca\u0dad\u0dcf \u0d9c\u0dd4\u0dbb\u0dd4 \u0dc4\u0da9", b: "\u201c\u0db8\u0db8 \u0dc3\u0dd6\u0daf\u0dcf\u0db1\u0db8\u0dca\u201d \u0d94\u0db6\u0db1\u0dca\u0db1. 3-2-1 \u0d9c\u0dab\u0db1\u0dca \u0d9a\u0dd2\u0dbb\u0dd3\u0db8\u0dd9\u0db1\u0dca \u0db4\u0dc3\u0dd4, \u0db4\u0dd0\u0dc4\u0dd0\u0daf\u0dd2\u0dbd\u0dd2 \u0db6\u0dca\u200d\u0dbb\u0dd2\u0dad\u0dcf\u0db1\u0dca\u0dba \u0d9a\u0dcf\u0db1\u0dca\u0dad\u0dcf \u0d9c\u0dd4\u0dbb\u0dd4 \u0dc4\u0da9\u0d9a\u0dca \u0dc3\u0dd0\u0db8 \u0dc0\u0da0\u0db1\u0dba\u0d9a\u0dca\u0db8 \u0daf\u0dd9\u0dc0\u0dbb\u0d9a\u0dca \u0d9a\u0dd2\u0dba\u0dba\u0dd2. \u0d89\u0db1\u0dca\u0db4\u0dc3\u0dd4 \u0dbd\u0dd2\u0dc0\u0dd3\u0db8\u0da7 \u0dad\u0dad\u0dca\u0db4\u0dbb 5\u0d9a\u0dca \u0dbd\u0dd0\u0db6\u0dda." },
@@ -2015,10 +2016,9 @@ try { window.localStorage.removeItem(k); } catch (e) { delete Mem[k]; }
 }
 };
 
-/* v6 default list: the 30 Cambridge B1 "Travel & Transport" words, each with
-a British meaning (m), a B1 example sentence (s) and a UK dictionary MP3.
-Every older list (leisure, hobbies, sport, appointments, Session 6) is removed in
-v7: Session 7 - Travel & Transport is the only published list. */
+/* The 30 Cambridge B1 "Travel & Transport" words, each with a British
+meaning (m), a B1 example sentence (s) and a UK dictionary MP3. Every older
+list is removed in v8: Session 7 - Travel & Transport is the only list. */
 var SAMPLE_LIST_NAME = "Session 7 - Travel & Transport";
 var UK_MP3_BASE = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
 function ukMp3(word) {
@@ -2087,7 +2087,7 @@ v: CONFIG.schema,
 settingsRev: CONFIG.settingsRev,
 settings: {
 theme: "auto", size: "m", hc: "off", perf: "auto", lang: "en",
-voiceName: "", rate: 0.85, volume: 1, mode: "paper", showWord: false, haptics: false,
+voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false,
 writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, advance: "auto",
 repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half"
 },
@@ -2149,11 +2149,11 @@ try { d = automatic ? JSON.parse(automatic) : null; } catch (err) { d = null; }
 if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
 }
 if ((!d.v || d.v < 2) && raw && !Store.get(CONFIG.key + ".before-v2")) Store.set(CONFIG.key + ".before-v2", raw);
-/* v7: every phone and browser that still holds a pre-Session-7 cache drops
+/* v8: every phone and browser that still holds a pre-Session-7 cache drops
 its saved dictation snapshot, past sessions, queued jobs, word lists,
 plan and session before anything reads them, then migrate() installs
 Session 7 - Travel & Transport (30 words, 5 second timer). */
-if (!d.settingsRev || d.settingsRev < 7) DB.dropOld(d);
+if (!d.settingsRev || d.settingsRev < 8) DB.dropOld(d);
 d = DB.migrate(d);
 this.data = d;
 if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
@@ -2167,7 +2167,7 @@ this.saveNow();
 this.saveNow();
 return d;
 },
-/* v7: remove every trace of an older session cache. */
+/* v8: remove every trace of an older session cache. */
 dropOld: function (d) {
 if (!d || typeof d !== "object") return d;
 delete d.snapshot;
@@ -2175,12 +2175,12 @@ delete d.sessions;
 delete d.outbox;
 return d;
 },
-/* v7 (Session 7 - Travel & Transport): a device that still holds an older
+/* v8 (Session 7 - Travel & Transport): a device that still holds an older
 class loses every cached word list, plan, session and queued job, sees the
 new bilingual Welcome Guide again, and loads the 30 travel words with the
 five second writing timer. Called by both load() and migrate() so a cache
 can never survive an upgrade. */
-resetToV7: function (d, base) {
+resetToV8: function (d, base) {
 if (!d || typeof d !== "object") return d;
 base = base || defaultData();
 d.lists = JSON.parse(JSON.stringify(base.lists));
@@ -2190,7 +2190,7 @@ d.settings.writeMode = "fixed";
 d.settings.writeFixed = 5;
 d.settings.sentence = false;
 d.settings.repeats = 2;
-d.settings.rate = 0.85;
+d.settings.rate = 0.88;
 d.settings.numbers = true;
 d.settings.mode = "paper";
 d.settings.pauseWord = 1.2;
@@ -2199,7 +2199,7 @@ delete d.snapshot;
 d.sessions = [];
 d.outbox = [];
 d.tourSeen = false;
-d.settingsRev = 7;
+d.settingsRev = 8;
 d.v = CONFIG.schema;
 return d;
 },
@@ -2259,18 +2259,18 @@ if (!d.plan.defaultList || !DB.findList(d, d.plan.defaultList)) d.plan.defaultLi
 if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
 if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
 if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
-/* v7: a settingsRev below 7 is replaced unconditionally - even if a list
+/* v8: a settingsRev below 8 is replaced unconditionally - even if a list
 still happens to carry the right id - so nothing from the previous Session (or any
 older session) can ever come back. */
-if (!d.settingsRev || d.settingsRev < 7) {
-DB.resetToV7(d, base);
-d.settingsRev = 7;
+if (!d.settingsRev || d.settingsRev < 8) {
+DB.resetToV8(d, base);
+d.settingsRev = 8;
 }
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
 d.session.listId = SAMPLE_LIST_ID;
-d.settingsRev = 7;
+d.settingsRev = 8;
 }
 if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
 d.v = CONFIG.schema;
@@ -2461,6 +2461,8 @@ for (var i = 0; i < nodes.length; i++) {
 var key = nodes[i].getAttribute("data-i18n");
 nodes[i].textContent = T(key);
 }
+var hc = U.$("#brandCredit");
+if (hc) hc.textContent = T("creditFull");
 var btn = U.$("#btnLang");
 if (btn) {
 btn.textContent = "EN | \u0dc3\u0dd2\u0d82\u0dc4\u0dbd";
@@ -3665,14 +3667,20 @@ this.textOnly = false;
 if (st.voiceName) {
 for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === st.voiceName) { this.chosen = this.ukVoices[i]; return this.chosen; }
 }
-/* British female voices first, then the clear male en-GB voices: the
-result is a warm, articulate 25-30 year old British female lecturer. */
-var good = ["Microsoft Sonia", "Microsoft Libby", "Google UK English Female", "Serena", "Kate", "Martha", "Stephanie", "Shelley", "Microsoft Hazel", "Daniel", "Oliver", "Arthur"];
-for (g = 0; g < good.length; g++) {
+/* Warm, articulate 25-30 year old British female lecturer. A Natural /
+Online neural British female voice always wins over a male en-GB voice:
+1) en-GB Natural/Online neural female, 2) any other en-GB female,
+3) any other en-GB voice. */
+var femaleRx = /Sonia|Libby|Maisie|Google UK English Female|Serena|Kate|Martha|Stephanie|Shelley|Hazel/i;
+var neuralRx = /Natural|Online|Neural/i;
+var nameOf = function (v) { return String((v && v.name) || ""); };
 for (i = 0; i < this.ukVoices.length; i++) {
-if (String(this.ukVoices[i].name || "").indexOf(good[g]) === 0) { this.chosen = this.ukVoices[i]; return this.chosen; }
+if (femaleRx.test(nameOf(this.ukVoices[i])) && neuralRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
 }
+for (i = 0; i < this.ukVoices.length; i++) {
+if (femaleRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
 }
+for (i = 0; i < this.ukVoices.length; i++) if (neuralRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
 for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].localService) { this.chosen = this.ukVoices[i]; return this.chosen; }
 this.chosen = this.ukVoices[0];
 return this.chosen;
@@ -3688,6 +3696,8 @@ Tier 3  streamed cloud British TTS through the shared #sdpAudio element
 Tier 4  any installed English voice (u.lang = "en-GB") + a WebAudio chime
 A missing device voice can therefore never block a dictation. */
 audio: null,
+audioEl: null,
+audioStarted: false,
 audioOk: false,
 lastTier: "",
 SILENT: "data:audio/wav;base64,UklGRioAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==",
@@ -3703,6 +3713,7 @@ try { a.crossOrigin = "anonymous"; } catch (e1) {}
 try { document.body.appendChild(a); } catch (e) {}
 }
 this.audio = a;
+this.audioEl = a;
 return a;
 },
 /* a slash alternative is written, never spoken: "tyre/tire" -> "tyre" */
@@ -3791,15 +3802,58 @@ if (female.test(String(v.name || ""))) return v;
 }
 return first;
 },
+/* STOP EVERYTHING. One shared audio element and the device synthesiser can
+never sound at the same time: this is the first thing a new part does, so a
+preloaded file, a stale stream or a leftover utterance cannot echo. */
+halt: function () {
+if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
+try {
+if (this.audioEl) {
+this.audioEl.onended = null; this.audioEl.onerror = null; this.audioEl.onstalled = null;
+this.audioEl.onplaying = null; this.audioEl.onplay = null;
+this.audioEl.pause();
+}
+} catch (e) {}
+try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e2) {}
+this.audioStarted = false;
+this.busy = false;
+return true;
+},
+/* zero-lag preload: the next word's British recording is fetched while the
+student is writing, so the following word starts instantly. */
+preloadCache: {},
+preload: function (text, explicit) {
+var t = U.trim(String(text || ""));
+if (!t) return "";
+if (U.nav("onLine", true) === false) return "";
+var key = t.toLowerCase();
+if (this.preloadCache[key]) return this.preloadCache[key];
+var src = (explicit && this.isBritishAudio(explicit)) ? explicit : this.amyUrl(t);
+try {
+var a = document.createElement("audio");
+a.preload = "auto";
+a.setAttribute("playsinline", "");
+try { a.crossOrigin = "anonymous"; } catch (e0) {}
+a.src = src;
+try { a.load(); } catch (e1) {}
+var keys = Object.keys(this.preloadCache);
+if (keys.length >= 12) { try { this.preloadCache[keys[0]] = null; delete this.preloadCache[keys[0]]; } catch (e2) {} }
+this.preloadCache[key] = a;
+return a;
+} catch (e) { return ""; }
+},
 /* one <audio> element for every spoken sound: iOS only lets an element that
-has already played inside a tap be started again from a timer. */
+has already played inside a tap be started again from a timer.
+cb(ok, started): "started" says the source really produced sound, so a
+caller must NEVER speak the same text again through speechSynthesis. */
 playAudio: function (src, rate, ms, cb) {
-var self = this, done = U.once(cb || function () {});
+var self = this;
+var done = U.once(cb || function () {});
 /* the shared element asks for a CORS-friendly copy first (crossorigin
 ="anonymous"); if a host does not send the headers the same file is
 played once more without them, so no word is ever silenced. */
-this.playOnce(src, rate, ms, function (ok) {
-if (ok) { done(true); return; }
+this.playOnce(src, rate, ms, function (ok, started) {
+if (ok || started) { done(ok, started); return; }
 self.playOnce(src, rate, ms, done, true);
 });
 },
@@ -3807,35 +3861,58 @@ playOnce: function (src, rate, ms, cb, plain) {
 var self = this;
 cb = U.once(cb || function () {});
 var a = this.el();
-if (!a || !src) { cb(false); return; }
+this.audioEl = a;
+if (!a || !src) { cb(false, false); return; }
 /* a browser that cannot decode audio at all (or a headless test DOM) must not
    spend seconds timing out: go straight to the device voice. */
 try {
-if (a.canPlayType && !a.canPlayType("audio/mpeg") && !a.canPlayType("audio/ogg") && !a.canPlayType("audio/wav")) { cb(false); return; }
+if (a.canPlayType && !a.canPlayType("audio/mpeg") && !a.canPlayType("audio/ogg") && !a.canPlayType("audio/wav")) { cb(false, false); return; }
 } catch (eCap) {}
-var settled = false;
+var settled = false, started = false, connectTimer = null, liveTimer = null;
+function release() {
+if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
+if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
+}
 function done(ok) {
 if (settled) return;
 settled = true;
+release();
 self.busy = false;
-if (timer) clearTimeout(timer);
-a.onended = null; a.onerror = null; a.onstalled = null;
-cb(!!ok);
+a.onended = null; a.onerror = null; a.onstalled = null; a.onplaying = null; a.onplay = null;
+cb(!!ok, started);
 }
-var timer = setTimeout(function () { try { a.pause(); } catch (e) {} done(false); }, Math.max(2200, ms || 6000));
+/* the recording is really sounding: it now OWNS this part. Only a
+   generous completion timeout may end it - never a synthetic voice. */
+function begun() {
+if (started || settled) return;
+started = true;
+self.audioOk = true;
+self.audioStarted = true;
+if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
+liveTimer = setTimeout(function () { try { a.pause(); } catch (e) {} done(true); }, Math.max(6000, ms || 6000));
+}
+/* the connection never produced sound within 2200 ms: safe to try the next
+   tier, because nothing has been heard yet. */
+connectTimer = setTimeout(function () {
+if (started || settled) return;
+try { a.pause(); } catch (e) {}
+done(false);
+}, 2200);
 try { a.pause(); } catch (e) {}
 if (plain) { try { a.removeAttribute("crossorigin"); a.crossOrigin = null; } catch (e2) {} }
 a.src = src;
 a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
-try { a.playbackRate = U.clamp(rate === undefined ? 0.85 : rate, 0.6, 1.2); } catch (e) {}
+try { a.playbackRate = U.clamp(rate === undefined ? 0.88 : rate, 0.6, 1.2); } catch (e) {}
+a.onplaying = begun;
+a.onplay = begun;
 a.onended = function () { done(true); };
 a.onerror = function () { done(false); };
-a.onstalled = function () { done(false); };
+a.onstalled = function () { if (!started) done(false); };
 this.busy = true;
 try {
 var p = a.play();
-if (p && p.then) p.then(function () { self.audioOk = true; }, function () { done(false); });
-else if (a.readyState > 0) { self.audioOk = true; }
+if (p && p.then) p.then(function () { begun(); }, function () { if (!started) done(false); });
+else if (a.readyState > 0) begun();
 } catch (e) { done(false); }
 },
 chime: function () {
@@ -3881,6 +3958,8 @@ try { a.crossOrigin = "anonymous"; } catch (e0) {}
 document.body.appendChild(a);
 }
 this.audio = a;
+this.audioEl = a;
+this.audioStarted = false;
 try {
 a.muted = false;
 a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
@@ -3904,11 +3983,8 @@ try { window.speechSynthesis.pause(); window.speechSynthesis.resume(); } catch (
 
 stop: function () {
 this.token++;
-if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
-try { if (this.audio) { this.audio.onended = null; this.audio.onerror = null; this.audio.pause(); } } catch (e) {}
-this.busy = false;
-if (!this.supported) return;
-try { window.speechSynthesis.cancel(); } catch (e4) {}
+this.halt();
+if (this.supported) { try { window.speechSynthesis.cancel(); } catch (e4) {} }
 this.activeUtter = null;
 },
 
@@ -3964,38 +4040,52 @@ if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 setTimeout(next, ms || Math.max(60, o.gap === undefined ? 100 : o.gap));
 }
-/* Tier 1 - the shared audio element, one British female source at a time */
+/* Tier 1 - the shared audio element, one British female source at a time.
+STRICT SINGLE-ENGINE LOCK: once this beat has actually produced sound, it is
+never spoken again by speechSynthesis. The only way down to the device voice
+is a failure BEFORE playback started (onerror or the 2200 ms connection
+timeout inside playOnce). There is no retry queue and no rewind of the queue
+index, so one beat can never be heard three or four times. */
 function stream(text, rate) {
 var sources = self.streamSources(text, o.word || "", o.mp3 || "");
-var attempt = 0, moved = false, guard = null;
-/* Zero lag: if no British source has actually started within 1.5 s, stop the
-element and let the device's British voice speak immediately. */
-function fallback() {
-if (moved || canceled()) return;
-moved = true;
-if (guard) { clearTimeout(guard); guard = null; }
-try { if (self.audio) self.audio.pause(); } catch (eP) {}
+var attempt = 0, partDone = false, audioStarted = false, guard = null;
+function release() { if (guard) { clearTimeout(guard); guard = null; } }
+function ended(ok) {
+if (partDone) return;
+partDone = true;
+release();
+if (token !== self.token) { finish({ ok: false, err: "canceled" }); return; }
+if (ok) { qi++; step(60); return; }
+/* nothing was ever heard: the device British voice may speak it once */
 streamDead = true;
 self.lastTier = "none";
 voice(text, rate);
 }
 function tryNext() {
-if (moved || canceled()) return;
-if (attempt >= sources.length) { fallback(); return; }
+if (partDone) return;
+if (token !== self.token) { finish({ ok: false, err: "canceled" }); return; }
+if (attempt >= sources.length) { ended(false); return; }
 var src = sources[attempt++];
 self.lastTier = /oxford|dictionaryapi|wikimedia|-uk\.|-gb\./.test(src) ? "dictionary"
 : (/voice=Amy/.test(src) ? "polly-amy" : (/voice=Emma/.test(src) ? "polly-emma" : "google"));
-self.playAudio(src, rate, 6000, function (ok) {
-if (moved || canceled()) return;
-if (ok) {
-moved = true;
-if (guard) { clearTimeout(guard); guard = null; }
-qi++; step(60); return;
+self.playAudio(src, rate, 6000, function (ok, started) {
+if (partDone) return;
+if (started && !audioStarted) {
+audioStarted = true;
+release();
 }
+if (started) { ended(true); return; }
+if (ok) { ended(true); return; }
 tryNext();
 });
 }
-guard = setTimeout(fallback, 1500);
+/* connection guard: only ever fires while nothing has been heard. The
+shared element flips self.audioStarted the moment it really plays, so a
+word that is already sounding can never be spoken a second time. */
+guard = setTimeout(function () {
+if (partDone || audioStarted || self.audioStarted) return;
+ended(false);
+}, 2400);
 tryNext();
 }
 /* Tier 2 / Tier 4 - the device's own British female voice, else any English */
@@ -4003,14 +4093,14 @@ function voice(text, rate) {
 if (!self.supported || self.textOnly) { qi++; step(60); return; }
 var uk = self.ukVoices.length > 0;
 var v = uk ? self.chosen : self.anyEnglish();
-if (uk && !v) v = self.chosen;
+if (uk && !v) { self.pick(); v = self.chosen; }
 if (!uk && !v) { self.chime(); qi = queue.length; finish({ ok: false, err: "no audio" }); return; }
 var u;
 try { u = new SpeechSynthesisUtterance(text); } catch (e0) { qi++; step(60); return; }
 u.lang = "en-GB";
 if (v) u.voice = v;
-u.rate = uk ? U.clamp(rate || 0.85, 0.5, 1.5) : 0.85;
-u.pitch = o.pitch === undefined ? 1.06 : o.pitch;
+u.rate = U.clamp(rate || 0.88, 0.65, 1.15);
+u.pitch = o.pitch === undefined ? 1.05 : o.pitch;
 u.volume = U.clamp(o.volume === undefined ? (DB.data ? DB.data.settings.volume : 1) : o.volume, 0, 1);
 self.activeUtter = u;
 self.lastTier = uk ? "device" : "device-any";
@@ -4027,7 +4117,7 @@ self.onInterrupt = null;
 try { hook(); } catch (e1) {}
 return;
 }
-if (res && res.err && res.err !== "canceled" && online && !streamDead) { stream(text, rate); return; }
+/* no retry and no stream echo: a spoken part advances exactly once */
 qi++;
 step();
 }
@@ -4045,7 +4135,11 @@ function next() {
 if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 var text = queue[qi];
-var rate = U.clamp(o.rate === undefined ? 0.85 : o.rate, 0.5, 1.5);
+var rate = U.clamp(o.rate === undefined ? 0.88 : o.rate, 0.5, 1.5);
+/* every part starts from silence: stop the previous engine first */
+try { if (self.audioEl) { self.audioEl.onended = null; self.audioEl.onerror = null; self.audioEl.onplaying = null; self.audioEl.onplay = null; self.audioEl.pause(); } } catch (eLock) {}
+try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (eLock2) {}
+self.audioStarted = false;
 if (online && !streamDead) { stream(text, rate); return; }
 voice(text, rate);
 }
@@ -4077,7 +4171,7 @@ if (!letters.length) { cb && cb({ ok: false }); return; }
 var parts = [String(word) + "."];
 for (var i = 0; i < letters.length; i++) parts.push(letters[i] + ".");
 parts.push(String(word) + ".");
-return this.say(parts, { rate: Math.max(0.6, (DB.data ? DB.data.settings.rate : 0.85)), gap: 260 }, cb);
+return this.say(parts, { rate: Math.max(0.6, (DB.data ? DB.data.settings.rate : 0.88)), gap: 260 }, cb);
 }
 };
 
@@ -4167,26 +4261,29 @@ this.timers.push(id);
 return id;
 },
 
+/* v8 strict two-repeat scheduler: the word is spoken EXACTLY st.repeats
+times (2 by default). There is no extra leading word beat, so a "repeat"
+setting of 2 can never produce 3 or 4 readings. */
 buildBeats: function (i) {
 var st = DB.data.settings;
 var real = this.order && this.order[i] !== undefined ? this.order[i] : i;
 var w = this.words[real] || { w: "", s: "" };
+var speakWord = Speech.speakText(w.w);
+var reps = U.clamp(st.repeats || 2, 1, 3);
 var beats = [];
-var sayW = Speech.speakText(w.w);
 if (st.numbers) {
-beats.push({ t: "say", text: "Number " + (i + 1) + ".", status: S.listening });
-beats.push({ t: "wait", ms: 450 });
+beats.push({ t: "say", text: "Number " + (i + 1) + ".", status: S.listening, isNum: true });
+beats.push({ t: "wait", ms: 400 });
 }
-beats.push({ t: "say", text: sayW, status: S.listening, mp3: w.audio || "", word: sayW });
-beats.push({ t: "wait", ms: Math.round(st.pauseWord * 1000) });
+for (var r = 0; r < reps; r++) {
+beats.push({ t: "say", text: speakWord, status: S.listening, isWord: true, mp3: w.audio || "", word: speakWord });
+if (r < reps - 1) {
+beats.push({ t: "wait", ms: Math.round((st.pauseWord || 1.2) * 1000) });
+}
+}
 if (st.sentence && w.s) {
-beats.push({ t: "say", text: w.s, status: S.listening });
-beats.push({ t: "wait", ms: Math.round(st.pauseSent * 1000) });
-}
-var extra = U.clamp(st.repeats, 1, 3) - 1;
-for (var r = 0; r < extra; r++) {
-beats.push({ t: "say", text: sayW, status: S.listening, mp3: w.audio || "", word: sayW });
-if (r < extra - 1) beats.push({ t: "wait", ms: Math.round(st.pauseWord * 1000) });
+beats.push({ t: "wait", ms: Math.round((st.pauseWord || 1.2) * 1000) });
+beats.push({ t: "say", text: w.s, status: S.listening, isSentence: true });
 }
 beats.push({ t: "write", secs: writeSecs(w.w), status: S.yourTurn });
 return beats;
@@ -4305,6 +4402,8 @@ self.runBeat(n + 1);
 this.after(b.ms || 500, function () { if (!stale()) self.runBeat(n + 1); });
 } else if (b.t === "write") {
 this.st = "waiting";
+/* zero-lag: the next word is pre-fetched during the writing timer */
+this.preloadNext();
 this.status(b.status || S.yourTurn);
 this.paint();
 var total = U.clamp(b.secs, 3, 60);
@@ -4403,6 +4502,17 @@ this.saveSnapshot();
 currentWord: function () {
 var real = this.order && this.order[this.idx] !== undefined ? this.order[this.idx] : this.idx;
 return this.words[real] || null;
+},
+/* warm the browser cache for word i + 1 so it starts with 0 ms of lag */
+preloadNext: function () {
+try {
+var next = this.idx + 1;
+if (!this.words.length || next >= this.words.length) return;
+var real = this.order && this.order[next] !== undefined ? this.order[next] : next;
+var w = this.words[real];
+if (!w) return;
+Speech.preload(Speech.speakText(w.w), w.audio || "");
+} catch (e) {}
 },
 repeatWord: function () {
 if (this.st === "idle") return;
@@ -5461,15 +5571,15 @@ speak: function (word, rate) {
 var r = rate === undefined ? DB.data.settings.rate : rate;
 var cache = DB.data.dictCache[U.norm(word)];
 if (cache && Speech.isBritishAudio(cache.audio)) {
-Speech.playAudio(cache.audio, r, 5200, function (ok) {
-if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
+Speech.playAudio(cache.audio, r, 5200, function (ok, started) {
+if (!ok && !started) Speech.say([word], { rate: r, word: word }, function () {});
 });
 return;
 }
 /* wiktionary ships open Ogg British recordings as well as MP3 */
 if (cache && Speech.isBritishAudio(cache.audioAlt)) {
-Speech.playAudio(cache.audioAlt, r, 5200, function (ok) {
-if (!ok) Speech.say([word], { rate: r, word: word }, function () {});
+Speech.playAudio(cache.audioAlt, r, 5200, function (ok, started) {
+if (!ok && !started) Speech.say([word], { rate: r, word: word }, function () {});
 });
 return;
 }

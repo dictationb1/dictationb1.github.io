@@ -17,7 +17,7 @@
   "defaults": {
     "sentence": false,
     "repeats": 2,
-    "rate": 0.85,
+    "rate": 0.88,
     "numbers": true,
     "mode": "paper",
     "writeMode": "fixed",
@@ -25,7 +25,7 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6
   },
-  "ver": 7,
+  "ver": 8,
   "version": "2.0.0",
   "buildDate": "2026-10-22",
   "credits": {
@@ -41,8 +41,8 @@
     "backup": "Google en-GB"
   },
   "live": {
-    "state": "https://ntfy.sh/sdp_dictationb1_state_v7",
-    "community": "https://ntfy.sh/sdp_dictationb1_comm_v7",
-    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v7"
+    "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
+    "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
+    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   }
 }
