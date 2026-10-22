@@ -59,7 +59,16 @@ async function check(name,fn){
   try{await fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}
 }
 (async()=>{
- const browser=await pw[engine].launch(engine==='chromium'&&!process.env.SDP_BROWSER_STANDARD?{executablePath:await packaged.executablePath(),args:packaged.args.filter(a=>a!=='--single-process')}:{headless:true});
+ /* A sandbox or CI image without the Chromium shared libraries cannot launch a
+    real engine. That is an environment limit, not an app failure: skip with an
+    explicit message instead of reporting a fake pass. */
+ let browser;
+ try{
+  browser=await pw[engine].launch(engine==='chromium'&&!process.env.SDP_BROWSER_STANDARD?{executablePath:await packaged.executablePath(),args:packaged.args.filter(a=>a!=='--single-process')}:{headless:true});
+ }catch(e){
+  console.log('SKIP upgrade-browser.cjs ('+engine+'): no runnable browser in this environment - '+String(e&&e.message||e).split('\n')[0]);
+  return;
+ }
  const viewports=engine==='webkit'?[[320,568],[360,640],[390,844],[768,1024],[1280,800],[375,667],[430,932],[667,375],[844,390],[932,430]]:[[320,568],[360,640],[390,844],[768,1024],[1280,800]];
  for(const [width,height] of viewports)await check(engine+' admin single sticky header '+width+'x'+height+' and reduced viewport',async()=>{
   const {context,page,errors}=await boot(browser,width,'gb',height);
@@ -79,7 +88,7 @@ async function check(name,fn){
   const {context,page,errors}=await boot(browser,390);
   try{
    await unlock(page);
-   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).admin.pinKdf);
+   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v6_travel')).admin.pinKdf);
    assert.equal(kdf,await page.evaluate(()=>crypto.subtle?'pbkdf2-sha256':'sha256'));
    const ta=page.getByLabel('Word list text',{exact:true});await ta.fill(sample);
    await page.getByText(/^I read this as: 30 words \(/).waitFor();   /* v2.0.0 prints the detected mode in brackets */
@@ -91,9 +100,9 @@ async function check(name,fn){
    assert.equal(await page.getByLabel('Word 1',{exact:true}).inputValue(),'free time');
    /* v2.0.0 Step 4 saves and publishes in one action, and every published word must
       arrive with its British dictionary MP3 so a phone plays audio without a UK voice. */
-   await page.getByRole('button',{name:'Save & Publish to All Students',exact:true}).click();
+   await page.getByRole('button',{name:/^Save & Publish Live Now/}).first().click();
    await page.locator('#toasts').getByText(/Saved & published to all students/).waitFor();
-   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')));
+   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v6_travel')));
    assert.equal(d.lists[0].publishedWords.length,29);assert.equal(d.lists[0].publishedWords[0].w,'free time');
    assert.ok(d.lists[0].publishedWords.every(x=>/--_gb_1\.mp3$/.test(x.audio||'')),'every published word keeps a British MP3: '+JSON.stringify(d.lists[0].publishedWords.slice(0,2)));
    assert.ok(d.lists[0].published&&d.lists[0].publishedVersion>=1,'publish flags');
@@ -112,7 +121,7 @@ async function check(name,fn){
    await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
    await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
    /* what should be heard comes from the live list, so the check follows published data */
-   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v1')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
+   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v6_travel')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
    assert(first.w,'the live list has a first word');
    const said=()=>page.evaluate(()=>window.__spoken||[]);
    const langs=()=>page.evaluate(()=>window.__langs||[]);
@@ -141,7 +150,7 @@ async function check(name,fn){
        transcript is read (Say the number is a learner setting, not always on) */
     await page.waitForFunction(()=>/Number 1\./.test((window.__spoken||[]).join(' ')),null,{timeout:8000}).catch(()=>{});
     const spoken=await said();
-    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v1')||'{}').settings||{}).numbers);
+    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v6_travel')||'{}').settings||{}).numbers);
     const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
     const phase=spoken.slice(0,until+1);
     assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
@@ -150,9 +159,9 @@ async function check(name,fn){
     const gbLangs=await langs();
     assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));
    }
-   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).snapshot);assert.equal(before.index,0);
+   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v6_travel')).snapshot);assert.equal(before.index,0);
    await page.reload();await page.locator('#homeTitle').waitFor();
-   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v1')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
+   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v6_travel')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
    assert.equal(errors.length,0);
   }finally{await context.close();}
  });

@@ -1,6 +1,1 @@
-hobbies, leisure, barbecue, camping, collection, cruise,
-dancing, drawing, facilities, festival, fiction, gallery,
-go shopping, guitar, hire, hike, holidays, jogging,
-magazine, musician, nightlife, painting, party,
-photograph, picnic, quiz, sculpture, sightseeing,
-sunbathe, torch
+travel, transport, abroad, accommodation, ambulance, announcement, arrival, astronaut, backpacking, baggage, boarding pass, brochure, canal, capital city, crossroads, currency, customs, delayed, deliver, departure, destination, direction, documents, driver's licence, embassy, exchange rate, ferry, flight, foreign, guest

@@ -1405,7 +1405,7 @@ function sdpTokens(args) {
 var APP_VERSION = "2.0.0";
 /* Stamped at release time and shown in Settings and on the fatal card, so it
    is always obvious which build a device is actually running. */
-var BUILD_DATE = "2026-10-14";
+var BUILD_DATE = "2026-10-22";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 /* Paste your Google Apps Script web app URL here to enable cloud sync.
@@ -1413,8 +1413,8 @@ function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 var CLOUD_URL = "";
 
 var CONFIG = {
-  key: "sdp.v4_tue20",
-  schema: 4,
+  key: "sdp.v6_travel",
+  schema: 6,
   maxHistory: 200,
   maxComments: 200,
   maxInbox: 200,
@@ -1433,7 +1433,7 @@ var CONFIG = {
   oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
   ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
   maxDictCache: 200,
-  settingsRev: 2,
+  settingsRev: 6,
   repoOwner: "dictationb1",
   repoName: "dictationb1.github.io",
   classDays: [2, 3],
@@ -1443,9 +1443,9 @@ var CONFIG = {
   /* A9 v2.0.0 real-time transport: free, open-source ntfy.sh topics. No key,
      no account and no server of our own; the browser streams them with SSE. */
   ntfyHost: "https://ntfy.sh",
-  ntfyState: "sdp_dictationb1_state_v4",
-  ntfyComm: "sdp_dictationb1_comm_v4",
-  ntfyInbox: "sdp_dictationb1_inbox_v4",
+  ntfyState: "sdp_dictationb1_state_v6",
+  ntfyComm: "sdp_dictationb1_comm_v6",
+  ntfyInbox: "sdp_dictationb1_inbox_v6",
   sseRetryMs: 15000,
   livePollMs: 45000,
   ratePostMs: 30000,
@@ -1904,108 +1904,46 @@ var Store = {
   }
 };
 
-/* v2.0.0 default list: the 30 Cambridge B1 "Leisure & Hobbies" words, each
-   with a B1 meaning (m), a B1 sentence (s) and a British dictionary MP3. */
-var SAMPLE_LIST_NAME = "B1 Leisure & Hobbies (30 words)";
+/* v6 default list: the 30 Cambridge B1 "Travel & Transport" words, each with
+   a British meaning (m), a B1 example sentence (s) and a UK dictionary MP3.
+   Every older list (leisure, hobbies, sport, appointments) was removed in v6. */
+var SAMPLE_LIST_NAME = "Session 6 - Travel & Transport";
 var UK_MP3_BASE = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
 function ukMp3(word) {
-  var k = String(word || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, "_").replace(/^_+|_+$/g, "");
+  var k = String(word || "").toLowerCase().replace(/[^a-z \-]/g, "").replace(/\s+/g, "_").replace(/^_+|_+$/g, "");
   return k ? UK_MP3_BASE + k + "--_gb_1.mp3" : "";
 }
 var SAMPLE_WORDS = [
-  { w: "athlete", s: "She is an Olympic athlete who trains six days a week.", m: "a person who is very good at sports or physical exercise, especially one who competes in events", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athlete--_gb_1.mp3" },
-  { w: "athletics", s: "Our school athletics team won four gold medals on Tuesday.", m: "the general name for sports such as running, jumping, and throwing", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/athletics--_gb_1.mp3" },
-  { w: "badminton", s: "We play badminton in the sports hall every Wednesday evening.", m: "a sport in which two or four players hit a shuttlecock over a high net with rackets", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/badminton--_gb_1.mp3" },
-  { w: "champion", s: "He became the national swimming champion at the age of eighteen.", m: "someone or a team that has won a competition, especially in sport", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/champion--_gb_1.mp3" },
-  { w: "climbing", s: "Rock climbing in the mountains requires strong ropes and a helmet.", m: "the sport or activity of climbing rocks or mountains", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/climbing--_gb_1.mp3" },
-  { w: "competitor", s: "Every competitor in the marathon received a medal at the finish.", m: "a person, team, or company that is competing against others", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/competitor--_gb_1.mp3" },
-  { w: "cycling", s: "Cycling along the country lanes is a great way to keep fit.", m: "the sport or activity of riding a bicycle", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cycling--_gb_1.mp3" },
-  { w: "cyclist", s: "Each cyclist must wear a safety helmet during the road race.", m: "someone who rides a bicycle", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/cyclist--_gb_1.mp3" },
-  { w: "diving", s: "She won first prize in the ten-metre platform diving competition.", m: "the sport of jumping into water head first or swimming underwater", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/diving--_gb_1.mp3" },
-  { w: "extreme sports", s: "My brother loves extreme sports like mountain biking and skydiving.", m: "sports that are very exciting and dangerous, such as skydiving or bungee jumping", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/extreme_sports--_gb_1.mp3" },
-  { w: "fitness", s: "She joined an evening fitness class to improve her health.", m: "the condition of being physically strong and healthy", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/fitness--_gb_1.mp3" },
-  { w: "goalkeeper", s: "The goalkeeper made a brilliant save in the final minute.", m: "the player whose job is to stop the ball going into the goal", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/goalkeeper--_gb_1.mp3" },
-  { w: "gymnastics", s: "She has practised gymnastics at the local club since she was six.", m: "physical exercises and movements that need skill, strength, and control", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/gymnastics--_gb_1.mp3" },
-  { w: "ice hockey", s: "Ice hockey is one of the fastest and most exciting winter sports.", m: "a game played on ice between two teams who try to hit a puck into a goal", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ice_hockey--_gb_1.mp3" },
-  { w: "instructor", s: "Our skiing instructor showed us how to stop safely on the slope.", m: "a person whose job is to teach a practical skill or sport", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/instructor--_gb_1.mp3" },
-  { w: "league", s: "Their football team finished at the top of the local league.", m: "a group of sports clubs or teams that play matches against each other", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/league--_gb_1.mp3" },
-  { w: "motor-racing", s: "He watched the British motor-racing championship at Silverstone.", m: "the sport of racing fast cars on a special track", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/motor-racing--_gb_1.mp3" },
-  { w: "practice", s: "Football practice starts at four o'clock on the school pitch.", m: "noun: regular training or activity done to improve your skill at a sport", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practice--_gb_1.mp3" },
-  { w: "practise", s: "You need to practise your serve every day before the tennis match.", m: "verb: to do an activity regularly in order to become better at it", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/practise--_gb_1.mp3" },
-  { w: "reserve", s: "He started the match on the bench as a reserve for the team.", m: "noun: an extra player who is ready to play if another team member cannot", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/reserve--_gb_1.mp3" },
-  { w: "sailing", s: "They went sailing across the bay in a small wooden boat.", m: "the sport or activity of travelling on water in a boat with sails", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sailing--_gb_1.mp3" },
-  { w: "skiing", s: "We go skiing in the mountains every winter holiday.", m: "the sport or activity of moving over snow on skis", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/skiing--_gb_1.mp3" },
-  { w: "snowboarding", s: "Snowboarding is very popular with young people at winter resorts.", m: "the sport of moving over snow while standing on a wide board", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/snowboarding--_gb_1.mp3" },
-  { w: "sports centre", s: "We booked a badminton court at the local sports centre.", m: "a building where the public can go to play different indoor sports", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/sports_centre--_gb_1.mp3" },
-  { w: "squash", s: "Playing squash for half an hour is a very fast workout.", m: "a game for two players who hit a small rubber ball against the walls of a court", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/squash--_gb_1.mp3" },
-  { w: "surf", s: "They learned how to surf on the big waves in Cornwall.", m: "to ride on waves in the sea on a special board", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surf--_gb_1.mp3" },
-  { w: "surfboarding", s: "Surfboarding at the beach is her favourite summer activity.", m: "the sport or activity of riding waves while standing on a surfboard", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/surfboarding--_gb_1.mp3" },
-  { w: "swimming", s: "Swimming fifty lengths of the pool is great exercise.", m: "the sport or activity of moving through water by moving your arms and legs", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/swimming--_gb_1.mp3" },
-  { w: "table tennis", s: "We played two games of table tennis in the youth club.", m: "an indoor game played on a table with small bats and a light plastic ball", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/table_tennis--_gb_1.mp3" },
-  { w: "throw", s: "How far can you throw the ball across the cricket field?", m: "verb: to send an object such as a ball through the air using your hand", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/throw--_gb_1.mp3" }
-];
-
-/* The previous default list is kept only as vocabulary data so words that
-   students already met still come with a meaning and a sentence. */
-var LEGACY_WORDS = [
-  { w: "appointment", m: "an arranged time to meet someone", s: "I have a dentist appointment on Thursday at four o'clock." },
-  { w: "temperature", m: "how hot or cold something is", s: "The temperature dropped to minus five last night." },
-  { w: "neighbour", m: "a person who lives near you", s: "Our new neighbour has a very friendly dog." },
-  { w: "schedule", m: "a plan of times for events", s: "The bus schedule changed at the beginning of March." },
-  { w: "delicious", m: "tasting very good", s: "This chocolate cake your mother made is absolutely delicious." },
-  { w: "necessary", m: "needed; you must have it", s: "It is necessary to book your tickets early." },
-  { w: "equipment", m: "tools or machines for a purpose", s: "The gym bought new equipment for the fitness room." },
-  { w: "comfortable", m: "making you feel relaxed", s: "These shoes are very comfortable for long walks." },
-  { w: "opportunity", m: "a chance to do something", s: "She got the opportunity to study in London." },
-  { w: "knowledge", m: "information you have learned", s: "He has good knowledge of the local history." },
-  { w: "though", m: "but; however", s: "It was cold, though we still enjoyed the walk." },
-  { w: "environment", m: "the natural world around us", s: "We should protect the environment for our children." },
-  { w: "weight", m: "how heavy something is", s: "The nurse checked my height and weight this morning." },
-  { w: "interview", m: "a formal meeting with questions", s: "Her job interview at the bank lasted forty minutes." },
-  { w: "programme", m: "a show on TV or radio", s: "There is a good programme on television tonight." },
-  { w: "receive", m: "to get something sent to you", s: "Did you receive my message about the meeting?" },
-  { w: "advertisement", m: "a notice that promotes something", s: "I saw the advertisement for the part-time job." },
-  { w: "definitely", m: "certainly; without any doubt", s: "I will definitely come to your birthday party." },
-  { w: "foreign", m: "from another country", s: "He enjoys learning foreign languages at his evening class." },
-  { w: "separate", m: "not together; apart", s: "Please keep the recycling in a separate bag." },
-  { w: "nervous", m: "worried and unable to relax", s: "I always feel nervous before a big exam." },
-  { w: "library", m: "a place where you borrow books", s: "You can borrow three books from the library." },
-  { w: "improve", m: "to get better at something", s: "Practising every day will really improve your spelling." },
-  { w: "suggestion", m: "an idea that you offer", s: "Thank you for your helpful suggestion about our project." },
-  { w: "accommodation", m: "a place to live or stay", s: "The price includes accommodation, breakfast and airport transfer." },
-  { w: "available", m: "able to be used or obtained", s: "Are any double rooms available for next weekend?" },
-  { w: "especially", m: "more than usual; particularly", s: "I love fruit, especially fresh mangoes and pineapple." },
-  { w: "experience", m: "knowledge gained by doing something", s: "She has five years of experience in sales." },
-  { w: "recipe", m: "instructions for cooking food", s: "This simple recipe needs only four basic ingredients." },
-  { w: "disappointed", m: "sad because hopes were not met", s: "He was disappointed that the concert was cancelled." },
-];
-
-/* Extra common B1 vocabulary used by the auto meaning/sentence generator. */
-var EXTRA_B1 = [
-  { w: "travel", m: "to go from one place to another, especially to visit places", s: "We travel to Manchester by train every spring." },
-  { w: "holiday", m: "a period of time when you are not at work or school and enjoy yourself", s: "They are on holiday in Cornwall for a week." },
-  { w: "swimming", m: "the sport or activity of moving through water", s: "The children have swimming lessons on Friday." },
-  { w: "football", m: "a game in which two teams kick a ball into a goal", s: "He plays football with his friends after school." },
-  { w: "cinema", m: "a place where people pay to watch films on a big screen", s: "We went to the cinema to see the new comedy." },
-  { w: "concert", m: "a live performance of music by a singer or a band", s: "The rock concert started at eight o'clock." },
-  { w: "theatre", m: "a building where plays and musicals are performed", s: "She works in the theatre box office." },
-  { w: "museum", m: "a building where objects of history or art are shown", s: "The science museum is free for students." },
-  { w: "bookclub", m: "a group of people who read and discuss the same books", s: "Our bookclub meets in the library every month." },
-  { w: "gardening", m: "the work of growing and looking after plants in a garden", s: "Gardening helps him relax after a busy week." },
-  { w: "cooking", m: "preparing food to eat by heating or mixing it", s: "He enjoys cooking pasta for his family." },
-  { w: "chess", m: "a board game for two players who move pieces to catch the king", s: "She plays chess with her grandfather on Sundays." },
-  { w: "cycling", m: "the activity of riding a bicycle for exercise or pleasure", s: "Cycling along the river path is great fun." },
-  { w: "skating", m: "moving on boots with blades or on a board with wheels", s: "They went skating at the ice rink downtown." },
-  { w: "singing", m: "making musical sounds with your voice", s: "Singing in the choir makes her very happy." },
-  { w: "actress", m: "a woman who acts in films or plays", s: "The actress won an award for her new film." },
-  { w: "costume", m: "the clothes that you wear to look like someone else", s: "He wore a pirate costume to the party." },
-  { w: "prize", m: "something, often money, that you win in a competition", s: "She won first prize in the spelling competition." },
-  { w: "audience", m: "the group of people who watch a show or listen to a concert", s: "The audience clapped for ten minutes." },
-  { w: "exhibition", m: "a public display of paintings or other objects", s: "An art exhibition opens in the gallery on Tuesday." },
-  { w: "adventure", m: "an exciting and unusual experience or activity", s: "Climbing the mountain was a real adventure." },
-  { w: "souvenir", m: "something you buy or keep to remember a holiday", s: "I bought a small souvenir for my sister." },
-  { w: "luggage", m: "the bags and cases that you take with you when you travel", s: "Please keep your luggage with you at all times." },
-  { w: "journey", m: "the act of travelling from one place to another", s: "The train journey takes about two hours." },
+  { w: "travel", m: "to make a journey from one place to another", s: "We usually travel to the city by train every morning.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/travel--_gb_1.mp3" },
+  { w: "transport", m: "a system of vehicles, such as buses and trains, for getting from one place to another", s: "Public transport in London includes buses and the underground.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/transport--_gb_1.mp3" },
+  { w: "abroad", m: "in or to a foreign country", s: "She hopes to study abroad for a year after finishing school.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/abroad--_gb_1.mp3" },
+  { w: "accommodation", m: "a place to live, work, or stay in, especially on holiday", s: "The price of the tour includes flights and hotel accommodation.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/accommodation--_gb_1.mp3" },
+  { w: "ambulance", m: "a special vehicle used to take sick or injured people to hospital", s: "Someone called an ambulance immediately after the road accident.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ambulance--_gb_1.mp3" },
+  { w: "announcement", m: "something that someone says officially, giving information about something", s: "We listened carefully to the platform announcement at the station.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/announcement--_gb_1.mp3" },
+  { w: "arrival", m: "the fact of arriving somewhere", s: "Please wait in the terminal building for the arrival of flight BA102.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/arrival--_gb_1.mp3" },
+  { w: "astronaut", m: "a person who has been trained for travelling in space", s: "The astronaut spent six months living on the space station.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/astronaut--_gb_1.mp3" },
+  { w: "backpacking", m: "travelling or camping while carrying your clothes and equipment in a backpack", s: "They went backpacking across Europe during their summer holidays.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/backpacking--_gb_1.mp3" },
+  { w: "baggage", m: "all the suitcases and bags that you take with you when you travel", s: "We waited twenty minutes at the airport to collect our baggage.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/baggage--_gb_1.mp3" },
+  { w: "boarding pass", m: "a card that a passenger must have to be allowed to get on an aircraft or ship", s: "Please show your passport and boarding pass at the departure gate.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/boarding_pass--_gb_1.mp3" },
+  { w: "brochure", m: "a type of small magazine that contains pictures and information about a product or holiday", s: "We picked up a holiday brochure from the local travel agent.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/brochure--_gb_1.mp3" },
+  { w: "canal", m: "a long, narrow stretch of water that has been made for boats to travel along", s: "We took a quiet boat trip along the historic city canal.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/canal--_gb_1.mp3" },
+  { w: "capital city", m: "the most important city in a country or state, where the government is based", s: "London is the capital city of the United Kingdom.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/capital_city--_gb_1.mp3" },
+  { w: "crossroads", m: "a place where two roads meet and cross each other", s: "Turn left at the traffic lights when you reach the main crossroads.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/crossroads--_gb_1.mp3" },
+  { w: "currency", m: "the money that is used in a particular country", s: "You can change your money into local currency at the airport.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/currency--_gb_1.mp3" },
+  { w: "customs", m: "the place at a port or airport where officials check goods brought into a country", s: "It took us ten minutes to walk through customs at the airport.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/customs--_gb_1.mp3" },
+  { w: "delayed", m: "happening at a later time than expected or intended", s: "Our morning train was delayed by thirty minutes because of rain.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/delayed--_gb_1.mp3" },
+  { w: "deliver", m: "to take goods, letters, or parcels to people's houses or places of work", s: "The postman will deliver the parcel before twelve o'clock tomorrow.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/deliver--_gb_1.mp3" },
+  { w: "departure", m: "the fact of a person or vehicle, especially an aircraft, leaving a place", s: "Please check the screen in the departure lounge for your gate number.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/departure--_gb_1.mp3" },
+  { w: "destination", m: "the place where someone is going or where something is being sent", s: "After a six-hour flight, we finally reached our holiday destination.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/destination--_gb_1.mp3" },
+  { w: "direction", m: "the position towards which someone or something moves or faces", s: "The sign pointed in the direction of the nearest railway station.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/direction--_gb_1.mp3" },
+  { w: "documents", m: "official papers or files that give information or proof of something", s: "Keep your travel documents and tickets safe in your hand luggage.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/documents--_gb_1.mp3" },
+  { w: "driver's licence", m: "noun: an official document that shows you are legally allowed to drive", s: "You must show your driver's licence when you hire a car.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drivers_licence--_gb_1.mp3" },
+  { w: "embassy", m: "the group of officials who represent their country in a foreign country, or the building they work in", s: "If you lose your passport abroad, contact your national embassy.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/embassy--_gb_1.mp3" },
+  { w: "exchange rate", m: "the value of the money of one country compared to that of another country", s: "The bank offered a very good exchange rate for British pounds.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/exchange_rate--_gb_1.mp3" },
+  { w: "ferry", m: "a boat or ship for taking passengers and often vehicles across an area of water", s: "We caught the early morning ferry across the channel to France.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ferry--_gb_1.mp3" },
+  { w: "flight", m: "a journey in an aircraft", s: "Have a pleasant flight and thank you for travelling with us.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/flight--_gb_1.mp3" },
+  { w: "foreign", m: "belonging or connected to a country that is not your own", s: "Learning a foreign language makes travelling much more enjoyable.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/foreign--_gb_1.mp3" },
+  { w: "guest", m: "a person who is staying at a hotel or visiting someone's home", s: "Every hotel guest receives a free breakfast in the dining room.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guest--_gb_1.mp3" }
 ];
 
 var WORD_BANK = (function () {
@@ -2016,12 +1954,10 @@ var WORD_BANK = (function () {
   }
   var i;
   for (i = 0; i < SAMPLE_WORDS.length; i++) add(SAMPLE_WORDS[i].w, SAMPLE_WORDS[i].m, SAMPLE_WORDS[i].s);
-  for (i = 0; i < LEGACY_WORDS.length; i++) add(LEGACY_WORDS[i].w, LEGACY_WORDS[i].m, LEGACY_WORDS[i].s);
-  for (i = 0; i < EXTRA_B1.length; i++) add(EXTRA_B1[i].w, EXTRA_B1[i].m, EXTRA_B1[i].s);
   return bank;
 })();
 
-var SAMPLE_LIST_ID = "list_tue_20_sport";
+var SAMPLE_LIST_ID = "list_session_6_travel";
 
 function defaultData() {
   var sample = {
@@ -2032,7 +1968,7 @@ function defaultData() {
     published: true,
     updatedAt: Date.now()
   };
-  var plan = { weekdays: ["", "", "", "", "", "", ""], dates: {}, pinned: "", defaultList: SAMPLE_LIST_ID };
+  var plan = { weekdays: ["", "", "", "", "", "", ""], dates: { "2026-10-19": SAMPLE_LIST_ID }, pinned: SAMPLE_LIST_ID, defaultList: SAMPLE_LIST_ID };
   return {
     v: CONFIG.schema,
     settingsRev: CONFIG.settingsRev,
@@ -2045,7 +1981,7 @@ function defaultData() {
     lists: [sample],
     plan: plan,
     session: {
-      no: "1", day: "Tuesday", autoDay: false, date: "2026-10-20", title: SAMPLE_LIST_NAME, listId: SAMPLE_LIST_ID,
+      no: "6", day: "Tuesday", autoDay: false, date: "2026-10-19", title: SAMPLE_LIST_NAME, listId: SAMPLE_LIST_ID,
       ready: [
         "Hello! Get your pen and paper. Are you ready? Tap Start when you are.",
         "Are you ready? Let's begin.",
@@ -2100,6 +2036,10 @@ var DB = {
       if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
     }
     if ((!d.v || d.v < 2) && raw && !Store.get(CONFIG.key + ".before-v2")) Store.set(CONFIG.key + ".before-v2", raw);
+    /* v6: a phone that still holds a pre-Session-6 cache drops its saved
+       dictation snapshot, past sessions and queued jobs before anything reads
+       them, then migrate() replaces the words, the plan and the session. */
+    if (!d.settingsRev || d.settingsRev < CONFIG.settingsRev) DB.dropOld(d);
     d = DB.migrate(d);
     this.data = d;
     if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
@@ -2111,6 +2051,14 @@ var DB = {
       this.saveNow();
     }
     this.saveNow();
+    return d;
+  },
+  /* v6: remove every trace of an older session cache. */
+  dropOld: function (d) {
+    if (!d || typeof d !== "object") return d;
+    delete d.snapshot;
+    delete d.sessions;
+    delete d.outbox;
     return d;
   },
   migrate: function (d) {
@@ -2169,9 +2117,10 @@ var DB = {
     if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
     if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
     if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
-    /* A3.2 settingsRev 2: number + word twice, no example sentence, and every
-       install moves to the 30 leisure words. */
-    if (!d.settingsRev || d.settingsRev < 4 || !DB.findList(d, SAMPLE_LIST_ID)) {
+    /* v6 (Session 6 - Travel & Transport): any device whose settingsRev is
+       below 6 loses every cached word list, plan date, session and queued
+       job, and loads the 30 travel words with the 5 second writing timer. */
+    if (!d.settingsRev || d.settingsRev < 6 || !DB.findList(d, SAMPLE_LIST_ID)) {
       d.settings.writeMode = "fixed";
       d.settings.writeFixed = 5;
       d.settings.sentence = false;
@@ -2182,17 +2131,17 @@ var DB = {
       d.settings.pauseWord = 1.2;
       d.settings.pauseSent = 1.6;
       d.lists = JSON.parse(JSON.stringify(base.lists));
-      d.plan = { weekdays: ["", "", "", "", "", "", ""], dates: {}, pinned: base.lists[0].id, defaultList: base.lists[0].id };
-      d.session.no = "1";
+      d.plan = { weekdays: ["", "", "", "", "", "", ""], dates: { "2026-10-19": SAMPLE_LIST_ID }, pinned: SAMPLE_LIST_ID, defaultList: SAMPLE_LIST_ID };
+      d.session.no = "6";
       d.session.day = "Tuesday";
       d.session.autoDay = false;
-      d.session.date = "2026-10-20";
+      d.session.date = "2026-10-19";
       d.session.title = SAMPLE_LIST_NAME;
       d.session.listId = SAMPLE_LIST_ID;
       delete d.snapshot;
       d.sessions = [];
       d.outbox = [];
-      d.settingsRev = 4;
+      d.settingsRev = 6;
       d.v = CONFIG.schema;
     }
     if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
@@ -2205,8 +2154,10 @@ var DB = {
     d = d || this.data;
     var s = d.session, today = U.dateKey(new Date()), planned = (d.plan && d.plan.dates) ? d.plan.dates[s.date] : null;
     if (!s.date || (!planned && s.date < today)) { s.date = today; s.day = DAYS[U.weekdayIndex(new Date())]; return true; }
+    /* a date the lecturer planned keeps the class day they typed: Session 6 is
+       Tuesday 19 October, even if the calendar weekday differs. */
     var day = new Date(s.date + "T12:00:00");
-    if (isFinite(day.getTime())) s.day = DAYS[U.weekdayIndex(day)];
+    if (isFinite(day.getTime()) && !(planned && s.day)) s.day = DAYS[U.weekdayIndex(day)];
     return false;
   },
   findList: function (d, id) {
@@ -2832,11 +2783,16 @@ var Screens = {
     U.widget("home-hero", function () {
 
     /* hero */
-    U.$("#homeKicker").textContent = (Lib.sessionLabel() || "Session").toUpperCase();
+    var ses = d.session || {};
+    var when = "";
+    if (ses.date) {
+      var sd = new Date(ses.date + "T12:00:00");
+      if (isFinite(sd.getTime())) when = " \u00b7 " + sd.getDate() + " " + MONTHS[sd.getMonth()].toUpperCase() + " " + sd.getFullYear();
+    }
+    U.$("#homeKicker").textContent = ("Session " + (ses.no || "1")).toUpperCase() + when;
     U.$("#homeTitle").textContent = list ? list.name : "No list published yet";
     var wc = list && list.words ? list.words.length : 0;
-    var est = Math.max(1, Math.round(Lib.estSeconds(list) / 60));
-    U.$("#homeSub").textContent = wc + (wc === 1 ? " word" : " words") + " \u00b7 about " + est + " min" + (d.session.title ? " \u00b7 " + d.session.title : "");
+    U.$("#homeSub").textContent = wc + " words \u00b7 " + writeSecs("") + "s timer";
 
     var meta = U.$("#homeMeta");
     meta.textContent = "";
@@ -3549,7 +3505,7 @@ var Speech = {
     if (st.voiceName) {
       for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === st.voiceName) { this.chosen = this.ukVoices[i]; return this.chosen; }
     }
-    var good = ["Daniel", "Kate", "Serena", "Martha", "Oliver", "Google UK English Female", "Google UK English Male",
+    var good = ["Daniel", "Martha", "Arthur", "Kate", "Serena", "Oliver", "Google UK English Female", "Google UK English Male",
       "Microsoft Sonia", "Microsoft Ryan", "Microsoft Libby", "Microsoft Hazel", "Microsoft George", "Microsoft Susan"];
     var localRanked = this.ukVoices.filter(function (voice) { return voice.localService; });
     if (localRanked.length) {
@@ -3608,16 +3564,42 @@ var Speech = {
     var base = url.split("?")[0].split("#")[0].toLowerCase();
     return /(_gb_|_gb\.|_gb-|-gb\.|-gb_|-uk\.|-uk_|-uk-|_uk\.|_uk_|_uk-|-uk\/|_uk\/)/.test(base);
   },
-  /* Tier 1 source: the word object's own URL, then the dictionary cache,
-     then the Cambridge/Oxford UK MP3 pattern for a single word. */
+  /* Tier 1 sources, in order: the word object's own URL, the cached
+     dictionary audio, the Oxford/Cambridge gstatic UK MP3, the Free Dictionary
+     API UK file, then the Wiktionary "En-uk-" recording. Every URL in the list
+     is British; each one is tried before any synthetic voice is used. A prompt
+     with no word of its own (a greeting, "Number 3") has no dictionary entry,
+     so it goes straight to Tier 2 instead of hunting for a recording. */
+  mp3Candidates: function (explicit, text, word) {
+    var out = [], i, seen = Object.create(null), uniq = [];
+    function push(url) {
+      if (typeof url !== "string" || !/^https:\/\/[^\s]+\.(mp3|ogg|oga)(?:[?#].*)?$/i.test(url)) return;
+      if (seen[url]) return;
+      seen[url] = 1; out.push(url);
+    }
+    push(explicit);
+    var t = this.normKey(U.trim(String(word || "")));
+    if (t) {
+      var cache = DB.data && DB.data.dictCache ? DB.data.dictCache[U.norm(t)] : null;
+      if (cache && cache.audio) push(cache.audio);
+      if (t.length <= 24) {
+        push(ukMp3(t));               /* Oxford / Cambridge CDN, en-GB */
+        if (t.indexOf(" ") < 0 && /^[a-z' \-]+$/.test(t)) {
+          var key = t.replace(/[^a-z]/g, "");
+          push("https://api.dictionaryapi.dev/media/pronunciations/en/" + encodeURIComponent(key) + "-uk.mp3");
+          push("https://commons.wikimedia.org/wiki/Special:FilePath/En-uk-" + encodeURIComponent(key) + ".ogg");
+        }
+      }
+    }
+    for (i = 0; i < out.length; i++) if (this.isBritishAudio(out[i])) uniq.push(out[i]);
+    return uniq.length ? uniq : out;   /* a real recording always beats a synthetic voice */
+  },
+  /* the single best recorded British source for a word (kept for Diagnostics
+     and the dictionary card): cached UK audio first, then the CDN pattern. */
   mp3For: function (text, word) {
     var t = this.normKey(U.trim(String(word || text || "")));
-    if (!t || /\s/.test(t) || t.length > 24) return "";
-    if (word && String(word).trim().toLowerCase() !== t) return "";
+    if (!t || t.length > 24) return "";
     var cache = DB.data && DB.data.dictCache ? DB.data.dictCache[U.norm(t)] : null;
-    /* a real British recording always wins; a US/other recording is kept for
-       the dictionary card but never becomes the dictation voice, so the word
-       stays British on a UK speaking exam */
     if (cache && this.isBritishAudio(cache.audio)) return cache.audio;
     return ukMp3(t);
   },
@@ -3801,15 +3783,20 @@ var Speech = {
       var text = queue[qi];
       var rate = U.clamp(o.rate === undefined ? 0.85 : o.rate, 0.5, 1.6);
       if (online && o.mp3 !== false && !mp3Tried) {
-        var mp3 = o.mp3 || self.mp3For(text, o.word);
-        if (mp3) {
-          self.lastTier = "dictionary";
-          mp3Tried = true;   /* tier 1 is tried once per call; never retried in a loop */
-          self.playAudio(mp3, rate, 5200, function (ok) {
+        var mp3s = self.mp3Candidates(o.mp3 || "", text, o.word);
+        if (mp3s.length) {
+          mp3Tried = true;   /* tier 1 is walked once per call, never in a loop */
+          var mi = 0;
+          (function tryMp3() {
             if (canceled()) return;
-            if (ok) { qi++; step(60); return; }
-            next();
-          });
+            if (mi >= mp3s.length) { next(); return; }
+            self.lastTier = "dictionary";
+            self.playAudio(mp3s[mi++], rate, 5200, function (ok) {
+              if (canceled()) return;
+              if (ok) { qi++; step(60); return; }
+              tryMp3();
+            });
+          })();
           return;
         }
       }
@@ -4482,8 +4469,10 @@ Eng.openPlayer = function () {
         var feedback = U.el("p", "tiny muted", ""); feedback.setAttribute("role", "status");
         U.on(inp, "input", function () {
           self.answers[self.idx] = U.clip(inp.value, 100); self.saveSnapshot();
-          var answer = U.norm(inp.value), target = U.norm(self.currentWord().w);
-          feedback.textContent = !answer ? "" : answer === target ? "Correct" : US_UK[answer] === target ? "American spelling — UK: " + target : "Keep trying";
+          var target = U.norm(self.currentWord().w);
+          var state = Results.answerState(inp.value, self.currentWord().w);
+          feedback.textContent = state === "empty" ? "" : state === "ok" ? "Correct"
+            : state === "half" ? "American spelling \u2014 UK: " + target : "Keep trying";
         }); top.appendChild(feedback);
         U.on(inp, "keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); self.next(); } });
         top.appendChild(inp);
@@ -4729,20 +4718,30 @@ function publishCompletion(rec, action) {
 }
 
 var Results = {
+  /* UK spelling map applied word by word, so "drivers licence",
+     "driver's licence" and "driver's license" are all understood. */
+  ukSpelling: function (s) {
+    var parts = U.norm(s).split(" "), out = [];
+    for (var i = 0; i < parts.length; i++) out.push(US_UK[parts[i]] || parts[i]);
+    return out.join(" ");
+  },
+  stripApostrophe: function (s) { return U.norm(s).replace(/[\u2018\u2019']/g, ""); },
+  answerState: function (answer, target) {
+    var a = this.stripApostrophe(answer), t = this.stripApostrophe(target);
+    if (!a) return "empty";
+    if (a === t) return "ok";
+    if (this.ukSpelling(a) === t) return DB.data.settings.usSpelling === "half" ? "half" : "wrong";
+    return "wrong";
+  },
   scoreTypeMode: function (words, order, answers) {
     var out = [], correct = 0, half = 0;
     for (var pos = 0; pos < order.length; pos++) {
       var w = words[order[pos]];
-      var ans = U.norm(answers[pos] || "");
       var target = U.norm(w ? w.w : "");
-      var row = { word: w ? w.w : "", ans: answers[pos] || "", state: "empty", hint: "" };
-      if (!ans) { row.state = "empty"; }
-      else if (ans === target) { row.state = "ok"; correct++; }
-      else if (US_UK[ans] && US_UK[ans] === target) {
-        row.state = DB.data.settings.usSpelling === "half" ? "half" : "wrong";
-        row.hint = S.americanHint + " " + target;
-        if (row.state === "half") half++;
-      } else { row.state = "wrong"; }
+      var state = this.answerState(answers[pos], w ? w.w : "");
+      var row = { word: w ? w.w : "", ans: answers[pos] || "", state: state, hint: "" };
+      if (state === "ok") correct++;
+      else if (state === "half") { half++; row.hint = S.americanHint + " " + target; }
       out.push(row);
     }
     return { rows: out, correct: correct, half: half, total: order.length };
@@ -4906,6 +4905,7 @@ var Results = {
               });
             });
             row.appendChild(hear); row.appendChild(good); row.appendChild(bad);
+            markHost.appendChild(row);
             return row;
           }
           renderChunked(markHost, words, markRow);
@@ -5916,7 +5916,11 @@ var Admin = {
     function add(w, sentence, meaning, rowNo) {
       if (mode === "plain list" && /[\t|]/.test(w)) { problems.push("Item " + rowNo + ": mixed column separators; use one format for the whole paste."); return; }
       w = U.trim(w).replace(/^\s*(?:[-*\u2013\u2014]\s+|\d+\s*[.)\-:]\s*)/, "");
-      w = U.trim(w).replace(/^['"]|['"]$/g, "").replace(/\s+/g, " ");
+      w = U.trim(w).replace(/^['"]|['"]$/g, "").replace(/\s+/g, " ")
+        /* a pasted part-of-speech tag is never part of the word:
+           "driver's licence(n)" -> "driver's licence" */
+        .replace(/\s*\((?:n|v|adj|adv|prep|conj|pron|det|num|noun|verb|adjective|adverb|excl|phr|phrase|phrasal verb)\)\s*$/i, "")
+        .replace(/\s*[,;:]+\s*$/, "");
       if (!w) return;
       if (w.length > CONFIG.maxWordChars || !/^[A-Za-z\u00c0-\u024f' \-]+$/.test(w)) {
         problems.push("Item " + rowNo + ": invalid word: " + w.slice(0, 40)); return;
@@ -6215,7 +6219,7 @@ Admin.tabWords = function (host) {
   ed.appendChild(ta);
   /* A4: one tap right under the paste box does the whole job - save, sync the
      session header, publish for students and broadcast live. */
-  var livePub = U.btn("Save & Publish Live (" + list.words.length + " words)", "i-cloud", "primary block xl");
+  var livePub = U.btn("Save & Publish Live Now (" + list.words.length + " words)", "i-cloud", "primary block xl");
   livePub.style.marginTop = "8px";
   livePub.style.position = "sticky";
   livePub.style.bottom = "8px";
@@ -6666,7 +6670,7 @@ Admin.tabWords = function (host) {
   if (list.published && !list.draft) status.textContent = S.published + ", v" + list.version + (list.updatedAt ? " \u00b7 " + U.relTime(list.updatedAt) : "");
   else status.textContent = S.unpublished;
   pub.appendChild(status);
-  var pubBtn = U.btn("Save & Publish to All Students", "i-cloud", "primary block xl");
+  var pubBtn = U.btn("Save & Publish Live Now", "i-cloud", "primary block xl");
   U.on(pubBtn, "click", function () { publishNow(); });
   pub.appendChild(pubBtn);
   var advanced = document.createElement("details");
@@ -8067,15 +8071,18 @@ var Cloud = {
   /* ---- boot: repository JSON + cached ntfy state + live SSE, at once ---- */
   bootSync: function () {
     var self = this;
-    if (this.repoServed()) this.fetchRepo(function (ok) { if (ok && Eng.st === "idle") Screens.home(); });
+    /* the two static files are read first, cache-busted, so a phone always
+       lands on the live Session 6 list; the ntfy topics stream in parallel
+       and never wait for an Apps Script link to exist. */
+    if (this.repoServed()) this.fetchRepo(function (ok) {
+      if (ok) { self.syncedAt = Date.now(); if (Eng.st === "idle") Screens.home(); }
+      UI.renderNet();
+    });
     if (!this.liveOn()) { UI.renderNet(); return; }
     this.liveMode = true;
     this.flushLive();
-    this.liveMode = true;
-    this.flushLive();
-    this.liveMode = true;
     this.liveOpen();
-    this.pullLive(function () { self.flushLive(); });
+    this.pullLive(function () { self.flushLive(); UI.renderNet(); });
     this.livePoll();
   },
 
@@ -8671,9 +8678,12 @@ UI.renderNet = function () {
   } else if (Cloud.live.posting || outbox) {
     label = "Syncing\u2026";
     good = true;
-  } else {
-    label = "Online \u00b7 Live Sync";
+  } else if (Cloud.live.ok || Cloud.repoOnline || Cloud.syncedAt) {
+    /* only a real HTTP 200 / EventSource open may claim live sync */
+    label = "Online \u00b7 Live Sync" + synced;
     good = true;
+  } else {
+    label = "Syncing\u2026";
   }
   txt.textContent = label;
   if (good) U.setCls(chip, "good", true);

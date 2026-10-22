@@ -5,19 +5,31 @@
     "Tuesday",
     "Wednesday"
   ],
+  "session": {
+    "no": "6",
+    "day": "Tuesday",
+    "date": "2026-10-19",
+    "title": "Session 6 - Travel & Transport",
+    "listId": "list_session_6_travel"
+  },
+  "listId": "list_session_6_travel",
   "defaults": {
     "sentence": false,
     "repeats": 2,
     "rate": 0.85,
     "numbers": true,
+    "mode": "paper",
     "writeMode": "fixed",
-    "writeFixed": 5
+    "writeFixed": 5,
+    "pauseWord": 1.2,
+    "pauseSent": 1.6
   },
-  "ver": 4,
+  "ver": 6,
   "version": "2.0.0",
+  "buildDate": "2026-10-22",
   "live": {
-    "state": "https://ntfy.sh/sdp_dictationb1_state_v4",
-    "community": "https://ntfy.sh/sdp_dictationb1_comm_v4",
-    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v4"
+    "state": "https://ntfy.sh/sdp_dictationb1_state_v6",
+    "community": "https://ntfy.sh/sdp_dictationb1_comm_v6",
+    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v6"
   }
 }
