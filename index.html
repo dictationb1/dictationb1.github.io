@@ -3810,7 +3810,7 @@ if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
 try {
 if (this.audioEl) {
 this.audioEl.onended = null; this.audioEl.onerror = null; this.audioEl.onstalled = null;
-this.audioEl.onplaying = null; this.audioEl.onplay = null;
+this.audioEl.onplaying = null; this.audioEl.onplay = null; this.audioEl.ontimeupdate = null;
 this.audioEl.pause();
 }
 } catch (e) {}
@@ -3878,13 +3878,19 @@ if (settled) return;
 settled = true;
 release();
 self.busy = false;
-a.onended = null; a.onerror = null; a.onstalled = null; a.onplaying = null; a.onplay = null;
+a.onended = null; a.onerror = null; a.onstalled = null; a.onplaying = null; a.onplay = null; a.ontimeupdate = null;
 cb(!!ok, started);
 }
 /* the recording is really sounding: it now OWNS this part. Only a
-   generous completion timeout may end it - never a synthetic voice. */
+   generous completion timeout may end it - never a synthetic voice.
+   A blocked request must never count as "started": the check needs real
+   evidence that sound is playing (a play() promise alone is not enough,
+   Chromium resolves it optimistically while the file is still loading). */
 function begun() {
 if (started || settled) return;
+var heard = false;
+try { heard = a.currentTime > 0 || a.readyState >= 3; } catch (eH) { heard = false; }
+if (!heard) return;
 started = true;
 self.audioOk = true;
 self.audioStarted = true;
@@ -3894,6 +3900,8 @@ liveTimer = setTimeout(function () { try { a.pause(); } catch (e) {} done(true);
 /* the connection never produced sound within 2200 ms: safe to try the next
    tier, because nothing has been heard yet. */
 connectTimer = setTimeout(function () {
+if (started || settled) return;
+begun();
 if (started || settled) return;
 try { a.pause(); } catch (e) {}
 done(false);
@@ -3905,6 +3913,7 @@ a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
 try { a.playbackRate = U.clamp(rate === undefined ? 0.88 : rate, 0.6, 1.2); } catch (e) {}
 a.onplaying = begun;
 a.onplay = begun;
+a.ontimeupdate = begun;
 a.onended = function () { done(true); };
 a.onerror = function () { done(false); };
 a.onstalled = function () { if (!started) done(false); };
@@ -3912,7 +3921,7 @@ this.busy = true;
 try {
 var p = a.play();
 if (p && p.then) p.then(function () { begun(); }, function () { if (!started) done(false); });
-else if (a.readyState > 0) begun();
+else begun();
 } catch (e) { done(false); }
 },
 chime: function () {
@@ -4084,6 +4093,7 @@ shared element flips self.audioStarted the moment it really plays, so a
 word that is already sounding can never be spoken a second time. */
 guard = setTimeout(function () {
 if (partDone || audioStarted || self.audioStarted) return;
+try { if (self.audioEl && self.audioEl.currentTime > 0) { audioStarted = true; return; } } catch (eG) {}
 ended(false);
 }, 2400);
 tryNext();
@@ -4137,7 +4147,7 @@ if (qi >= queue.length) { finish({ ok: true }); return; }
 var text = queue[qi];
 var rate = U.clamp(o.rate === undefined ? 0.88 : o.rate, 0.5, 1.5);
 /* every part starts from silence: stop the previous engine first */
-try { if (self.audioEl) { self.audioEl.onended = null; self.audioEl.onerror = null; self.audioEl.onplaying = null; self.audioEl.onplay = null; self.audioEl.pause(); } } catch (eLock) {}
+try { if (self.audioEl) { self.audioEl.onended = null; self.audioEl.onerror = null; self.audioEl.onplaying = null; self.audioEl.onplay = null; self.audioEl.ontimeupdate = null; self.audioEl.pause(); } } catch (eLock) {}
 try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (eLock2) {}
 self.audioStarted = false;
 if (online && !streamDead) { stream(text, rate); return; }
