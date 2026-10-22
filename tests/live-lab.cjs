@@ -158,10 +158,9 @@ function device(html, base) {
     check('the lecturer Home header is internally consistent (SESSION 4 + the same title)', () => {
       const kicker = lecturer.w.document.getElementById('homeKicker').textContent;
       const title = lecturer.w.document.getElementById('homeTitle').textContent;
-      if (!/^Session 4/.test(kicker)) throw Error('kicker: ' + kicker);
+      if (!/^SESSION 4\b/i.test(kicker)) throw Error('kicker: ' + kicker);
       if (!/Session 4 words/.test(title)) throw Error('title: ' + title);
-      const day = new Date('2026-10-21T12:00:00').getDay();
-      if (kicker.indexOf(day === 3 ? 'Wednesday' : '?') < 0) throw Error('kicker has no real weekday: ' + kicker);
+      if (kicker.toUpperCase().indexOf('21 OCT 2026') < 0) throw Error('kicker has no real session date: ' + kicker);
     });
     check('the published session is 30 real words with British audio urls', () => {
       const posted = JSON.parse(topics.sdp_dictationb1_state_v6[topics.sdp_dictationb1_state_v6.length - 1]);
@@ -178,7 +177,7 @@ function device(html, base) {
       if (String(d.session.no) !== '4') throw Error('student session no ' + d.session.no);
       if (S.Lib.current().words.length !== 30) throw Error('student words ' + S.Lib.current().words.length);
       const kicker = student.w.document.getElementById('homeKicker').textContent;
-      if (!/^Session 4/.test(kicker)) throw Error('student kicker: ' + kicker);
+      if (!/^SESSION 4\b/i.test(kicker)) throw Error('student kicker: ' + kicker);
     });
     check('the student outbox is empty (nothing stuck as "1 waiting")', () =>
       { if (student.q.DB.data.outbox.length) throw Error('outbox ' + student.q.DB.data.outbox.length); });
