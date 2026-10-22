@@ -196,7 +196,9 @@ async function flow(browser, vp, label, seed) {
   }
   await page.waitForTimeout(600);
   const said = await spoken(page);
-  const order = words.map(w => said.findIndex(s => s.text.trim().toLowerCase() === w.toLowerCase()));
+  /* "tyre/tire" is written with both spellings but spoken as "tyre" */
+  const spokenForm = w => String(w).split('/')[0].trim().toLowerCase();
+  const order = words.map(w => said.findIndex(s => s.text.trim().toLowerCase() === spokenForm(w)));
   const inOrder = order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
   const allGB = said.every(s => s.lang === 'en-GB');
   const usedVoice = said.filter(s => s.voice).map(s => s.voice);

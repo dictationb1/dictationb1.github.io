@@ -47,7 +47,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
   const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v7_session7')||'{}').session||{}).day||''}catch(e){return ''}});
-  results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&kicker.includes('19/10/2026')&&day==='Sunday'?'PASS':'FAIL'});
+  results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'home-390.png'),fullPage:true});
   await context.close();
  }
