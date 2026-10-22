@@ -3808,6 +3808,11 @@ var self = this;
 cb = U.once(cb || function () {});
 var a = this.el();
 if (!a || !src) { cb(false); return; }
+/* a browser that cannot decode audio at all (or a headless test DOM) must not
+   spend seconds timing out: go straight to the device voice. */
+try {
+if (a.canPlayType && !a.canPlayType("audio/mpeg") && !a.canPlayType("audio/ogg") && !a.canPlayType("audio/wav")) { cb(false); return; }
+} catch (eCap) {}
 var settled = false;
 function done(ok) {
 if (settled) return;
@@ -3962,24 +3967,35 @@ setTimeout(next, ms || Math.max(60, o.gap === undefined ? 100 : o.gap));
 /* Tier 1 - the shared audio element, one British female source at a time */
 function stream(text, rate) {
 var sources = self.streamSources(text, o.word || "", o.mp3 || "");
-var attempt = 0;
-function tryNext() {
-if (canceled()) return;
-if (attempt >= sources.length) {
+var attempt = 0, moved = false, guard = null;
+/* Zero lag: if no British source has actually started within 1.5 s, stop the
+element and let the device's British voice speak immediately. */
+function fallback() {
+if (moved || canceled()) return;
+moved = true;
+if (guard) { clearTimeout(guard); guard = null; }
+try { if (self.audio) self.audio.pause(); } catch (eP) {}
 streamDead = true;
 self.lastTier = "none";
 voice(text, rate);
-return;
 }
+function tryNext() {
+if (moved || canceled()) return;
+if (attempt >= sources.length) { fallback(); return; }
 var src = sources[attempt++];
 self.lastTier = /oxford|dictionaryapi|wikimedia|-uk\.|-gb\./.test(src) ? "dictionary"
 : (/voice=Amy/.test(src) ? "polly-amy" : (/voice=Emma/.test(src) ? "polly-emma" : "google"));
 self.playAudio(src, rate, 6000, function (ok) {
-if (canceled()) return;
-if (ok) { qi++; step(60); return; }
+if (moved || canceled()) return;
+if (ok) {
+moved = true;
+if (guard) { clearTimeout(guard); guard = null; }
+qi++; step(60); return;
+}
 tryNext();
 });
 }
+guard = setTimeout(fallback, 1500);
 tryNext();
 }
 /* Tier 2 / Tier 4 - the device's own British female voice, else any English */
