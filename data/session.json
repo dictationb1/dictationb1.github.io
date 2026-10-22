@@ -1,199 +1,199 @@
 {
   "ok": true,
-  "ver": 6,
+  "ver": 7,
   "session": {
-    "no": "6",
-    "day": "Tuesday",
-    "date": "2026-10-19",
-    "title": "Session 6 - Travel & Transport",
-    "listId": "list_session_6_travel"
+    "no": "7",
+    "day": "Thursday",
+    "date": "2026-10-22",
+    "title": "Session 7 - Travel & Transport",
+    "listId": "list_session_7_travel"
   },
   "lists": [
     {
-      "id": "list_session_6_travel",
-      "name": "Session 6 - Travel & Transport",
-      "version": 2,
+      "id": "list_session_7_travel",
+      "name": "Session 7 - Travel & Transport",
+      "version": 3,
       "published": true,
       "words": [
         {
-          "w": "travel",
-          "s": "We usually travel to the city by train every morning.",
-          "m": "to make a journey from one place to another",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/travel--_gb_1.mp3"
+          "w": "guidebook",
+          "m": "a book that gives information for visitors about a place, such as a city or country",
+          "s": "We bought a guidebook to learn about the best museums in Rome.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guidebook--_gb_1.mp3"
         },
         {
-          "w": "transport",
-          "s": "Public transport in London includes buses and the underground.",
-          "m": "a system of vehicles, such as buses and trains, for getting from one place to another",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/transport--_gb_1.mp3"
+          "w": "handlebars",
+          "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
+          "s": "Hold the handlebars with both hands when you ride down the hill.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/handlebars--_gb_1.mp3"
         },
         {
-          "w": "abroad",
-          "s": "She hopes to study abroad for a year after finishing school.",
-          "m": "in or to a foreign country",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/abroad--_gb_1.mp3"
+          "w": "harbour",
+          "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
+          "s": "The fishing boats returned safely to the harbour before the storm.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/harbour--_gb_1.mp3"
         },
         {
-          "w": "accommodation",
-          "s": "The price of the tour includes flights and hotel accommodation.",
-          "m": "a place to live, work, or stay in, especially on holiday",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/accommodation--_gb_1.mp3"
+          "w": "helicopter",
+          "m": "a type of aircraft without wings that has large blades on top that go round",
+          "s": "The rescue helicopter flew over the mountains to find the hikers.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/helicopter--_gb_1.mp3"
         },
         {
-          "w": "ambulance",
-          "s": "Someone called an ambulance immediately after the road accident.",
-          "m": "a special vehicle used to take sick or injured people to hospital",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ambulance--_gb_1.mp3"
+          "w": "hitchhike",
+          "m": "to travel for free by standing by the road and asking drivers for a ride",
+          "s": "It is not safe to hitchhike alone along a busy motorway at night.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/hitchhike--_gb_1.mp3"
         },
         {
-          "w": "announcement",
-          "s": "We listened carefully to the platform announcement at the station.",
-          "m": "something that someone says officially, giving information about something",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/announcement--_gb_1.mp3"
+          "w": "immigration",
+          "m": "the area at an airport or port where officials check the passports of people entering a country",
+          "s": "We showed our passports at immigration after landing in London.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/immigration--_gb_1.mp3"
         },
         {
-          "w": "arrival",
-          "s": "Please wait in the terminal building for the arrival of flight BA102.",
-          "m": "the fact of arriving somewhere",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/arrival--_gb_1.mp3"
+          "w": "journey",
+          "m": "the act of travelling from one place to another, especially in a vehicle",
+          "s": "The train journey from Galle to Colombo takes about two hours.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/journey--_gb_1.mp3"
         },
         {
-          "w": "astronaut",
-          "s": "The astronaut spent six months living on the space station.",
-          "m": "a person who has been trained for travelling in space",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/astronaut--_gb_1.mp3"
+          "w": "luggage",
+          "m": "the bags, suitcases, and things that you take with you when you are travelling",
+          "s": "You are allowed one piece of hand luggage on the aircraft.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/luggage--_gb_1.mp3"
         },
         {
-          "w": "backpacking",
-          "s": "They went backpacking across Europe during their summer holidays.",
-          "m": "travelling or camping while carrying your clothes and equipment in a backpack",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/backpacking--_gb_1.mp3"
+          "w": "machine",
+          "m": "a piece of equipment with moving parts that uses power to do a particular job",
+          "s": "You can buy your train ticket from the machine at the station.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/machine--_gb_1.mp3"
         },
         {
-          "w": "baggage",
-          "s": "We waited twenty minutes at the airport to collect our baggage.",
-          "m": "all the suitcases and bags that you take with you when you travel",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/baggage--_gb_1.mp3"
+          "w": "mechanic",
+          "m": "someone whose job is repairing the engines of vehicles and other machines",
+          "s": "The mechanic repaired our car engine at the garage this morning.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/mechanic--_gb_1.mp3"
         },
         {
-          "w": "boarding pass",
-          "s": "Please show your passport and boarding pass at the departure gate.",
-          "m": "a card that a passenger must have to be allowed to get on an aircraft or ship",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/boarding_pass--_gb_1.mp3"
+          "w": "nationality",
+          "m": "the official right to belong to a particular country",
+          "s": "Please write your full name and nationality on the arrival form.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/nationality--_gb_1.mp3"
         },
         {
-          "w": "brochure",
-          "s": "We picked up a holiday brochure from the local travel agent.",
-          "m": "a type of small magazine that contains pictures and information about a product or holiday",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/brochure--_gb_1.mp3"
+          "w": "on business",
+          "m": "travelling or staying somewhere as part of your work, not for a holiday",
+          "s": "Her father has gone to Singapore on business for three days.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/on_business--_gb_1.mp3"
         },
         {
-          "w": "canal",
-          "s": "We took a quiet boat trip along the historic city canal.",
-          "m": "a long, narrow stretch of water that has been made for boats to travel along",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/canal--_gb_1.mp3"
+          "w": "on vacation",
+          "m": "away from work or school for a holiday",
+          "s": "The office is closed because the manager is away on vacation.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/on_vacation--_gb_1.mp3"
         },
         {
-          "w": "capital city",
-          "s": "London is the capital city of the United Kingdom.",
-          "m": "the most important city in a country or state, where the government is based",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/capital_city--_gb_1.mp3"
+          "w": "overnight",
+          "m": "for or during the night",
+          "s": "We took the overnight ferry and arrived early the next morning.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/overnight--_gb_1.mp3"
         },
         {
-          "w": "crossroads",
-          "s": "Turn left at the traffic lights when you reach the main crossroads.",
-          "m": "a place where two roads meet and cross each other",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/crossroads--_gb_1.mp3"
+          "w": "passenger",
+          "m": "a person who is travelling in a vehicle but is not driving it or working on it",
+          "s": "Every passenger must fasten their seatbelt before the plane takes off.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/passenger--_gb_1.mp3"
         },
         {
-          "w": "currency",
-          "s": "You can change your money into local currency at the airport.",
-          "m": "the money that is used in a particular country",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/currency--_gb_1.mp3"
+          "w": "public transport",
+          "m": "buses, trains, and other vehicles that anyone can pay to use",
+          "s": "Using public transport helps to reduce traffic in the city centre.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/public_transport--_gb_1.mp3"
         },
         {
-          "w": "customs",
-          "s": "It took us ten minutes to walk through customs at the airport.",
-          "m": "the place at a port or airport where officials check goods brought into a country",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/customs--_gb_1.mp3"
+          "w": "reception",
+          "m": "the desk in a hotel or office building where visitors go when they first arrive",
+          "s": "Please leave your room key at reception when you check out.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/reception--_gb_1.mp3"
         },
         {
-          "w": "delayed",
-          "s": "Our morning train was delayed by thirty minutes because of rain.",
-          "m": "happening at a later time than expected or intended",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/delayed--_gb_1.mp3"
+          "w": "reservation",
+          "m": "an arrangement in which something such as a seat or hotel room is kept for you",
+          "s": "I called the hotel to make a room reservation for two nights.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/reservation--_gb_1.mp3"
         },
         {
-          "w": "deliver",
-          "s": "The postman will deliver the parcel before twelve o'clock tomorrow.",
-          "m": "to take goods, letters, or parcels to people's houses or places of work",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/deliver--_gb_1.mp3"
+          "w": "road sign",
+          "m": "a notice at the side of a road that gives information or instructions to drivers",
+          "s": "The road sign warned drivers about a sharp bend ahead.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/road_sign--_gb_1.mp3"
         },
         {
-          "w": "departure",
-          "s": "Please check the screen in the departure lounge for your gate number.",
-          "m": "the fact of a person or vehicle, especially an aircraft, leaving a place",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/departure--_gb_1.mp3"
+          "w": "signpost",
+          "m": "a sign by the side of a road or path that shows the direction and distance to places",
+          "s": "We followed the wooden signpost pointing towards the village.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/signpost--_gb_1.mp3"
         },
         {
-          "w": "destination",
-          "s": "After a six-hour flight, we finally reached our holiday destination.",
-          "m": "the place where someone is going or where something is being sent",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/destination--_gb_1.mp3"
+          "w": "spaceship",
+          "m": "a vehicle that is able to travel in space",
+          "s": "The astronauts travelled to the moon inside a silver spaceship.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/spaceship--_gb_1.mp3"
         },
         {
-          "w": "direction",
-          "s": "The sign pointed in the direction of the nearest railway station.",
-          "m": "the position towards which someone or something moves or faces",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/direction--_gb_1.mp3"
+          "w": "suitcase",
+          "m": "a large flat box with a handle used for carrying clothes when you travel",
+          "s": "She packed her warm winter clothes into a large blue suitcase.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/suitcase--_gb_1.mp3"
         },
         {
-          "w": "documents",
-          "s": "Keep your travel documents and tickets safe in your hand luggage.",
-          "m": "official papers or files that give information or proof of something",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/documents--_gb_1.mp3"
+          "w": "tourist information centre",
+          "m": "an office that gives free maps, brochures, and advice to visitors",
+          "s": "We got a free city map from the tourist information centre.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/tourist_information_centre--_gb_1.mp3"
         },
         {
-          "w": "driver's licence",
-          "s": "You must show your driver's licence when you hire a car.",
-          "m": "noun: an official document that shows you are legally allowed to drive",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/drivers_licence--_gb_1.mp3"
+          "w": "traffic lights",
+          "m": "sets of red, amber, and green lights at road junctions that control traffic",
+          "s": "Walk across the pedestrian crossing when the traffic lights turn green.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/traffic_lights--_gb_1.mp3"
         },
         {
-          "w": "embassy",
-          "s": "If you lose your passport abroad, contact your national embassy.",
-          "m": "the group of officials who represent their country in a foreign country, or the building they work in",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/embassy--_gb_1.mp3"
+          "w": "tunnel",
+          "m": "a long passage built underground or through a hill for a road or railway",
+          "s": "The express train went through a long dark tunnel under the river.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/tunnel--_gb_1.mp3"
         },
         {
-          "w": "exchange rate",
-          "s": "The bank offered a very good exchange rate for British pounds.",
-          "m": "the value of the money of one country compared to that of another country",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/exchange_rate--_gb_1.mp3"
+          "w": "tyre/tire",
+          "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
+          "s": "He had to stop by the road to change a flat tyre on his car.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/tyre--_gb_1.mp3"
         },
         {
-          "w": "ferry",
-          "s": "We caught the early morning ferry across the channel to France.",
-          "m": "a boat or ship for taking passengers and often vehicles across an area of water",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/ferry--_gb_1.mp3"
+          "w": "vehicle",
+          "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
+          "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/vehicle--_gb_1.mp3"
         },
         {
-          "w": "flight",
-          "s": "Have a pleasant flight and thank you for travelling with us.",
-          "m": "a journey in an aircraft",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/flight--_gb_1.mp3"
+          "w": "visa",
+          "m": "an official mark in your passport that allows you to enter or leave a country",
+          "s": "You need to apply for a tourist visa before travelling to that country.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/visa--_gb_1.mp3"
         },
         {
-          "w": "foreign",
-          "s": "Learning a foreign language makes travelling much more enjoyable.",
-          "m": "belonging or connected to a country that is not your own",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/foreign--_gb_1.mp3"
+          "w": "waiting room",
+          "m": "a room at a station, airport, or doctor's surgery where people can sit and wait",
+          "s": "The passengers sat in the warm waiting room until the train arrived.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/waiting_room--_gb_1.mp3"
         },
         {
-          "w": "guest",
-          "s": "Every hotel guest receives a free breakfast in the dining room.",
-          "m": "a person who is staying at a hotel or visiting someone's home",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/guest--_gb_1.mp3"
+          "w": "windscreen",
+          "m": "the large glass window at the front of a car, bus, or other vehicle",
+          "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
+          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/oxford/windscreen--_gb_1.mp3"
         }
       ]
     }
@@ -201,17 +201,17 @@
   "plan": [
     {
       "key": "default",
-      "listId": "list_session_6_travel",
+      "listId": "list_session_7_travel",
       "pinned": true
     },
     {
       "key": "pinned",
-      "listId": "list_session_6_travel",
+      "listId": "list_session_7_travel",
       "pinned": true
     },
     {
-      "key": "d2026-10-19",
-      "listId": "list_session_6_travel"
+      "key": "d2026-10-22",
+      "listId": "list_session_7_travel"
     }
   ],
   "announcement": null,

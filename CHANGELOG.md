@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.0.0 (v7) — 2026-10-22 (Session 7 · Travel & Transport)
+
+- **Session 7 replaces every older list.** 30 Cambridge B1 *Travel & Transport*
+  words (`guidebook` … `windscreen`, including `tyre/tire`, `road sign`,
+  `tourist information centre` and `waiting room`), each with a British meaning,
+  a B1 example sentence and an Oxford/Cambridge UK MP3.
+  `CONFIG.key` is `sdp.v7_session7`, `CONFIG.schema`/`settingsRev` are `7`, and
+  the live topics are `sdp_dictationb1_state_v7` / `_comm_v7` / `_inbox_v7`.
+- **Migration wipes the old class on every phone.** `DB.load()` and `DB.migrate()`
+  overwrite `lists`, `plan` and `session` and delete `snapshot`, `sessions`,
+  `outbox` whenever `settingsRev < 7`; `tourSeen` is reset so everyone sees the
+  new bilingual Welcome Guide once. Personal history, results and comments stay.
+- **5 second timer, numbers only by default.** `writeMode: "fixed"`,
+  `writeFixed: 5`, `sentence: false`, `repeats: 2`, `rate: 0.85`,
+  `numbers: true`, `mode: "paper"`, `pauseWord: 1.2`, `pauseSent: 1.6`.
+- **One tap EN | සිංහල.** `#btnLang` in the header (and at the top of the Welcome
+  Guide) translates navigation, Home actions and player controls through
+  `STRINGS_SI` / `T()`; dictation audio always stays British English.
+- **Creator credits everywhere.** “Created by Hansana · Idea given by Ayya01
+  (Lesandu) · Lecturer in Charge: Sumodya Sewmini” (Sinhala: නිර්මාණය: Hansana ·
+  අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini) in the header,
+  Home footer, Settings → About and the Welcome Guide.
+- **Four-tier British female professor audio.** Tier 1 streams Oxford/Cambridge
+  UK MP3s, then AWS Polly **Amy** (en-GB), then Polly **Emma**, then Google
+  en-GB, all through the single unlocked `#sdpAudio` element; Tier 2 ranks
+  British female device voices first with `pitch = 1.06`; Tier 3 keeps the
+  `-uk.mp3` / `En-uk-` recordings; Tier 4 falls back to any English female voice,
+  still tagged `en-GB`. `tyre/tire` is spoken “tyre” and either spelling is
+  marked 100% correct.
+- **Real-time sync, zero fake numbers.** `data/version.json` and
+  `data/session.json` are fetched cache-busted on boot, the v7 ntfy topics are
+  polled and streamed over SSE, `#chipNet` only claims “Online · Live Sync”
+  after a real response, and Class stats are computed strictly from real student
+  results.
+- **Guide, admin and tests.** New Welcome & Complete User Guide (four steps, both
+  languages), PIN `7898`, one-tap **Save & Publish Live Now**, a 30-row paper
+  self-check, and `tests/upgrade.test.cjs` rewritten from scratch for v7.
+
 ## 2.0.0 (v6) — 2026-10-22 (Session 6)
 
 - **Every older word list is gone.** Session 6 — *Travel & Transport* is the only

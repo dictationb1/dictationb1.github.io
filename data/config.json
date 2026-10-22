@@ -2,17 +2,18 @@
   "appName": "Smart Dictation",
   "level": "B1",
   "classDays": [
-    "Tuesday",
-    "Wednesday"
+    "Thursday"
   ],
   "session": {
-    "no": "6",
-    "day": "Tuesday",
-    "date": "2026-10-19",
-    "title": "Session 6 - Travel & Transport",
-    "listId": "list_session_6_travel"
+    "no": "7",
+    "day": "Thursday",
+    "date": "2026-10-22",
+    "title": "Session 7 - Travel & Transport",
+    "listId": "list_session_7_travel",
+    "branch": "CCBE Galle Branch",
+    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH"
   },
-  "listId": "list_session_6_travel",
+  "listId": "list_session_7_travel",
   "defaults": {
     "sentence": false,
     "repeats": 2,
@@ -24,12 +25,24 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6
   },
-  "ver": 6,
+  "ver": 7,
   "version": "2.0.0",
   "buildDate": "2026-10-22",
+  "credits": {
+    "createdBy": "Hansana",
+    "ideaBy": "Ayya01 (Lesandu)",
+    "lecturerInCharge": "Sumodya Sewmini",
+    "en": "Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini",
+    "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කඨිකාචාර්ය: Sumodya Sewmini"
+  },
+  "tts": {
+    "primary": "AWS Polly Amy (en-GB)",
+    "failover": "AWS Polly Emma (en-GB)",
+    "backup": "Google en-GB"
+  },
   "live": {
-    "state": "https://ntfy.sh/sdp_dictationb1_state_v6",
-    "community": "https://ntfy.sh/sdp_dictationb1_comm_v6",
-    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v6"
+    "state": "https://ntfy.sh/sdp_dictationb1_state_v7",
+    "community": "https://ntfy.sh/sdp_dictationb1_comm_v7",
+    "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v7"
   }
 }
