@@ -146,9 +146,11 @@ async function flow(browser, vp, label, seed) {
     { monday: plan.plan.weekdays[0], pinned: plan.plan.pinned, no: plan.session.no, day: plan.session.day });
   await page.getByRole('button', { name: 'Lock now', exact: true }).first().click();
   await page.waitForTimeout(300);
+  /* v6 kicker: "SESSION 12 · 12 OCT 2026" - the session number and the real date
+     are on Home; the class day is stored with the session and checked above. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  rec(label + ' header shows session number and day; panel locked',
-    kicker.includes('12') && kicker.includes('monday') && !await page.locator('#adminHost').isVisible(), { kicker });
+  rec(label + ' header shows session number and date; panel locked',
+    /^session 12/.test(kicker) && /\d{1,2} [a-z]{3} \d{4}/.test(kicker) && plan.session.day === 'Monday' && !await page.locator('#adminHost').isVisible(), { kicker });
 
   /* make the run quick and deterministic: manual advance */
   await dismissTour(page); await page.locator('#tab-set').click();
