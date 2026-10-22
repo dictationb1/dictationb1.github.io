@@ -1442,8 +1442,8 @@ Leave it empty for local-only mode (everything still works on one device). */
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v8_session7",
-schema: 8,
+key: "sdp.v9_session7",
+schema: 9,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1458,12 +1458,16 @@ netTimeout: 8000,
 dictHost: "https://api.dictionaryapi.dev/api/v2/entries/en/",
 wikiDefHost: "https://en.wiktionary.org/api/rest_v1/page/definition/",
 wikiMediaHost: "https://en.wiktionary.org/api/rest_v1/page/media-list/",
+/* v9 UNIFIED VOICE: one single British female professor voice ("Amy",
+en-GB) speaks EVERY sound in this app through #sdpAudio. The only failover
+is the Google Translate en-GB female TTS, and only if "Amy" fails to load.
+Oxford/dictionary MP3s are NEVER played during dictation (half of the
+recordings are spoken by a man, so the speaker would change word to word). */
 ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
-ttsEmmaHost: "https://api.streamelements.com/kappa/v2/speech?voice=Emma&text=",
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 8,
+settingsRev: 9,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -2149,11 +2153,13 @@ try { d = automatic ? JSON.parse(automatic) : null; } catch (err) { d = null; }
 if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
 }
 if ((!d.v || d.v < 2) && raw && !Store.get(CONFIG.key + ".before-v2")) Store.set(CONFIG.key + ".before-v2", raw);
-/* v8: every phone and browser that still holds a pre-Session-7 cache drops
-its saved dictation snapshot, past sessions, queued jobs, word lists,
+/* v8/v9: every phone and browser that still holds a pre-Session-7 cache
+drops its saved dictation snapshot, past sessions, queued jobs, word lists,
 plan and session before anything reads them, then migrate() installs
-Session 7 - Travel & Transport (30 words, 5 second timer). */
-if (!d.settingsRev || d.settingsRev < 8) DB.dropOld(d);
+Session 7 - Travel & Transport (30 words, 5 second timer). v9 additionally
+purges any male device voice, so one single British female professor voice
+(Amy) can speak every sound. */
+if (!d.settingsRev || d.settingsRev < 9) DB.dropOld(d);
 d = DB.migrate(d);
 this.data = d;
 if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
@@ -2175,12 +2181,14 @@ delete d.sessions;
 delete d.outbox;
 return d;
 },
-/* v8 (Session 7 - Travel & Transport): a device that still holds an older
+/* v8/v9 (Session 7 - Travel & Transport): a device that still holds an older
 class loses every cached word list, plan, session and queued job, sees the
 new bilingual Welcome Guide again, and loads the 30 travel words with the
 five second writing timer. Called by both load() and migrate() so a cache
-can never survive an upgrade. */
-resetToV8: function (d, base) {
+can never survive an upgrade. v9 also drops any male window.speechSynthesis
+voice name so the unified British female professor voice (Amy) is never
+mixed with a male speaker. */
+resetToV9: function (d, base) {
 if (!d || typeof d !== "object") return d;
 base = base || defaultData();
 d.lists = JSON.parse(JSON.stringify(base.lists));
@@ -2199,7 +2207,8 @@ delete d.snapshot;
 d.sessions = [];
 d.outbox = [];
 d.tourSeen = false;
-d.settingsRev = 8;
+if (d.settings && typeof d.settings.voiceName === "string" && d.settings.voiceName && !/female/i.test(d.settings.voiceName) && /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(d.settings.voiceName)) d.settings.voiceName = "";
+d.settingsRev = 9;
 d.v = CONFIG.schema;
 return d;
 },
@@ -2262,17 +2271,20 @@ if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.
 /* v8: a settingsRev below 8 is replaced unconditionally - even if a list
 still happens to carry the right id - so nothing from the previous Session (or any
 older session) can ever come back. */
-if (!d.settingsRev || d.settingsRev < 8) {
-DB.resetToV8(d, base);
-d.settingsRev = 8;
-}
+if (!d.settingsRev || d.settingsRev < 8) DB.resetToV9(d, base);
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
 d.session.listId = SAMPLE_LIST_ID;
-d.settingsRev = 8;
 }
+/* v9 (ONE unified British female professor voice, Amy): a male
+window.speechSynthesis voice saved by an older build is purged on every
+migrate(). The mandated male pattern is tested against the name only when
+the name is not a women's voice - "Female" itself contains "male", so a
+"Google UK English Female" voice must never be purged. */
+if (d.settings && typeof d.settings.voiceName === "string" && d.settings.voiceName && !/female/i.test(d.settings.voiceName) && /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(d.settings.voiceName)) d.settings.voiceName = "";
 if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
+d.settingsRev = 9;
 d.v = CONFIG.schema;
 return d;
 },
@@ -3296,8 +3308,16 @@ return b;
 
 /* ---- Voice ---- */
 var v = card("Voice");
+/* v9: ONE unified British female professor voice speaks every sound, so
+the app can never switch between male and female speakers mid-dictation. */
+var uniLbl = U.el("label", "field", null);
+uniLbl.appendChild(U.el("span", "lbl", "Active unified voice"));
+var uniPill = U.el("div", "chip good", "British Female Professor Voice (Amy \u00b7 en-GB)");
+uniPill.style.display = "inline-block";
+uniLbl.appendChild(uniPill);
+v.appendChild(uniLbl);
 var voiceSel = U.el("select", null, null);
-voiceSel.setAttribute("aria-label", "UK English voice");
+voiceSel.setAttribute("aria-label", "Offline device voice (fallback only)");
 var voices = Speech.ukVoices.length ? Speech.ukVoices : Speech.voices;
 if (!voices.length) {
 var o0 = U.el("option", null, "No voices found yet");
@@ -3316,14 +3336,14 @@ DB.save();
 UI.toast("Voice: " + (voiceSel.value || "device default"), { icon: "i-vol" });
 });
 var lbl = U.el("label", "field", null);
-lbl.appendChild(U.el("span", "lbl", "UK English voice"));
+lbl.appendChild(U.el("span", "lbl", "Offline device voice (fallback only)"));
 lbl.appendChild(voiceSel);
 v.appendChild(lbl);
 var audioPill = U.el("div", "chip" + (Speech.audioReady() ? " good" : ""), Speech.audioLabel());
 audioPill.style.display = "inline-block";
 audioPill.style.margin = "2px 0 8px";
 v.appendChild(audioPill);
-v.appendChild(U.el("p", "tiny muted", "British audio comes from recorded dictionary sounds, your en-GB device voice, a streamed British voice and - if all of those fail - any English voice on the phone."));
+v.appendChild(U.el("p", "tiny muted", "Every word, number, phrase and spelling is spoken online by the same British female professor (Amy \u00b7 en-GB). Male dictionary MP3s are never used during dictation, and the offline device fallback ranks British female voices first."));
 var vrow = U.el("div", "btn-row tight", null);
 vrow.style.marginTop = "8px";
 var test = U.btn("Test sound", "i-vol", "soft");
@@ -3659,28 +3679,57 @@ if (uks.length && NoVoice.cardOpen) NoVoice.close();
 UI.renderNet();
 },
 
+/* v9: male device voices are NEVER chosen while the device has any female
+voice. The offline fallback ranks ONLY British female voices in this fixed
+order, so window.speechSynthesis can never mix a man into the dictation.
+"Female" itself contains "male", so the mandated male pattern is never
+tested against a women's voice name. */
+isMaleName: function (n) {
+n = String(n || "");
+if (!n) return false;
+if (/female/i.test(n)) return false;
+return /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(n);
+},
+femaleRank: ["Microsoft Sonia", "Microsoft Libby", "Maisie", "Google UK English Female", "Serena", "Kate", "Martha", "Stephanie", "Shelley", "Microsoft Hazel"],
+isFemaleName: function (n) {
+n = String(n || "");
+if (!n || this.isMaleName(n)) return false;
+if (/female/i.test(n)) return true;
+for (var j = 0; j < this.femaleRank.length; j++) {
+if (n === this.femaleRank[j] || n.indexOf(this.femaleRank[j]) >= 0) return true;
+}
+return false;
+},
 pick: function () {
 var st = DB.data ? DB.data.settings : { voiceName: "" };
-var i, g;
+var i, r, n;
 if (!this.ukVoices.length) { this.chosen = null; return null; }
 this.textOnly = false;
-if (st.voiceName) {
-for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === st.voiceName) { this.chosen = this.ukVoices[i]; return this.chosen; }
+var saved = String(st.voiceName || "");
+if (saved && this.isMaleName(saved)) saved = "";
+var females = [];
+for (i = 0; i < this.ukVoices.length; i++) if (this.isFemaleName(this.ukVoices[i].name)) females.push(this.ukVoices[i]);
+if (females.length) {
+if (saved) {
+for (i = 0; i < females.length; i++) if (females[i].name === saved) { this.chosen = females[i]; return this.chosen; }
 }
-/* Warm, articulate 25-30 year old British female lecturer. A Natural /
-Online neural British female voice always wins over a male en-GB voice:
-1) en-GB Natural/Online neural female, 2) any other en-GB female,
-3) any other en-GB voice. */
-var femaleRx = /Sonia|Libby|Maisie|Google UK English Female|Serena|Kate|Martha|Stephanie|Shelley|Hazel/i;
+for (r = 0; r < this.femaleRank.length; r++) {
+for (i = 0; i < females.length; i++) {
+n = String(females[i].name || "");
+if (n === this.femaleRank[r] || n.indexOf(this.femaleRank[r]) >= 0) { this.chosen = females[i]; return this.chosen; }
+}
+}
+this.chosen = females[0];
+return this.chosen;
+}
+/* Only when the device has NO female voice at all may an en-GB voice (even
+a male one) keep the dictation from going silent - the online Amy voice
+still leads every sound. */
+if (saved) {
+for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === saved) { this.chosen = this.ukVoices[i]; return this.chosen; }
+}
 var neuralRx = /Natural|Online|Neural/i;
-var nameOf = function (v) { return String((v && v.name) || ""); };
-for (i = 0; i < this.ukVoices.length; i++) {
-if (femaleRx.test(nameOf(this.ukVoices[i])) && neuralRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
-}
-for (i = 0; i < this.ukVoices.length; i++) {
-if (femaleRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
-}
-for (i = 0; i < this.ukVoices.length; i++) if (neuralRx.test(nameOf(this.ukVoices[i]))) { this.chosen = this.ukVoices[i]; return this.chosen; }
+for (i = 0; i < this.ukVoices.length; i++) if (neuralRx.test(String(this.ukVoices[i].name || ""))) { this.chosen = this.ukVoices[i]; return this.chosen; }
 for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].localService) { this.chosen = this.ukVoices[i]; return this.chosen; }
 this.chosen = this.ukVoices[0];
 return this.chosen;
@@ -3721,6 +3770,14 @@ speakText: function (w) {
 var t = String(w === null || w === undefined ? "" : w);
 var cut = t.indexOf("/");
 if (cut > 0) t = t.slice(0, cut);
+return U.trim(t);
+},
+/* v9: "tyre/tire" is ALWAYS spoken as "tyre", so the professor voice says
+it naturally. Only a single slash-alternative word is cut this way; a
+sentence that happens to contain a slash is kept whole. */
+cleanSpeech: function (text) {
+var t = U.trim(String(text === null || text === undefined ? "" : text));
+if (/^[^\s\/]+\/[^\s\/]+$/.test(t)) t = t.split("/")[0];
 return U.trim(t);
 },
 normKey: function (w) { return String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim(); },
@@ -3771,23 +3828,21 @@ if (cache && this.isBritishAudio(cache.audio)) return cache.audio;
 return ukMp3(t);
 },
 streamUrl: function (text) {
-return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=" + encodeURIComponent(text);
+return CONFIG.ttsHost + encodeURIComponent(this.cleanSpeech(text));
 },
-/* AWS Polly British female neural voices, streamed through a free, open
-host with no key: "Amy" is the primary 25-30 year old professor voice,
-"Emma" is the automatic British female failover. */
-amyUrl: function (text) { return CONFIG.ttsBackupHost + encodeURIComponent(text); },
-emmaUrl: function (text) { return CONFIG.ttsEmmaHost + encodeURIComponent(text); },
+/* v9 UNIFIED VOICE. Every utterance - "Are you ready?", "3", "2", "1",
+"Number 1.", single words, multi-word phrases and spelling letters - is
+spoken by the SAME AWS Polly British female neural professor "Amy" (en-GB)
+on #sdpAudio, streamed through a free, open host with no key. */
+amyUrl: function (text) { return CONFIG.ttsBackupHost + encodeURIComponent(this.cleanSpeech(text)); },
 backupUrl: function (text) { return this.amyUrl(text); },
-/* Tier 1 order for one spoken part: an authentic Oxford/Cambridge UK
-recording of the word, Polly Amy, Polly Emma, then Google en-GB. */
-streamSources: function (text, word, explicit) {
-var out = [], seen = {}, i;
-var mp3s = this.mp3Candidates(explicit || "", text, word || "");
-for (i = 0; i < mp3s.length; i++) if (!seen[mp3s[i]]) { seen[mp3s[i]] = 1; out.push(mp3s[i]); }
-var voices = [this.amyUrl(text), this.emmaUrl(text), this.streamUrl(text)];
-for (i = 0; i < voices.length; i++) if (!seen[voices[i]]) { seen[voices[i]] = 1; out.push(voices[i]); }
-return out;
+/* The only two playback sources in the whole app, in order: the primary
+"Amy" female voice, then the Google Translate en-GB female failover (only
+if "Amy" fails to load). No Oxford/dictionary MP3 - half of those are
+recorded by men - and no other TTS voice, so a male and a female speaker
+can never alternate inside one dictation. */
+streamSources: function (text) {
+return [this.amyUrl(text), this.streamUrl(text)];
 },
 anyEnglish: function () {
 /* Tier 4: an English female voice is preferred even when it is not en-GB;
@@ -3819,16 +3874,17 @@ this.audioStarted = false;
 this.busy = false;
 return true;
 },
-/* zero-lag preload: the next word's British recording is fetched while the
-student is writing, so the following word starts instantly. */
+/* zero-lag preload: the next word's unified "Amy" female voice URL is
+fetched during the 5-second writing countdown, so every word plays with
+0 ms delay. */
 preloadCache: {},
-preload: function (text, explicit) {
+preload: function (text) {
 var t = U.trim(String(text || ""));
 if (!t) return "";
 if (U.nav("onLine", true) === false) return "";
 var key = t.toLowerCase();
 if (this.preloadCache[key]) return this.preloadCache[key];
-var src = (explicit && this.isBritishAudio(explicit)) ? explicit : this.amyUrl(t);
+var src = this.amyUrl(t);
 try {
 var a = document.createElement("audio");
 a.preload = "auto";
@@ -3910,7 +3966,7 @@ try { a.pause(); } catch (e) {}
 if (plain) { try { a.removeAttribute("crossorigin"); a.crossOrigin = null; } catch (e2) {} }
 a.src = src;
 a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
-try { a.playbackRate = U.clamp(rate === undefined ? 0.88 : rate, 0.6, 1.2); } catch (e) {}
+try { a.playbackRate = U.clamp(rate === undefined ? 0.88 : rate, 0.65, 1.15); } catch (e) {}
 a.onplaying = begun;
 a.onplay = begun;
 a.ontimeupdate = begun;
@@ -3945,8 +4001,7 @@ o.start(t + pair[1]); o.stop(t + pair[1] + 0.22);
 /* one short label for the Ready sheet and Settings > Voice */
 audioLabel: function () {
 var online = U.nav("onLine", true) !== false;
-if (this.ukVoices.length) return "UK Audio Ready (British Voice" + (online ? " + Dictionary Audio)" : ")");
-if (online) return "UK Audio Ready: British Dictionary Recording + Cloud British Voice";
+if (online) return "UK Audio Ready: British Female Professor Voice (Amy \u00b7 en-GB)";
 if (this.anyEnglish()) return "UK Audio Ready: English device voice (offline)";
 return "No British audio on this device - words are shown";
 },
@@ -4011,17 +4066,14 @@ return out;
 },
 
 /* speak an array of text parts in order; cb() is always called exactly once.
-Tier choice per part: recorded dictionary MP3 -> device en-GB voice ->
-streamed cloud British TTS -> any English device voice -> chime. */
-/* Session 7 four-tier British engine.
-Tier 1 (online, through the single #sdpAudio element): Oxford/Cambridge
-UK dictionary MP3, then AWS Polly British female neural "Amy", then Polly
-"Emma", then Google en-GB. Every prompt, number, phrase and word starts
-here, so the voice is always a clear British female lecturer.
-Tier 2: the device en-GB voice (British female ranked first).
-Tier 3: the -uk.mp3 / En-uk- Wiktionary recordings inside Tier 1.
-Tier 4: any installed English voice, still labelled en-GB.
-A missing device voice can never block or abort a dictation. */
+v9 UNIFIED VOICE ENGINE: every part - "Are you ready?", "3", "2", "1",
+"Number 1.", single words like "guidebook", multi-word phrases like
+"tourist information centre" and every spelling letter - is played through
+the single #sdpAudio element with ONE British female professor voice
+("Amy", en-GB), then the Google Translate en-GB female failover. Only when
+BOTH produce no sound at all may the device voice take that one part
+(British female ranked first; a male voice only if the device has no
+female voice at all). A missing device voice can never block a dictation. */
 say: function (parts, opts, cb) {
 var self = this;
 var o = opts || {};
@@ -4049,14 +4101,16 @@ if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 setTimeout(next, ms || Math.max(60, o.gap === undefined ? 100 : o.gap));
 }
-/* Tier 1 - the shared audio element, one British female source at a time.
+/* The shared #sdpAudio element - the unified "Amy" female voice, then the
+Google en-GB female failover, one source at a time.
 STRICT SINGLE-ENGINE LOCK: once this beat has actually produced sound, it is
 never spoken again by speechSynthesis. The only way down to the device voice
 is a failure BEFORE playback started (onerror or the 2200 ms connection
 timeout inside playOnce). There is no retry queue and no rewind of the queue
-index, so one beat can never be heard three or four times. */
+index (the queue index is never decremented), so #sdpAudio ("Amy") and window.speechSynthesis can NEVER
+both speak the same beat. */
 function stream(text, rate) {
-var sources = self.streamSources(text, o.word || "", o.mp3 || "");
+var sources = self.streamSources(text);
 var attempt = 0, partDone = false, audioStarted = false, guard = null;
 function release() { if (guard) { clearTimeout(guard); guard = null; } }
 function ended(ok) {
@@ -4075,8 +4129,7 @@ if (partDone) return;
 if (token !== self.token) { finish({ ok: false, err: "canceled" }); return; }
 if (attempt >= sources.length) { ended(false); return; }
 var src = sources[attempt++];
-self.lastTier = /oxford|dictionaryapi|wikimedia|-uk\.|-gb\./.test(src) ? "dictionary"
-: (/voice=Amy/.test(src) ? "polly-amy" : (/voice=Emma/.test(src) ? "polly-emma" : "google"));
+self.lastTier = /voice=Amy/.test(src) ? "polly-amy" : "google";
 self.playAudio(src, rate, 6000, function (ok, started) {
 if (partDone) return;
 if (started && !audioStarted) {
@@ -4098,7 +4151,9 @@ ended(false);
 }, 2400);
 tryNext();
 }
-/* Tier 2 / Tier 4 - the device's own British female voice, else any English */
+/* Offline fallback (and the last resort when both female TTS URLs produced
+no sound): the device's own voice - British female ranked first, males only
+if no female voice exists - never a second engine on the same beat. */
 function voice(text, rate) {
 if (!self.supported || self.textOnly) { qi++; step(60); return; }
 var uk = self.ukVoices.length > 0;
@@ -4145,7 +4200,7 @@ function next() {
 if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 var text = queue[qi];
-var rate = U.clamp(o.rate === undefined ? 0.88 : o.rate, 0.5, 1.5);
+var rate = U.clamp(o.rate || (DB.data ? DB.data.settings.rate : 0.88), 0.65, 1.15);
 /* every part starts from silence: stop the previous engine first */
 try { if (self.audioEl) { self.audioEl.onended = null; self.audioEl.onerror = null; self.audioEl.onplaying = null; self.audioEl.onplay = null; self.audioEl.ontimeupdate = null; self.audioEl.pause(); } } catch (eLock) {}
 try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (eLock2) {}
@@ -4271,9 +4326,12 @@ this.timers.push(id);
 return id;
 },
 
-/* v8 strict two-repeat scheduler: the word is spoken EXACTLY st.repeats
-times (2 by default). There is no extra leading word beat, so a "repeat"
-setting of 2 can never produce 3 or 4 readings. */
+/* v9 strict two-repeat scheduler: the word is spoken EXACTLY st.repeats
+times (2 by default - never 3 or 4). Every reading is the unified "Amy"
+British female voice: no extra leading word beat, so a "repeat" setting of
+2 can never produce 3 or 4 readings. Default shape per word:
+say "Number N." -> wait 400 -> say word -> wait pauseWord -> say word ->
+write (5-second countdown, with the next word preloaded as Amy audio). */
 buildBeats: function (i) {
 var st = DB.data.settings;
 var real = this.order && this.order[i] !== undefined ? this.order[i] : i;
@@ -4286,7 +4344,7 @@ beats.push({ t: "say", text: "Number " + (i + 1) + ".", status: S.listening, isN
 beats.push({ t: "wait", ms: 400 });
 }
 for (var r = 0; r < reps; r++) {
-beats.push({ t: "say", text: speakWord, status: S.listening, isWord: true, mp3: w.audio || "", word: speakWord });
+beats.push({ t: "say", text: speakWord, status: S.listening, isWord: true, word: speakWord });
 if (r < reps - 1) {
 beats.push({ t: "wait", ms: Math.round((st.pauseWord || 1.2) * 1000) });
 }
@@ -4404,7 +4462,7 @@ this.st = "speaking";
 this.status(b.status || S.listening);
 if (!Speech.supported) { this.after(700, function () { if (!stale()) self.runBeat(n + 1); }); return; }
 var rate = DB.data.settings.rate;
-Speech.say([b.text], { rate: rate, volume: DB.data.settings.volume, mp3: b.mp3 || false, word: b.word || "" }, function () {
+Speech.say([b.text], { rate: rate, volume: DB.data.settings.volume, word: b.word || "" }, function () {
 if (stale()) return;
 self.runBeat(n + 1);
 });
@@ -4521,7 +4579,7 @@ if (!this.words.length || next >= this.words.length) return;
 var real = this.order && this.order[next] !== undefined ? this.order[next] : next;
 var w = this.words[real];
 if (!w) return;
-Speech.preload(Speech.speakText(w.w), w.audio || "");
+Speech.preload(Speech.speakText(w.w));
 } catch (e) {}
 },
 repeatWord: function () {
@@ -4529,7 +4587,7 @@ if (this.st === "idle") return;
 var w = this.currentWord();
 if (!w) return;
 this.interrupt(function (done) {
-Speech.say([w.w], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: w.audio || false, word: w.w }, done);
+Speech.say([w.w], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, word: w.w }, done);
 });
 },
 repeatSentence: function () {
@@ -4537,7 +4595,7 @@ if (this.st === "idle") return;
 var w = this.currentWord();
 if (!w || !w.s) { UI.toast("This word has no example sentence", { icon: "i-info" }); return; }
 this.interrupt(function (done) {
-Speech.say([w.s], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: false, word: "" }, done);
+Speech.say([w.s], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, word: "" }, done);
 });
 },
 spellWord: function () {
@@ -4551,7 +4609,7 @@ UI.toast("Reading this word more slowly", { icon: "i-slow" });
 var w = this.currentWord();
 if (!w) return;
 this.interrupt(function (done) {
-Speech.say([w.w], { rate: Math.max(0.55, DB.data.settings.rate - 0.25), volume: DB.data.settings.volume, mp3: w.audio || "", word: w.w }, done);
+Speech.say([w.w], { rate: Math.max(0.55, DB.data.settings.rate - 0.25), volume: DB.data.settings.volume, word: w.w }, done);
 });
 },
 /* one-off action: bump the run id so the main chain stops, speak, then return
@@ -4900,9 +4958,9 @@ pill.style.display = "inline-block";
 pill.style.margin = "2px 0 10px";
 b.appendChild(pill);
 var vline = U.el("p", "small muted", null);
-vline.textContent = Speech.ukVoices.length
-? (S.voiceFound + ": " + Speech.voiceName())
-: (U.nav("onLine", true) === false ? "Offline: using your English device voice." : "Using British dictionary audio, then a British voice.");
+vline.textContent = U.nav("onLine", true) !== false
+? "British Female Professor voice (Amy \u00b7 en-GB)"
+: (Speech.ukVoices.length ? (S.voiceFound + ": " + Speech.voiceName()) : "Offline: using your English device voice.");
 b.appendChild(vline);
 var testRow = U.el("div", "btn-row tight", null);
 var testBtn = U.btn("Test sound", "i-vol", "sm soft");
@@ -4960,7 +5018,7 @@ never over a run that already started (say() bumps the speech token). */
 var greetRun = self.runId;
 setTimeout(function () {
 if (self.runId !== greetRun) return;
-Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.volume, mp3: false }, function () {});
+Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, function () {});
 }, 260);
 return sh;
 };
@@ -5206,11 +5264,7 @@ U.on(bad, "click", function () { marks[i] = marks[i] === "no" ? "" : "no"; paint
 paintState();
 var hear = U.btn("", "i-vol", "sm ghost icon");
 hear.setAttribute("aria-label", "Hear this word");
-U.on(hear, "click", function () {
-Speech.playAudio(ukMp3(w.w), DB.data.settings.rate, 5200, function (ok) {
-if (!ok) Speech.say([w.w], { rate: DB.data.settings.rate, word: w.w }, function () {});
-});
-});
+U.on(hear, "click", function () { Dict.speak(w.w, DB.data.settings.rate); });
 row.appendChild(hear); row.appendChild(good); row.appendChild(bad);
 markHost.appendChild(row);
 return row;
@@ -5576,23 +5630,10 @@ DB.save(true);   /* light save: a cached lookup never costs a backup copy */
 return merged;
 },
 
-/* UK audio file when the lookup has one, otherwise the four-tier engine */
+/* v9: the SAME unified British female professor voice (Amy) speaks here
+too - never a male dictionary MP3 and never a second engine. */
 speak: function (word, rate) {
 var r = rate === undefined ? DB.data.settings.rate : rate;
-var cache = DB.data.dictCache[U.norm(word)];
-if (cache && Speech.isBritishAudio(cache.audio)) {
-Speech.playAudio(cache.audio, r, 5200, function (ok, started) {
-if (!ok && !started) Speech.say([word], { rate: r, word: word }, function () {});
-});
-return;
-}
-/* wiktionary ships open Ogg British recordings as well as MP3 */
-if (cache && Speech.isBritishAudio(cache.audioAlt)) {
-Speech.playAudio(cache.audioAlt, r, 5200, function (ok, started) {
-if (!ok && !started) Speech.say([word], { rate: r, word: word }, function () {});
-});
-return;
-}
 Speech.say([word], { rate: r, word: word }, function () {});
 }
 };
