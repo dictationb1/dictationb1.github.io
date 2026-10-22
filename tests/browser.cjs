@@ -43,8 +43,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.getByRole('button',{name:'Session',exact:true}).click();
   await page.getByLabel('Session number',{exact:true}).fill('19');await page.getByRole('button',{name:'Sun',exact:true}).click();
   await page.getByRole('button',{name:'Lock now',exact:true}).first().click();
+  /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
+     not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&kicker.includes('sun')?'PASS':'FAIL'});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v6_travel')||'{}').session||{}).day||''}catch(e){return ''}});
+  results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&kicker.includes('oct 2026')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'home-390.png'),fullPage:true});
   await context.close();
  }
