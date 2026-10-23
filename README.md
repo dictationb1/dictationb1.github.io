@@ -4,7 +4,7 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Release status
 
-**2.1.0 (v13, 2026-10-23) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the unified British **female professor Amy** audio chain, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, creator credits (Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini), the one-tap **Save & Publish Live Now** editor, and real-time sync through `data/*.json` and the v8 ntfy live channel. The Home screen is now the full Apple WWDC25 Liquid Glass Hero Playground: a floating glass navbar, two-column hero, draggable glowing orb, live Material Mixer, animated bubbles and chips, saturated stat tiles, and a magnifying macOS-style dock. Dark theme and full glass are the defaults on every device; there is no automatic Lite downgrade, and manual Lite still preserves blobs, grain, blur, and shadows. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
+**2.2.0 (v14, 2026-10-23) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the unified British **female professor Amy** audio chain, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, full creator credits, the one-tap **Save & Publish Live Now** editor, and real-time sync through `data/*.json` and the v8 ntfy live channel. The Liquid Glass Home now includes a floating animated **“credits goes to Hansana”** glass badge, spring-loaded **Clear / Frost / Smoke** controls with a 420 ms liquid morph, and live aqua progress tracks on the Material Mixer sliders. The 60 FPS engine uses pre-blurred gradient blobs, a single 1.2-second frame probe and automatic Lite mode on constrained devices; Lite retains glass blur, tint transitions, the orb and all badge animations. The low-data engine answers all 30 dictionary entries from memory, replays the shared audio buffer and downloads `session.json` only when its version is newer. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
 
 ## Add next week's words in three steps (candidate)
 
@@ -16,10 +16,10 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Saved data and migration
 
-- The current key is `sdp.v11_liquid`; `CONFIG.schema` and `settingsRev` are `11`.
-- A v11 migration installs Session 7 and changes old `auto` theme/performance preferences to `dark`/`full`. Later explicit Light or Lite choices are retained.
-- Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, and paper mode.
-- The original pre-migration JSON is retained as `sdp.v11_liquid.before-v2` when storage is available. Existing recovery/backup keys remain supported.
+- The current key is `sdp.v14_liquid`; `CONFIG.schema` and `settingsRev` are `14`.
+- The v14 migration imports v13/v12 storage without discarding results or comments, preserves Session 7, and converts older named tint preferences to numeric `0` (Clear), `1` (Frost), or `2` (Smoke).
+- Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, paper mode, dark theme and automatic performance selection.
+- The original pre-migration JSON is retained as `sdp.v14_liquid.before-v2` when storage is available. Existing recovery/backup keys remain supported.
 - Export a backup before experimenting. Browser storage can be cleared by the user or operating system. This candidate has not added an installable PWA or persistent-storage guarantee.
 
 ## The lecturer PIN is a convenience lock
@@ -33,13 +33,13 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
 ### Forgot the local PIN (preserve data)
 
 1. Use **Settings → My data → backup/export** before doing anything else. A locked export intentionally excludes the lecturer's private inbox and authentication material. Do **not** clear all site storage or use Reset if you need existing work.
-2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v1` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
+2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v14_liquid` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
 3. In the console for this site, run this convenience-lock recovery only on your own device:
    ```js
-   var d = JSON.parse(localStorage.getItem('sdp.v11_liquid'));
+   var d = JSON.parse(localStorage.getItem('sdp.v14_liquid'));
    if (!d || !Array.isArray(d.lists)) throw new Error('Stop: saved data is not valid');
    d.admin = {};
-   localStorage.setItem('sdp.v11_liquid', JSON.stringify(d));
+   localStorage.setItem('sdp.v14_liquid', JSON.stringify(d));
    location.reload();
    ```
    Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
@@ -73,7 +73,9 @@ GitHub Pages is static, and this repository is public. A browser cannot safely w
 ```sh
 npm ci --prefix tests
 node tests/check.cjs
-node --test tests/upgrade.test.cjs
+node tests/upgrade.test.cjs
+node tests/phase1.cjs
+node tests/upgrade-browser.cjs
 npm test --prefix tests
 ```
 

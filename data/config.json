@@ -25,10 +25,11 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6,
     "theme": "dark",
-    "perf": "auto"
+    "perf": "auto",
+    "glassTint": 0
   },
-  "ver": 13,
-  "version": "2.1.0",
+  "ver": 14,
+  "version": "2.2.0",
   "buildDate": "2026-10-23",
   "credits": {
     "createdBy": "Hansana",
@@ -47,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "2.1.0",
-  "settingsRev": 13,
+  "appVersion": "2.2.0",
+  "settingsRev": 14,
   "performance": {
     "mode": "auto",
     "lite": {

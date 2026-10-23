@@ -17,7 +17,7 @@
 <title>Smart Dictation Player</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; }
-:root {--font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;--r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;--tap: 44px;--safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);--safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);--fs: 16px;--dur: 220ms;--ease: cubic-bezier(.2, .9, .25, 1.35);/* Apple WWDC25 Liquid Glass material - live, tuned by the Settings mixer */
+:root {--font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;--r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;--tap: 44px;--safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);--safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);--fs: 16px;--dur: 220ms;--ease: cubic-bezier(.2, .9, .25, 1.35); --ease-spring: cubic-bezier(.2, .9, .25, 1.35); --dim: var(--ink-2); --shadow: inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);/* Apple WWDC25 Liquid Glass material - live, tuned by the Settings mixer */
 --gb: 14px;   /* backdrop blur */
 --gs: 1.6;    /* saturate */
 --gbr: 1.03;  /* brightness */
@@ -27,13 +27,17 @@
 :root[data-size="m"] { --fs: 16px; }
 :root[data-size="l"] { --fs: 18px; }
 :root[data-size="xl"] { --fs: 20.5px; }
-:root[data-theme="light"] {--bg1: #e8ecf4; --bg2: #dde4f2;--ink: #0e1424; --ink-2: rgba(14,20,36,.66); --ink-3: rgba(14,20,36,.42);--acc: #3a5cf0; --acc-2: #7a3cf0;--good: #0f8a4d; --warn: #a8620a; --bad: #c62c3d;--glass: rgba(255,255,255,.55); --glass-2: rgba(255,255,255,.68); --glass-3: rgba(255,255,255,.48);--glass-solid: #fbfcff; --glass-solid-2: #eef1f8;--line: rgba(14,20,36,.14); --line-2: rgba(14,20,36,.12);--edge: rgba(255,255,255,.85);--inset-hi: rgba(255,255,255,.95);--shadow1: 0 18px 50px rgba(20,30,60,.16); --shadow2: 0 24px 60px rgba(20,30,60,.22);--inner: inset 0 1px 0 rgba(255,255,255,.9);--ring: rgba(58,92,240,.5);--scr: rgba(13,18,32,.34);--blob1: rgba(83,199,240,.42); --blob2: rgba(255,111,97,.42); --blob3: rgba(255,194,71,.42); --blob4: rgba(143,123,255,.42);}
-:root[data-theme="dark"] {--bg1: #0a0f1e; --bg2: #0f172e;--ink: #f1f4ff; --ink-2: rgba(241,244,255,.66); --ink-3: rgba(241,244,255,.42);--acc: #8ea6ff; --acc-2: #c39bff;--good: #37c07f; --warn: #e0a44a; --bad: #ff7285;--glass: rgba(255,255,255,.07); --glass-2: rgba(255,255,255,.12); --glass-3: rgba(255,255,255,.09);--glass-solid: #161a29; --glass-solid-2: #1e2336;--line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.12);--edge: rgba(255,255,255,.22);--inset-hi: rgba(255,255,255,.45);--shadow1: 0 18px 50px rgba(2,6,20,.45); --shadow2: 0 26px 64px rgba(2,6,20,.58);--inner: inset 0 1px 0 rgba(255,255,255,.1);--ring: rgba(142,166,255,.6);--scr: rgba(0,0,0,.6);--blob1: rgba(83,199,240,.5); --blob2: rgba(255,111,97,.5); --blob3: rgba(255,194,71,.5); --blob4: rgba(143,123,255,.5);}
-/* Liquid Glass tint modes - body.tint-clear (default), .tint-frost, .tint-smoke */
-body.tint-frost { --glass: rgba(255,255,255,.18); }
-:root[data-theme="light"] body.tint-frost { --glass: rgba(255,255,255,.72); }
-body.tint-smoke { --glass: rgba(10,15,30,.44); }
-:root[data-theme="light"] body.tint-smoke { --glass: rgba(70,85,130,.30); }
+:root[data-theme="light"] {--bg1: #e8ecf4; --bg2: #dde4f2;--ink: #0e1424; --ink-2: rgba(14,20,36,.66); --ink-3: rgba(14,20,36,.42);--acc: #3a5cf0; --acc-2: #7a3cf0;--good: #0f8a4d; --warn: #a8620a; --bad: #c62c3d;--glass: rgba(255,255,255,.55); --glass-tint: rgba(255,255,255,.55); --glass-2: rgba(255,255,255,.68); --glass-3: rgba(255,255,255,.48);--glass-solid: #fbfcff; --glass-solid-2: #eef1f8;--line: rgba(14,20,36,.14); --line-2: rgba(14,20,36,.12);--edge: rgba(255,255,255,.85);--inset-hi: rgba(255,255,255,.95);--shadow1: 0 18px 50px rgba(20,30,60,.16); --shadow2: 0 24px 60px rgba(20,30,60,.22);--inner: inset 0 1px 0 rgba(255,255,255,.9);--ring: rgba(58,92,240,.5);--scr: rgba(13,18,32,.34);--blob1: rgba(83,199,240,.42); --blob2: rgba(255,111,97,.42); --blob3: rgba(255,194,71,.42); --blob4: rgba(143,123,255,.42);}
+:root[data-theme="dark"] {--bg1: #0a0f1e; --bg2: #0f172e;--ink: #f1f4ff; --ink-2: rgba(241,244,255,.66); --ink-3: rgba(241,244,255,.42);--acc: #8ea6ff; --acc-2: #c39bff;--good: #37c07f; --warn: #e0a44a; --bad: #ff7285;--glass: rgba(255,255,255,.07); --glass-tint: rgba(255,255,255,.085); --glass-2: rgba(255,255,255,.12); --glass-3: rgba(255,255,255,.09);--glass-solid: #161a29; --glass-solid-2: #1e2336;--line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.12);--edge: rgba(255,255,255,.22);--inset-hi: rgba(255,255,255,.45);--shadow1: 0 18px 50px rgba(2,6,20,.45); --shadow2: 0 26px 64px rgba(2,6,20,.58);--inner: inset 0 1px 0 rgba(255,255,255,.1);--ring: rgba(142,166,255,.6);--scr: rgba(0,0,0,.6);--blob1: rgba(83,199,240,.5); --blob2: rgba(255,111,97,.5); --blob3: rgba(255,194,71,.5); --blob4: rgba(143,123,255,.5);}
+/* v14: dramatic Clear / Frost / Smoke presets, inherited by every glass pane. */
+body.tint-clear { --glass-tint: rgba(255, 255, 255, .085); --inset-hi: rgba(255, 255, 255, .45); --line: rgba(255, 255, 255, .14); }
+:root[data-theme="light"] body.tint-clear { --glass-tint: rgba(255, 255, 255, .55); --inset-hi: rgba(255, 255, 255, .95); --line: rgba(14,20,36,.14); }
+body.tint-frost { --glass-tint: rgba(225, 240, 255, .22); --inset-hi: rgba(255, 255, 255, .82); --line: rgba(255, 255, 255, .32); --shadow: var(--shadow1); }
+:root[data-theme="light"] body.tint-frost { --glass-tint: rgba(255, 255, 255, .82); --inset-hi: rgba(255, 255, 255, 1); }
+body.tint-frost .glass { background-color: var(--glass-tint); box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(180, 225, 255, .14), var(--shadow); }
+body.tint-smoke { --glass-tint: rgba(6, 10, 24, .64); --inset-hi: rgba(83, 199, 240, .45); --line: rgba(83, 199, 240, .22); --shadow: var(--shadow1); }
+:root[data-theme="light"] body.tint-smoke { --glass-tint: rgba(30, 42, 78, .38); --inset-hi: rgba(255, 255, 255, .65); }
+body.tint-smoke .glass { background-color: var(--glass-tint); box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(0, 0, 0, .35), var(--shadow); }
 :root[data-hc="on"] {--glass: var(--glass-solid); --glass-2: var(--glass-solid); --glass-3: var(--glass-solid);--edge: var(--ink); --inner: none;--line-2: var(--ink);}
 :root[data-hc="on"] .glass { background: var(--glass-solid) !important; }
 @media (prefers-contrast: more) {.glass { background: var(--glass-solid); }}
@@ -78,7 +82,8 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 #grain { display: none !important; }
 @media (prefers-reduced-transparency: reduce) {.glass { background: var(--glass-solid); }}
 /* Apple WWDC25 Liquid Glass: the exact 4-layer recipe on every glass surface */
-.glass, #tabbar, .sheet, .modal, .toast {background: var(--glass);border-radius: 24px;border: 0;-webkit-backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);position: relative;}
+.glass { position: relative; background-color: var(--glass-tint); border-radius: 24px; -webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), var(--shadow); transition: background-color .48s cubic-bezier(.2, .9, .25, 1.35), box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), -webkit-backdrop-filter .48s ease, backdrop-filter .48s ease, transform .45s cubic-bezier(.2, .9, .25, 1.35); }
+#tabbar, .sheet, .modal, .toast {background-color: var(--glass-tint);border-radius: 24px;border: 0;-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);position: relative;}
 .glass.strong { background: var(--glass-2); }
 .glass.deep { box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow2); }
 /* pointer-tracked specular hotspot on every .glass surface */
@@ -132,6 +137,8 @@ input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius:
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;background: linear-gradient(180deg, var(--acc), var(--acc-2)); box-shadow: 0 2px 8px rgba(0,0,0,.25); border: 2px solid #fff; }
 input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: var(--line-2); }
 input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--acc); }
+.ctl input[type="range"] { background: linear-gradient(90deg, var(--aqua) var(--fill, 50%), rgba(255,255,255,.16) var(--fill, 50%)); background-size: 100% 6px; background-position: center; background-repeat: no-repeat; border-radius: 99px; }
+.ctl input[type="range"]::-webkit-slider-runnable-track, .ctl input[type="range"]::-moz-range-track { background: transparent; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); padding: 6px 0; }
 .switch .txt { flex: 1 1 auto; }
 .switch .txt b { display: block; font-weight: 640; font-size: .94rem; }
@@ -150,7 +157,7 @@ input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius
 #btnLang { font-size: .74rem; padding: 5px 10px; min-height: 30px; }
 #chipNet { max-width: 58vw; }
 #chipNetText { display: inline-block; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
-.credit { font-size: .72rem; font-weight: 620; letter-spacing: .01em; color: var(--ink-2); }
+.credit-note { font-size: .72rem; font-weight: 620; letter-spacing: .01em; color: var(--ink-2); }
 .langchip { font-weight: 700; letter-spacing: .02em; }
 .guide-step { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r1);background: var(--glass-3); border: 1px solid var(--line-2); margin-bottom: 8px; }
 .guide-step .n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;background: linear-gradient(180deg, var(--acc), var(--acc-2)); color: #fff; font-size: .82rem; font-weight: 750; }
@@ -342,7 +349,7 @@ body[data-perf="lite"] .blob, body[data-perf="lite"] .bubble, body[data-perf="li
 body[data-perf="lite"] .glass::before { display: none !important; }
 body[data-perf="lite"] .topbar.glass, body[data-perf="lite"] #tabbar.glass, body[data-perf="lite"] #homeHero.glass, body[data-perf="lite"] .panel.glass, body[data-perf="lite"] .wordcard.glass, body[data-perf="lite"] .sheet, body[data-perf="lite"] .modal {-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1.5px 0 0 var(--inset-hi), inset 0 0 0 1px var(--line), 0 14px 32px rgba(4, 8, 22, .4); }
 /* repeated inner rows: hardware-accelerated translucent glass, still the same look */
-body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[data-perf="lite"] .comm-item.glass, body[data-perf="lite"] .guide-step, body[data-perf="lite"] .bento-sessions > .glass {-webkit-backdrop-filter: none;backdrop-filter: none;background: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.05)); }
+body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[data-perf="lite"] .comm-item.glass, body[data-perf="lite"] .guide-step, body[data-perf="lite"] .bento-sessions > .glass {-webkit-backdrop-filter: none;backdrop-filter: none;background-image: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.05)); }
 .topbar.glass { position: fixed; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); z-index: 50; width: min(1100px, calc(100vw - 20px)); margin: 0; padding: 7px 14px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -12px 24px rgba(255,255,255,.06), 0 14px 42px rgba(0,0,0,.28); }
 .topbar .brand { gap: 9px; }
 .topbar .brand .mark { width: 38px; height: 38px; border-radius: 62% 38% 58% 42%; color: #062530; background: linear-gradient(135deg, #5cd0f4, #3ce0b8); transform: rotate(45deg); box-shadow: 0 0 24px rgba(60,224,184,.25), inset 0 1px 0 rgba(255,255,255,.75); }
@@ -355,8 +362,8 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .theme-btn { font-size: 1.15rem; line-height: 1; }
 .lg-hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: center; }
 .lg-hero > * { min-width: 0; }
-#homeHero.hero { padding: 26px; overflow: visible; background: linear-gradient(158deg, rgba(9,14,28,.58), rgba(12,20,38,.46)); }
-:root[data-theme="light"] #homeHero.hero { background: linear-gradient(158deg, rgba(255,255,255,.74), rgba(244,248,255,.64)); }
+#homeHero.hero { padding: 26px; overflow: visible; background-image: linear-gradient(158deg, rgba(9,14,28,.58), rgba(12,20,38,.46)); }
+:root[data-theme="light"] #homeHero.hero { background-image: linear-gradient(158deg, rgba(255,255,255,.74), rgba(244,248,255,.64)); }
 :root[data-theme="light"] .eyebrow, :root[data-theme="light"] .panel h2 span, :root[data-theme="light"] .mix-head output { color: #0f6a92; }
 :root[data-theme="light"] .stage .chip { color: #0e1424; }
 .eyebrow { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .68rem; letter-spacing: .105em; color: var(--aqua); }
@@ -387,10 +394,10 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .mix-head output { color: var(--aqua); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; }
 .stage input[type="range"] { min-height: 28px; margin: 0; }
 .stage input[type="range"]::-webkit-slider-thumb { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); border-color: rgba(255,255,255,.9); }
-.seg-tint { position: relative; display: flex; height: 40px; margin-top: 8px; padding: 3px; border: 1px solid var(--line-2); border-radius: 999px; background: rgba(255,255,255,.055); }
-.seg-tint button { position: relative; z-index: 1; flex: 1; border: 0; border-radius: 999px; background: transparent; color: var(--ink-2); font-size: .72rem; font-weight: 650; cursor: pointer; }
-.seg-tint button[aria-pressed="true"] { color: var(--ink); }
-.seg-ind { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 999px; background: rgba(255,255,255,.15); box-shadow: inset 0 1px 0 rgba(255,255,255,.24); transition: transform 220ms var(--ease); }
+.seg-tint { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 99px; margin-top: 8px; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.seg-tint .seg-ind { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 99px; background: linear-gradient(135deg, rgba(92,208,244,.38), rgba(60,224,184,.28)); box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 2px 12px rgba(0,0,0,.32); transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease; pointer-events: none; z-index: 0; }
+.seg-tint button { position: relative; z-index: 1; border: 0; background: none; color: var(--dim); font: 700 13px "Manrope", system-ui, sans-serif; padding: 8px 0; cursor: pointer; border-radius: 99px; transition: color .3s ease, transform .25s var(--ease-spring); }
+.seg-tint button.active { color: var(--ink); }
 .mixer-hint { margin-top: 8px; color: var(--ink-2); font-size: .66rem; text-align: center; }
 .stage .chip { position: absolute; z-index: 3; min-height: 32px; color: var(--ink); background: rgba(255,255,255,.1); animation: bob 4.5s ease-in-out infinite; }
 .chip-a { left: 4px; top: 12px; }
@@ -446,9 +453,33 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .stage .panel { padding-left: 14px; padding-right: 14px; } .chip-b { bottom: 6px; }}
 .chip.good { color: #0a6b3d; background: rgba(15,138,77,.12); }
 html[data-theme="dark"] .chip.good { color: #7fe0ac; }
+
+/* Tint-specific rim/glow wins over the Lite surface optimisations too. */
+body.tint-frost[data-perf] .glass { box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(180, 225, 255, .14), var(--shadow); }
+body.tint-smoke[data-perf] .glass { box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(0, 0, 0, .35), var(--shadow); }
+/* v14 floating liquid-glass credit: intentionally animated in Full AND Lite. */
+.credit { position: fixed; right: 22px; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 70; display: flex; align-items: center; gap: 11px; padding: 11px 18px 11px 13px; border-radius: 99px; overflow: hidden; cursor: pointer; opacity: 0; transform: translateY(90px) scale(.6); filter: blur(10px); transition: transform .85s var(--ease-spring), opacity .55s ease, filter .55s ease; }
+.credit.in { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+.credit.out { opacity: 0; transform: translateY(-72px) scale(.75); filter: blur(8px); transition: transform .7s cubic-bezier(.55,-.15,.6,1), opacity .55s ease, filter .55s ease; }
+.credit.snap { transition: none !important; }
+.credit.in:hover { transform: translateY(-4px) scale(1.05); }
+.c-drop { width: 24px; height: 24px; flex: none; }
+.c-text { display: flex; flex-direction: column; line-height: 1.15; }
+.c-text small { font: 600 9.5px "JetBrains Mono", ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.c-text b { font: 700 16px "Space Grotesk", system-ui, sans-serif; letter-spacing: .01em; color: var(--ink); }
+.credit::after { content: ""; position: absolute; top: -20%; bottom: -20%; width: 55%; left: -80%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.4), transparent); transform: skewX(-20deg); animation: sheen 3.6s ease-in-out 1.2s infinite; pointer-events: none; }
+@keyframes sheen { 0%, 50% { left: -80%; } 80%, 100% { left: 140%; } }
+.credit .ring { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.credit.in .ring { animation: ping 1.3s ease-out .15s 1; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(83,199,240,.55); } 100% { box-shadow: 0 0 0 26px rgba(83,199,240,0); } }
+body.tint-morph .panel.glass, body.tint-morph #homeHero.glass { animation: tintMorph 420ms var(--ease-spring) 1; }
+body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { animation: tintShimmer 420ms ease 1; }
+@keyframes tintMorph { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.012); } }
+@keyframes tintShimmer { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@media (max-width: 680px) { #tabbar button { min-height: 50px; } .credit { right: 14px; bottom: calc(82px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px 9px 11px; } }
 </style>
 </head>
-<body data-theme="dark" data-perf="full">
+<body class="tint-clear" data-theme="dark" data-perf="full">
 <!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
@@ -510,7 +541,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
   <header class="topbar glass">
     <div class="brand">
       <span class="mark" aria-hidden="true"><svg width="21" height="21"><use xlink:href="#i-mic" href="#i-mic"></use></svg></span>
-      <span class="t"><b id="brandName">SMART<em>/</em>DICTATION</b><span id="brandSub">Created by Hansana · Idea by Ayya01 (Lesandu)</span><span id="brandCredit" class="credit sr">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</span></span>
+      <span class="t"><b id="brandName">SMART<em>/</em>DICTATION</b><span id="brandSub">Created by Hansana · Idea by Ayya01 (Lesandu)</span><span id="brandCredit" class="credit-note sr">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</span></span>
     </div>
     <div class="row top-controls">
       <button type="button" id="btnLang" class="chip langchip" aria-label="Switch language" aria-pressed="false">EN | සිංහල</button>
@@ -522,7 +553,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
     </div>
   </header>
 
-  <nav id="tabbar" role="tablist" aria-label="Main sections">
+  <nav id="tabbar" class="glass" role="tablist" aria-label="Main sections">
     <button type="button" role="tab" id="tab-home" data-tab="home" aria-selected="true" aria-controls="screen-home"><svg aria-hidden="true"><use xlink:href="#i-home" href="#i-home"></use></svg><span data-i18n="navHome">Home</span></button>
     <button type="button" role="tab" id="tab-dict" data-tab="dict" aria-selected="false" aria-controls="screen-dict"><svg aria-hidden="true"><use xlink:href="#i-book" href="#i-book"></use></svg><span data-i18n="navDict">Dictionary</span></button>
     <button type="button" role="tab" id="tab-practice" data-tab="practice" aria-selected="false" aria-controls="screen-practice"><svg aria-hidden="true"><use xlink:href="#i-target" href="#i-target"></use></svg><span data-i18n="navPractice">Practice</span></button>
@@ -541,7 +572,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
         <div class="kicker eyebrow" id="homeKicker">SESSION 7 · 22/10/2026 ● CCBE GALLE BRANCH</div>
         <h1><span id="homeTitle">Session 7 - Travel &amp; Transport</span> <span class="hollow" aria-hidden="true">Liquid Glass</span></h1>
         <p class="lede muted" id="homeSub">30 words · 5s timer · Word ×2 · British Female Professor Voice (Amy · en-GB)</p>
-        <div class="glass hero-credit">💧 Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer: Sumodya Sewmini</div>
+        <div class="glass hero-credit">💧 Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</div>
         <div class="meta" id="homeMeta"></div>
         <div class="glass card r2 hidden" id="homeResume">
           <div class="spread"><div><b id="resumeText">Welcome back</b><p class="muted small" id="resumeSub"></p></div><span class="row"><button type="button" class="btn sm soft" id="btnResumeNo">Start again</button><button type="button" class="btn sm primary" id="btnResumeYes">Continue</button></span></div>
@@ -561,10 +592,15 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
         <div id="orb" class="orb" role="button" tabindex="0" aria-label="Glowing orb. Drag it, use arrow keys to move, or press Enter to centre it."></div>
         <div class="glass panel" id="materialMixer">
           <h2>Liquid Glass <span>Material Mixer</span></h2>
-          <div class="mix-row"><div class="mix-head"><label for="sBlur">Blur</label><output id="outBlur" for="sBlur">14px</output></div><input id="sBlur" type="range" min="4" max="40" value="14" step="1" aria-label="Glass blur"></div>
-          <div class="mix-row"><div class="mix-head"><label for="sSat">Saturate</label><output id="outSat" for="sSat">1.6×</output></div><input id="sSat" type="range" min="100" max="260" value="160" step="1" aria-label="Glass saturation"></div>
-          <div class="mix-row"><div class="mix-head"><label for="sBrt">Bright</label><output id="outBrt" for="sBrt">1.03</output></div><input id="sBrt" type="range" min="90" max="130" value="103" step="1" aria-label="Glass brightness"></div>
-          <div class="seg-tint" id="segTint" role="group" aria-label="Glass tint"><span class="seg-ind" aria-hidden="true"></span><button type="button" data-tint="clear" aria-pressed="true">Clear</button><button type="button" data-tint="frost" aria-pressed="false">Frost</button><button type="button" data-tint="smoke" aria-pressed="false">Smoke</button></div>
+          <div class="mix-row ctl"><div class="mix-head"><label for="sBlur">Blur</label><output id="outBlur" for="sBlur">14px</output></div><input id="sBlur" type="range" min="4" max="40" value="14" step="1" aria-label="Glass blur"></div>
+          <div class="mix-row ctl"><div class="mix-head"><label for="sSat">Saturate</label><output id="outSat" for="sSat">1.6×</output></div><input id="sSat" type="range" min="100" max="260" value="160" step="1" aria-label="Glass saturation"></div>
+          <div class="mix-row ctl"><div class="mix-head"><label for="sBrt">Bright</label><output id="outBrt" for="sBrt">1.03</output></div><input id="sBrt" type="range" min="90" max="130" value="103" step="1" aria-label="Glass brightness"></div>
+          <div class="seg-tint" id="segTint" role="group" aria-label="Glass tint mode">
+            <span class="seg-ind"></span>
+            <button type="button" data-tint="0">Clear</button>
+            <button type="button" data-tint="1">Frost</button>
+            <button type="button" data-tint="2">Smoke</button>
+          </div>
           <div class="seg" id="segPerf" role="group" aria-label="Performance mode" style="margin-top:8px"><button type="button" data-perf="auto" aria-pressed="true">Auto</button><button type="button" data-perf="lite" aria-pressed="false">Lite 60FPS</button><button type="button" data-perf="full" aria-pressed="false">Full</button></div>
           <p class="mixer-hint" id="perfStatus">⚡ Auto Lite (60 FPS)</p>
           <p class="mixer-hint">↖ drag the glowing orb behind this glass pane</p>
@@ -575,7 +611,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
     <div class="grid3" id="homeStats"></div>
     <div class="stack home-lower">
       <div class="bento-sessions"><div class="glass card pad-s"><div class="spread" style="margin-bottom:8px"><h3>Past sessions</h3><span class="row"><button type="button" class="btn sm ghost" id="btnRefresh" aria-label="Refresh now"><svg aria-hidden="true"><use xlink:href="#i-refresh" href="#i-refresh"></use></svg></button></span></div><div id="homeSessions"></div></div></div>
-      <p class="credit center small" id="homeCredits" data-i18n="creditFull">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</p>
+      <p class="credit-note center small" id="homeCredits" data-i18n="creditFull">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</p>
     </div>
   </section>
 
@@ -1173,6 +1209,14 @@ function inboxAction(body) {
 }
 
 </script>
+<div class="credit glass" id="credit" role="note" aria-label="Credits go to Hansana">
+  <span class="ring" aria-hidden="true"></span>
+  <svg class="c-drop" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2.7C9 7 5.5 11 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 11 15 7 12 2.7Z" fill="url(#dgC)"/>
+    <defs><linearGradient id="dgC" x1="5" y1="4" x2="19" y2="20"><stop stop-color="#5cd0f4"/><stop offset="1" stop-color="#3ce0b8"/></linearGradient></defs>
+  </svg>
+  <span class="c-text"><small>credits goes to</small><b>Hansana</b></span>
+</div>
 <script>
 (function () {
 "use strict";
@@ -1230,15 +1274,15 @@ try { proto[m] = wrapped; } catch (ignored) {}
 })();
 
 /* SECTION 1 - CONFIG */
-var APP_VERSION = "2.1.0";
+var APP_VERSION = "2.2.0";
 var BUILD_DATE = "2026-10-23";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v13_fast_liquid",
-schema: 13,
+key: "sdp.v14_liquid",
+schema: 14,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1257,7 +1301,7 @@ ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 13,
+settingsRev: 14,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -1841,6 +1885,7 @@ var IPA = {
 "vehicle": "\u02c8vi\u02d0\u0259kl", "visa": "\u02c8vi\u02d0z\u0259", "waiting room": "\u02c8we\u026at\u026a\u014b ru\u02d0m",
 "windscreen": "\u02c8w\u026andskri\u02d0n"
 };
+var POS = { "hitchhike": "verb", "on business": "phrase", "on vacation": "phrase", "overnight": "adjective / adverb" };
 
 var WORD_BANK = (function () {
 var bank = Object.create(null);
@@ -1872,7 +1917,7 @@ settings: {
 theme: "dark", size: "m", hc: false, perf: "auto", lang: "en",
 voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false, lowData: false,
 writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, advance: "auto",
-repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half"
+repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half", glassTint: 0
 },
 lists: [sample],
 plan: plan,
@@ -1922,11 +1967,12 @@ data: null,
 saveTimer: null,
 load: function () {
 var raw = Store.get(CONFIG.key);
-/* v13 reads the previous build's storage once, so a phone that already has
-   results and comments never loses them when the key changes. */
+/* v14 migrates the previous builds without discarding class results. */
 if (!raw) {
-var legacy = "";
-try { legacy = Store.get("sdp.v12_liquid") || ""; } catch (eL) { legacy = ""; }
+var legacyKeys = ["sdp.v13_fast_liquid", "sdp.v12_liquid"], legacy = "";
+for (var lk = 0; lk < legacyKeys.length && !legacy; lk++) {
+try { legacy = Store.get(legacyKeys[lk]) || ""; } catch (eL) { legacy = ""; }
+}
 if (legacy) {
 raw = legacy;
 try { Store.set(CONFIG.key, legacy); } catch (eW) {}
@@ -2043,7 +2089,7 @@ if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.
 if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
 if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
 if (!d.settingsRev || d.settingsRev < 8) DB.resetToV9(d, base);
-if (!d.settingsRev || d.settingsRev < 13) DB.resetToV13(d, base);
+if (!d.settingsRev || d.settingsRev < 14) DB.resetToV14(d, base);
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
@@ -2054,7 +2100,7 @@ if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CON
 if (d.settings.hc !== true && d.settings.hc !== "on") d.settings.hc = false;
 if (d.settings.theme === "auto" || ["light","dark"].indexOf(d.settings.theme) < 0) d.settings.theme = "dark";
 if (["auto","full","lite"].indexOf(d.settings.perf) < 0) d.settings.perf = "auto";
-d.settingsRev = 13;
+d.settingsRev = 14;
 d.v = CONFIG.schema;
 return d;
 },
@@ -2081,6 +2127,16 @@ resetToV13: function (d, base) {
 DB.resetToV12(d, base);
 d.settings.perf = "auto";
 d.settingsRev = 13;
+return d;
+},
+resetToV14: function (d, base) {
+if (!d.settingsRev || d.settingsRev < 13) DB.resetToV13(d, base);
+if (d.settings.glassTint === "frost") d.settings.glassTint = 1;
+else if (d.settings.glassTint === "smoke") d.settings.glassTint = 2;
+else if (d.settings.glassTint === "clear") d.settings.glassTint = 0;
+d.settings.glassTint = [0, 1, 2].indexOf(Number(d.settings.glassTint)) >= 0 ? Number(d.settings.glassTint) : 0;
+d.settingsRev = 14;
+d.v = CONFIG.schema;
 return d;
 },
 refreshSessionDate: function (d) {
@@ -2260,21 +2316,67 @@ openWelcomeGuide: function (full) {
 if (typeof welcomeGuide === "function") return welcomeGuide(full);
 return null;
 },
-applyTint: function (tint) {
-var t = tint === "frost" || tint === "smoke" ? tint : "clear";
-U.setCls(document.body, "tint-frost", t === "frost");
-U.setCls(document.body, "tint-smoke", t === "smoke");
-var host = U.$("#segTint");
-if (!host) return;
-var buttons = U.$$("button", host), active = 0;
-for (var i = 0; i < buttons.length; i++) {
-var on = buttons[i].getAttribute("data-tint") === t;
-buttons[i].setAttribute("aria-pressed", on ? "true" : "false");
-if (on) active = i;
+initCreditBadge: function () {
+var credit = U.$("#credit");
+if (!credit || credit.__creditBound) return;
+credit.__creditBound = true;
+var cTimers = [], paused = false;
+var cClear = function () { for (var i = 0; i < cTimers.length; i++) clearTimeout(cTimers[i]); cTimers = []; };
+function show() { U.setCls(credit, "out", false); U.setCls(credit, "snap", false); U.setCls(credit, "in", true); }
+function creditLoop() {
+cClear();
+U.setCls(credit, "snap", true);
+U.setCls(credit, "in", false);
+U.setCls(credit, "out", false);
+void credit.offsetWidth;
+U.setCls(credit, "snap", false);
+cTimers.push(setTimeout(function () {
+show();
+cTimers.push(setTimeout(function () {
+U.setCls(credit, "out", true);
+U.setCls(credit, "in", false);
+cTimers.push(setTimeout(creditLoop, 900));
+}, 5200));
+}, 350));
 }
-var indicator = U.$(".seg-ind", host);
-if (indicator) indicator.style.transform = "translateX(" + (active * 100) + "%)";
+function pause() { paused = true; cClear(); show(); }
+function resume() { if (!paused) return; paused = false; creditLoop(); }
+U.on(credit, "mouseenter", pause);
+U.on(credit, "pointerdown", pause);
+U.on(credit, "mouseleave", resume);
+U.on(credit, "pointerup", function (e) { if (e.pointerType && e.pointerType !== "mouse") cTimers.push(setTimeout(resume, 1200)); });
+U.on(credit, "pointercancel", resume);
+U.on(credit, "click", function () { UI.toast("💧 Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini", { icon: "i-info", ms: 6500 }); });
+creditLoop();
 },
+setTint: function (index, fromUser) {
+var i = index === "frost" ? 1 : (index === "smoke" ? 2 : (index === "clear" ? 0 : Number(index)));
+if ([0, 1, 2].indexOf(i) < 0) i = 0;
+U.setCls(document.body, "tint-clear", i === 0);
+U.setCls(document.body, "tint-frost", i === 1);
+U.setCls(document.body, "tint-smoke", i === 2);
+var hosts = U.$$(".seg-tint");
+for (var h = 0; h < hosts.length; h++) {
+var ind = U.$(".seg-ind", hosts[h]);
+if (ind) ind.style.transform = "translateX(" + (i * 100) + "%)";
+var buttons = U.$$("button", hosts[h]);
+for (var b = 0; b < buttons.length; b++) {
+var on = Number(buttons[b].getAttribute("data-tint")) === i;
+U.setCls(buttons[b], "active", on);
+buttons[b].setAttribute("aria-pressed", on ? "true" : "false");
+}
+}
+if (fromUser) {
+U.setCls(document.body, "tint-morph", true);
+if (this.tintMorphTimer) clearTimeout(this.tintMorphTimer);
+this.tintMorphTimer = setTimeout(function () { U.setCls(document.body, "tint-morph", false); }, 420);
+}
+if (DB.data && DB.data.settings) {
+DB.data.settings.glassTint = i;
+if (fromUser) DB.save();
+}
+},
+applyTint: function (tint) { this.setTint(tint, false); },
 applySize: function () { document.documentElement.setAttribute("data-size", DB.data.settings.size || "m"); },
 applyHc: function () { var on = DB.data.settings.hc === true || DB.data.settings.hc === "on"; document.documentElement.setAttribute("data-hc", on ? "on" : "off"); },
 applyLang: function () {
@@ -2324,7 +2426,8 @@ input.__lgBound = 1;
 var saved = st[cfg[5]];
 if (typeof saved === "number") input.value = String(saved);
 function paint() {
-var raw = Number(input.value), value = raw / cfg[3];
+var v = Number(input.value), min = Number(input.min), max = Number(input.max), value = v / cfg[3];
+input.style.setProperty("--fill", ((v - min) / (max - min) * 100) + "%");
 root.style.setProperty(cfg[2], cfg[3] === 1 ? value + cfg[4] : value.toFixed(2));
 if (output) output.textContent = String(value) + cfg[4];
 }
@@ -2333,19 +2436,15 @@ paint();
 st[cfg[5]] = Number(input.value);
 DB.save();
 });
-if (typeof saved === "number") paint();
+paint();
 })(sliders[i]);
-var tint = pick("#segTint");
-if (tint && !tint.__lgBound) {
+var tintHosts = U.$$(".seg-tint");
+for (var th = 0; th < tintHosts.length; th++) (function (tint) {
+if (tint.__lgBound) return;
 tint.__lgBound = 1;
-U.delegate(tint, "click", "button", function (ev, b) {
-var t = b.getAttribute("data-tint") || "clear";
-st.glassTint = t;
-UI.applyTint(t);
-DB.save();
-});
-}
-UI.applyTint(st.glassTint || "clear");
+U.delegate(tint, "click", "button", function (ev, b) { UI.setTint(Number(b.getAttribute("data-tint")), true); });
+})(tintHosts[th]);
+UI.setTint(st.glassTint, false);
 var perf = pick("#segPerf");
 if (perf && !perf.__lgBound) {
 perf.__lgBound = 1;
@@ -3387,11 +3486,11 @@ ap.appendChild(perfInfo);
 var mix = card("Liquid Glass Mixer");
 mix.appendChild(U.el("p", "tiny muted", "Blur, saturate and brightness of every glass surface - tune the Apple WWDC25 material live."));
 function mixerRow(title, prop, min, max, step, def, unit) {
-var wrap = U.el("div", null, null);
+var wrap = U.el("div", "ctl", null);
 wrap.style.margin = "10px 0";
 var top = U.el("div", "spread", null);
 top.appendChild(U.el("b", "small", title));
-var val = U.el("span", "small muted mono", def + unit);
+var val = U.el("span", "small muted mono", null);
 top.appendChild(val);
 wrap.appendChild(top);
 var r = U.el("input", null, null);
@@ -3401,36 +3500,36 @@ r.max = String(max);
 r.step = String(step);
 r.value = String(def);
 r.setAttribute("aria-label", title);
-U.on(r, "input", function () {
-document.documentElement.style.setProperty(prop, r.value + unit);
-val.textContent = r.value + unit;
-});
+function paint() {
+var v = Number(r.value), min = Number(r.min), max = Number(r.max), value = prop === "--gb" ? v : v / 100;
+r.style.setProperty("--fill", ((v - min) / (max - min) * 100) + "%");
+document.documentElement.style.setProperty(prop, prop === "--gb" ? value + "px" : value.toFixed(2));
+val.textContent = String(value) + unit;
+var key = prop === "--gb" ? "glassBlur" : (prop === "--gs" ? "glassSat" : "glassBrt");
+st[key] = v;
+}
+U.on(r, "input", function () { paint(); DB.save(); });
+paint();
 wrap.appendChild(r);
 mix.appendChild(wrap);
 }
-mixerRow("Blur", "--gb", 4, 40, 1, 22, " px");
-mixerRow("Saturate", "--gs", 1.0, 2.6, 0.1, 1.7, "x");
-mixerRow("Brightness", "--gbr", 0.9, 1.3, 0.05, 1.03, "x");
+mixerRow("Blur", "--gb", 4, 40, 1, st.glassBlur || 14, "px");
+mixerRow("Saturate", "--gs", 100, 260, 1, st.glassSat || 160, "×");
+mixerRow("Brightness", "--gbr", 90, 130, 1, st.glassBrt || 103, "");
 var tp = U.el("div", null, null);
 tp.style.margin = "10px 0";
 tp.appendChild(U.el("div", "tiny muted strong", "Tint mode"));
-var tseg = U.el("div", "seg scroll", null);
-tseg.style.marginTop = "6px";
-tseg.appendChild(U.el("span", "thumb", null));
-var tints = [["Clear", "clear"], ["Frost", "frost"], ["Smoke", "smoke"]];
-for (var ti = 0; ti < tints.length; ti++) (function (pair) {
-var b = U.el("button", null, pair[0]);
+var tseg = U.el("div", "seg-tint", null);
+tseg.setAttribute("role", "group");
+tseg.setAttribute("aria-label", "Glass tint mode");
+tseg.appendChild(U.el("span", "seg-ind", null));
+var tints = [["Clear", 0], ["Frost", 1], ["Smoke", 2]];
+for (var ti = 0; ti < tints.length; ti++) {
+var b = U.el("button", null, tints[ti][0]);
 b.type = "button";
-b.setAttribute("data-tint", pair[1]);
-b.setAttribute("aria-pressed", String(DB.data.settings.glassTint === pair[1]));
-U.on(b, "click", function () {
-var t = pair[1];
-UI.applyTint(t);
-DB.data.settings.glassTint = t;
-DB.save();
-});
+b.setAttribute("data-tint", String(tints[ti][1]));
 tseg.appendChild(b);
-})(tints[ti]);
+}
 tp.appendChild(tseg);
 mix.appendChild(tp);
 
@@ -3457,7 +3556,7 @@ md.appendChild(actionRow("Restore from backup", "Paste a backup or choose a file
 md.appendChild(actionRow("Reset app data", "Deletes words, results and messages on this device", "i-trash", function () { DataTools.reset(); }, "danger"));
 
 var ab = card(S.about);
-var creditBox = U.el("div", "credit", null);
+var creditBox = U.el("div", "credit-note", null);
 creditBox.style.display = "block";
 creditBox.style.marginBottom = "8px";
 creditBox.textContent = T("creditFull");
@@ -5422,7 +5521,7 @@ build();
 var Dict = {
 audioEl: null,
 embedded: function (key) {
-var lists = (DB.data && DB.data.lists) || [], i, j, k, words, w, keys;
+var lists = (DB.data && DB.data.lists) || [], i, j, k, words, w, keys, phon;
 for (i = 0; i < lists.length; i++) {
 words = (lists[i] && lists[i].words) || [];
 for (j = 0; j < words.length; j++) {
@@ -5431,7 +5530,8 @@ if (!w || !w.m || !w.w) continue;
 keys = [U.norm(w.w)].concat(String(w.w).split("/").map(function (p) { return U.norm(p); }));
 for (k = 0; k < keys.length; k++) {
 if (keys[k] !== key) continue;
-return { ipa: IPA[U.norm(w.w)] || "", pos: w.pos || "", meaning: w.m, example: w.s || "",
+phon = IPA[U.norm(w.w)] || "";
+return { phon: phon, ipa: phon, pos: w.pos || POS[U.norm(w.w)] || "noun", def: w.m, meaning: w.m, ex: w.s || "", example: w.s || "",
 audio: w.audio || "", ukSource: true, embedded: true, ts: Date.now() };
 }
 }
@@ -5449,7 +5549,7 @@ if (local) {
 DB.data.dictCache[key] = local;
 DB.save();
 cb && cb(local);
-return;
+return local;
 }
 if (!window.fetch) { cb && cb(cache || null); return; }
 if (U.nav("onLine", true) === false) { cb && cb(cache || null); return; }
@@ -5602,6 +5702,7 @@ var r = rate === undefined ? DB.data.settings.rate : rate;
 Speech.say([word], { rate: r, word: word }, function () {});
 }
 };
+var DictAPI = Dict;
 
 /* SECTION 16 - COMMUNITY (anonymous comments + private message) */
 var Comm = {
@@ -8507,7 +8608,7 @@ self.repoVer = String((ver && ver.version) || "");
 self.repoAt = Number(ver && ver.updatedAt) || 0;
 self.repoVersion = Number(ver && ver.ver) || 0;
 var mine = Number((DB.data && DB.data.ver) || 0);
-if (!force && self.repoVersion && mine && self.repoVersion <= mine) { finish(self.repoOnline); return; }
+if (self.repoVersion <= mine) { finish(self.repoOnline); return; }
 loadSession(self.repoVersion);
 }, function () { finish(false); });
 };
@@ -9039,7 +9140,7 @@ pick.appendChild(t);
 });
 b.appendChild(pick);
 
-var credit = U.el("div", "glass card pad-s r2 credit", null);
+var credit = U.el("div", "glass card pad-s r2 credit-note", null);
 credit.style.display = "block";
 credit.style.margin = "10px 0";
 credit.style.textAlign = "center";
@@ -9124,6 +9225,7 @@ UI.applyTheme();
 UI.applySize();
 UI.applyHc();
 UI.applyLang();
+UI.initCreditBadge();
 initLiquidPlayground();
 initDockMagnification();
 Speech.init();
@@ -9312,15 +9414,23 @@ card.style.setProperty("--mx", mx + "%");
 card.style.setProperty("--my", my + "%");
 } catch (e) {}
 }
+U.on(document, "pointerenter", function (e) {
+if (!e || e.pointerType === "touch" || UI.perfMode !== "full" || !UI.finePointer()) return;
+var target = e.target && e.target.closest ? e.target.closest(".glass") : null;
+if (!target) return;
+card = target;
+rect = card.getBoundingClientRect();
+x = e.clientX; y = e.clientY;
+}, { capture: true, passive: true });
 U.on(document, "pointermove", function (e) {
 if (!e || e.pointerType === "touch" || UI.perfMode !== "full" || !UI.finePointer()) return;
 var target = e.target && e.target.closest ? e.target.closest(".glass") : null;
 if (target !== card) { card = target; rect = null; }
-if (!card) return;
-if (!rect) rect = card.getBoundingClientRect();
+if (!card || !rect) return;
 x = e.clientX; y = e.clientY;
 if (!frame) frame = window.requestAnimationFrame ? window.requestAnimationFrame(flush) : (flush(), 0);
 }, { passive: true });
+U.on(document, "pointerleave", function () { card = null; rect = null; }, { capture: true, passive: true });
 U.on(window, "scroll", function () { rect = null; }, { passive: true });
 U.on(window, "resize", function () { rect = null; });
 })();
