@@ -305,14 +305,31 @@ function material(page) {
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
 
       const orb = page.locator('#orb');
+      /* the glass panel (z-index 2) deliberately sits over the orb (z-index 1);
+         only the sliver above the panel is hittable, so probe the press point */
+      const press = await page.evaluate(() => {
+        const o = document.getElementById('orb');
+        const p = document.getElementById('materialMixer').getBoundingClientRect();
+        const r = o.getBoundingClientRect();
+        const y = Math.min(r.top + 40, (r.top + Math.min(r.bottom, p.top)) / 2);
+        const x = r.left + r.width / 2;
+        const hit = document.elementFromPoint(x, y);
+        return {
+          x: x, y: y, styleTop: o.style.top, orbTop: r.top, panelTop: p.top,
+          hit: hit ? (hit.id || String(hit.className) || hit.tagName) : 'none',
+          ok: !!hit && (hit === o || o.contains(hit))
+        };
+      });
+      assert.ok(press.ok, 'press point hit-tests to the orb: ' + JSON.stringify(press));
       const before = await orb.boundingBox();
       assert.ok(before, 'the orb is laid out');
-      await page.mouse.move(before.x + 60, before.y + 40);
+      await page.mouse.move(press.x, press.y);
       await page.mouse.down();
-      await page.mouse.move(before.x + 120, before.y + 80, { steps: 6 });
+      await page.mouse.move(press.x + 60, press.y + 40, { steps: 6 });
       await page.mouse.up();
       const after = await orb.boundingBox();
-      assert.ok(after && Math.abs(after.x - before.x) > 30, 'the orb drags');
+      assert.ok(after && Math.abs(after.x - before.x) > 30,
+        'the orb drags: ' + JSON.stringify({ press: press, before: before, after: after }));
 
       /* dock magnification is a Full-glass, fine-pointer nicety */
       if ((await material(page)).perf !== 'full') {
