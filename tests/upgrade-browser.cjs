@@ -1,4 +1,4 @@
-/* Release 2.4.0 (ver 16) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.5.0 (ver 17) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer and the low-data
    audio path. Rewritten from scratch for this release.
 
@@ -145,7 +145,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v16 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v17 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -300,7 +300,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v16_swan')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v17_type_tick')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -434,9 +434,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v16_swan')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v17_type_tick')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v16_swan')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v17_type_tick')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -446,7 +446,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v16_swan'));
+        const d = JSON.parse(localStorage.getItem('sdp.v17_type_tick'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
