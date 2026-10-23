@@ -9,7 +9,7 @@ const fileURL=require('node:url').pathToFileURL(path.join(root,'index.html')).hr
 const engine=process.env.SDP_BROWSER||'chromium';
 function fakeSpeech(scenario){
  window.__spoken=[];window.__langs=[];
- let voices=scenario==='none'?[]:scenario==='us'?Array.from({length:5},(_,i)=>({name:'US '+i,lang:'en-US',localService:true})):scenario==='aliases'?[{name:'Samsung',lang:'eng-GBR',localService:true},{name:'test',lang:'en_GB',localService:true}]:[{name:'Daniel',lang:'en-GB',localService:true}];
+ let voices=scenario==='none'?[]:scenario==='us'?Array.from({length:5},(_,i)=>({name:'US '+i,lang:'en-US',localService:true})):scenario==='aliases'?[{name:'Samsung',lang:'eng-GBR',localService:true},{name:'test',lang:'en_GB',localService:true}]:[{name:'Amy',lang:'en-GB',localService:true}];
  Object.defineProperty(window,'speechSynthesis',{value:{getVoices:()=>voices,speak(u){window.__spoken.push(u.text);window.__langs.push(u.lang);setTimeout(()=>u.onend&&u.onend(),5);},cancel(){},pause(){},resume(){}}});
  window.SpeechSynthesisUtterance=function(text){this.text=text;};
 }
@@ -84,11 +84,45 @@ async function check(name,fn){
    await page.setViewportSize({width,height:420});await page.getByLabel('Word list text',{exact:true}).focus();await assertBars();
   }finally{await context.close();}
  });
+ await check(engine+' v11 full Liquid Glass playground, drag, mixer, dock and manual Lite',async()=>{
+  const {context,page,errors}=await boot(browser,1280,'gb',800);
+  try{
+   const state=()=>page.evaluate(()=>({rootTheme:document.documentElement.getAttribute('data-theme'),bodyTheme:document.body.getAttribute('data-theme'),rootPerf:document.documentElement.getAttribute('data-perf'),bodyPerf:document.body.getAttribute('data-perf')}));
+   assert.deepEqual(await state(),{rootTheme:'dark',bodyTheme:'dark',rootPerf:'full',bodyPerf:'full'});
+   const material=await page.evaluate(()=>{const hero=getComputedStyle(document.querySelector('#homeHero')),blob=getComputedStyle(document.querySelector('#bg .blob')),grain=getComputedStyle(document.querySelector('#grain'));return{blur:hero.backdropFilter||hero.webkitBackdropFilter,shadow:hero.boxShadow,blob:blob.display,grain:grain.display,columns:getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns};});
+   assert.notEqual(material.blur,'none');assert.notEqual(material.shadow,'none');assert.notEqual(material.blob,'none');assert.notEqual(material.grain,'none');
+   assert.equal(material.columns.split(' ').length,2,'desktop hero has two columns: '+material.columns);
+   const orb=page.locator('#orb'),before=await orb.boundingBox();assert(before);
+   await page.mouse.move(before.x+70,before.y+32);await page.mouse.down();await page.mouse.move(before.x+120,before.y+62,{steps:5});await page.mouse.up();
+   const after=await orb.boundingBox();assert(after&&Math.abs(after.x-before.x)>35&&Math.abs(after.y-before.y)>20,'orb moved by pointer drag');
+   await page.evaluate(()=>{for(const [id,value]of [['sBlur',34],['sSat',210],['sBrt',110]]){const el=document.getElementById(id);el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));}});
+   const mixed=await page.evaluate(()=>({blur:document.documentElement.style.getPropertyValue('--gb'),sat:document.documentElement.style.getPropertyValue('--gs'),bright:document.documentElement.style.getPropertyValue('--gbr'),out:document.querySelector('#outSat').textContent}));
+   assert.deepEqual(mixed,{blur:'34px',sat:'2.1',bright:'1.1',out:'2.1×'});
+   await page.locator('#segTint [data-tint="frost"]').click();assert(await page.locator('body.tint-frost').count());
+   await page.locator('#segTint [data-tint="smoke"]').click();assert(await page.locator('body.tint-smoke').count());assert.equal(await page.locator('body.tint-frost').count(),0);
+   await page.locator('#segTint [data-tint="clear"]').click();assert.equal(await page.locator('body.tint-smoke').count(),0);
+   const tab=page.locator('#tab-home'),box=await tab.boundingBox();assert(box);await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.waitForTimeout(150);
+   assert.match(await tab.evaluate(el=>el.style.transform),/scale\(1\.28(?:0)?\)/,'dock magnification');
+   await page.mouse.move(2,2);await page.waitForTimeout(150);assert.equal(await tab.evaluate(el=>el.style.transform),'');
+   await page.locator('#themeBtn').click();assert.deepEqual(await state(),{rootTheme:'light',bodyTheme:'light',rootPerf:'full',bodyPerf:'full'});
+   await page.locator('#themeBtn').click();assert.deepEqual(await state(),{rootTheme:'dark',bodyTheme:'dark',rootPerf:'full',bodyPerf:'full'});
+   await page.screenshot({path:path.join(__dirname,'artifacts','liquid-desktop.png'),fullPage:true});
+   await page.locator('#tab-set').click();await page.getByRole('button',{name:'Lite (fast)',exact:true}).click();
+   const lite=await page.evaluate(()=>{const hero=getComputedStyle(document.querySelector('#homeHero'));return{perf:document.body.getAttribute('data-perf'),blob:getComputedStyle(document.querySelector('#bg .blob')).display,grain:getComputedStyle(document.querySelector('#grain')).display,blur:hero.backdropFilter||hero.webkitBackdropFilter,shadow:hero.boxShadow};});
+   assert.equal(lite.perf,'lite');assert.notEqual(lite.blob,'none');assert.notEqual(lite.grain,'none');assert.notEqual(lite.blur,'none');assert.notEqual(lite.shadow,'none');
+   await page.getByRole('button',{name:'Full glass',exact:true}).click();await page.locator('#tab-home').click();
+   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
+   const mobile=await page.evaluate(()=>({columns:getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns,overflow:document.documentElement.scrollWidth>innerWidth,perf:document.body.getAttribute('data-perf')}));
+   assert.equal(mobile.columns.split(' ').length,1,'mobile hero stacks');assert.equal(mobile.overflow,false,'no mobile horizontal overflow');assert.equal(mobile.perf,'full');
+   await page.screenshot({path:path.join(__dirname,'artifacts','liquid-mobile.png'),fullPage:true});
+   assert.equal(errors.length,0,'page errors: '+errors.join(' | '));
+  }finally{await context.close();}
+ });
  await check(engine+' paste 30; edit/delete/reorder; 200 rows; direct publish preview; local PBKDF2 upgrade',async()=>{
   const {context,page,errors}=await boot(browser,390);
   try{
    await unlock(page);
-   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v8_session7')).admin.pinKdf);
+   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).admin.pinKdf);
    assert.equal(kdf,await page.evaluate(()=>crypto.subtle?'pbkdf2-sha256':'sha256'));
    const ta=page.getByLabel('Word list text',{exact:true});await ta.fill(sample);
    await page.getByText(/^I read this as: 30 words \(/).waitFor();   /* v2.0.0 prints the detected mode in brackets */
@@ -102,7 +136,7 @@ async function check(name,fn){
       arrive with its British dictionary MP3 so a phone plays audio without a UK voice. */
    await page.getByRole('button',{name:/^Save & Publish Live Now/}).first().click();
    await page.locator('#toasts').getByText(/Saved & published to all students/).waitFor();
-   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v8_session7')));
+   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')));
    assert.equal(d.lists[0].publishedWords.length,29);assert.equal(d.lists[0].publishedWords[0].w,'free time');
    assert.ok(d.lists[0].publishedWords.every(x=>/--_gb_1\.mp3$/.test(x.audio||'')),'every published word keeps a British MP3: '+JSON.stringify(d.lists[0].publishedWords.slice(0,2)));
    assert.ok(d.lists[0].published&&d.lists[0].publishedVersion>=1,'publish flags');
@@ -121,7 +155,7 @@ async function check(name,fn){
    await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
    await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
    /* what should be heard comes from the live list, so the check follows published data */
-   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v8_session7')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
+   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v11_liquid')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
    assert(first.w,'the live list has a first word');
    const said=()=>page.evaluate(()=>window.__spoken||[]);
    const langs=()=>page.evaluate(()=>window.__langs||[]);
@@ -150,7 +184,7 @@ async function check(name,fn){
        transcript is read (Say the number is a learner setting, not always on) */
     await page.waitForFunction(()=>/Number 1\./.test((window.__spoken||[]).join(' ')),null,{timeout:8000}).catch(()=>{});
     const spoken=await said();
-    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v8_session7')||'{}').settings||{}).numbers);
+    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v11_liquid')||'{}').settings||{}).numbers);
     const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
     const phase=spoken.slice(0,until+1);
     assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
@@ -159,9 +193,9 @@ async function check(name,fn){
     const gbLangs=await langs();
     assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));
    }
-   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v8_session7')).snapshot);assert.equal(before.index,0);
+   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).snapshot);assert.equal(before.index,0);
    await page.reload();await page.locator('#homeTitle').waitFor();
-   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v8_session7')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
+   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
    assert.equal(errors.length,0);
   }finally{await context.close();}
  });

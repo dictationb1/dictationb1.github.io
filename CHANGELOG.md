@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.0.0 (v11) — 2026-10-23 (full Apple WWDC25 Liquid Glass Playground)
+
+- **Full glass is the default everywhere.** The initial HTML, `defaultData()`, and
+  v11 migration use dark/full; `UI.autoPerf()` and the frame probe never downgrade
+  a device. Manual Lite only pauses ambient blob movement and no longer hides
+  blobs/grain or removes backdrop blur, filters, or shadows.
+- **A real two-column Liquid Glass Home.** Adds the floating top-center glass pill
+  navbar, giant hollow display type, creator pill, draggable glowing `#orb`, four
+  rising bubbles, overlapping Material Mixer, live blur/saturation/brightness and
+  tint controls, floating voice chips, saturated bento stats, and dock magnification.
+  Existing Home/player/control IDs and mobile layouts are preserved.
+- **Session 7 and Amy remain unified.** The same 30 Travel & Transport words,
+  fixed 5-second timer, two repeats, paper checklist, bilingual guide, credits,
+  Admin PIN, live publishing, and ntfy sync remain. Online speech uses Amy with
+  the en-GB Google failover through one `#sdpAudio`; known male offline voices
+  are filtered out.
+- **Release and regression metadata.** `APP_VERSION` is `2.0.0`, the storage key
+  is `sdp.v11_liquid`, and schema/settings/data revisions are `11`. Unit, ES5,
+  migration, real Chromium interaction/layout, axe, and legacy regression tests
+  cover the release.
+
 ## 2.0.0 (v8) — 2026-10-22 (Session 7 · Travel & Transport · strictly two repeats)
 
 - **The word is spoken exactly twice.** `Eng.buildBeats()` now emits

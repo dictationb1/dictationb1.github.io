@@ -23,9 +23,11 @@
     "writeMode": "fixed",
     "writeFixed": 5,
     "pauseWord": 1.2,
-    "pauseSent": 1.6
+    "pauseSent": 1.6,
+    "theme": "dark",
+    "perf": "full"
   },
-  "ver": 10,
+  "ver": 11,
   "version": "2.0.0",
   "buildDate": "2026-10-22",
   "credits": {

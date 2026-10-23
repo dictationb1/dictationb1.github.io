@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="auto" data-perf="auto" data-size="m" data-hc="off">
+<html lang="en-GB" data-theme="dark" data-perf="full" data-size="m" data-hc="off">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#eaf0fb">
+<meta name="theme-color" content="#0a0f1e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,7 +38,7 @@
 :root[data-size="m"] { --fs: 16px; }
 :root[data-size="l"] { --fs: 18px; }
 :root[data-size="xl"] { --fs: 20.5px; }
-:root[data-theme="light"], :root[data-theme="auto"] {
+:root[data-theme="light"] {
 --bg1: #e8ecf4; --bg2: #dde4f2;
 --ink: #0e1424; --ink-2: rgba(14,20,36,.66); --ink-3: rgba(14,20,36,.42);
 --acc: #3a5cf0; --acc-2: #7a3cf0;
@@ -54,7 +54,6 @@
 --scr: rgba(13,18,32,.34);
 --blob1: rgba(83,199,240,.42); --blob2: rgba(255,111,97,.42); --blob3: rgba(255,194,71,.42); --blob4: rgba(143,123,255,.42);
 }
-:root[data-theme="auto"] { }
 :root[data-theme="dark"] {
 --bg1: #0a0f1e; --bg2: #0f172e;
 --ink: #f1f4ff; --ink-2: rgba(241,244,255,.66); --ink-3: rgba(241,244,255,.42);
@@ -76,32 +75,14 @@ body.tint-frost { --glass: rgba(255,255,255,.18); }
 :root[data-theme="light"] body.tint-frost { --glass: rgba(255,255,255,.72); }
 body.tint-smoke { --glass: rgba(10,15,30,.44); }
 :root[data-theme="light"] body.tint-smoke { --glass: rgba(70,85,130,.30); }
-@media (prefers-color-scheme: dark) {
-:root[data-theme="auto"] {
---bg1: #080a11; --bg2: #120a1e;
---ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
---acc: #8ea6ff; --acc-2: #c39bff;
---good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
---glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
---glass-solid: #161a29; --glass-solid-2: #1e2336;
---line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
---edge: rgba(255,255,255,.22);
---shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
---shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
---inner: inset 0 1px 0 rgba(255,255,255,.1);
---ring: rgba(142,166,255,.6);
---scr: rgba(0,0,0,.6);
---blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
-}
-}
 :root[data-hc="on"] {
 --glass: var(--glass-solid); --glass-2: var(--glass-solid); --glass-3: var(--glass-solid);
 --edge: var(--ink); --inner: none;
 --line-2: var(--ink);
 }
-:root[data-hc="on"] .glass { background: var(--glass-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+:root[data-hc="on"] .glass { background: var(--glass-solid) !important; }
 @media (prefers-contrast: more) {
-.glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.glass { background: var(--glass-solid); }
 }
 html, body { margin: 0; padding: 0; }
 html { font-size: var(--fs); -webkit-text-size-adjust: 100%; }
@@ -156,10 +137,8 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 @keyframes drift4 { to { transform: translate3d(8vmax, -10vmax, 0) scale(1.06); } }
 #grain { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .05;
 background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
-body[data-perf="lite"] #grain, body[data-perf="lite"] .blob { display: none; }
-body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), var(--bg2)); --gb: 10px; }
 @media (prefers-reduced-transparency: reduce) {
-.glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.glass { background: var(--glass-solid); }
 }
 /* Apple WWDC25 Liquid Glass: the exact 4-layer recipe on every glass surface */
 .glass, #tabbar, .sheet, .modal, .toast {
@@ -253,7 +232,6 @@ box-shadow: var(--shadow1); transition: transform var(--dur) var(--ease), width 
 pointer-events: none; z-index: 0;
 }
 :root[data-theme="dark"] .seg .thumb { background: rgba(255,255,255,.14); }
-body[data-perf="lite"] .seg .thumb { transition: none; }
 .seg button {
 position: relative; z-index: 1; flex: 1 0 auto;
 min-height: 38px; padding: 8px 14px; border: 0; background: transparent;
@@ -296,7 +274,6 @@ background: var(--glass-2); cursor: pointer; -webkit-tap-highlight-color: transp
 background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); transition: transform var(--dur) var(--ease); }
 .sw[aria-checked="true"] { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); border-color: transparent; box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35); }
 .sw[aria-checked="true"] i { transform: translateX(20px); }
-body[data-perf="lite"] .sw i { transition: none; }
 .stepper { display: inline-flex; align-items: center; gap: 6px; }
 .stepper .val { min-width: 46px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 #app { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
@@ -304,7 +281,6 @@ padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(var(--tabbar
 min-height: 100vh; min-height: 100dvh; }
 .screen { animation: screenIn var(--dur) var(--ease) both; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-body[data-perf="lite"] .screen { animation: none; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; row-gap: 8px; }
 .topbar > .row { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
 #btnLang { font-size: .74rem; padding: 5px 10px; min-height: 30px; }
@@ -394,7 +370,6 @@ font-size: .7rem; font-weight: 700; border: 1px solid transparent; }
 .bar { height: 8px; border-radius: 999px; background: var(--line-2); overflow: hidden; }
 .bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--acc), var(--acc-2));
 transition: width 240ms var(--ease); }
-body[data-perf="lite"] .bar > i { transition: none; }
 .bar.thin { height: 5px; }
 .lens { position: relative; width: 148px; height: 148px; flex: 0 0 auto; }
 .lens button {
@@ -412,14 +387,12 @@ transition: transform 160ms var(--ease); touch-action: manipulation; -webkit-tap
 .lens .ring circle { fill: none; stroke-width: 7; stroke-linecap: round; }
 .lens .ring .bg { stroke: var(--line-2); }
 .lens .ring .fg { stroke: var(--acc); transition: stroke-dashoffset 200ms linear; }
-body[data-perf="lite"] .lens .ring .fg { transition: none; }
 .bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
 .bars i { width: 4px; height: 6px; border-radius: 2px; background: var(--acc); }
 .bars[data-on="1"] i { animation: bounce 1s ease-in-out infinite; }
 .bars i:nth-child(2) { animation-delay: .12s; } .bars i:nth-child(3) { animation-delay: .24s; }
 .bars i:nth-child(4) { animation-delay: .36s; } .bars i:nth-child(5) { animation-delay: .48s; }
 @keyframes bounce { 0%,100% { height: 6px; opacity: .55; } 50% { height: 22px; opacity: 1; } }
-body[data-perf="lite"] .bars { display: none; }
 @media (prefers-reduced-motion: reduce) { .bars i { animation: none !important; } }
 .layer {
 position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 60;
@@ -430,7 +403,6 @@ animation: layerIn 200ms var(--ease) both;
 overscroll-behavior: contain;
 }
 @keyframes layerIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
-body[data-perf="lite"] .layer { animation: none; }
 .layer .lhead {
 display: flex; align-items: center; justify-content: space-between; gap: 10px;
 padding: calc(12px + var(--safe-t)) 14px 10px;
@@ -445,7 +417,6 @@ animation: sheetUp 240ms var(--ease) both;
 padding-bottom: var(--safe-b);
 }
 @keyframes sheetUp { from { transform: translateY(14%); opacity: .4; } to { transform: none; opacity: 1; } }
-body[data-perf="lite"] .sheet { animation: none; }
 .sheet .grabber { width: 40px; height: 5px; border-radius: 999px; background: var(--line-2); margin: 9px auto 4px; flex: 0 0 auto; }
 .sheet .shead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 16px 10px; flex: 0 0 auto; }
 .sheet .sbody { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 18px; }
@@ -457,7 +428,6 @@ body[data-perf="lite"] .sheet { animation: none; }
 .scrim { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 65; background: var(--scr);
 animation: fade 200ms var(--ease) both; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-body[data-perf="lite"] .scrim { animation: none; }
 .modal { position: fixed; z-index: 80; top: 50%; left: 50%; transform: translate(-50%,-50%);
 width: 92vw; max-width: 420px; width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
 padding: 18px; animation: pop 200ms var(--ease) both; }
@@ -465,14 +435,12 @@ padding: 18px; animation: pop 200ms var(--ease) both; }
 .modal.flex-card { position: relative; top: auto; left: auto; transform: none;
 width: 100%; max-width: 440px; animation: pop-flex 200ms var(--ease) both; }
 @keyframes pop-flex { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
-body[data-perf="lite"] .modal { animation: none; }
 #toasts { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: calc(96px + var(--safe-b));
 display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 460px; width: min(100%, 460px);
 padding: 12px 14px; font-size: .9rem;
 animation: toastIn 200ms var(--ease) both; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-body[data-perf="lite"] .toast { animation: none; }
 .toast .msg { flex: 1 1 auto; }
 .toast.out { animation: toastOut 180ms var(--ease) both; }
 @keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
@@ -487,14 +455,12 @@ body[data-perf="lite"] .toast { animation: none; }
 .countdown .cd-fg { stroke: var(--acc-2); transition: stroke-dashoffset 200ms linear; }
 .countdown .num { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
 font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-body[data-perf="lite"] .countdown .cd-fg { transition: none; }
 .ansinput { font-size: 1.25rem; text-align: center; min-height: 58px; letter-spacing: .01em; }
 .ctrlgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; width: 100%; max-width: 520px; }
 @media (min-width: 560px) { .ctrlgrid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 .ctrlgrid .btn { width: 100%; }
 .shake { animation: shake 380ms ease; }
 @keyframes shake { 10%,90% { transform: translateX(-3px); } 30%,70% { transform: translateX(5px); } 50% { transform: translateX(-6px); } }
-body[data-perf="lite"] .shake { animation: none; }
 .pinpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 14px auto 0; }
 .pinpad button { min-height: 66px; font-size: 1.5rem; font-weight: 650; border-radius: var(--r2);
 border: 1px solid var(--line-2); background: var(--glass-3); cursor: pointer;
@@ -536,7 +502,6 @@ background: linear-gradient(180deg, var(--acc), var(--acc-2)); }
 align-items: center; justify-content: center; }
 .scorering .lbl b { font-size: 1.7rem; font-weight: 750; line-height: 1; }
 .scorering .lbl span { font-size: .7rem; color: var(--ink-2); }
-body[data-perf="lite"] .scorering .fg { transition: none; }
 .diagrow { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
 .diagrow .ic { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .diagrow .ic svg { width: 14px; height: 14px; }
@@ -575,58 +540,105 @@ table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid va
 @media (prefers-reduced-motion: reduce) {
 *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
-body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after { animation: none !important; transition: none !important; }
 
-@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
-body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
--webkit-backdrop-filter: blur(12px) saturate(140%) !important;
-backdrop-filter: blur(12px) saturate(140%) !important;
-}
-}
-body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after {
-filter: none !important; text-shadow: none !important;
-}
-@media (prefers-reduced-transparency: reduce) {
-body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
-background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-}
-}
-:root[data-hc="on"] body[data-perf="full"] #tabbar, :root[data-hc="on"] body[data-perf="full"] .sheet {
-background: var(--glass-solid); -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-}
 .paste-scroll { max-height: 340px; overflow: auto; }
 .paste-scroll table { width: 100%; min-width: 640px; }
 .paste-scroll td { vertical-align: top; }
 .paste-scroll input { font-size: 16px; min-width: 130px; }
 .paste-scroll td:last-child { min-width: 175px; }
-html[data-perf="lite"] .glass,
-html[data-perf="lite"] .card,
-html[data-perf="lite"] .sheet,
-html[data-perf="lite"] #topbar,
-html[data-perf="lite"] #tabbar {
--webkit-backdrop-filter: none !important;
-backdrop-filter: none !important;
-background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(240,245,255,.70));
-box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 24px rgba(20,28,55,.10);
+
+/* v11 WWDC25 Home: full glass remains visible in BOTH performance modes. */
+body[data-perf="lite"] .blob { animation-play-state: paused !important; }
+.topbar.glass { position: sticky; top: calc(10px + var(--safe-t)); z-index: 35; width: fit-content; max-width: 100%; margin: 0 auto 18px; padding: 8px 14px; border-radius: 999px; flex-wrap: nowrap; box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -12px 24px rgba(255,255,255,.06), 0 14px 42px rgba(0,0,0,.28); }
+.topbar .brand { gap: 9px; }
+.topbar .brand .mark { width: 38px; height: 38px; border-radius: 62% 38% 58% 42%; color: #062530; background: linear-gradient(135deg, #5cd0f4, #3ce0b8); transform: rotate(45deg); box-shadow: 0 0 24px rgba(60,224,184,.25), inset 0 1px 0 rgba(255,255,255,.75); }
+.topbar .brand .mark svg { transform: rotate(-45deg); }
+.topbar .brand .t b { font-size: .9rem; letter-spacing: .075em; white-space: nowrap; }
+.topbar .brand .t b em { color: var(--aqua); font-style: normal; padding: 0 2px; }
+.topbar .brand .t #brandSub { display: block; font-size: .6rem; line-height: 1.3; white-space: nowrap; }
+.top-controls { flex-wrap: nowrap !important; margin-left: 12px; }
+.top-controls > * { margin: 0; }
+.theme-btn { font-size: 1.15rem; line-height: 1; }
+.lg-hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: center; }
+.lg-hero > * { min-width: 0; }
+#homeHero.hero { padding: 26px; overflow: visible; }
+.eyebrow { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .68rem; letter-spacing: .105em; color: var(--aqua); }
+#homeHero h1 { margin: 12px 0 14px; font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.02; letter-spacing: -.025em; font-weight: 760; }
+.hollow { color: transparent; -webkit-text-stroke: 1.5px var(--ink); }
+#homeSub.lede { font-size: .94rem; line-height: 1.55; color: var(--ink-2); }
+.hero-credit { margin-top: 16px; padding: 9px 13px; border-radius: 999px; font-size: .69rem; line-height: 1.4; text-align: center; color: var(--ink-2); }
+#homeHero .meta { margin: 14px 0; }
+.hero-actions { display: grid; gap: 10px; }
+#homeResume { margin: 12px 0; }
+#btnGuide.glass { border-radius: 999px; }
+#segMode { width: 100%; }
+.stage { position: relative; min-height: 420px; isolation: isolate; }
+.bubble { position: absolute; z-index: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.24); background: linear-gradient(145deg, rgba(255,255,255,.18), rgba(83,199,240,.05)); box-shadow: inset 2px 2px 8px rgba(255,255,255,.18), 0 10px 30px rgba(0,0,0,.12); animation: rise 9s ease-in-out infinite; }
+.bubble-1 { width: 46px; height: 46px; left: 4%; bottom: 12%; }
+.bubble-2 { width: 25px; height: 25px; left: 34%; bottom: 3%; animation-delay: -3s; }
+.bubble-3 { width: 62px; height: 62px; right: 3%; bottom: 23%; animation-delay: -6s; }
+.bubble-4 { width: 18px; height: 18px; right: 34%; bottom: 7%; animation-delay: -1.5s; }
+@keyframes rise { 0%,100% { transform: translateY(70px) scale(.78); opacity: .15; } 50% { transform: translateY(-180px) scale(1); opacity: .7; } }
+.orb { position: absolute; z-index: 1; left: 39%; top: 44px; width: 140px; height: 140px; border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; background: radial-gradient(circle at 32% 28%, #ffe3b0, #ff8a5c 45%, #ff4d6d 100%); box-shadow: 0 0 90px 34px rgba(255,110,90,.45), inset 0 2px 8px rgba(255,255,255,.7); }
+.orb.dragging { cursor: grabbing; }
+.orb:focus-visible { outline: 3px solid var(--aqua); outline-offset: 5px; }
+.stage .panel { position: absolute; z-index: 2; left: 9%; right: 2%; top: 106px; padding: 17px 18px; border-radius: 30px; overflow: hidden; }
+.panel h2 { font-size: 1rem; letter-spacing: -.02em; }
+.panel h2 span { color: var(--aqua); }
+.mix-row { margin: 5px 0; }
+.mix-head { display: flex; align-items: center; justify-content: space-between; font-size: .75rem; font-weight: 650; }
+.mix-head output { color: var(--aqua); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; }
+.stage input[type="range"] { min-height: 28px; margin: 0; }
+.stage input[type="range"]::-webkit-slider-thumb { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); border-color: rgba(255,255,255,.9); }
+.seg-tint { position: relative; display: flex; height: 40px; margin-top: 8px; padding: 3px; border: 1px solid var(--line-2); border-radius: 999px; background: rgba(255,255,255,.055); }
+.seg-tint button { position: relative; z-index: 1; flex: 1; border: 0; border-radius: 999px; background: transparent; color: var(--ink-2); font-size: .72rem; font-weight: 650; cursor: pointer; }
+.seg-tint button[aria-pressed="true"] { color: var(--ink); }
+.seg-ind { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 999px; background: rgba(255,255,255,.15); box-shadow: inset 0 1px 0 rgba(255,255,255,.24); transition: transform 220ms var(--ease); }
+.mixer-hint { margin-top: 8px; color: var(--ink-2); font-size: .66rem; text-align: center; }
+.stage .chip { position: absolute; z-index: 3; min-height: 32px; color: var(--ink); background: rgba(255,255,255,.1); animation: bob 4.5s ease-in-out infinite; }
+.chip-a { left: 0; top: 15px; }
+.chip-b { right: 0; bottom: 2px; animation-delay: -2s !important; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+#homeStats { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 24px; }
+#homeStats .statbox { min-height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+#homeStats .statbox:nth-child(1) { background: linear-gradient(140deg, rgba(13,58,74,.65), rgba(18,58,103,.65)); }
+#homeStats .statbox:nth-child(2) { background: linear-gradient(150deg, rgba(107,31,60,.65), rgba(138,61,28,.65)); }
+#homeStats .statbox:nth-child(3) { background: linear-gradient(150deg, rgba(36,30,82,.65), rgba(61,34,96,.65)); }
+#homeStats .statbox b { font-size: 1.75rem; }
+#homeStats .statbox span { color: rgba(241,244,255,.76); }
+.home-lower { margin-top: 14px; }
+@media (min-width: 900px) {
+#app { display: block; max-width: 1220px; padding-top: calc(16px + var(--safe-t)); padding-bottom: calc(116px + var(--safe-b)); }
+.screen { grid-column: auto; }
+#tabbar { position: fixed; top: auto; left: 50%; right: auto; bottom: calc(16px + var(--safe-b)); width: auto; max-width: calc(100vw - 24px); padding: 8px; border-radius: 999px; flex-direction: row; gap: 5px; transform: translateX(-50%); }
+#tabbar button { flex: 0 0 88px; min-height: 62px; padding: 7px 10px; border-radius: 999px; flex-direction: column; justify-content: center; gap: 3px; font-size: .68rem; transform-origin: 50% 100%; transition: transform 120ms ease-out, background 160ms ease; }
+#tabbar button .badge { position: absolute; margin: -20px 0 0 24px; }
+#tabbar button[aria-selected="true"] { color: var(--aqua); }
 }
-html[data-perf="lite"] .scrollme { will-change: auto; }
-@media (prefers-color-scheme: dark) {
-html[data-perf="lite"] .glass,
-html[data-perf="lite"] .card,
-html[data-perf="lite"] .sheet,
-html[data-perf="lite"] #topbar,
-html[data-perf="lite"] #tabbar {
-background: linear-gradient(180deg, rgba(40,46,70,.90), rgba(22,26,42,.76));
-box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 24px rgba(0,0,0,.30);
+@media (max-width: 899px) { .lg-hero { grid-template-columns: minmax(0,1fr); gap: 20px; } .stage { width: 100%; max-width: 520px; margin: 0 auto; } .topbar.glass { width: 100%; } }
+@media (max-width: 620px) {
+.topbar.glass { flex-wrap: wrap; justify-content: center; row-gap: 7px; padding: 9px 11px; border-radius: 30px; }
+.topbar .brand { width: 100%; justify-content: center; }
+.top-controls { width: 100%; justify-content: center !important; margin-left: 0; gap: 5px; }
+#chipNet { max-width: 112px; } #chipNetText { max-width: 76px; }
+#homeHero.hero { padding: 20px; } #homeHero h1 { font-size: clamp(2.15rem, 11vw, 3.25rem); }
+.hero-credit { border-radius: 20px; }
+.stage { min-height: 420px; } .stage .panel { left: 5%; right: 1%; } .orb { left: 34%; }
+.stage .chip { font-size: .67rem; padding: 5px 9px; }
+#homeStats { gap: 8px; } #homeStats .statbox { min-height: 102px; padding: 9px 5px; }
+#homeStats .statbox b { font-size: 1.35rem; } #homeStats .statbox span { font-size: .64rem; }
 }
+@media (max-width: 350px) {
+.topbar .brand .t #brandSub { font-size: .55rem; } #btnLang { padding-left: 7px; padding-right: 7px; }
+#chipNet { max-width: 86px; } #chipNetText { max-width: 54px; }
+.stage .panel { left: 2%; right: 0; padding-left: 14px; padding-right: 14px; } .chip-b { bottom: -3px; }
 }
 .chip.good { color: #0a6b3d; background: rgba(15,138,77,.12); }
 html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 </style>
 </head>
-<body data-perf="auto">
+<body data-theme="dark" data-perf="full">
 <!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
-<audio id="sdpAudio" preload="auto" playsinline crossorigin="anonymous"></audio>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -689,22 +701,18 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 <div id="bg" data-anim="on"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="blob blob4"></div><div id="grain"></div></div>
 
 <div id="app">
-  <header class="topbar">
+  <header class="topbar glass">
     <div class="brand">
       <span class="mark" aria-hidden="true"><svg width="21" height="21"><use xlink:href="#i-mic" href="#i-mic"></use></svg></span>
-      <span class="t"><b id="brandName">Smart Dictation</b><span id="brandSub">UK English &middot; B1</span><span id="brandCredit" class="credit">Created by Hansana &middot; Idea given by Ayya01 (Lesandu) &middot; Lecturer in Charge: Sumodya Sewmini</span></span>
+      <span class="t"><b id="brandName">SMART<em>/</em>DICTATION</b><span id="brandSub">Created by Hansana · Idea by Ayya01 (Lesandu)</span><span id="brandCredit" class="credit sr">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</span></span>
     </div>
-    <div class="row">
+    <div class="row top-controls">
       <button type="button" id="btnLang" class="chip langchip" aria-label="Switch language" aria-pressed="false">EN | සිංහල</button>
       <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Live Sync</span></button>
+      <button type="button" id="themeBtn" class="btn icon ghost theme-btn" aria-label="Switch to light theme" title="Switch theme">☀</button>
       <button type="button" id="btnLock" class="btn icon ghost" aria-label="Open lecturer mode"><svg aria-hidden="true"><use xlink:href="#i-lock" href="#i-lock"></use></svg></button>
     </div>
   </header>
-
-  <!-- permanent creator credit, visible on every screen -->
-  <div class="creditbar glass" id="creditBar">
-    <span class="credit" data-i18n="creditFull">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</span>
-  </div>
 
   <nav id="tabbar" role="tablist" aria-label="Main sections">
     <button type="button" role="tab" id="tab-home" data-tab="home" aria-selected="true" aria-controls="screen-home"><svg aria-hidden="true"><use xlink:href="#i-home" href="#i-home"></use></svg><span data-i18n="navHome">Home</span></button>
@@ -713,41 +721,45 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
     <button type="button" role="tab" id="tab-set" data-tab="set" aria-selected="false" aria-controls="screen-set"><svg aria-hidden="true"><use xlink:href="#i-gear" href="#i-gear"></use></svg><span data-i18n="navSet">Settings</span></button>
   </nav>
 
-  <!-- ============ HOME ============ -->
+  <!-- ============ HOME: APPLE WWDC25 LIQUID GLASS PLAYGROUND ============ -->
   <section class="screen" id="screen-home" role="tabpanel" aria-labelledby="tab-home">
     <div id="homeAnn"></div>
-    <div class="glass card hero" id="homeHero">
-      <div class="kicker" id="homeKicker">Session</div>
-      <h1 id="homeTitle">Loading&hellip;</h1>
-      <p class="muted small" id="homeSub"></p>
-      <div class="meta" id="homeMeta"></div>
-    </div>
-
-    <div class="stack" style="margin-top:12px">
-      <div class="glass card r2 hidden" id="homeResume">
-        <div class="spread">
-          <div><b id="resumeText">Welcome back</b><p class="muted small" id="resumeSub"></p></div>
-          <span class="row"><button type="button" class="btn sm soft" id="btnResumeNo">Start again</button><button type="button" class="btn sm primary" id="btnResumeYes">Continue</button></span>
+    <div class="lg-hero">
+      <div class="glass card hero" id="homeHero">
+        <div class="kicker eyebrow" id="homeKicker">SESSION 7 · 22/10/2026 ● CCBE GALLE BRANCH</div>
+        <h1><span id="homeTitle">Session 7 - Travel &amp; Transport</span> <span class="hollow" aria-hidden="true">Liquid Glass</span></h1>
+        <p class="lede muted" id="homeSub">30 words · 5s timer · Word ×2 · British Female Professor Voice (Amy · en-GB)</p>
+        <div class="glass hero-credit">💧 Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer: Sumodya Sewmini</div>
+        <div class="meta" id="homeMeta"></div>
+        <div class="glass card r2 hidden" id="homeResume">
+          <div class="spread"><div><b id="resumeText">Welcome back</b><p class="muted small" id="resumeSub"></p></div><span class="row"><button type="button" class="btn sm soft" id="btnResumeNo">Start again</button><button type="button" class="btn sm primary" id="btnResumeYes">Continue</button></span></div>
+        </div>
+        <div class="hero-actions">
+          <button type="button" id="btnStart" class="btn primary xl block"><svg aria-hidden="true"><use xlink:href="#i-play" href="#i-play"></use></svg><span id="btnStartText" data-i18n="startDict">Start dictation</span></button>
+          <button type="button" id="btnGuide" class="btn soft block glass"><svg aria-hidden="true"><use xlink:href="#i-help" href="#i-help"></use></svg><span data-i18n="guide">User Guide / උපදෙස්</span></button>
+          <div class="seg" id="segMode" role="tablist" aria-label="Answer mode"><span class="thumb" aria-hidden="true"></span>
+            <button type="button" role="tab" data-mode="paper" aria-selected="true"><span data-i18n="listenPaper">Listen &amp; write on paper</span></button>
+            <button type="button" role="tab" data-mode="type" aria-selected="false"><span data-i18n="typeAnswers">Type my answers</span></button>
+          </div>
         </div>
       </div>
-
-      <button type="button" id="btnStart" class="btn primary xl block"><svg aria-hidden="true"><use xlink:href="#i-play" href="#i-play"></use></svg><span id="btnStartText" data-i18n="startDict">Start dictation</span></button>
-
-      <button type="button" id="btnGuide" class="btn soft block"><svg aria-hidden="true"><use xlink:href="#i-help" href="#i-help"></use></svg><span data-i18n="guide">Guide</span></button>
-
-      <div class="seg" id="segMode" role="tablist" aria-label="Answer mode"><span class="thumb" aria-hidden="true"></span>
-        <button type="button" role="tab" data-mode="paper" aria-selected="true"><span data-i18n="listenPaper">Listen &amp; write on paper</span></button>
-        <button type="button" role="tab" data-mode="type" aria-selected="false"><span data-i18n="typeAnswers">Type my answers</span></button>
+      <div class="stage" id="lgStage" role="group" aria-label="Interactive Liquid Glass material playground">
+        <span class="bubble bubble-1" aria-hidden="true"></span><span class="bubble bubble-2" aria-hidden="true"></span><span class="bubble bubble-3" aria-hidden="true"></span><span class="bubble bubble-4" aria-hidden="true"></span>
+        <div id="orb" class="orb" role="button" tabindex="0" aria-label="Glowing orb. Drag it, use arrow keys to move, or press Enter to centre it."></div>
+        <div class="glass panel" id="materialMixer">
+          <h2>Liquid Glass <span>Material Mixer</span></h2>
+          <div class="mix-row"><div class="mix-head"><label for="sBlur">Blur</label><output id="outBlur" for="sBlur">22px</output></div><input id="sBlur" type="range" min="4" max="40" value="22" step="1" aria-label="Glass blur"></div>
+          <div class="mix-row"><div class="mix-head"><label for="sSat">Saturate</label><output id="outSat" for="sSat">1.7×</output></div><input id="sSat" type="range" min="100" max="260" value="170" step="1" aria-label="Glass saturation"></div>
+          <div class="mix-row"><div class="mix-head"><label for="sBrt">Bright</label><output id="outBrt" for="sBrt">1.03</output></div><input id="sBrt" type="range" min="90" max="130" value="103" step="1" aria-label="Glass brightness"></div>
+          <div class="seg-tint" id="segTint" role="group" aria-label="Glass tint"><span class="seg-ind" aria-hidden="true"></span><button type="button" data-tint="clear" aria-pressed="true">Clear</button><button type="button" data-tint="frost" aria-pressed="false">Frost</button><button type="button" data-tint="smoke" aria-pressed="false">Smoke</button></div>
+          <p class="mixer-hint">↖ drag the glowing orb behind this glass pane</p>
+        </div>
+        <span class="glass chip chip-a">💧 Liquid Glass: Live</span><span class="glass chip chip-b">🇬🇧 Amy UK Voice ⚡︎</span>
       </div>
-
-      <div class="grid3" id="homeStats"></div>
-
-      <div class="glass card pad-s">
-        <div class="spread" style="margin-bottom:8px"><h3>Past sessions</h3>
-          <span class="row"><button type="button" class="btn sm ghost" id="btnRefresh" aria-label="Refresh now"><svg aria-hidden="true"><use xlink:href="#i-refresh" href="#i-refresh"></use></svg></button></span></div>
-        <div id="homeSessions"></div>
-      </div>
-
+    </div>
+    <div class="grid3" id="homeStats"></div>
+    <div class="stack home-lower">
+      <div class="glass card pad-s"><div class="spread" style="margin-bottom:8px"><h3>Past sessions</h3><span class="row"><button type="button" class="btn sm ghost" id="btnRefresh" aria-label="Refresh now"><svg aria-hidden="true"><use xlink:href="#i-refresh" href="#i-refresh"></use></svg></button></span></div><div id="homeSessions"></div></div>
       <p class="credit center small" id="homeCredits" data-i18n="creditFull">Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini</p>
     </div>
   </section>
@@ -1352,7 +1364,7 @@ two-step reset, rolling recovery copy, centred fatal card, no injected script.
 results + auto-save, dictionary, community + private messages,
 lecturer panel with local/cloud PIN, optional Google Sheets cloud sync,
 device diagnostics, Liquid Glass UI with Lite performance mode.
-ES2017 only. No frameworks, no external fonts, no third-party scripts.
+Strict ES5 syntax only. No frameworks, external fonts, or third-party scripts.
 ========================================================================== */
 (function () {
 "use strict";
@@ -1436,8 +1448,8 @@ Leave it empty for local-only mode (everything still works on one device). */
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v10_session7",
-schema: 10,
+key: "sdp.v11_liquid",
+schema: 11,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1463,7 +1475,7 @@ ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 10,
+settingsRev: 11,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -1602,7 +1614,7 @@ navComm: "Community",
 navSet: "Settings",
 listenPaper: "Listen & write on paper",
 typeAnswers: "Type my answers",
-guide: "Guide / \u0d8b\u0db4\u0daf\u0dd9\u0dc3\u0dca",
+guide: "User Guide / \u0d8b\u0db4\u0daf\u0dd9\u0dc3\u0dca",
 guideLong: "Complete user guide",
 pause: "Pause",
 creditFull: "Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu) \u00b7 Lecturer in Charge: Sumodya Sewmini",
@@ -2086,7 +2098,7 @@ return {
 v: CONFIG.schema,
 settingsRev: CONFIG.settingsRev,
 settings: {
-theme: "dark", size: "m", hc: "off", perf: "auto", lang: "en",
+theme: "dark", size: "m", hc: "off", perf: "full", lang: "en",
 voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false,
 writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, advance: "auto",
 repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half"
@@ -2158,7 +2170,7 @@ purges any male device voice, so one single British female professor voice
 if (!d.settingsRev || d.settingsRev < 9) DB.dropOld(d);
 /* v10: the Apple Liquid Glass upgrade keeps Session 7 but drops any stale
    pre-v10 cached snapshot so no old surface or audio state survives. */
-if (!d.settingsRev || d.settingsRev < 10) DB.dropOld(d);
+if (!d.settingsRev || d.settingsRev < 11) DB.dropOld(d);
 d = DB.migrate(d);
 this.data = d;
 if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
@@ -2273,7 +2285,7 @@ older session) can ever come back. */
 if (!d.settingsRev || d.settingsRev < 8) DB.resetToV9(d, base);
 /* v10 (Apple WWDC25 Liquid Glass material system): migrate any remaining
    pre-v10 device onto Session 7 with the new material tokens. */
-if (!d.settingsRev || d.settingsRev < 10) DB.resetToV10(d, base);
+if (!d.settingsRev || d.settingsRev < 11) DB.resetToV11(d, base);
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
@@ -2286,7 +2298,9 @@ the name is not a women's voice - "Female" itself contains "male", so a
 "Google UK English Female" voice must never be purged. */
 if (d.settings && typeof d.settings.voiceName === "string" && d.settings.voiceName && !/female/i.test(d.settings.voiceName) && /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(d.settings.voiceName)) d.settings.voiceName = "";
 if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
-d.settingsRev = 10;
+if (d.settings.theme === "auto" || ["light","dark"].indexOf(d.settings.theme) < 0) d.settings.theme = "dark";
+if (d.settings.perf === "auto" || ["full","lite"].indexOf(d.settings.perf) < 0) d.settings.perf = "full";
+d.settingsRev = 11;
 d.v = CONFIG.schema;
 return d;
 },
@@ -2295,6 +2309,14 @@ return d;
 resetToV10: function (d, base) {
 DB.resetToV9(d, base);
 d.settingsRev = 10;
+return d;
+},
+/* v11: Auto becomes dark + full once; later manual choices are retained. */
+resetToV11: function (d, base) {
+DB.resetToV10(d, base);
+d.settings.theme = "dark";
+d.settings.perf = "full";
+d.settingsRev = 11;
 return d;
 },
 /* Defect A: a stale unplanned date moves to today; a published date never
@@ -2461,11 +2483,34 @@ frameMs: 0,
 
 /* ---------- theme / size / performance ---------- */
 applyTheme: function () {
-var t = DB.data.settings.theme || "auto";
-document.documentElement.setAttribute("data-theme", t);
-var dark = t === "dark" || (t === "auto" && UI.prefers("(prefers-color-scheme: dark)"));
+var t = DB.data.settings.theme || "dark";
+var mode = (t === "light") ? "light" : "dark";
+document.documentElement.setAttribute("data-theme", mode);
+document.body.setAttribute("data-theme", mode);
+var dark = mode === "dark";
 var meta = U.$("meta[name=theme-color]");
-if (meta) meta.setAttribute("content", dark ? "#080a11" : "#eaf0fb");
+if (meta) meta.setAttribute("content", dark ? "#0a0f1e" : "#eaf0fb");
+var themeBtn = U.$("#themeBtn");
+if (themeBtn) {
+themeBtn.textContent = dark ? "☀" : "☾";
+themeBtn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+themeBtn.setAttribute("title", dark ? "Switch to light theme" : "Switch to dark theme");
+}
+},
+applyTint: function (tint) {
+var t = tint === "frost" || tint === "smoke" ? tint : "clear";
+U.setCls(document.body, "tint-frost", t === "frost");
+U.setCls(document.body, "tint-smoke", t === "smoke");
+var host = U.$("#segTint");
+if (!host) return;
+var buttons = U.$("button", host), active = 0;
+for (var i = 0; i < buttons.length; i++) {
+var on = buttons[i].getAttribute("data-tint") === t;
+buttons[i].setAttribute("aria-pressed", on ? "true" : "false");
+if (on) active = i;
+}
+var indicator = U.$(".seg-ind", host);
+if (indicator) indicator.style.transform = "translateX(" + (active * 100) + "%)";
 },
 applySize: function () { document.documentElement.setAttribute("data-size", DB.data.settings.size || "m"); },
 applyHc: function () { document.documentElement.setAttribute("data-hc", DB.data.settings.hc ? "on" : "off"); },
@@ -2502,23 +2547,13 @@ prefers: function (q) {
 try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; }
 },
 autoPerf: function () {
-if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
-if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-/* A7: very low-end phones (2 cores or 2 GB RAM and below) start in lite
-   straight away - they still get the genuine Liquid Glass look, just with
-   paused blobs and a 10 px blur. */
-var cores = U.nav("hardwareConcurrency", 0), mem = U.nav("deviceMemory", 0);
-if (cores && cores <= 2) return "lite";
-if (mem && mem <= 2) return "lite";
-try {
-var conn = navigator.connection || navigator.webkitConnection;
-if (conn && conn.saveData) return "lite";
-} catch (e) {}
-return null;
+this.autoDowngraded = false;
+return "full";
 },
 applyPerf: function () {
-var want = DB.data.settings.perf || "auto";
-var mode = want === "auto" ? (this.autoPerf() || (this.autoDowngraded || this.frameMs > 24 ? "lite" : "full")) : want;
+var want = DB.data.settings.perf || "full";
+var mode = want === "lite" ? "lite" : "full";
+this.autoDowngraded = false;
 this.perfMode = mode;
 document.documentElement.setAttribute("data-perf", mode);
 document.body.setAttribute("data-perf", mode);
@@ -2558,8 +2593,8 @@ if (!samples.length) return;
 samples.sort(function (a, b) { return a - b; });
 var median = samples[Math.floor(samples.length / 2)];
 this.frameMs = Math.round(median * 10) / 10;
-if (median > 24) this.autoDowngraded = true;
-if (DB.data.settings.perf === "auto") this.applyPerf();
+this.autoDowngraded = false;
+this.applyPerf();
 },
 pauseAnimations: function (paused) {
 var bg = U.$("#bg");
@@ -2969,10 +3004,10 @@ if (ses.date) {
 var bits = String(ses.date).split("-");
 if (bits.length === 3) when = " \u00b7 " + bits[2] + "/" + bits[1] + "/" + bits[0];
 }
-U.$("#homeKicker").textContent = ("Session " + (ses.no || "1")).toUpperCase() + when + " \u00b7 " + (ses.branch || "CCBE GALLE BRANCH").toUpperCase();
+U.$("#homeKicker").textContent = ("Session " + (ses.no || "1")).toUpperCase() + when + " \u25cf " + (ses.branch || "CCBE GALLE BRANCH").toUpperCase();
 U.$("#homeTitle").textContent = list ? list.name : "No list published yet";
 var wc = list && list.words ? list.words.length : 0;
-U.$("#homeSub").textContent = wc + " words \u00b7 " + writeSecs("") + "s timer \u00b7 Created by Hansana \u00b7 Idea by Ayya01 (Lesandu)";
+U.$("#homeSub").textContent = wc + " words \u00b7 " + writeSecs("") + "s timer \u00b7 Word \u00d7" + st.repeats + " \u00b7 British Female Professor Voice (Amy \u00b7 en-GB)";
 
 var meta = U.$("#homeMeta");
 meta.textContent = "";
@@ -3438,10 +3473,7 @@ b.setAttribute("data-tint", pair[1]);
 b.setAttribute("aria-pressed", String(DB.data.settings.glassTint === pair[1]));
 U.on(b, "click", function () {
 var t = pair[1];
-var cls = document.body.className.replace(/\btint-\S*/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/, "");
-document.body.className = t === "clear" ? cls : (cls ? cls + " " : "") + "tint-" + t;
-var bs = tseg.getElementsByTagName("button");
-for (var k = 0; k < bs.length; k++) bs[k].setAttribute("aria-pressed", String(bs[k].getAttribute("data-tint") === t));
+UI.applyTint(t);
 DB.data.settings.glassTint = t;
 DB.save();
 });
@@ -3735,9 +3767,12 @@ if (!this.supported) return;
 var list = [];
 try { list = window.speechSynthesis.getVoices() || []; } catch (e) { list = []; }
 if (!list) list = [];
-this.voices = list.slice(0);
+this.voices = [];
 var uks = [];
-for (var i = 0; i < list.length; i++) if (this.isUK(list[i])) uks.push(list[i]);
+for (var i = 0; i < list.length; i++) if (!this.isMaleName(list[i].name)) {
+this.voices.push(list[i]);
+if (this.isUK(list[i])) uks.push(list[i]);
+}
 this.ukVoices = uks;
 this.pick();
 if (uks.length && NoVoice.cardOpen) NoVoice.close();
@@ -3755,7 +3790,7 @@ if (!n) return false;
 if (/female/i.test(n)) return false;
 return /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(n);
 },
-femaleRank: ["Microsoft Sonia", "Microsoft Libby", "Maisie", "Google UK English Female", "Serena", "Kate", "Martha", "Stephanie", "Shelley", "Microsoft Hazel"],
+femaleRank: ["Amy", "Microsoft Sonia", "Microsoft Libby", "Maisie", "Google UK English Female", "Serena", "Kate", "Martha", "Stephanie", "Shelley", "Microsoft Hazel"],
 isFemaleName: function (n) {
 n = String(n || "");
 if (!n || this.isMaleName(n)) return false;
@@ -3787,9 +3822,8 @@ if (n === this.femaleRank[r] || n.indexOf(this.femaleRank[r]) >= 0) { this.chose
 this.chosen = females[0];
 return this.chosen;
 }
-/* Only when the device has NO female voice at all may an en-GB voice (even
-a male one) keep the dictation from going silent - the online Amy voice
-still leads every sound. */
+/* Only non-male offline voices remain candidates. The online Amy voice
+still leads every sound; known male device voices are never selected. */
 if (saved) {
 for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === saved) { this.chosen = this.ukVoices[i]; return this.chosen; }
 }
@@ -3912,13 +3946,13 @@ return [this.amyUrl(text), this.streamUrl(text)];
 anyEnglish: function () {
 /* Tier 4: an English female voice is preferred even when it is not en-GB;
 the utterance is still labelled en-GB and pitched like the professor. */
-var female = /\b(female|woman|sonia|libby|samantha|victoria|karen|moira|tessa|serena|kate|martha|stephanie|shelley|hazel|zira|aria|jenny)\b/i;
+var female = /\b(female|woman|amy|sonia|libby|samantha|victoria|karen|moira|tessa|serena|kate|martha|stephanie|shelley|hazel|zira|aria|jenny)\b/i;
 var first = null;
 for (var i = 0; i < this.voices.length; i++) {
 var v = this.voices[i];
 if (!/^en/i.test(this.normLang(v.lang))) continue;
-if (!first) first = v;
-if (female.test(String(v.name || ""))) return v;
+if (!first && !this.isMaleName(v.name)) first = v;
+if (female.test(String(v.name || "")) && !this.isMaleName(v.name)) return v;
 }
 return first;
 },
@@ -9272,6 +9306,94 @@ DB.saveNow();
 welcomeGuide();
 }
 
+
+function initLiquidPlayground() {
+var root = document.documentElement;
+function range(id, outId, prop, divisor, suffix) {
+var input = U.$(id), output = U.$(outId);
+if (!input || !output) return;
+U.on(input, "input", function () {
+var raw = Number(input.value), value = raw / divisor;
+root.style.setProperty(prop, String(value) + (divisor === 1 ? suffix : ""));
+output.textContent = String(value) + suffix;
+});
+}
+range("#sBlur", "#outBlur", "--gb", 1, "px");
+range("#sSat", "#outSat", "--gs", 100, "×");
+range("#sBrt", "#outBrt", "--gbr", 100, "");
+UI.applyTint(DB.data.settings.glassTint || "clear");
+U.delegate(U.$("#segTint"), "click", "button", function (ev, button) {
+var tint = button.getAttribute("data-tint") || "clear";
+DB.data.settings.glassTint = tint;
+UI.applyTint(tint);
+DB.save();
+});
+var stage = U.$("#lgStage"), orb = U.$("#orb"), drag = null;
+if (!stage || !orb) return;
+function bounds() { return stage.getBoundingClientRect(); }
+function moveOrb(x, y) {
+var rect = bounds(), w = orb.offsetWidth || 140, h = orb.offsetHeight || 140;
+orb.style.left = U.clamp(x, 0, Math.max(0, rect.width - w)) + "px";
+orb.style.top = U.clamp(y, 0, Math.max(0, rect.height - h)) + "px";
+}
+function centreOrb() {
+var rect = bounds();
+moveOrb((rect.width - (orb.offsetWidth || 140)) * 0.42, 44);
+}
+U.on(orb, "pointerdown", function (e) {
+var rect = orb.getBoundingClientRect();
+drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top };
+U.setCls(orb, "dragging", true);
+try { orb.setPointerCapture(e.pointerId); } catch (ignored) {}
+e.preventDefault();
+});
+U.on(orb, "pointermove", function (e) {
+if (!drag || e.pointerId !== drag.id) return;
+var rect = bounds();
+moveOrb(e.clientX - rect.left - drag.x, e.clientY - rect.top - drag.y);
+});
+function drop(e) {
+if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+drag = null;
+U.setCls(orb, "dragging", false);
+try { orb.releasePointerCapture(e.pointerId); } catch (ignored) {}
+}
+U.on(orb, "pointerup", drop);
+U.on(orb, "pointercancel", drop);
+U.on(orb, "keydown", function (e) {
+var rect = bounds(), current = orb.getBoundingClientRect(), step = e.shiftKey ? 30 : 12;
+var x = current.left - rect.left, y = current.top - rect.top;
+if (e.key === "ArrowLeft") x -= step;
+else if (e.key === "ArrowRight") x += step;
+else if (e.key === "ArrowUp") y -= step;
+else if (e.key === "ArrowDown") y += step;
+else if (e.key === "Enter" || e.key === " ") { centreOrb(); e.preventDefault(); return; }
+else return;
+moveOrb(x, y);
+e.preventDefault();
+});
+centreOrb();
+}
+function initDockMagnification() {
+var dock = U.$("#tabbar");
+if (!dock) return;
+function reset() {
+var buttons = U.$$("button", dock);
+for (var i = 0; i < buttons.length; i++) buttons[i].style.transform = "";
+}
+U.on(dock, "pointermove", function (e) {
+if (window.innerWidth < 900 || e.pointerType === "touch") { reset(); return; }
+var buttons = U.$$("button", dock);
+for (var i = 0; i < buttons.length; i++) {
+var rect = buttons[i].getBoundingClientRect();
+var distance = Math.abs(e.clientX - (rect.left + rect.width / 2));
+var power = Math.max(0, 1 - distance / 190);
+buttons[i].style.transform = "translateY(" + (-10 * power).toFixed(2) + "px) scale(" + (1 + 0.28 * power).toFixed(3) + ")";
+}
+}, { passive: true });
+U.on(dock, "pointerleave", reset);
+}
+
 function boot() {
   Store.test();
   DB.load();
@@ -9280,14 +9402,8 @@ UI.applyTheme();
 UI.applySize();
 UI.applyHc();
 UI.applyLang();
-/* restore the saved Liquid Glass tint (Clear / Frost / Smoke) on the body */
-try {
-var gt = String(DB.data.settings.glassTint || "clear");
-if (gt && gt !== "clear") {
-var cls = document.body.className.replace(/\btint-\S*/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/, "");
-document.body.className = cls ? cls + " tint-" + gt : "tint-" + gt;
-}
-} catch (e) {}
+initLiquidPlayground();
+initDockMagnification();
 Speech.init();
 Cloud.init();
 Links.readHash();
@@ -9299,6 +9415,11 @@ U.delegate(U.$("#tabbar"), "click", "button", function (ev, b) {
 UI.setTab(b.getAttribute("data-tab"));
 });
 U.on(U.$("#btnLock"), "click", function () { Admin.open(); });
+U.on(U.$("#themeBtn"), "click", function () {
+DB.data.settings.theme = DB.data.settings.theme === "light" ? "dark" : "light";
+DB.saveNow();
+UI.applyTheme();
+});
 U.on(U.$("#btnLang"), "click", function () {
 UI.setLang(DB.data.settings.lang === "si" ? "en" : "si");
 UI.toast(DB.data.settings.lang === "si" ? "\u0dc3\u0dd2\u0d82\u0dc4\u0dbd \u0db4\u0da7\u0dd2\u0dad\u0dca\u0dad" : "English", { icon: "i-info", ms: 1600 });
@@ -9437,10 +9558,7 @@ contacted on boot; the newest payload wins. */
 Cloud.bootSync();
 UI.setTab("home");
 UI.applyPerf();
-UI.frameProbe(function () {
-if (navigator.hardwareConcurrency <= 4 || navigator.deviceMemory <= 4) { DB.data.settings.perf = "lite"; DB.saveNow(); }
-UI.applyPerf();
-});
+UI.frameProbe(function () { UI.applyPerf(); });
 /* Opening the file makes no network requests. Sync begins on the first user tap. */
 var syncStarted = false;
 function beginSync() {
