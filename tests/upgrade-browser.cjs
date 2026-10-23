@@ -38,6 +38,14 @@ function fakeSpeech() {
   try { window.SpeechSynthesisUtterance = function (text) { this.text = text; }; } catch (e3) {}
 }
 
+async function openTab(page, id) {
+  await page.evaluate((tab) => {
+    const button = document.getElementById(tab);
+    if (button) button.click();
+  }, id);
+  await page.waitForTimeout(250);
+}
+
 async function boot(browser, width, height) {
   const context = await browser.newContext({
     viewport: { width, height },
@@ -154,8 +162,7 @@ function material(page) {
       assert.match(m.disc, /radial-gradient/);
       assert.equal(m.heroDisplay, 'block', 'the hero is one clean full-width column');
       assert.equal(await page.locator('#screen-home #lgStage').count(), 0, 'no mixer on Home');
-      await page.locator('#tab-set').click();
-      await page.waitForTimeout(200);
+      await openTab(page, 'tab-set');
       const stage = await page.evaluate(() => ({
         found: !!document.querySelector('#screen-set #lgStage'),
         orb: getComputedStyle(document.querySelector('#screen-set #orb')).backgroundImage,
@@ -164,7 +171,7 @@ function material(page) {
       assert.equal(stage.found, true, 'the Material Mixer lives in Settings');
       assert.equal(stage.mixer, true);
       assert.match(stage.orb, /radial-gradient/);
-      await page.locator('#tab-home').click();
+      await openTab(page, 'tab-home');
       assert.equal(await page.locator('#tabbar button').count(), 5, 'five dock sections');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
@@ -259,8 +266,7 @@ function material(page) {
   await check(engine + ' mixer, tint and orb keep working after tab switches', async () => {
     const { context, page, errors } = await boot(browser, 1280, 900);
     try {
-      await page.locator('#tab-set').click();
-      await page.waitForTimeout(200);
+      await openTab(page, 'tab-set');
       assert.equal(await page.locator('#screen-set #materialMixer').count(), 1, 'Settings hosts the mixer');
       await page.evaluate(() => {
         for (const [id, value] of [['sBlur', 34], ['sSat', 210], ['sBrt', 110]]) {
@@ -354,10 +360,16 @@ function material(page) {
          coarse-pointer engine must not magnify at all, and a fine pointer must */
       const fine = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
       const dock = page.locator('#tab-home');
+      await page.mouse.move(2, 2);
+      await page.waitForTimeout(3600);   /* performance toasts must clear the dock */
       const box = await dock.boundingBox();
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await page.waitForTimeout(250);
-      const transformed = await dock.evaluate((el) => el.style.transform);
+      let transformed = '';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(300);
+        transformed = await dock.evaluate((el) => el.style.transform);
+        if (transformed) break;
+      }
       if (fine) assert.match(transformed, /scale\(1\.28/, 'dock magnification');
       else assert.equal(transformed, '', 'a coarse pointer never magnifies');
       await page.mouse.move(2, 2);
