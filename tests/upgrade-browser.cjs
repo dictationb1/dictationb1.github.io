@@ -1,4 +1,4 @@
-/* Release 2.1.0 (ver 13) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.2.0 (ver 14) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer and the low-data
    audio path. Rewritten from scratch for this release.
 
@@ -136,7 +136,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v13 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v14 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -182,6 +182,10 @@ function material(page) {
       assert.notEqual(lite.orb, 'none', 'the warm orb is still rendered');
       assert.match(lite.stripes, /repeating-linear-gradient/, 'stripes kept in lite');
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
+      await page.waitForFunction(() => {
+        const css = getComputedStyle(document.querySelector('.topbar.glass'));
+        return (css.backdropFilter || css.webkitBackdropFilter || '').indexOf('blur(8px)') >= 0;
+      }, null, { timeout: 8000 });
       const blurPx = await page.evaluate(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));
         return css.backdropFilter || css.webkitBackdropFilter || '';
@@ -191,6 +195,50 @@ function material(page) {
       await page.locator('#btnPerf').click();
       await page.waitForTimeout(250);
       assert.equal((await material(page)).perf, 'full');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' floating Hansana credit animates in Full and Lite and opens full credits', async () => {
+    const { context, page, errors } = await boot(browser, 1280, 800);
+    try {
+      const full = await page.evaluate(() => {
+        const credit = document.getElementById('credit');
+        return {
+          inView: credit.classList.contains('in'),
+          opacity: getComputedStyle(credit).opacity,
+          sheen: getComputedStyle(credit, '::after').animationName,
+          ping: getComputedStyle(credit.querySelector('.ring')).animationName,
+          transition: getComputedStyle(credit).transitionProperty
+        };
+      });
+      assert.equal(full.inView, true, 'spring entrance completes');
+      assert.equal(full.opacity, '1');
+      assert.equal(full.sheen, 'sheen');
+      assert.equal(full.ping, 'ping');
+      assert.match(full.transition, /transform/);
+      await page.locator('#credit').click();
+      assert.match(await page.locator('#toasts').textContent(), /Created by Hansana · Idea given by Ayya01 \(Lesandu\) · Lecturer in Charge: Sumodya Sewmini/);
+      if ((await material(page)).perf === 'full') await page.locator('#btnPerf').click();
+      await page.mouse.move(2, 2);
+      await page.waitForTimeout(1000);
+      const lite = await page.evaluate(() => {
+        const credit = document.getElementById('credit');
+        return {
+          perf: document.body.getAttribute('data-perf'),
+          inView: credit.classList.contains('in'),
+          sheen: getComputedStyle(credit, '::after').animationName,
+          ping: getComputedStyle(credit.querySelector('.ring')).animationName,
+          transition: getComputedStyle(credit).transitionProperty
+        };
+      });
+      assert.equal(lite.perf, 'lite');
+      assert.equal(lite.inView, true);
+      assert.equal(lite.sheen, 'sheen', 'Lite never disables the diagonal sheen');
+      assert.equal(lite.ping, 'ping', 'Lite never disables the aqua ping');
+      assert.match(lite.transition, /transform/);
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
       await context.close();
@@ -214,18 +262,45 @@ function material(page) {
         blur: document.documentElement.style.getPropertyValue('--gb'),
         sat: document.documentElement.style.getPropertyValue('--gs'),
         bright: document.documentElement.style.getPropertyValue('--gbr'),
-        out: document.querySelector('#outSat').textContent
+        out: document.querySelector('#outSat').textContent,
+        fills: ['sBlur', 'sSat', 'sBrt'].map((id) => document.getElementById(id).style.getPropertyValue('--fill'))
       }));
       assert.equal(mixed.blur, '34px');
       assert.equal(mixed.sat, '2.10');
       assert.equal(mixed.bright, '1.10');
       assert.equal(mixed.out, '2.1×');
-      await page.locator('#segTint [data-tint="frost"]').click();
+      assert.ok(Math.abs(parseFloat(mixed.fills[0]) - 83.3333) < 0.01);
+      assert.equal(mixed.fills[1], '68.75%');
+      assert.equal(mixed.fills[2], '50%');
+      await page.evaluate(() => { window.__tintHero = document.getElementById('homeHero'); });
+      const clear = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
+      await page.locator('#segTint [data-tint="1"]').click();
       assert.equal(await page.locator('body.tint-frost').count(), 1);
-      await page.locator('#segTint [data-tint="smoke"]').click();
+      assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
+      assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(225, 240, 255, 0.22)', null, { timeout: 8000 });
+      const frost = await page.evaluate(() => ({
+        bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
+        shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
+        morph: document.body.classList.contains('tint-morph'),
+        saved: JSON.parse(localStorage.getItem('sdp.v14_liquid')).settings.glassTint,
+        indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
+      }));
+      assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
+      assert.equal(frost.bg, 'rgba(225, 240, 255, 0.22)');
+      assert.match(frost.shadow, /180, 225, 255/);
+      assert.equal(frost.morph, false);
+      assert.equal(frost.saved, 1);
+      assert.deepEqual(frost.indicators, ['translateX(100%)', 'translateX(100%)']);
+      await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
-      await page.locator('#segTint [data-tint="clear"]').click();
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 24, 0.64)', null, { timeout: 8000 });
+      const smoke = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
+      assert.equal(smoke, 'rgba(6, 10, 24, 0.64)');
+      await page.locator('#segTint [data-tint="0"]').click();
+      await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
+      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
 
       const orb = page.locator('#orb');
       const before = await orb.boundingBox();
@@ -314,9 +389,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v13_fast_liquid')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v14_liquid')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v13_fast_liquid')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v14_liquid')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -326,7 +401,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v13_fast_liquid'));
+        const d = JSON.parse(localStorage.getItem('sdp.v14_liquid'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });

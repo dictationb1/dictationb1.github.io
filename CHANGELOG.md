@@ -1,5 +1,44 @@
 # Changelog
 
+## 2.2.0 (v14) — 2026-10-23 (animated Hansana badge and liquid tint morphs)
+
+- **Floating creator badge.** Adds the fixed `#credit.credit.glass` pill with the
+  aqua droplet, “credits goes to Hansana” label, spring entrance/exit, diagonal
+  `sheen`, one-shot `ping`, and a pausable 350 / 5200 / 900 ms `creditLoop()`.
+  Hover or pointer inspection keeps it visible; clicking opens the complete
+  Hansana / Ayya01 (Lesandu) / Sumodya Sewmini credits. Its animations remain
+  enabled in both Full and Lite modes, with a phone placement above the dock.
+- **Clear / Frost / Smoke now morph instead of merely changing state.** Both
+  Material Mixers use numeric `data-tint="0|1|2"` controls and a spring sliding
+  `.seg-ind`. `UI.setTint()` updates every pill in place without re-rendering,
+  persists `settings.glassTint`, and triggers a 420 ms scale/shimmer pulse.
+  Explicit `background-color`, `box-shadow`, and `backdrop-filter` transitions
+  make the crystal, milky frost, and obsidian smoke presets visibly animate in
+  Full and Lite modes.
+- **Live mixer tracks.** Home and Settings range controls update their aqua
+  `--fill` percentage on every input, and `UI.bindLiquidControls()` re-binds all
+  tint pills, sliders and the draggable orb after screen/language renders.
+- **60 FPS safeguards retained.** Pre-blurred radial blobs, hidden full-screen
+  grain, one hovered-pane rectangle cached on `pointerenter`, and the single
+  1.2-second median-frame probe remain. Lite pauses only ambient loops while
+  preserving backdrop blur, specular rims, stripes, disc, orb, tint transitions,
+  segmented indicator and the complete badge animation set.
+- **Low-data dictionary contract.** `DictAPI.lookup()` returns embedded `phon`,
+  `pos`, `def`, and `ex` fields (plus the existing UI aliases) for every Session
+  7 word with zero requests. The shared `preload="none"` audio element still
+  replays a buffered repeat, and repository sync fetches `session.json` only
+  when `remoteVer > DB.data.ver`, including on a manual refresh.
+- **Release and migration.** `APP_VERSION` is `2.2.0`; the storage key is
+  `sdp.v14_liquid`, schema/settings/data revisions are `14`. v13 and v12 data
+  migrate without losing class results, and named legacy tints become numeric.
+  The 30-word Session 7 assignment, fixed five-second timer, two repeats, Amy
+  en-GB voice chain, bilingual UI, Practice, Community, checklist and Admin PIN
+  7898 remain intact.
+- **Verification.** A cleanly regenerated `tests/upgrade.test.cjs` covers the
+  badge timing, pause/toast behavior, no-render tint morph, slider fill,
+  migration, low-data engine and preserved features. The Phase 1 and real
+  Chromium gates cover regressions and computed browser materials.
+
 ## 2.1.0 (v13) — 2026-10-23 (60 FPS Liquid Glass, automatic Lite mode, 85% less data)
 
 - **GPU/CPU lag removed at the source.** `.blob` no longer uses `filter: blur(85px)`
