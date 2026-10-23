@@ -242,13 +242,18 @@ function material(page) {
         await page.locator('#btnPerf').click();
         await page.waitForTimeout(250);
       }
+      /* dock magnification is deliberately a desktop fine-pointer nicety: a
+         coarse-pointer engine must not magnify at all, and a fine pointer must */
+      const fine = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
       const dock = page.locator('#tab-home');
       const box = await dock.boundingBox();
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await page.waitForTimeout(200);
-      assert.match(await dock.evaluate((el) => el.style.transform), /scale\(1\.28/, 'dock magnification');
+      await page.waitForTimeout(250);
+      const transformed = await dock.evaluate((el) => el.style.transform);
+      if (fine) assert.match(transformed, /scale\(1\.28/, 'dock magnification');
+      else assert.equal(transformed, '', 'a coarse pointer never magnifies');
       await page.mouse.move(2, 2);
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(250);
       assert.equal(await dock.evaluate((el) => el.style.transform), '');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
