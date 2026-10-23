@@ -1,7 +1,8 @@
-/* Smart Dictation Player 2.4.0 (schema 16) release verification.
-   Regenerated from scratch for this release: an animated swan credit badge, the
-   see-through Liquid Glass title font, the Material Mixer moved into Settings
-   and the zero-lag 60 FPS engine. Written with fs.writeFileSync, never patched. */
+/* Smart Dictation Player 2.5.0 (schema 17) release verification.
+   Regenerated from scratch with fs.writeFileSync for this release: the complete
+   "Type my answers" experience with the animated Liquid Glass tick mark, live
+   letter slots, streak pill and smart timer assist, on top of every v16 upgrade
+   (swan badge, see-through title, Settings mixer, sliding capsules, 60 FPS). */
 'use strict';
 
 const assert = require('node:assert/strict');
@@ -34,6 +35,9 @@ function boot() { return harness(); }
 function fire(a, el, type) {
   el.dispatchEvent(new a.w.Event(type, { bubbles: true, cancelable: true }));
 }
+function enter(a, el) {
+  el.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+}
 function has(token, label) { assert.ok(html.indexOf(token) >= 0, label || token); }
 function lacks(token, label) { assert.equal(html.indexOf(token), -1, label || token); }
 function rule(selector) {
@@ -51,6 +55,11 @@ function appScript() {
   const found = html.match(/<script>([\s\S]*?)<\/script>/g);
   return found[found.length - 1].replace(/^<script>/, '').replace(/<\/script>$/, '');
 }
+function typeBoot(a) {
+  a.q.DB.data.settings.mode = 'type';
+  a.q.Eng.start({});
+  return a.w.document;
+}
 
 /* ------------------------------------------------------- release integrity */
 
@@ -67,30 +76,31 @@ test('single-file budget, strict ES5 and zero external assets', function () {
   assert.equal(/\basync\s+function/.test(script), false, 'no async functions');
 });
 
-test('v16 / 2.4.0 metadata is consistent across the app and data files', function () {
-  for (const data of [version, config, session]) assert.ok(Number(data.ver) >= 16, 'ver >= 16');
-  assert.equal(version.appVersion, '2.4.0');
-  assert.equal(version.version, '2.4.0');
-  assert.equal(version.settingsRev, 16);
+test('v17 / 2.5.0 metadata is consistent across the app and data files', function () {
+  for (const data of [version, config, session]) assert.ok(Number(data.ver) >= 17, 'ver >= 17');
+  assert.equal(version.appVersion, '2.5.0');
+  assert.equal(version.version, '2.5.0');
+  assert.equal(version.settingsRev, 17);
   assert.equal(version.session, '7');
   assert.equal(version.title, TITLE);
   assert.equal(version.buildDate, '2026-10-23');
-  assert.equal(config.appVersion, '2.4.0');
-  assert.equal(config.settingsRev, 16);
+  assert.equal(config.appVersion, '2.5.0');
+  assert.equal(config.settingsRev, 17);
   assert.equal(config.listId, LIST_ID);
-  assert.equal(session.appVersion, '2.4.0');
-  has('var APP_VERSION="2.4.0"');
-  has('key:"sdp.v16_swan"');
+  assert.equal(session.appVersion, '2.5.0');
+  has('var APP_VERSION="2.5.0"');
+  has('key:"sdp.v17_type_tick"');
   const a = boot();
   try {
-    assert.equal(a.q.CONFIG.key, 'sdp.v16_swan');
-    assert.equal(a.q.CONFIG.schema, 16);
-    assert.equal(a.q.CONFIG.settingsRev, 16);
+    assert.equal(a.q.CONFIG.key, 'sdp.v17_type_tick');
+    assert.equal(a.q.CONFIG.schema, 17);
+    assert.equal(a.q.CONFIG.settingsRev, 17);
+    assert.equal(a.w.SDP.version, '2.5.0');
     assert.ok(a.w.document.body.getAttribute('data-perf'));
   } finally { a.close(); }
 });
 
-test('Session 7 keeps all 30 Travel & Transport words in order', function () {
+test('Session 7 keeps all 30 Travel & Transport words, 5s timer, 2 repeats and Amy', function () {
   assert.deepEqual(session.lists[0].words.map((w) => w.w), WORDS);
   assert.equal(session.session.title, TITLE);
   assert.equal(session.session.no, '7');
@@ -118,6 +128,325 @@ test('Session 7 keeps all 30 Travel & Transport words in order', function () {
   } finally { a.close(); }
 });
 
+/* --------------------------------------------- v17 type mode: smart matcher */
+
+test('getTargetVariants and isAnswerMatch accept every spelling of tyre/tire', function () {
+  has('Eng.getTargetVariants=function');
+  has('Eng.isAnswerMatch=function');
+  const a = boot();
+  try {
+    const Eng = a.q.Eng;
+    const variants = (wObj) => Array.prototype.slice.call(Eng.getTargetVariants(wObj));
+    assert.deepEqual(variants({ w: 'tyre/tire' }), ['tyre/tire', 'tyre', 'tire']);
+    assert.deepEqual(variants({ w: ' Tourist   Information Centre ' }), ['tourist information centre']);
+    assert.deepEqual(variants({ w: 'public transport' }), ['public transport']);
+    assert.equal(Eng.isAnswerMatch('tyre', { w: 'tyre/tire' }), true);
+    assert.equal(Eng.isAnswerMatch('tire', { w: 'tyre/tire' }), true);
+    assert.equal(Eng.isAnswerMatch('tyre/tire', { w: 'tyre/tire' }), true);
+    assert.equal(Eng.isAnswerMatch('  Tyre ', { w: 'tyre/tire' }), true);
+    assert.equal(Eng.isAnswerMatch('TIRE', { w: 'tyre/tire' }), true);
+    assert.equal(Eng.isAnswerMatch('tyres', { w: 'tyre/tire' }), false);
+    assert.equal(Eng.isAnswerMatch('', { w: 'tyre/tire' }), false);
+    assert.equal(Eng.isAnswerMatch('tourist information centre', { w: 'tourist information centre' }), true);
+    assert.equal(Eng.isAnswerMatch('tourist information center', { w: 'tourist information centre' }), false);
+  } finally { a.close(); }
+});
+
+/* ------------------------------------------- v17 type mode: Liquid Glass UI */
+
+test('Type mode builds the Liquid Glass answer deck with pill, slots, tick and check button', function () {
+  has('Eng.onTypeCorrect=function');
+  has('playTickChime:function');
+  has('UI.playTickChime();');
+  has('tick.id="ansTick"');
+  has('hero.id="plTickHero"');
+  has('slots.id="ansSlots"');
+  has('pill.id="plLiveScore"');
+  has('checkBtn.id="ansCheckBtn"');
+  has('feedback.id="ansFeedback"');
+  has('ans-input-wrap');
+  has('is-correct');
+  has('@keyframes tickPulse');
+  has('slot-done');
+  assert.match(rule('.ans-input-wrap'), /border-radius:999px/);
+  assert.match(rule('.ans-input-wrap'), /transition:box-shadow \.4s cubic-bezier\(\.2,\.9,\.25,1\.35\)/);
+  assert.match(rule('.ans-input-wrap.is-correct'), /inset 0 0 0 2px #39d4b8/);
+  assert.match(rule('.ans-input-wrap.is-correct'), /transform:scale\(1\.02\)/);
+  assert.match(rule('.ans-tick'), /opacity:0/);
+  assert.match(rule('.ans-tick'), /transform:scale\(\.3\) rotate\(-25deg\)/);
+  assert.match(rule('.ans-tick.is-correct'), /opacity:1/);
+  assert.match(rule('.ans-tick .tick-bg'), /fill:url\(#dgC\)/);
+  assert.match(rule('.ans-tick .tick-check'), /stroke-dasharray:28/);
+  assert.match(rule('.ans-tick.is-correct .tick-check'), /stroke-dashoffset:0/);
+  assert.match(rule('.pl-tick-hero'), /opacity:0/);
+  assert.match(rule('.pl-tick-hero.is-correct'), /opacity:1/);
+  assert.equal(rule('.pl-tick-hero svg'), '.pl-tick-hero svg {width:24px;height:24px;}');
+  assert.match(rule('.pl-tick-hero .hero-tick-circle'), /fill:#39d4b8/);
+  assert.match(rule('.pl-tick-hero.is-correct .hero-tick-path'), /stroke-dashoffset:0/);
+  assert.ok(html.indexOf('id="dgC"') >= 0, 'the tick gradient is defined');
+  const a = boot();
+  try {
+    const doc = typeBoot(a);
+    const deck = doc.querySelector('.ans-deck.glass');
+    assert.ok(deck, 'the deck is a glass container');
+    const pill = doc.getElementById('plLiveScore');
+    assert.ok(pill.classList.contains('ans-score-pill'));
+    assert.equal(doc.getElementById('plCorrectCount').textContent, '\u2713 0 Correct');
+    assert.equal(doc.getElementById('plStreakCount').textContent, '\ud83d\udd25 0 Streak');
+    const slots = doc.getElementById('ansSlots');
+    assert.ok(slots.classList.contains('ans-slots'));
+    assert.equal(slots.querySelectorAll('.ans-hint-chip').length, 1);
+    assert.equal(slots.querySelector('.ans-hint-chip').textContent, '9 letters');
+    assert.equal(slots.querySelectorAll('.slot').length, 9, 'guidebook has nine slots');
+    const wrap = doc.getElementById('ansWrap');
+    assert.ok(wrap.classList.contains('ans-input-wrap'));
+    const inp = doc.getElementById('ansInput');
+    assert.ok(inp.classList.contains('ansinput'));
+    assert.equal(inp.placeholder, 'Type the word you hear\u2026');
+    assert.equal(wrap.contains(inp), true);
+    const tick = doc.getElementById('ansTick');
+    assert.ok(tick.classList.contains('ans-tick'));
+    assert.ok(tick.querySelector('.tick-ring'));
+    assert.ok(tick.querySelector('svg .tick-bg'));
+    assert.equal(tick.querySelector('svg .tick-check').getAttribute('d'), 'M10.5 18.5L15.8 23.8L25.8 13.2');
+    assert.equal(wrap.contains(tick), true);
+    const chk = doc.getElementById('ansCheckBtn');
+    assert.equal(chk.textContent, 'Check \u2713');
+    assert.equal(wrap.contains(chk), true);
+    const fb = doc.getElementById('ansFeedback');
+    assert.ok(fb);
+    assert.equal(fb.getAttribute('role'), 'status');
+    const hero = doc.querySelector('.wordcard #plTickHero.pl-tick-hero');
+    assert.ok(hero, 'the hero tick lives on the word card');
+    assert.ok(hero.querySelector('svg .hero-tick-circle'));
+    assert.equal(hero.querySelector('svg .hero-tick-path').getAttribute('d'), 'M16.5 28.8L24.5 36.8L39.8 20.5');
+    assert.match(hero.textContent, /Correct!/);
+  } finally { a.close(); }
+});
+
+test('letter slots light up aqua for hits, amber for misses and show the word gap', function () {
+  const a = boot();
+  try {
+    const doc = typeBoot(a);
+    const inp = doc.getElementById('ansInput');
+    inp.value = 'gu';
+    fire(a, inp, 'input');
+    let slots = doc.querySelectorAll('#ansSlots .slot');
+    assert.equal(slots.length, 9);
+    assert.equal(slots[0].className, 'slot slot-ok');
+    assert.equal(slots[0].textContent, 'g');
+    assert.equal(slots[1].className, 'slot slot-ok');
+    assert.equal(slots[2].className, 'slot');
+    inp.value = 'gx';
+    fire(a, inp, 'input');
+    slots = doc.querySelectorAll('#ansSlots .slot');
+    assert.equal(slots[1].className, 'slot slot-err');
+    assert.equal(slots[1].textContent, 'x');
+    a.q.Eng.runItem(15);
+    const chip = doc.querySelector('#ansSlots .ans-hint-chip');
+    assert.equal(chip.textContent, '2 words \u00b7 16 letters');
+    assert.equal(doc.querySelectorAll('#ansSlots .slot').length, 15);
+    assert.equal(doc.querySelectorAll('#ansSlots .slot-gap').length, 1, 'a visual gap splits the words');
+  } finally { a.close(); }
+});
+
+test('a correct answer pops the animated tick, chimes, scores the streak and auto-advances', function () {
+  const a = boot();
+  try {
+    let started = 0;
+    a.w.AudioContext = function () {
+      this.currentTime = 0;
+      this.destination = {};
+      this.resume = function () {};
+      this.createOscillator = function () {
+        return { type: '', frequency: { value: 0 }, connect: function () {}, start: function () { started++; }, stop: function () {} };
+      };
+      this.createGain = function () {
+        return { gain: { setValueAtTime: function () {}, exponentialRampToValueAtTime: function () {} }, connect: function () {} };
+      };
+    };
+    const doc = typeBoot(a);
+    const inp = doc.getElementById('ansInput');
+    a.q.Eng.runItem(25);
+    assert.equal(a.q.Eng.currentWord().w, 'tyre/tire');
+    inp.value = 'tire';
+    fire(a, inp, 'input');
+    const Eng = a.q.Eng;
+    assert.equal(Eng.wordSolved, true);
+    assert.equal(Eng.answers[25], 'tire');
+    assert.equal(Eng.liveCorrectCount, 1);
+    assert.equal(Eng.liveStreakCount, 1);
+    assert.equal(doc.getElementById('ansWrap').className, 'ans-input-wrap is-correct');
+    assert.ok(doc.querySelector('.wordcard').classList.contains('is-correct'));
+    assert.equal(doc.getElementById('ansTick').className, 'ans-tick is-correct');
+    assert.equal(doc.getElementById('plTickHero').className, 'pl-tick-hero is-correct');
+    assert.equal(doc.getElementById('plWord').textContent, 'tyre/tire');
+    assert.ok(doc.getElementById('plWord').classList.contains('solved-glow'));
+    assert.ok(doc.getElementById('plHint').textContent.length > 5, 'IPA and meaning are revealed');
+    assert.equal(doc.getElementById('ansFeedback').textContent, '\u2713 Correct! Spot on!');
+    assert.equal(doc.getElementById('plCorrectCount').textContent, '\u2713 1 Correct');
+    assert.equal(doc.getElementById('plStreakCount').textContent, '\ud83d\udd25 1 Streak');
+    assert.equal(doc.getElementById('ansCheckBtn').textContent, 'Next \u2192');
+    const done = doc.querySelectorAll('#ansSlots .slot-done');
+    assert.equal(done.length, 4, 'the primary UK spelling tyre has four slots');
+    assert.equal(done[1].style.animationDelay, '45ms', 'the wave pop is staggered');
+    assert.equal(started, 3, 'playTickChime rings a three-note crystal chime');
+    a.clock.tick(1050);
+    assert.equal(Eng.idx, 26, 'the player auto-advances after the tick animation');
+    assert.equal(Eng.wordSolved, false);
+    assert.equal(doc.getElementById('ansWrap').className, 'ans-input-wrap');
+    assert.equal(doc.getElementById('ansTick').className, 'ans-tick');
+    assert.equal(doc.getElementById('plTickHero').className, 'pl-tick-hero');
+    assert.equal(doc.getElementById('ansCheckBtn').textContent, 'Check \u2713');
+    assert.equal(doc.getElementById('ansFeedback').textContent, '');
+  } finally { a.close(); }
+});
+
+test('Sinhala students get the Sinhala celebration', function () {
+  const a = boot();
+  try {
+    const doc = typeBoot(a);
+    a.q.DB.data.settings.lang = 'si';
+    const inp = doc.getElementById('ansInput');
+    inp.value = 'guidebook';
+    fire(a, inp, 'input');
+    assert.equal(a.q.Eng.wordSolved, true);
+    assert.equal(doc.getElementById('ansFeedback').textContent, '\u2713 \u0db1\u0dd2\u0dc0\u0dd0\u0dbb\u0daf\u0dd2\u0dba\u0dd2!');
+  } finally { a.close(); }
+});
+
+test('the 1-tap Check button submits exactly like Enter', function () {
+  const a = boot();
+  try {
+    const doc = typeBoot(a);
+    const inp = doc.getElementById('ansInput');
+    inp.value = 'guidebook';
+    doc.getElementById('ansCheckBtn').click();
+    assert.equal(a.q.Eng.wordSolved, true);
+    assert.equal(a.q.Eng.answers[0], 'guidebook');
+    assert.equal(doc.getElementById('ansTick').className, 'ans-tick is-correct');
+  } finally { a.close(); }
+});
+
+test('a wrong Enter shakes once with a helpful hint and the second Enter skips', function () {
+  const a = boot();
+  try {
+    const doc = typeBoot(a);
+    const inp = doc.getElementById('ansInput');
+    a.q.Eng.runItem(2);
+    assert.equal(a.q.Eng.currentWord().w, 'harbour');
+    inp.value = 'harbor';
+    fire(a, inp, 'input');
+    assert.equal(a.q.Eng.wordSolved, false);
+    enter(a, inp);
+    assert.equal(a.q.Eng.triedWrongOnce, true);
+    assert.equal(doc.getElementById('ansWrap').className, 'ans-input-wrap is-wrong');
+    assert.equal(doc.getElementById('ansFeedback').textContent,
+      'Keep trying \u00b7 Starts with \'ha\u2026\' (7 chars) \u2014 press Enter again to skip');
+    a.clock.tick(400);
+    assert.equal(doc.getElementById('ansWrap').className, 'ans-input-wrap', 'the shake clears after 400ms');
+    enter(a, inp);
+    assert.equal(a.q.Eng.idx, 3, 'the second Enter moves on');
+    assert.equal(a.q.Eng.liveStreakCount, 0, 'and resets the streak');
+    assert.equal(doc.getElementById('plStreakCount').textContent, '\ud83d\udd25 0 Streak');
+    a.q.Eng.runItem(4);
+    inp.value = '';
+    enter(a, inp);
+    assert.equal(a.q.Eng.idx, 5, 'Enter on an empty answer skips straight away');
+  } finally { a.close(); }
+});
+
+test('an American spelling is answered with the UK spelling hint', function () {
+  const a = boot();
+  try {
+    a.q.DB.data.settings.mode = 'type';
+    a.q.Eng.start({ list: { name: 'US test', words: [{ w: 'colour', m: 'a hue', s: 'The colour of the bus is bright red today.' }] } });
+    const doc = a.w.document;
+    const inp = doc.getElementById('ansInput');
+    inp.value = 'color';
+    fire(a, inp, 'input');
+    enter(a, inp);
+    assert.equal(doc.getElementById('ansFeedback').textContent, 'American spelling \u2014 UK spelling: colour');
+    assert.equal(a.q.Eng.idx, 0, 'the hint does not skip the word');
+  } finally { a.close(); }
+});
+
+test('the smart typing assist bumps a low countdown back to 4 seconds', function () {
+  has('countdown.bump');
+  const a = boot();
+  try {
+    a.q.DB.data.settings.mode = 'type';
+    a.q.DB.data.settings.advance = 'auto';
+    a.q.Eng.start({});
+    a.q.Eng.runItem(0);
+    a.q.Eng.runId++;
+    a.q.Speech.supported = true;
+    a.q.Speech.textOnly = false;
+    a.q.Eng.runBeat(a.q.Eng.beats.length - 1);
+    assert.equal(a.q.Eng.st, 'waiting');
+    assert.equal(typeof a.q.Eng.countdown.bump, 'function');
+    a.clock.tick(3000);
+    const doc = a.w.document;
+    assert.equal(doc.getElementById('cdNum').textContent, '2');
+    const inp = doc.getElementById('ansInput');
+    inp.value = 'g';
+    fire(a, inp, 'input');
+    assert.equal(doc.getElementById('cdNum').textContent, '4', 'typing never gets cut off below 4s');
+    a.clock.tick(1000);
+    assert.equal(doc.getElementById('cdNum').textContent, '3', 'the countdown resumes from the bump');
+  } finally { a.close(); }
+});
+
+/* --------------------------------------------------- v17 results and scoring */
+
+test('scoreTypeMode scores tyre, tire and tyre/tire all as ok', function () {
+  const a = boot();
+  try {
+    const words = [
+      { w: 'tyre/tire', m: 'a rubber ring', s: 'The tyre is new.' },
+      { w: 'public transport', m: 'buses and trains', s: 'I use public transport.' },
+      { w: 'visa', m: 'a travel document', s: 'My visa is ready.' }
+    ];
+    const res = a.q.Results.scoreTypeMode(words, [0, 1, 2], ['tire', 'public transport', '']);
+    assert.equal(res.rows[0].state, 'ok');
+    assert.equal(res.rows[1].state, 'ok');
+    assert.equal(res.rows[2].state, 'empty');
+    assert.equal(res.correct, 2);
+    assert.equal(res.total, 3);
+    assert.equal(a.q.Results.scoreTypeMode(words, [0], ['tyre']).rows[0].state, 'ok');
+    assert.equal(a.q.Results.scoreTypeMode(words, [0], ['tyre/tire']).rows[0].state, 'ok');
+    assert.equal(a.q.Results.scoreTypeMode(words, [0], ['tyres']).rows[0].state, 'wrong');
+  } finally { a.close(); }
+});
+
+test('the Results review glows a tick on every ok row and offers Practise Missed Words Only', function () {
+  has('row-tick');
+  has('Practise Missed Words Only');
+  const a = boot();
+  try {
+    const words = [
+      { w: 'tyre/tire', m: 'a rubber ring', s: 'The tyre is new.' },
+      { w: 'public transport', m: 'buses and trains', s: 'I use public transport.' },
+      { w: 'visa', m: 'a travel document', s: 'My visa is ready.' }
+    ];
+    const order = [0, 1, 2];
+    const res = a.q.Results.scoreTypeMode(words, order, ['tire', 'public transport', '']);
+    const rec = {
+      id: 'r17', date: '2026-10-14', ts: Date.now(), sessionNo: '7', sessionDay: 'Thursday',
+      sessionDate: '2026-10-22', sessionTitle: TITLE, listName: TITLE, listId: LIST_ID,
+      mode: 'type', wordCount: 3, score: 2, percent: 67, durationSec: 90,
+      voiceName: 'Amy', ukVoice: true, deviceType: 'desktop', selfScored: false, rows: res.rows
+    };
+    a.q.Results.open(rec, words, order);
+    const doc = a.w.document;
+    assert.equal(doc.querySelectorAll('.row-tick').length, 2, 'one glowing tick per ok row');
+    assert.ok(doc.querySelector('.row-tick .row-tick-bg'));
+    assert.equal(doc.querySelector('.row-tick .row-tick-path').getAttribute('d'), 'M10.5 18.5L15.8 23.8L25.8 13.2');
+    assert.ok(doc.querySelectorAll('.listrow .diff').length >= 3, 'every row keeps the character diff');
+    assert.ok(doc.body.textContent.indexOf('Practise Missed Words Only') >= 0, 'the 1-tap practise button appears');
+  } finally { a.close(); }
+});
+
 /* ------------------------------------------------------------- swan badge */
 
 test('the animated swan replaces the water drop inside #credit', function () {
@@ -131,7 +460,6 @@ test('the animated swan replaces the water drop inside #credit', function () {
   has('id="swanBody"');
   has('id="swanWing"');
   lacks('c-drop', 'the old water drop is gone');
-  lacks('dgC', 'the old drop gradient is gone');
   lacks('\u{1F4A7}', 'no water-drop emoji anywhere');
   assert.equal((html.match(/id="credit"/g) || []).length, 1, 'exactly one #credit');
   assert.equal((html.match(/class="c-swan"/g) || []).length, 1, 'exactly one swan');
@@ -177,7 +505,7 @@ test('the floating credit and its swan animate in Full and Lite', function () {
 
 /* ------------------------------------------------------- liquid glass title */
 
-test('#homeTitle wears the see-through Liquid Glass font', function () {
+test('#homeTitle wears the see-through Liquid Glass font with no hollow span', function () {
   const title = rule('#homeTitle,.liquid-glass-text');
   assert.match(title, /-webkit-text-stroke:1\.75px/);
   assert.match(title, /color:transparent !important/);
@@ -187,7 +515,7 @@ test('#homeTitle wears the see-through Liquid Glass font', function () {
   assert.match(rule('body[data-theme="light"] #homeTitle,body[data-theme="light"] .liquid-glass-text'), /-webkit-text-stroke/);
   has('class="liquid-glass-text"');
   lacks('class="hollow"', 'the extra "Liquid Glass" words are gone');
-  lacks('Liquid Glass</span>');
+  lacks('<span class="hollow">Liquid Glass</span>');
   assert.equal(homeMarkup().indexOf('Liquid Glass'), -1, 'the hero never repeats "Liquid Glass"');
   assert.equal(homeMarkup().indexOf('hollow'), -1, 'no hollow span in the hero');
   const a = boot();
@@ -214,6 +542,7 @@ test('#lgStage lives in Settings and never in Home', function () {
   assert.equal(homeMarkup().indexOf('materialMixer'), -1, 'Home markup has no mixer');
   has('host.appendChild(UI.liquidStage())');
   has('liquidStage:function');
+  has('UI.bindLiquidControls(host);');
   const a = boot();
   try {
     const doc = a.w.document;
@@ -356,6 +685,8 @@ test('every .seg and tint capsule slides without rebuilding its bar', function (
   assert.match(thumb, /box-shadow:inset 0 1\.5px 0 rgba\(255,255,255,\.65\),inset 0 0 0 1\.5px rgba\(155,180,255,\.52\)/);
   assert.match(thumb, /!important/);
   has('segSync:function');
+  has('seg-tint');
+  has('seg-ind');
   const a = boot();
   try {
     const doc = a.w.document;
@@ -365,6 +696,7 @@ test('every .seg and tint capsule slides without rebuilding its bar', function (
     assert.equal(doc.getElementById('segMode'), seg, 'the seg is not recreated on click');
     assert.equal(seg.querySelector('[data-mode="type"]').getAttribute('aria-selected'), 'true');
     assert.match(seg.querySelector('.thumb').style.transform, /^translate3d\(/);
+    assert.equal(a.q.DB.data.settings.mode, 'type', 'the mode pill drives "Type my answers"');
     a.q.UI.setTab('set');
     const tint = doc.getElementById('segTint');
     tint.querySelector('[data-tint="2"]').click();
@@ -452,7 +784,7 @@ test('the shared #sdpAudio element replays from currentTime 0 on Repeat #2', fun
 
 /* ------------------------------------------------------------ migration */
 
-test('a v15 save moves to the sdp.v16_swan key without losing results', function () {
+test('a v15 save moves to the sdp.v17_type_tick key without losing results', function () {
   const a = boot();
   try {
     const seed = JSON.parse(JSON.stringify(a.q.DB.data));
@@ -464,17 +796,38 @@ test('a v15 save moves to the sdp.v16_swan key without losing results', function
     seed.settings.glassTint = 1;
     seed.results.push({ id: 'legacy_result', score: 27, wordCount: 30, ts: 1, listId: seed.plan.defaultList });
     a.w.localStorage.setItem('sdp.v15_liquid', JSON.stringify(seed));
-    a.w.localStorage.removeItem('sdp.v16_swan');
+    a.w.localStorage.removeItem('sdp.v17_type_tick');
     a.q.DB.load();
-    assert.equal(a.q.DB.data.settingsRev, 16);
-    assert.equal(a.q.DB.data.v, 16);
+    assert.equal(a.q.DB.data.settingsRev, 17);
+    assert.equal(a.q.DB.data.v, 17);
     assert.ok(a.q.DB.data.results.some((r) => r.id === 'legacy_result'), 'results survive');
     assert.equal(a.q.DB.data.settings.glassBlur, 22);
     assert.equal(a.q.DB.data.settings.glassTint, 1);
     assert.equal(a.q.DB.data.settings.writeFixed, 5);
     assert.equal(a.q.DB.data.settings.repeats, 2);
     assert.ok(a.q.DB.data.admin.pinHash);
-    assert.ok(a.w.localStorage.getItem('sdp.v16_swan'), 'the new key is written');
+    assert.ok(a.w.localStorage.getItem('sdp.v17_type_tick'), 'the new key is written');
+  } finally { a.close(); }
+});
+
+test('a v16 swan save is lifted to v17 with every setting intact', function () {
+  const a = boot();
+  try {
+    const seed = JSON.parse(JSON.stringify(a.q.DB.data));
+    seed.settingsRev = 16;
+    seed.v = 16;
+    seed.settings.glassBlur = 18;
+    seed.settings.perf = 'lite';
+    seed.results.push({ id: 'swan_result', score: 30, wordCount: 30, ts: 2, listId: seed.plan.defaultList });
+    a.w.localStorage.setItem('sdp.v16_swan', JSON.stringify(seed));
+    a.w.localStorage.removeItem('sdp.v17_type_tick');
+    a.q.DB.load();
+    assert.equal(a.q.DB.data.settingsRev, 17);
+    assert.equal(a.q.DB.data.v, 17);
+    assert.equal(a.q.DB.data.settings.glassBlur, 18);
+    assert.equal(a.q.DB.data.settings.perf, 'lite');
+    assert.ok(a.q.DB.data.results.some((r) => r.id === 'swan_result'), 'swan-era results survive');
+    assert.ok(a.w.localStorage.getItem('sdp.v17_type_tick'), 'the v17 key is written');
   } finally { a.close(); }
 });
 
