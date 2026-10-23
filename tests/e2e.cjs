@@ -34,8 +34,11 @@ const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
 async function dismissTour(page) {
-  /* close whatever overlay is open (first-run tour, results layer, PIN sheet) */
-  for (let i = 0; i < 8; i++) {
+  /* Close whatever overlay is open (first-run tour, results layer, PIN sheet).
+     Overlays open asynchronously (a finish, a publish, a first-run tour), so this
+     keeps going until nothing is left and also clears an orphan scrim, which can
+     outlive its pane and silently swallow the next click on the floating dock. */
+  for (let i = 0; i < 12; i++) {
     let clicked = false;
     const sheet = page.locator('#sheets .sheet');
     const layer = page.locator('#layers .layer');
@@ -49,9 +52,40 @@ async function dismissTour(page) {
     } else if (await modal.count() && await modal.first().isVisible()) {
       try { await page.locator('#modals button').last().click({ timeout: 2000 }); clicked = true; } catch (e) {}
     }
-    if (!clicked) return;
+    if (!clicked) {
+      const scrim = page.locator('#modals .scrim, #sheets .scrim');
+      if (await scrim.count()) {
+        try { await scrim.first().click({ timeout: 1000, force: true }); clicked = true; } catch (e) {}
+      }
+    }
+    if (!clicked) {
+      const busy = await page.evaluate(() => Boolean(document.querySelector('#layers .layer, #sheets .sheet, #modals .modal, #sheets .scrim, #modals .scrim')));
+      if (!busy) return;
+      await page.keyboard.press('Escape');
+      clicked = true;
+    }
     await page.waitForTimeout(250);
   }
+  /* Last resort: drive the app's own close buttons straight through the DOM
+     (never through hit-testing) and only then drop a stuck overlay node. */
+  for (let pass = 0; pass < 4; pass++) {
+    const left = await page.evaluate(() => {
+      const layer = document.querySelector('#layers .layer .lhead button');
+      const sheet = document.querySelector('#sheets .sheet .shead button');
+      const modal = document.querySelector('#modals .modal .btn-row button');
+      const target = layer || sheet || modal;
+      if (target) { target.click(); return true; }
+      const scrim = document.querySelector('#modals .scrim, #sheets .scrim');
+      if (scrim) { scrim.click(); return true; }
+      return false;
+    });
+    if (!left) break;
+    await page.waitForTimeout(300);
+  }
+  await page.evaluate(() => {
+    document.querySelectorAll('#layers .layer, #sheets .sheet, #modals .modal, #modals .scrim, #sheets .scrim').forEach(node => node.remove());
+  });
+  await page.waitForTimeout(150);
 }
 
 async function unlock(page, pin) {
