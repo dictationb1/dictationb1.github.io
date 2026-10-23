@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0 (v12) — 2026-10-23 (desktop + 360px Apple WWDC25 Liquid Glass stage)
+
+- **Glass engine fixed.** `contain: content` is gone from `.glass` (it created a
+  containment boundary that broke `backdrop-filter` refraction in Chrome and on
+  mobile Safari), and the old 900px two-column left-sidebar grid is replaced by a
+  centred full canvas (`max-width: 1140px`) with a fixed floating top pill navbar
+  and a floating macOS-style magnifying dock on every screen size.
+- **A real root cause behind the flat dark cards.** `settings.hc` defaulted to the
+  *string* `"off"`, which is truthy, so `applyHc()` forced `data-hc="on"` on a fresh
+  install and every `.glass` pane rendered as a solid `#161a29` box. The default is
+  now the boolean `false`, `applyHc()` only honours `true`/`"on"`, and `migrate()`
+  repairs a stored `"off"`.
+- **Colour-refracting surfaces.** Home wraps `#homeHero.glass` in an
+  `.anatomy-stage` with `.stripes` and a coral `.disc` directly behind the pane;
+  `#lgStage` is a clamped, overflow-hidden orb stage; the stat cards are saturated
+  bento tiles with an inner `.glass` surface; Past sessions sits on a mint striped
+  bento tile; and the dictation player layer is a translucent blur stage with its
+  own `.stripes`, warm orb, aqua-to-mint lens and inset specular rim.
+- **Mobile 360-430px.** The top bar never overflows horizontally (it scrolls, then
+  compacts under 520px), `.lg-hero` stacks to one column with a 330px stage, and
+  `document.documentElement.scrollWidth` equals `window.innerWidth` at 320/360/390/
+  430/768/1024/1280 in real Chromium.
+- **Session 7 and Amy remain untouched.** Storage key `sdp.v12_liquid`, schema and
+  settings revision `12`; the same 30 Travel & Transport words, fixed 5-second
+  timer, two repeats, paper checklist, bilingual guide and credits, Admin PIN 7898,
+  live publishing and ntfy sync, and one unified British female professor voice
+  (Amy, en-GB) through `#sdpAudio`.
+
 ## 2.0.0 (v11) — 2026-10-23 (full Apple WWDC25 Liquid Glass Playground)
 
 - **Full glass is the default everywhere.** The initial HTML, `defaultData()`, and

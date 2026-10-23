@@ -1,4 +1,7 @@
-/* Release 2.0.0 (ver 11): full WWDC25 Liquid Glass Playground + Session 7. */
+/* Release 2.0.0 (ver 12): the full Apple_liquid.html WWDC25 Liquid Glass stage
+   on desktop AND on a 360px phone, with Session 7 - Travel & Transport intact.
+   This file is regenerated from scratch on every release (fs.writeFileSync, no
+   regex surgery on the app source) and only reads index.html and data/*.json. */
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -24,19 +27,31 @@ const TRAVEL = [
   'vehicle', 'visa', 'waiting room', 'windscreen'
 ];
 
-test('release metadata is 2.0.0 / ver 11 with dark full-glass defaults', function () {
+/* Every CSS rule whose selector list mentions .glass, with its declarations. */
+function glassRules(source) {
+  const rules = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let match;
+  while ((match = re.exec(source))) {
+    if (/(^|,|\s)\.glass(\s|,|:|\.|$)/.test(match[1])) rules.push({ selector: match[1].trim(), body: match[2] });
+  }
+  return rules;
+}
+
+test('release metadata is 2.0.0 / ver 12 with dark full-glass defaults', function () {
   assert.equal(versionJson.version, '2.0.0');
-  assert.ok(Number(versionJson.ver) >= 11);
-  assert.ok(Number(versionJson.settingsRev) >= 11);
+  assert.ok(Number(versionJson.ver) >= 12, 'ver >= 12');
+  assert.ok(Number(versionJson.settingsRev) >= 12, 'settingsRev >= 12');
   assert.equal(versionJson.session, '7');
   assert.equal(versionJson.title, APP);
   assert.equal(configJson.version, '2.0.0');
-  assert.ok(Number(configJson.ver) >= 11);
+  assert.ok(Number(configJson.ver) >= 12, 'config ver >= 12');
   assert.equal(configJson.listId, LIST_ID);
   assert.equal(configJson.session.no, '7');
   assert.equal(configJson.session.date, '2026-10-22');
   assert.equal(configJson.session.title, APP);
   assert.equal(configJson.session.branch, 'CCBE Galle Branch');
+  assert.equal(configJson.session.display, 'SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH');
   assert.equal(configJson.defaults.theme, 'dark');
   assert.equal(configJson.defaults.perf, 'full');
   assert.equal(configJson.defaults.writeMode, 'fixed');
@@ -53,7 +68,7 @@ test('release metadata is 2.0.0 / ver 11 with dark full-glass defaults', functio
 });
 
 test('session.json contains exactly the requested 30 Session 7 words', function () {
-  assert.ok(Number(sessionJson.ver) >= 11);
+  assert.ok(Number(sessionJson.ver) >= 12);
   assert.equal(sessionJson.session.no, '7');
   assert.equal(sessionJson.session.date, '2026-10-22');
   assert.equal(sessionJson.lists.length, 1);
@@ -63,39 +78,103 @@ test('session.json contains exactly the requested 30 Session 7 words', function 
   assert.deepEqual(sessionJson.lists[0].words.map(function (w) { return w.w; }), TRAVEL);
   for (const word of sessionJson.lists[0].words) {
     assert.ok(word.m && word.m.length > 8, word.w + ' meaning');
-    assert.ok(word.s && word.s.length > 15, word.w + ' sentence');
+    assert.ok(word.s && word.s.length > 15, word.s + ' sentence');
     assert.match(word.audio, /^https:\/\/.+\.mp3$/, word.w + ' audio');
   }
   for (const word of TRAVEL) assert.ok(html.indexOf(word) >= 0, 'index has ' + word);
 });
 
-test('index carries the complete interactive Liquid Glass hero and preserved features', function () {
+test('the glass engine has no containment boundary on any glass surface', function () {
+  assert.ok(html.indexOf('contain: content') < 0, 'no contain: content anywhere');
+  assert.ok(html.indexOf('contain:paint') < 0, 'no contain:paint anywhere');
+  assert.ok(html.indexOf('contain: paint') < 0, 'no contain: paint anywhere');
+  for (const rule of glassRules(html)) {
+    assert.ok(!/contain\s*:/.test(rule.body), '.glass rule must not contain: ' + rule.selector);
+  }
+  assert.ok(html.indexOf('-webkit-backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03))') >= 0,
+    'the four-layer glass recipe stays intact');
+});
+
+test('the layout is a centred canvas with a floating top pill and a floating bottom dock', function () {
+  assert.ok(html.indexOf('max-width: 1140px') >= 0, '#app max width');
+  assert.ok(html.indexOf('padding: calc(82px + var(--safe-t)) 20px calc(104px + var(--safe-b))') >= 0, '#app padding');
+  assert.ok(html.indexOf('grid-template-columns: 232px') < 0, 'the old sidebar grid is gone');
+  assert.match(html, /\.topbar\.glass \{ position: fixed; top: calc\(12px \+ var\(--safe-t\)\); left: 50%; transform: translateX\(-50%\)/);
+  assert.ok(html.indexOf('width: min(1100px, calc(100vw - 20px))') >= 0, 'the top pill clamps to the viewport');
+  assert.match(html, /#tabbar \{position: fixed; z-index: 50;/);
+  assert.ok(html.indexOf('bottom: calc(12px + var(--safe-b))') >= 0, 'the dock floats above the safe area');
+  assert.ok(html.indexOf('width: min(460px, calc(100vw - 20px))') >= 0, 'the dock clamps to the viewport');
+  assert.ok(html.indexOf('display: flex; flex-direction: row; gap: 6px; padding: 7px 10px; border-radius: 999px;') >= 0,
+    'the dock is a horizontal pill at every width');
+  assert.ok(html.indexOf('transform-origin: 50% 100%') >= 0, 'dock magnification origin');
+  assert.ok(html.indexOf('initDockMagnification') >= 0, 'dock magnification is wired');
+});
+
+test('home and player carry the colour-refracting Apple_liquid.html surfaces', function () {
   const required = [
+    'class="anatomy-stage"', 'class="stripes"', 'class="disc"',
+    'repeating-linear-gradient(115deg, rgba(127,214,247,.40) 0 22px',
+    'radial-gradient(circle at 35% 30%, #ff6f61, #7a1f4a)',
     'id="orb"', 'id="lgStage"', 'id="sBlur"', 'id="sSat"', 'id="sBrt"',
     'id="outBlur"', 'id="outSat"', 'id="outBrt"', 'id="segTint"',
     'class="hollow"', 'class="lg-hero"', 'Liquid Glass', 'Material Mixer',
-    'lg-warp', '--gb', '--gs', '--gbr', '--aqua', '@keyframes rise',
-    'initLiquidPlayground', 'initDockMagnification', 'pointerdown', 'pointermove',
+    'lg-warp', '--gb', '--gs', '--gbr', '--aqua', '--mint', '@keyframes rise',
+    'initLiquidPlayground', 'pointerdown', 'pointermove',
+    'player-backdrop', 'player-orb', 'bento-sessions', 'statbox-in',
+    'linear-gradient(140deg, #0d3a4a, #123a67)',
+    'linear-gradient(150deg, #6b1f3c, #8a3d1c)',
+    'radial-gradient(circle at 20% 10%, rgba(143,123,255,.5), transparent 55%), linear-gradient(150deg, #241e52, #3d2260)',
+    'repeating-linear-gradient(120deg, rgba(57,212,184,.18) 0 14px, transparent 14px 34px), linear-gradient(150deg, #0d4a41, #14635b)',
+    'background: linear-gradient(135deg, #5cd0f4, #3ce0b8); color: #062530;',
+    'background: rgba(10,15,30,.74)', 'blur(20px)',
     'Hansana', 'Ayya01', 'Lesandu', 'සිංහල', 'voice=Amy',
     'api.streamelements.com/kappa/v2/speech', 'translate.google.com/translate_tts',
     'tl=en-GB', 'writeFixed: 5', 'sentence: false', 'repeats: 2',
     'data-theme="dark" data-perf="full"', 'id="themeBtn"', 'id="homeStats"',
     'id="homeSessions"', 'id="chipNetText"', 'id="btnLock"', 'id="tabbar"',
-    'ntfy.sh', 'EventSource', 'Save & Publish Live Now', 'id="sdpAudio"',
-    'linear-gradient(140deg, rgba(13,58,74,.65), rgba(18,58,103,.65))',
-    'linear-gradient(150deg, rgba(107,31,60,.65), rgba(138,61,28,.65))',
-    'linear-gradient(150deg, rgba(36,30,82,.65), rgba(61,34,96,.65))'
+    'ntfy.sh', 'EventSource', 'Save & Publish Live Now', 'id="sdpAudio"'
   ];
   for (const token of required) assert.ok(html.indexOf(token) >= 0, 'missing: ' + token);
   assert.ok(html.indexOf('APP_VERSION = "2.0.0"') >= 0);
-  assert.ok(html.indexOf('key: "sdp.v11_liquid",') >= 0);
-  assert.ok(html.indexOf('schema: 11,') >= 0);
-  assert.ok(html.indexOf('settingsRev: 11,') >= 0);
-  assert.ok(html.indexOf('settingsRev < 11') >= 0);
+  assert.ok(html.indexOf('key: "sdp.v12_liquid",') >= 0);
+  assert.ok(html.indexOf('schema: 12,') >= 0);
+  assert.ok(html.indexOf('settingsRev: 12,') >= 0);
+  assert.ok(html.indexOf('settingsRev < 12') >= 0);
+  assert.ok(html.indexOf('resetToV12') >= 0);
+  assert.ok(html.indexOf('<html lang="en-GB" data-theme="dark" data-perf="full"') >= 0);
+  assert.ok(html.indexOf('<body data-theme="dark" data-perf="full">') >= 0);
   assert.equal((html.match(/id="sdpAudio"/g) || []).length, 1);
   assert.equal((html.match(/class="bubble bubble-/g) || []).length, 4);
   assert.equal(require('./test-pin.cjs'), '7898');
   assert.doesNotMatch(html, /<link[\s>]/i, 'no external link tags');
+});
+
+test('high contrast is a real boolean, never the truthy string "off"', function () {
+  assert.ok(html.indexOf('hc: false') >= 0, 'the default is the boolean false');
+  assert.ok(html.indexOf('hc: "off"') < 0, 'the truthy "off" string is gone');
+  const a = harness();
+  try {
+    assert.equal(a.q.DB.data.settings.hc, false);
+    assert.equal(a.w.document.documentElement.getAttribute('data-hc'), 'off');
+    a.q.DB.data.settings.hc = true;
+    a.q.UI.applyHc();
+    assert.equal(a.w.document.documentElement.getAttribute('data-hc'), 'on');
+    a.q.DB.data.settings.hc = 'off';
+    assert.equal(a.q.UI.applyHc() || a.w.document.documentElement.getAttribute('data-hc'), 'off');
+  } finally {
+    a.close();
+  }
+});
+
+test('mobile 360px-430px rules keep the top bar and orb stage inside the viewport', function () {
+  assert.ok(html.indexOf('@media (max-width: 860px)') >= 0, '860px breakpoint');
+  assert.ok(html.indexOf('@media (max-width: 520px)') >= 0, '520px breakpoint');
+  assert.match(html, /@media \(max-width: 860px\) \{[\s\S]*?\.lg-hero \{ grid-template-columns: minmax\(0,1fr\); gap: 16px; \}/);
+  assert.match(html, /@media \(max-width: 860px\) \{[\s\S]*?#lgStage\.stage \{ min-height: 330px;/);
+  assert.match(html, /\.topbar\.glass \{ flex-wrap: nowrap; overflow-x: auto; padding: 6px 10px;/);
+  assert.match(html, /@media \(max-width: 520px\) \{ \.topbar \.brand \.t \{ display: none; \}/);
+  assert.ok(html.indexOf('#lgStage.stage { position: relative; min-height: 470px; border-radius: 32px; overflow: hidden;') >= 0,
+    'the orb stage clips its own overflow');
 });
 
 test('destructive old Lite/theme overrides are absent', function () {
@@ -108,14 +187,14 @@ test('destructive old Lite/theme overrides are absent', function () {
   assert.ok(html.indexOf('body[data-perf="lite"] .blob { animation-play-state: paused !important; }') >= 0);
 });
 
-test('in-app v11 defaults, migration and unified audio are correct', function () {
+test('in-app v12 defaults, migration and the unified Amy voice are correct', function () {
   const a = harness();
   try {
     const q = a.q, d = q.DB.data;
-    assert.equal(q.CONFIG.key, 'sdp.v11_liquid');
-    assert.equal(q.CONFIG.schema, 11);
-    assert.equal(q.CONFIG.settingsRev, 11);
-    assert.equal(d.settingsRev, 11);
+    assert.equal(q.CONFIG.key, 'sdp.v12_liquid');
+    assert.equal(q.CONFIG.schema, 12);
+    assert.equal(q.CONFIG.settingsRev, 12);
+    assert.equal(d.settingsRev, 12);
     assert.equal(d.settings.theme, 'dark');
     assert.equal(d.settings.perf, 'full');
     assert.equal(d.settings.writeMode, 'fixed');
@@ -135,13 +214,13 @@ test('in-app v11 defaults, migration and unified audio are correct', function ()
     assert.ok(a.w.document.getElementById('sdpAudio'));
 
     const old = q.defaultData();
-    old.settingsRev = 10;
+    old.settingsRev = 11;
     old.settings.theme = 'auto';
     old.settings.perf = 'auto';
     const migrated = q.DB.migrate(old);
     assert.equal(migrated.settings.theme, 'dark');
     assert.equal(migrated.settings.perf, 'full');
-    assert.equal(migrated.settingsRev, 11);
+    assert.equal(migrated.settingsRev, 12);
     const manual = q.defaultData();
     manual.settings.theme = 'light';
     manual.settings.perf = 'lite';
@@ -154,7 +233,7 @@ test('in-app v11 defaults, migration and unified audio are correct', function ()
     assert.equal(sources[0], 'https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=tourist%20information%20centre');
     assert.equal(sources[1], 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=tourist%20information%20centre');
     q.Speech.voices = [{ name: 'Daniel', lang: 'en-GB' }];
-    assert.equal(q.Speech.anyEnglish(), null, 'known male offline voice is filtered');
+    assert.equal(q.Speech.anyEnglish(), null, 'a known male offline voice is filtered');
     q.Speech.voices.push({ name: 'Microsoft Sonia', lang: 'en-GB' });
     assert.equal(q.Speech.anyEnglish().name, 'Microsoft Sonia');
   } finally {
@@ -267,7 +346,7 @@ test('live mixer, tint, draggable orb and dock magnification work', function () 
   }
 });
 
-test('rendered Home retains every existing control and the exact Session 7 copy', function () {
+test('rendered Home keeps the stage anatomy, bento tiles and exact Session 7 copy', function () {
   const a = harness();
   try {
     const doc = a.w.document;
@@ -280,9 +359,34 @@ test('rendered Home retains every existing control and the exact Session 7 copy'
     assert.equal(doc.getElementById('homeSub').textContent, '30 words · 5s timer · Word ×2 · British Female Professor Voice (Amy · en-GB)');
     assert.equal(doc.getElementById('btnGuide').textContent, 'User Guide / උපදෙස්');
     assert.equal(doc.querySelectorAll('#homeStats .statbox').length, 3);
+    assert.equal(doc.querySelectorAll('#homeStats .statbox .glass.statbox-in').length, 3);
     assert.equal(doc.querySelectorAll('#lgStage .bubble').length, 4);
+    assert.ok(doc.querySelector('.anatomy-stage > #homeHero'), 'the hero sits inside the anatomy stage');
+    assert.ok(doc.querySelector('.anatomy-stage > .stripes'), 'stripes behind the hero');
+    assert.ok(doc.querySelector('.anatomy-stage > .disc'), 'the coral disc behind the hero');
+    assert.ok(doc.querySelector('#screen-home .bento-sessions #homeSessions'), 'past sessions sit on the mint bento tile');
     assert.match(doc.querySelector('.topbar').className, /glass/);
     assert.match(doc.getElementById('brandName').textContent, /SMART\/DICTATION/);
+    assert.ok(doc.querySelector('.hero-credit').textContent.indexOf('Hansana') >= 0);
+    assert.ok(doc.querySelector('.hero-credit').textContent.indexOf('Ayya01 (Lesandu)') >= 0);
+  } finally {
+    a.close();
+  }
+});
+
+test('the Dictation Player layer opens with its own stripes and warm orb backdrop', function () {
+  const a = harness();
+  try {
+    const doc = a.w.document;
+    a.q.Eng.openPlayer();
+    const back = doc.querySelector('#layers .layer .player-backdrop');
+    assert.ok(back, 'the player backdrop exists');
+    assert.ok(back.querySelector('.stripes'), 'stripes behind the word card');
+    assert.ok(back.querySelector('.player-orb'), 'the warm orb behind the word card');
+    assert.ok(doc.querySelector('#layers .layer .wordcard.glass'), 'the word card is still glass');
+    assert.ok(doc.querySelector('#layers .layer .lens button'), 'the lens play button exists');
+    assert.ok(doc.querySelector('#layers .layer .ctrlgrid'), 'the full control grid is preserved');
+    a.q.UI.closeLayer(a.q.Eng.layer);
   } finally {
     a.close();
   }

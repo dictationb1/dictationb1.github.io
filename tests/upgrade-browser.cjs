@@ -84,7 +84,7 @@ async function check(name,fn){
    await page.setViewportSize({width,height:420});await page.getByLabel('Word list text',{exact:true}).focus();await assertBars();
   }finally{await context.close();}
  });
- await check(engine+' v11 full Liquid Glass playground, drag, mixer, dock and manual Lite',async()=>{
+ await check(engine+' v12 full Liquid Glass stage, drag, mixer, bento, dock and manual Lite',async()=>{
   const {context,page,errors}=await boot(browser,1280,'gb',800);
   try{
    const state=()=>page.evaluate(()=>({rootTheme:document.documentElement.getAttribute('data-theme'),bodyTheme:document.body.getAttribute('data-theme'),rootPerf:document.documentElement.getAttribute('data-perf'),bodyPerf:document.body.getAttribute('data-perf')}));
@@ -122,7 +122,7 @@ async function check(name,fn){
   const {context,page,errors}=await boot(browser,390);
   try{
    await unlock(page);
-   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).admin.pinKdf);
+   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).admin.pinKdf);
    assert.equal(kdf,await page.evaluate(()=>crypto.subtle?'pbkdf2-sha256':'sha256'));
    const ta=page.getByLabel('Word list text',{exact:true});await ta.fill(sample);
    await page.getByText(/^I read this as: 30 words \(/).waitFor();   /* v2.0.0 prints the detected mode in brackets */
@@ -136,7 +136,7 @@ async function check(name,fn){
       arrive with its British dictionary MP3 so a phone plays audio without a UK voice. */
    await page.getByRole('button',{name:/^Save & Publish Live Now/}).first().click();
    await page.locator('#toasts').getByText(/Saved & published to all students/).waitFor();
-   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')));
+   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')));
    assert.equal(d.lists[0].publishedWords.length,29);assert.equal(d.lists[0].publishedWords[0].w,'free time');
    assert.ok(d.lists[0].publishedWords.every(x=>/--_gb_1\.mp3$/.test(x.audio||'')),'every published word keeps a British MP3: '+JSON.stringify(d.lists[0].publishedWords.slice(0,2)));
    assert.ok(d.lists[0].published&&d.lists[0].publishedVersion>=1,'publish flags');
@@ -155,7 +155,7 @@ async function check(name,fn){
    await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
    await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
    /* what should be heard comes from the live list, so the check follows published data */
-   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v11_liquid')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
+   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v12_liquid')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
    assert(first.w,'the live list has a first word');
    const said=()=>page.evaluate(()=>window.__spoken||[]);
    const langs=()=>page.evaluate(()=>window.__langs||[]);
@@ -184,7 +184,7 @@ async function check(name,fn){
        transcript is read (Say the number is a learner setting, not always on) */
     await page.waitForFunction(()=>/Number 1\./.test((window.__spoken||[]).join(' ')),null,{timeout:8000}).catch(()=>{});
     const spoken=await said();
-    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v11_liquid')||'{}').settings||{}).numbers);
+    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v12_liquid')||'{}').settings||{}).numbers);
     const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
     const phase=spoken.slice(0,until+1);
     assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
@@ -193,9 +193,9 @@ async function check(name,fn){
     const gbLangs=await langs();
     assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));
    }
-   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).snapshot);assert.equal(before.index,0);
+   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).snapshot);assert.equal(before.index,0);
    await page.reload();await page.locator('#homeTitle').waitFor();
-   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v11_liquid')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
+   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
    assert.equal(errors.length,0);
   }finally{await context.close();}
  });
