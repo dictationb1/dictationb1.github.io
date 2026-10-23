@@ -25,7 +25,13 @@
 --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
 --fs: 16px;
 --dur: 220ms;
---ease: cubic-bezier(.22,.75,.28,1);
+--ease: cubic-bezier(.2, .9, .25, 1.35);
+/* Apple WWDC25 Liquid Glass material - live, tuned by the Settings mixer */
+--gb: 22px;   /* backdrop blur */
+--gs: 1.7;    /* saturate */
+--gbr: 1.03;  /* brightness */
+/* drift accents */
+--aqua: #53c7f0; --coral: #ff6f61; --amber: #ffc247; --violet: #8f7bff; --mint: #39d4b8;
 --tabbar: 76px;
 }
 :root[data-size="s"] { --fs: 14.5px; }
@@ -33,38 +39,43 @@
 :root[data-size="l"] { --fs: 18px; }
 :root[data-size="xl"] { --fs: 20.5px; }
 :root[data-theme="light"], :root[data-theme="auto"] {
---bg1: #eaf0fb; --bg2: #f6f1ff;
---ink: #0d1220; --ink-2: #46506b; --ink-3: #6a748c;
+--bg1: #e8ecf4; --bg2: #dde4f2;
+--ink: #0e1424; --ink-2: rgba(14,20,36,.66); --ink-3: rgba(14,20,36,.42);
 --acc: #3a5cf0; --acc-2: #7a3cf0;
 --good: #0f8a4d; --warn: #a8620a; --bad: #c62c3d;
---glass: rgba(255,255,255,.72); --glass-2: rgba(255,255,255,.5); --glass-3: rgba(255,255,255,.42);
+--glass: rgba(255,255,255,.55); --glass-2: rgba(255,255,255,.68); --glass-3: rgba(255,255,255,.48);
 --glass-solid: #fbfcff; --glass-solid-2: #eef1f8;
---line: rgba(255,255,255,.9); --line-2: rgba(13,18,32,.1);
+--line: rgba(14,20,36,.14); --line-2: rgba(14,20,36,.12);
 --edge: rgba(255,255,255,.85);
---shadow1: 0 1px 2px rgba(16,24,48,.06), 0 10px 30px rgba(16,24,48,.10);
---shadow2: 0 2px 6px rgba(16,24,48,.07), 0 24px 60px rgba(16,24,48,.16);
+--inset-hi: rgba(255,255,255,.95);
+--shadow1: 0 18px 50px rgba(20,30,60,.16); --shadow2: 0 24px 60px rgba(20,30,60,.22);
 --inner: inset 0 1px 0 rgba(255,255,255,.9);
 --ring: rgba(58,92,240,.5);
 --scr: rgba(13,18,32,.34);
---blob1: rgba(58,92,240,.30); --blob2: rgba(122,60,240,.24); --blob3: rgba(255,255,255,.55);
+--blob1: rgba(83,199,240,.42); --blob2: rgba(255,111,97,.42); --blob3: rgba(255,194,71,.42); --blob4: rgba(143,123,255,.42);
 }
 :root[data-theme="auto"] { }
 :root[data-theme="dark"] {
---bg1: #080a11; --bg2: #120a1e;
---ink: #f4f6ff; --ink-2: #b9c1da; --ink-3: #8e97b5;
+--bg1: #0a0f1e; --bg2: #0f172e;
+--ink: #f1f4ff; --ink-2: rgba(241,244,255,.66); --ink-3: rgba(241,244,255,.42);
 --acc: #8ea6ff; --acc-2: #c39bff;
 --good: #37c07f; --warn: #e0a44a; --bad: #ff7285;
---glass: rgba(30,34,52,.62); --glass-2: rgba(30,34,52,.45); --glass-3: rgba(30,34,52,.38);
+--glass: rgba(255,255,255,.085); --glass-2: rgba(255,255,255,.13); --glass-3: rgba(255,255,255,.10);
 --glass-solid: #161a29; --glass-solid-2: #1e2336;
---line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.1);
+--line: rgba(255,255,255,.14); --line-2: rgba(255,255,255,.12);
 --edge: rgba(255,255,255,.22);
---shadow1: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.42);
---shadow2: 0 2px 8px rgba(0,0,0,.5), 0 26px 64px rgba(0,0,0,.55);
+--inset-hi: rgba(255,255,255,.45);
+--shadow1: 0 18px 50px rgba(2,6,20,.45); --shadow2: 0 26px 64px rgba(2,6,20,.58);
 --inner: inset 0 1px 0 rgba(255,255,255,.1);
 --ring: rgba(142,166,255,.6);
 --scr: rgba(0,0,0,.6);
---blob1: rgba(80,110,255,.30); --blob2: rgba(150,90,255,.26); --blob3: rgba(255,255,255,.06);
+--blob1: rgba(83,199,240,.5); --blob2: rgba(255,111,97,.5); --blob3: rgba(255,194,71,.5); --blob4: rgba(143,123,255,.5);
 }
+/* Liquid Glass tint modes - body.tint-clear (default), .tint-frost, .tint-smoke */
+body.tint-frost { --glass: rgba(255,255,255,.18); }
+:root[data-theme="light"] body.tint-frost { --glass: rgba(255,255,255,.72); }
+body.tint-smoke { --glass: rgba(10,15,30,.44); }
+:root[data-theme="light"] body.tint-smoke { --glass: rgba(70,85,130,.30); }
 @media (prefers-color-scheme: dark) {
 :root[data-theme="auto"] {
 --bg1: #080a11; --bg2: #120a1e;
@@ -130,33 +141,44 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 8px; }
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 #bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.blob { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; filter: blur(60px); opacity: .9; will-change: transform; }
-.blob1 { background: var(--blob1); top: -22vmax; left: -14vmax; }
-.blob2 { background: var(--blob2); bottom: -26vmax; right: -18vmax; }
-.blob3 { background: var(--blob3); top: 34%; left: 40%; width: 40vmax; height: 40vmax; }
-#bg[data-anim="on"] .blob1 { animation: drift1 26s ease-in-out infinite alternate; }
-#bg[data-anim="on"] .blob2 { animation: drift2 32s ease-in-out infinite alternate; }
-#bg[data-anim="on"] .blob3 { animation: drift3 22s ease-in-out infinite alternate; }
-@keyframes drift1 { to { transform: translate3d(9vmax, 7vmax, 0) scale(1.12); } }
-@keyframes drift2 { to { transform: translate3d(-8vmax, -6vmax, 0) scale(1.08); } }
-@keyframes drift3 { to { transform: translate3d(-10vmax, 6vmax, 0) scale(.9); } }
-#grain { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .035;
+.blob { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; filter: blur(85px); will-change: transform; }
+.blob1 { background: var(--blob1); top: -26vmax; left: -16vmax; }
+.blob2 { background: var(--blob2); bottom: -30vmax; right: -20vmax; width: 70vmax; height: 70vmax; }
+.blob3 { background: var(--blob3); top: 30%; left: 35%; width: 44vmax; height: 44vmax; }
+.blob4 { background: var(--blob4); bottom: 28%; right: 30%; width: 52vmax; height: 52vmax; }
+#bg[data-anim="on"] .blob1 { animation: drift1 34s ease-in-out infinite alternate; }
+#bg[data-anim="on"] .blob2 { animation: drift2 38s ease-in-out infinite alternate; }
+#bg[data-anim="on"] .blob3 { animation: drift3 30s ease-in-out infinite alternate; }
+#bg[data-anim="on"] .blob4 { animation: drift4 36s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate3d(12vmax, 10vmax, 0) scale(1.14); } }
+@keyframes drift2 { to { transform: translate3d(-10vmax, -8vmax, 0) scale(1.10); } }
+@keyframes drift3 { to { transform: translate3d(-12vmax, 8vmax, 0) scale(.92); } }
+@keyframes drift4 { to { transform: translate3d(8vmax, -10vmax, 0) scale(1.06); } }
+#grain { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .05;
 background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
 body[data-perf="lite"] #grain, body[data-perf="lite"] .blob { display: none; }
-body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), var(--bg2)); }
+body[data-perf="lite"] { background-image: linear-gradient(180deg, var(--bg1), var(--bg2)); --gb: 10px; }
 @media (prefers-reduced-transparency: reduce) {
 .glass { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
-.glass {
+/* Apple WWDC25 Liquid Glass: the exact 4-layer recipe on every glass surface */
+.glass, #tabbar, .sheet, .modal, .toast {
 background: var(--glass);
-border: 1px solid var(--line);
-border-radius: var(--r3);
-box-shadow: var(--shadow1), var(--inner);
+border-radius: 24px;
+border: 0;
+-webkit-backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));
+backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));
+box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);
 position: relative;
 contain: content;
 }
 .glass.strong { background: var(--glass-2); }
-.glass.deep { box-shadow: var(--shadow2), var(--inner); }
+.glass.deep { box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow2); }
+/* pointer-tracked specular hotspot on every .glass surface */
+.glass::before {
+content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+background: radial-gradient(380px circle at var(--mx, 50%) var(--my, -30%), rgba(255,255,255,.16), transparent 62%);
+}
 .glass::after {
 content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
 border-radius: inherit; pointer-events: none;
@@ -169,14 +191,6 @@ opacity: .9;
 .card.pad-s { padding: 12px; }
 .card.r2 { border-radius: var(--r2); }
 .card.r4 { border-radius: var(--r4); }
-@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-.glass { -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
-body[data-perf="lite"] .glass {
-background: var(--glass-solid);
--webkit-backdrop-filter: none; backdrop-filter: none;
-border-color: var(--line-2);
-}
-}
 .btn {
 -webkit-appearance: none; appearance: none;
 display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -193,11 +207,11 @@ user-select: none; -webkit-user-select: none;
 .btn:active { transform: scale(.96); }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 .btn.primary {
-background: linear-gradient(180deg, var(--acc), var(--acc-2));
-color: #fff; border-color: transparent;
-box-shadow: 0 2px 8px rgba(58,92,240,.34), 0 14px 34px rgba(90,60,240,.24), inset 0 1px 0 rgba(255,255,255,.34);
+background: linear-gradient(135deg, #5cd0f4, #3ce0b8);
+color: #062530;
+border-color: transparent;
+box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35);
 }
-:root[data-theme="dark"] .btn.primary { color: #0b0d16; }
 .btn.big { min-height: 60px; font-size: 1.1rem; padding: 14px 26px; }
 .btn.xl { min-height: 68px; font-size: 1.22rem; padding: 16px 32px; }
 .btn.ghost { background: transparent; box-shadow: none; border-color: var(--line-2); }
@@ -219,8 +233,7 @@ font-size: .78rem; font-weight: 600; color: var(--ink-2);
 touch-action: manipulation;
 }
 button.chip { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-button.chip[aria-pressed="true"] { background: linear-gradient(180deg, var(--acc), var(--acc-2)); color: #fff; border-color: transparent; }
-:root[data-theme="dark"] button.chip[aria-pressed="true"] { color: #0b0d16; }
+button.chip[aria-pressed="true"] { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); color: #062530; border-color: transparent; box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35); }
 .chip.good { color: var(--good); border-color: rgba(15,138,77,.32); }
 .chip.warn { color: var(--warn); border-color: rgba(168,98,10,.32); }
 .chip.bad { color: var(--bad); border-color: rgba(198,44,61,.32); }
@@ -248,7 +261,11 @@ border-radius: 999px; font-size: .88rem; font-weight: 620; color: var(--ink-2);
 cursor: pointer; white-space: nowrap; touch-action: manipulation;
 -webkit-tap-highlight-color: transparent;
 }
-.seg button[aria-selected="true"], .seg button[aria-pressed="true"] { color: var(--ink); }
+.seg button[aria-selected="true"], .seg button[aria-pressed="true"] {
+color: #062530;
+background: linear-gradient(135deg, #5cd0f4, #3ce0b8);
+box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35);
+}
 .field { display: block; }
 .field > span.lbl { display: block; font-size: .8rem; font-weight: 640; color: var(--ink-2); margin-bottom: 6px; }
 input[type="text"], input[type="number"], input[type="date"], input[type="search"], input[type="password"], textarea, select {
@@ -277,7 +294,7 @@ input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius
 background: var(--glass-2); cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; }
 .sw i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
 background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); transition: transform var(--dur) var(--ease); }
-.sw[aria-checked="true"] { background: linear-gradient(180deg, var(--acc), var(--acc-2)); border-color: transparent; }
+.sw[aria-checked="true"] { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); border-color: transparent; box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35); }
 .sw[aria-checked="true"] i { transform: translateX(20px); }
 body[data-perf="lite"] .sw i { transition: none; }
 .stepper { display: inline-flex; align-items: center; gap: 6px; }
@@ -320,12 +337,6 @@ position: fixed; z-index: 40;
 left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r));
 bottom: calc(10px + var(--safe-b));
 display: flex; gap: 2px; padding: 6px;
-background: var(--glass-2); border: 1px solid var(--line);
-border-radius: var(--r4); box-shadow: var(--shadow2), var(--inner);
-}
-@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-#tabbar { -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
-body[data-perf="lite"] #tabbar { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 #tabbar button {
 flex: 1 1 0; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
@@ -430,16 +441,8 @@ border-bottom: 1px solid var(--line-2); flex: 0 0 auto;
 .sheet {
 position: fixed; z-index: 70; left: 0; right: 0; bottom: 0;
 max-height: 88vh; display: flex; flex-direction: column;
-background: var(--glass-solid);
-border-radius: var(--r4) var(--r4) 0 0;
-border-top: 1px solid var(--line);
-box-shadow: var(--shadow2);
 animation: sheetUp 240ms var(--ease) both;
 padding-bottom: var(--safe-b);
-}
-@supports (backdrop-filter: blur(28px)) or (-webkit-backdrop-filter: blur(28px)) {
-.sheet { background: var(--glass-2); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%); }
-body[data-perf="lite"] .sheet { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @keyframes sheetUp { from { transform: translateY(14%); opacity: .4; } to { transform: none; opacity: 1; } }
 body[data-perf="lite"] .sheet { animation: none; }
@@ -457,8 +460,7 @@ animation: fade 200ms var(--ease) both; }
 body[data-perf="lite"] .scrim { animation: none; }
 .modal { position: fixed; z-index: 80; top: 50%; left: 50%; transform: translate(-50%,-50%);
 width: 92vw; max-width: 420px; width: min(92vw, 420px); max-height: 86vh; overflow-y: auto;
-background: var(--glass-solid); border-radius: var(--r3); border: 1px solid var(--line);
-box-shadow: var(--shadow2); padding: 18px; animation: pop 200ms var(--ease) both; }
+padding: 18px; animation: pop 200ms var(--ease) both; }
 @keyframes pop { from { opacity: 0; transform: translate(-50%,-46%) scale(.96); } to { opacity: 1; transform: translate(-50%,-50%); } }
 .modal.flex-card { position: relative; top: auto; left: auto; transform: none;
 width: 100%; max-width: 440px; animation: pop-flex 200ms var(--ease) both; }
@@ -467,13 +469,8 @@ body[data-perf="lite"] .modal { animation: none; }
 #toasts { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: calc(96px + var(--safe-b));
 display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 460px; width: min(100%, 460px);
-padding: 12px 14px; border-radius: var(--r2); background: var(--glass-solid);
-border: 1px solid var(--line); box-shadow: var(--shadow2); font-size: .9rem;
+padding: 12px 14px; font-size: .9rem;
 animation: toastIn 200ms var(--ease) both; }
-@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
-.toast { background: var(--glass-2); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
-body[data-perf="lite"] .toast { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
 @keyframes toastIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 body[data-perf="lite"] .toast { animation: none; }
 .toast .msg { flex: 1 1 auto; }
@@ -579,10 +576,7 @@ table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid va
 *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after { animation: none !important; transition: none !important; }
-body * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-body .blob { display: none; }
-body #grain { display: none; }
-body .glass, body .toast { background: var(--glass-solid); }
+
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
 body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
 -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
@@ -590,8 +584,7 @@ backdrop-filter: blur(12px) saturate(140%) !important;
 }
 }
 body[data-perf="lite"] *, body[data-perf="lite"] *::before, body[data-perf="lite"] *::after {
-filter: none !important; box-shadow: none !important; text-shadow: none !important;
--webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+filter: none !important; text-shadow: none !important;
 }
 @media (prefers-reduced-transparency: reduce) {
 body[data-perf="full"] #tabbar, body[data-perf="full"] .sheet {
@@ -637,6 +630,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
+<filter id="lg-warp"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G"/></filter>
 </defs>
 <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></symbol>
 <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/></symbol>
@@ -692,7 +686,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 
 <audio id="sdpAudio" preload="auto" playsinline crossorigin="anonymous"></audio>
 
-<div id="bg" data-anim="on"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div id="grain"></div></div>
+<div id="bg" data-anim="on"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="blob blob4"></div><div id="grain"></div></div>
 
 <div id="app">
   <header class="topbar">
@@ -1442,8 +1436,8 @@ Leave it empty for local-only mode (everything still works on one device). */
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v9_session7",
-schema: 9,
+key: "sdp.v10_session7",
+schema: 10,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1464,10 +1458,12 @@ is the Google Translate en-GB female TTS, and only if "Amy" fails to load.
 Oxford/dictionary MP3s are NEVER played during dictation (half of the
 recordings are spoken by a man, so the speaker would change word to word). */
 ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
+/* v10: Apple WWDC25 Liquid Glass material system (--gb / --gs / --gbr,
+   --aqua, --mint, lg-warp) applied to index.html; see Settings > Appearance. */
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 9,
+settingsRev: 10,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -2090,7 +2086,7 @@ return {
 v: CONFIG.schema,
 settingsRev: CONFIG.settingsRev,
 settings: {
-theme: "auto", size: "m", hc: "off", perf: "auto", lang: "en",
+theme: "dark", size: "m", hc: "off", perf: "auto", lang: "en",
 voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false,
 writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, advance: "auto",
 repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half"
@@ -2160,6 +2156,9 @@ Session 7 - Travel & Transport (30 words, 5 second timer). v9 additionally
 purges any male device voice, so one single British female professor voice
 (Amy) can speak every sound. */
 if (!d.settingsRev || d.settingsRev < 9) DB.dropOld(d);
+/* v10: the Apple Liquid Glass upgrade keeps Session 7 but drops any stale
+   pre-v10 cached snapshot so no old surface or audio state survives. */
+if (!d.settingsRev || d.settingsRev < 10) DB.dropOld(d);
 d = DB.migrate(d);
 this.data = d;
 if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
@@ -2272,6 +2271,9 @@ if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.
 still happens to carry the right id - so nothing from the previous Session (or any
 older session) can ever come back. */
 if (!d.settingsRev || d.settingsRev < 8) DB.resetToV9(d, base);
+/* v10 (Apple WWDC25 Liquid Glass material system): migrate any remaining
+   pre-v10 device onto Session 7 with the new material tokens. */
+if (!d.settingsRev || d.settingsRev < 10) DB.resetToV10(d, base);
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
@@ -2284,8 +2286,15 @@ the name is not a women's voice - "Female" itself contains "male", so a
 "Google UK English Female" voice must never be purged. */
 if (d.settings && typeof d.settings.voiceName === "string" && d.settings.voiceName && !/female/i.test(d.settings.voiceName) && /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(d.settings.voiceName)) d.settings.voiceName = "";
 if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
-d.settingsRev = 9;
+d.settingsRev = 10;
 d.v = CONFIG.schema;
+return d;
+},
+/* v10 (Session 7 keeps its 30 words and 5 second timer): installs the Apple
+   Liquid Glass material defaults and purges any leftover male voice name. */
+resetToV10: function (d, base) {
+DB.resetToV9(d, base);
+d.settingsRev = 10;
 return d;
 },
 /* Defect A: a stale unplanned date moves to today; a published date never
@@ -2495,10 +2504,12 @@ try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) 
 autoPerf: function () {
 if (this.prefers("(prefers-reduced-motion: reduce)")) return "lite";
 if (this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
-/* A7: low-core and low-memory phones start in lite straight away. */
+/* A7: very low-end phones (2 cores or 2 GB RAM and below) start in lite
+   straight away - they still get the genuine Liquid Glass look, just with
+   paused blobs and a 10 px blur. */
 var cores = U.nav("hardwareConcurrency", 0), mem = U.nav("deviceMemory", 0);
-if (cores && cores <= 4) return "lite";
-if (mem && mem <= 4) return "lite";
+if (cores && cores <= 2) return "lite";
+if (mem && mem <= 2) return "lite";
 try {
 var conn = navigator.connection || navigator.webkitConnection;
 if (conn && conn.saveData) return "lite";
@@ -3384,6 +3395,60 @@ ap.appendChild(switchRow("High contrast", "Solid surfaces and stronger lines", "
 ap.appendChild(segRow("Performance", [{ id: "auto", label: "Auto" }, { id: "full", label: "Full glass" }, { id: "lite", label: "Lite (fast)" }], st.perf, function (val) { st.perf = val; DB.save(); UI.applyPerf(); }));
 var perfInfo = U.el("p", "tiny muted", "Now: " + UI.perfMode + " mode \u00b7 measured frame " + UI.frameMs + " ms");
 ap.appendChild(perfInfo);
+
+/* ---- Liquid Glass Material Mixer ---- */
+var mix = card("Liquid Glass Mixer");
+mix.appendChild(U.el("p", "tiny muted", "Blur, saturate and brightness of every glass surface - tune the Apple WWDC25 material live."));
+function mixerRow(title, prop, min, max, step, def, unit) {
+var wrap = U.el("div", null, null);
+wrap.style.margin = "10px 0";
+var top = U.el("div", "spread", null);
+top.appendChild(U.el("b", "small", title));
+var val = U.el("span", "small muted mono", def + unit);
+top.appendChild(val);
+wrap.appendChild(top);
+var r = U.el("input", null, null);
+r.type = "range";
+r.min = String(min);
+r.max = String(max);
+r.step = String(step);
+r.value = String(def);
+r.setAttribute("aria-label", title);
+U.on(r, "input", function () {
+document.documentElement.style.setProperty(prop, r.value + unit);
+val.textContent = r.value + unit;
+});
+wrap.appendChild(r);
+mix.appendChild(wrap);
+}
+mixerRow("Blur", "--gb", 4, 40, 1, 22, " px");
+mixerRow("Saturate", "--gs", 1.0, 2.6, 0.1, 1.7, "x");
+mixerRow("Brightness", "--gbr", 0.9, 1.3, 0.05, 1.03, "x");
+var tp = U.el("div", null, null);
+tp.style.margin = "10px 0";
+tp.appendChild(U.el("div", "tiny muted strong", "Tint mode"));
+var tseg = U.el("div", "seg scroll", null);
+tseg.style.marginTop = "6px";
+tseg.appendChild(U.el("span", "thumb", null));
+var tints = [["Clear", "clear"], ["Frost", "frost"], ["Smoke", "smoke"]];
+for (var ti = 0; ti < tints.length; ti++) (function (pair) {
+var b = U.el("button", null, pair[0]);
+b.type = "button";
+b.setAttribute("data-tint", pair[1]);
+b.setAttribute("aria-pressed", String(DB.data.settings.glassTint === pair[1]));
+U.on(b, "click", function () {
+var t = pair[1];
+var cls = document.body.className.replace(/\btint-\S*/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/, "");
+document.body.className = t === "clear" ? cls : (cls ? cls + " " : "") + "tint-" + t;
+var bs = tseg.getElementsByTagName("button");
+for (var k = 0; k < bs.length; k++) bs[k].setAttribute("aria-pressed", String(bs[k].getAttribute("data-tint") === t));
+DB.data.settings.glassTint = t;
+DB.save();
+});
+tseg.appendChild(b);
+})(tints[ti]);
+tp.appendChild(tseg);
+mix.appendChild(tp);
 
 /* ---- Install ---- */
 var ins = card(S.installTitle);
@@ -9215,6 +9280,14 @@ UI.applyTheme();
 UI.applySize();
 UI.applyHc();
 UI.applyLang();
+/* restore the saved Liquid Glass tint (Clear / Frost / Smoke) on the body */
+try {
+var gt = String(DB.data.settings.glassTint || "clear");
+if (gt && gt !== "clear") {
+var cls = document.body.className.replace(/\btint-\S*/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/, "");
+document.body.className = cls ? cls + " tint-" + gt : "tint-" + gt;
+}
+} catch (e) {}
 Speech.init();
 Cloud.init();
 Links.readHash();
@@ -9386,6 +9459,31 @@ setTimeout(function () { Admin.open(); }, 350);
 }
 if (!Links.importPending) setTimeout(firstRunTour, 700);
 }
+
+/* --- Liquid Glass: pointer-tracked specular hotspot ---.
+   Throttled to a single requestAnimationFrame flag so the main thread stays at
+   60 fps; touch events are skipped so mobile scrolling stays 100% native. */
+(function () {
+var ticking = false;
+var mx = "50%";
+var my = "-30%";
+function applyPointer() {
+ticking = false;
+try {
+document.documentElement.style.setProperty("--mx", mx);
+document.documentElement.style.setProperty("--my", my);
+} catch (e) {}
+}
+U.on(document, "pointermove", function (e) {
+if (e && e.pointerType === "touch") return;
+mx = Math.round((e.clientX / Math.max(1, innerWidth)) * 100) + "%";
+my = Math.round((e.clientY / Math.max(1, innerHeight)) * 100) + "%";
+if (!ticking) {
+ticking = true;
+window.requestAnimationFrame(applyPointer);
+}
+}, { passive: true });
+})();
 
 /* global safety nets */
 window.addEventListener("error", function (ev) {
