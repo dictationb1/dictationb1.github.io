@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 15,
+  "ver": 16,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -218,6 +218,6 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "2.3.0",
+  "appVersion": "2.4.0",
   "updatedAt": "2026-10-23T00:00:00Z"
 }

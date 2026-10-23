@@ -1,4 +1,4 @@
-/* Release 2.3.0 (ver 15) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.4.0 (ver 16) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer and the low-data
    audio path. Rewritten from scratch for this release.
 
@@ -116,7 +116,8 @@ function material(page) {
       grain: getComputedStyle(document.querySelector('#grain')).display,
       blobFilter: getComputedStyle(document.querySelector('#bg .blob')).filter,
       blobAnimation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
-      orb: getComputedStyle(document.querySelector('#orb')).backgroundImage,
+      orb: document.querySelector('#orb') ? getComputedStyle(document.querySelector('#orb')).backgroundImage : 'none',
+      heroDisplay: getComputedStyle(document.querySelector('.lg-hero')).display,
       stripes: getComputedStyle(document.querySelector('.stripes')).backgroundImage,
       disc: getComputedStyle(document.querySelector('.disc')).backgroundImage
     };
@@ -136,7 +137,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v15 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v16 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -149,11 +150,21 @@ function material(page) {
       assert.notEqual(m.chipShadow, 'none');
       assert.equal(m.grain, 'none', 'no feTurbulence layer across the viewport');
       assert.equal(m.blobFilter, 'none', 'no 85px GPU blur on the blobs');
-      assert.match(m.orb, /radial-gradient/);
       assert.match(m.stripes, /repeating-linear-gradient/);
       assert.match(m.disc, /radial-gradient/);
-      const columns = await page.evaluate(() => getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns.split(' ').length);
-      assert.equal(columns, 2, 'desktop hero keeps two columns');
+      assert.equal(m.heroDisplay, 'block', 'the hero is one clean full-width column');
+      assert.equal(await page.locator('#screen-home #lgStage').count(), 0, 'no mixer on Home');
+      await page.locator('#tab-set').click();
+      await page.waitForTimeout(200);
+      const stage = await page.evaluate(() => ({
+        found: !!document.querySelector('#screen-set #lgStage'),
+        orb: getComputedStyle(document.querySelector('#screen-set #orb')).backgroundImage,
+        mixer: !!document.querySelector('#screen-set #materialMixer')
+      }));
+      assert.equal(stage.found, true, 'the Material Mixer lives in Settings');
+      assert.equal(stage.mixer, true);
+      assert.match(stage.orb, /radial-gradient/);
+      await page.locator('#tab-home').click();
       assert.equal(await page.locator('#tabbar button').count(), 5, 'five dock sections');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
@@ -179,7 +190,7 @@ function material(page) {
       assert.notEqual(lite.topbarBlur, 'none', 'topbar blur kept in lite');
       assert.notEqual(lite.dockBlur, 'none', 'dock blur kept in lite');
       assert.notEqual(lite.heroShadow, 'none', 'specular rim kept in lite');
-      assert.notEqual(lite.orb, 'none', 'the warm orb is still rendered');
+      assert.equal(lite.perf, 'lite');
       assert.match(lite.stripes, /repeating-linear-gradient/, 'stripes kept in lite');
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
       await page.waitForFunction(() => {
@@ -249,8 +260,8 @@ function material(page) {
     const { context, page, errors } = await boot(browser, 1280, 900);
     try {
       await page.locator('#tab-set').click();
-      await page.locator('#tab-home').click();
-      await page.waitForTimeout(150);
+      await page.waitForTimeout(200);
+      assert.equal(await page.locator('#screen-set #materialMixer').count(), 1, 'Settings hosts the mixer');
       await page.evaluate(() => {
         for (const [id, value] of [['sBlur', 34], ['sSat', 210], ['sBrt', 110]]) {
           const el = document.getElementById(id);
@@ -283,7 +294,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v15_liquid')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v16_swan')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -293,7 +304,7 @@ function material(page) {
       assert.equal(frost.saved, 1);
       /* browsers normalise the raw `0` channels to `0px` when serialising */
       const norm = (t) => String(t).replace(/\s+/g, '').replace(/px(?=,|\))/g, '');
-      assert.deepEqual(frost.indicators.map(norm), ['translate3d(100%,0,0)', 'translate3d(100%,0,0)']);
+      assert.deepEqual(frost.indicators.map(norm), ['translate3d(100%,0,0)']);
       await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
@@ -366,7 +377,7 @@ function material(page) {
       assert.notEqual(m.heroBlur, 'none', 'phone glass still renders');
       assert.notEqual(m.heroShadow, 'none');
       const layout = await page.evaluate(() => ({
-        columns: getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns.split(' ').length,
+        columns: getComputedStyle(document.querySelector('.lg-hero')).display === 'block' ? 1 : 2,
         overflow: document.documentElement.scrollWidth > window.innerWidth,
         dock: document.getElementById('tabbar').getBoundingClientRect().width <= window.innerWidth
       }));
@@ -411,9 +422,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v15_liquid')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v16_swan')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v15_liquid')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v16_swan')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -423,7 +434,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v15_liquid'));
+        const d = JSON.parse(localStorage.getItem('sdp.v16_swan'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
