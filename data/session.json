@@ -1,18 +1,20 @@
 {
   "ok": true,
-  "ver": 12,
+  "ver": 13,
   "session": {
     "no": "7",
     "day": "Thursday",
     "date": "2026-10-22",
     "title": "Session 7 - Travel & Transport",
-    "listId": "list_session_7_travel"
+    "listId": "list_session_7_travel",
+    "branch": "CCBE Galle Branch",
+    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH"
   },
   "lists": [
     {
       "id": "list_session_7_travel",
       "name": "Session 7 - Travel & Transport",
-      "version": 3,
+      "version": 4,
       "published": true,
       "words": [
         {
@@ -215,5 +217,7 @@
     }
   ],
   "announcement": null,
-  "comments": []
+  "comments": [],
+  "appVersion": "2.1.0",
+  "updatedAt": "2026-10-23T00:00:00Z"
 }

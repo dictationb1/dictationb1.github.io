@@ -18,8 +18,8 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 :root {--font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Sinhala", "Iskoola Pota", "Nirmala UI", Arial, sans-serif;--r1: 14px; --r2: 20px; --r3: 26px; --r4: 32px;--tap: 44px;--safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);--safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);--fs: 16px;--dur: 220ms;--ease: cubic-bezier(.2, .9, .25, 1.35);/* Apple WWDC25 Liquid Glass material - live, tuned by the Settings mixer */
---gb: 22px;   /* backdrop blur */
---gs: 1.7;    /* saturate */
+--gb: 14px;   /* backdrop blur */
+--gs: 1.6;    /* saturate */
 --gbr: 1.03;  /* brightness */
 /* drift accents */
 --aqua: #53c7f0; --coral: #ff6f61; --amber: #ffc247; --violet: #8f7bff; --mint: #39d4b8;--tabbar: 76px;}
@@ -62,11 +62,11 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 8px; }
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 #bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.blob { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; filter: blur(85px); will-change: transform; }
-.blob1 { background: var(--blob1); top: -26vmax; left: -16vmax; }
-.blob2 { background: var(--blob2); bottom: -30vmax; right: -20vmax; width: 70vmax; height: 70vmax; }
-.blob3 { background: var(--blob3); top: 30%; left: 35%; width: 44vmax; height: 44vmax; }
-.blob4 { background: var(--blob4); bottom: 28%; right: 30%; width: 52vmax; height: 52vmax; }
+.blob { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; background: radial-gradient(circle, var(--blob-color) 0%, transparent 70%); opacity: .52; will-change: transform; transform: translate3d(0,0,0); }
+.blob1 { --blob-color: var(--blob1); top: -26vmax; left: -16vmax; }
+.blob2 { --blob-color: var(--blob2); bottom: -30vmax; right: -20vmax; width: 70vmax; height: 70vmax; }
+.blob3 { --blob-color: var(--blob3); top: 30%; left: 35%; width: 44vmax; height: 44vmax; }
+.blob4 { --blob-color: var(--blob4); bottom: 28%; right: 30%; width: 52vmax; height: 52vmax; }
 #bg[data-anim="on"] .blob1 { animation: drift1 34s ease-in-out infinite alternate; }
 #bg[data-anim="on"] .blob2 { animation: drift2 38s ease-in-out infinite alternate; }
 #bg[data-anim="on"] .blob3 { animation: drift3 30s ease-in-out infinite alternate; }
@@ -75,7 +75,7 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 @keyframes drift2 { to { transform: translate3d(-10vmax, -8vmax, 0) scale(1.10); } }
 @keyframes drift3 { to { transform: translate3d(-12vmax, 8vmax, 0) scale(.92); } }
 @keyframes drift4 { to { transform: translate3d(8vmax, -10vmax, 0) scale(1.06); } }
-#grain { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .05;background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
+#grain { display: none !important; }
 @media (prefers-reduced-transparency: reduce) {.glass { background: var(--glass-solid); }}
 /* Apple WWDC25 Liquid Glass: the exact 4-layer recipe on every glass surface */
 .glass, #tabbar, .sheet, .modal, .toast {background: var(--glass);border-radius: 24px;border: 0;-webkit-backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));backdrop-filter: blur(var(--gb, 22px)) saturate(var(--gs, 1.7)) brightness(var(--gbr, 1.03));box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);position: relative;}
@@ -335,8 +335,14 @@ table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid va
 .paste-scroll input { font-size: 16px; min-width: 130px; }
 .paste-scroll td:last-child { min-width: 175px; }
 
-/* v11 WWDC25 Home: full glass remains visible in BOTH performance modes. */
-body[data-perf="lite"] .blob { animation-play-state: paused !important; }
+/* v13: automatic Lite mode keeps 100% of the Apple_liquid.html material.
+   Only the paint cost changes - every surface stays glass. */
+body[data-perf="lite"] { --gb: 8px; --gs: 1.35; --gbr: 1.02; }
+body[data-perf="lite"] .blob, body[data-perf="lite"] .bubble, body[data-perf="lite"] .chip-a, body[data-perf="lite"] .chip-b { animation: none !important; }
+body[data-perf="lite"] .glass::before { display: none !important; }
+body[data-perf="lite"] .topbar.glass, body[data-perf="lite"] #tabbar.glass, body[data-perf="lite"] #homeHero.glass, body[data-perf="lite"] .panel.glass, body[data-perf="lite"] .wordcard.glass, body[data-perf="lite"] .sheet, body[data-perf="lite"] .modal {-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1.5px 0 0 var(--inset-hi), inset 0 0 0 1px var(--line), 0 14px 32px rgba(4, 8, 22, .4); }
+/* repeated inner rows: hardware-accelerated translucent glass, still the same look */
+body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[data-perf="lite"] .comm-item.glass, body[data-perf="lite"] .guide-step, body[data-perf="lite"] .bento-sessions > .glass {-webkit-backdrop-filter: none;backdrop-filter: none;background: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.05)); }
 .topbar.glass { position: fixed; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); z-index: 50; width: min(1100px, calc(100vw - 20px)); margin: 0; padding: 7px 14px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -12px 24px rgba(255,255,255,.06), 0 14px 42px rgba(0,0,0,.28); }
 .topbar .brand { gap: 9px; }
 .topbar .brand .mark { width: 38px; height: 38px; border-radius: 62% 38% 58% 42%; color: #062530; background: linear-gradient(135deg, #5cd0f4, #3ce0b8); transform: rotate(45deg); box-shadow: 0 0 24px rgba(60,224,184,.25), inset 0 1px 0 rgba(255,255,255,.75); }
@@ -444,7 +450,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 </head>
 <body data-theme="dark" data-perf="full">
 <!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
 <filter id="lg-warp"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -496,7 +502,7 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 <symbol id="i-slow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l2.6 1.8"/><path d="M16.5 16.5 19 19"/></symbol>
 </svg>
 
-<audio id="sdpAudio" preload="auto" playsinline crossorigin="anonymous"></audio>
+<audio id="sdpAudio" preload="none" playsinline crossorigin="anonymous"></audio>
 
 <div id="bg" data-anim="on"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="blob blob4"></div><div id="grain"></div></div>
 
@@ -509,14 +515,17 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
     <div class="row top-controls">
       <button type="button" id="btnLang" class="chip langchip" aria-label="Switch language" aria-pressed="false">EN | සිංහල</button>
       <button type="button" id="chipNet" class="chip" aria-label="Sync status"><span class="dot"></span><span id="chipNetText">Live Sync</span></button>
-      <button type="button" id="themeBtn" class="btn icon ghost theme-btn" aria-label="Switch to light theme" title="Switch theme">☀</button>
-      <button type="button" id="btnLock" class="btn icon ghost" aria-label="Open lecturer mode"><svg aria-hidden="true"><use xlink:href="#i-lock" href="#i-lock"></use></svg></button>
+      <button type="button" id="btnPerf" class="chip" aria-label="Performance mode" title="⚡ Lite / ✨ Full">⚡ Lite</button>
+      <button type="button" id="btnGuideTop" class="btn icon ghost" aria-label="User guide" title="User Guide / උපදෙස්"><svg aria-hidden="true"><use xlink:href="#i-help" href="#i-help"></use></svg></button>
+      <button type="button" id="btnTheme" class="btn icon ghost theme-btn" aria-label="Switch to light theme" title="Switch theme">☀</button>
+      <button type="button" id="btnAdmin" class="btn icon ghost" aria-label="Open lecturer admin mode"><svg aria-hidden="true"><use xlink:href="#i-lock" href="#i-lock"></use></svg></button>
     </div>
   </header>
 
   <nav id="tabbar" role="tablist" aria-label="Main sections">
     <button type="button" role="tab" id="tab-home" data-tab="home" aria-selected="true" aria-controls="screen-home"><svg aria-hidden="true"><use xlink:href="#i-home" href="#i-home"></use></svg><span data-i18n="navHome">Home</span></button>
     <button type="button" role="tab" id="tab-dict" data-tab="dict" aria-selected="false" aria-controls="screen-dict"><svg aria-hidden="true"><use xlink:href="#i-book" href="#i-book"></use></svg><span data-i18n="navDict">Dictionary</span></button>
+    <button type="button" role="tab" id="tab-practice" data-tab="practice" aria-selected="false" aria-controls="screen-practice"><svg aria-hidden="true"><use xlink:href="#i-target" href="#i-target"></use></svg><span data-i18n="navPractice">Practice</span></button>
     <button type="button" role="tab" id="tab-comm" data-tab="comm" aria-selected="false" aria-controls="screen-comm"><svg aria-hidden="true"><use xlink:href="#i-chat" href="#i-chat"></use></svg><span data-i18n="navComm">Community</span><span id="commBadge" class="badge hidden"></span></button>
     <button type="button" role="tab" id="tab-set" data-tab="set" aria-selected="false" aria-controls="screen-set"><svg aria-hidden="true"><use xlink:href="#i-gear" href="#i-gear"></use></svg><span data-i18n="navSet">Settings</span></button>
   </nav>
@@ -552,10 +561,12 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
         <div id="orb" class="orb" role="button" tabindex="0" aria-label="Glowing orb. Drag it, use arrow keys to move, or press Enter to centre it."></div>
         <div class="glass panel" id="materialMixer">
           <h2>Liquid Glass <span>Material Mixer</span></h2>
-          <div class="mix-row"><div class="mix-head"><label for="sBlur">Blur</label><output id="outBlur" for="sBlur">22px</output></div><input id="sBlur" type="range" min="4" max="40" value="22" step="1" aria-label="Glass blur"></div>
-          <div class="mix-row"><div class="mix-head"><label for="sSat">Saturate</label><output id="outSat" for="sSat">1.7×</output></div><input id="sSat" type="range" min="100" max="260" value="170" step="1" aria-label="Glass saturation"></div>
+          <div class="mix-row"><div class="mix-head"><label for="sBlur">Blur</label><output id="outBlur" for="sBlur">14px</output></div><input id="sBlur" type="range" min="4" max="40" value="14" step="1" aria-label="Glass blur"></div>
+          <div class="mix-row"><div class="mix-head"><label for="sSat">Saturate</label><output id="outSat" for="sSat">1.6×</output></div><input id="sSat" type="range" min="100" max="260" value="160" step="1" aria-label="Glass saturation"></div>
           <div class="mix-row"><div class="mix-head"><label for="sBrt">Bright</label><output id="outBrt" for="sBrt">1.03</output></div><input id="sBrt" type="range" min="90" max="130" value="103" step="1" aria-label="Glass brightness"></div>
           <div class="seg-tint" id="segTint" role="group" aria-label="Glass tint"><span class="seg-ind" aria-hidden="true"></span><button type="button" data-tint="clear" aria-pressed="true">Clear</button><button type="button" data-tint="frost" aria-pressed="false">Frost</button><button type="button" data-tint="smoke" aria-pressed="false">Smoke</button></div>
+          <div class="seg" id="segPerf" role="group" aria-label="Performance mode" style="margin-top:8px"><button type="button" data-perf="auto" aria-pressed="true">Auto</button><button type="button" data-perf="lite" aria-pressed="false">Lite 60FPS</button><button type="button" data-perf="full" aria-pressed="false">Full</button></div>
+          <p class="mixer-hint" id="perfStatus">⚡ Auto Lite (60 FPS)</p>
           <p class="mixer-hint">↖ drag the glowing orb behind this glass pane</p>
         </div>
         <span class="glass chip chip-a">💧 Liquid Glass: Live</span><span class="glass chip chip-b">🇬🇧 Amy UK Voice ⚡︎</span>
@@ -614,6 +625,19 @@ html[data-theme="dark"] .chip.good { color: #7fe0ac; }
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ PRACTICE ============ -->
+  <section class="screen hidden" id="screen-practice" role="tabpanel" aria-labelledby="tab-practice">
+    <div class="glass card r3">
+      <div class="spread"><h2>Practice</h2><span class="chip" id="pracCount">0 / 30</span></div>
+      <div class="seg" id="pracMode" role="tablist" aria-label="Practice mode" style="margin-top:10px">
+        <button type="button" role="tab" data-p="flash" data-f="flash" aria-selected="true">Flashcards</button>
+        <button type="button" role="tab" data-p="quiz" data-f="quiz" aria-selected="false">Quiz</button>
+        <button type="button" role="tab" data-p="audio" data-f="audio" aria-selected="false">Audio list</button>
+      </div>
+      <div id="pracStage" style="margin-top:12px"></div>
     </div>
   </section>
 
@@ -1150,37 +1174,9 @@ function inboxAction(body) {
 
 </script>
 <script>
-/* ==========================================================================
-Smart Dictation Player  v1.4.0  (build 2026-10-13)
-Changelog: 1.4.0 - hardened DOMTokenList guard, per-widget Home rendering,
-build stamp in Settings and on the fatal card, safe-area insets,
-Test sound button.
-1.3.0 - strict UK speech, Text mode, immediate finish saving,
-typed feedback and autosave, UK-only dictionary audio, private backup filtering
-and device fallbacks.
-1.2.0 - guided cloud setup, student and offline-list links,
-contact hand-off, accurate sync status and automatic outbox retries.
-1.1.0 - lecturer PIN seed, guarded edits, richer paste/import,
-preview table, planner calendar, session controls and private reply support.
-1.0.1 - Phase 1: safe class tokens, non-blocking error log,
-two-step reset, rolling recovery copy, centred fatal card, no injected script.
-1.0.0 - first release: dictation engine, UK voice handling,
-results + auto-save, dictionary, community + private messages,
-lecturer panel with local/cloud PIN, optional Google Sheets cloud sync,
-device diagnostics, Liquid Glass UI with Lite performance mode.
-Strict ES5 syntax only. No frameworks, external fonts, or third-party scripts.
-========================================================================== */
 (function () {
 "use strict";
 
-/* ============================================================
-GUARD - HARDENED DOM TOKENS (installed before anything else)
-One guarded helper for every class-like token list. It trims, splits on
-whitespace, drops empty tokens and can never throw, so a bad class name
-can never blank a screen again (Firefox: "DOMTokenList.add: The empty
-string is not a valid token."). classList, relList and part all use
-DOMTokenList, so patching the prototype covers every call site.
-============================================================ */
 function sdpTokens(args) {
 var out = [], i, j, n, value, start, c;
 if (!args || !args.length) return out;
@@ -1189,8 +1185,6 @@ value = args[i];
 if (value === null || value === undefined) continue;
 if (typeof value !== "string") { try { value = "" + value; } catch (err) { continue; } }
 if (!value) continue;
-/* the token scan is done by hand: no String method is ever called on a coerced
-value, which is the one thing some engines report as a null |this| (WebKit). */
 n = value.length; start = -1;
 for (j = 0; j <= n; j++) {
 c = j < n ? value.charAt(j) : " ";
@@ -1211,8 +1205,6 @@ var native = proto[m];
 if (typeof native !== "function" || native.__sdpGuarded) return;
 var wrapped = function () {
 try {
-/* only the token arguments are filtered - toggle's force flag and
-replace's second token must never be read as class names */
 if (m === "toggle") {
 var tok = sdpTokens([arguments[0]]);
 if (!tok.length) return false;
@@ -1224,7 +1216,6 @@ if (!a1.length || !a2.length) return false;
 return native.call(this, a1[0], a2[0]);
 }
 var toks = sdpTokens(arguments);
-/* old WebViews only accept one token per call */
 for (var i = 0; i < toks.length; i++) native.call(this, toks[i]);
 return undefined;
 } catch (err) {
@@ -1238,22 +1229,16 @@ try { proto[m] = wrapped; } catch (ignored) {}
 }
 })();
 
-/* ============================================================
-SECTION 1 - CONFIG
-============================================================ */
-var APP_VERSION = "2.0.0";
-/* Stamped at release time and shown in Settings and on the fatal card, so it
-is always obvious which build a device is actually running. */
-var BUILD_DATE = "2026-10-22";
+/* SECTION 1 - CONFIG */
+var APP_VERSION = "2.1.0";
+var BUILD_DATE = "2026-10-23";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
-/* Paste your Google Apps Script web app URL here to enable cloud sync.
-Leave it empty for local-only mode (everything still works on one device). */
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v12_liquid",
-schema: 12,
+key: "sdp.v13_fast_liquid",
+schema: 13,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1268,26 +1253,17 @@ netTimeout: 8000,
 dictHost: "https://api.dictionaryapi.dev/api/v2/entries/en/",
 wikiDefHost: "https://en.wiktionary.org/api/rest_v1/page/definition/",
 wikiMediaHost: "https://en.wiktionary.org/api/rest_v1/page/media-list/",
-/* v9 UNIFIED VOICE: one single British female professor voice ("Amy",
-en-GB) speaks EVERY sound in this app through #sdpAudio. The only failover
-is the Google Translate en-GB female TTS, and only if "Amy" fails to load.
-Oxford/dictionary MP3s are NEVER played during dictation (half of the
-recordings are spoken by a man, so the speaker would change word to word). */
 ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
-/* v10: Apple WWDC25 Liquid Glass material system (--gb / --gs / --gbr,
-   --aqua, --mint, lg-warp) applied to index.html; see Settings > Appearance. */
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 12,
+settingsRev: 13,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
 cambridge: "https://dictionary.cambridge.org/dictionary/english/",
 gasPrefix: "https://script.google.com/macros/s/",
 gasSuffix: "/exec",
-/* A9 v2.0.0 real-time transport: free, open-source ntfy.sh topics. No key,
-no account and no server of our own; the browser streams them with SSE. */
 ntfyHost: "https://ntfy.sh",
 ntfyState: "sdp_dictationb1_state_v8",
 ntfyComm: "sdp_dictationb1_comm_v8",
@@ -1305,9 +1281,7 @@ var DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", 
 var DAYS_S = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/* ============================================================
-SECTION 2 - STRINGS (single place for translation later)
-============================================================ */
+/* SECTION 2 - STRINGS (single place for translation later) */
 var STRINGS_EN = {
 appName: "Smart Dictation Player",
 localMode: "Local mode",
@@ -1411,10 +1385,10 @@ tour3: "Tell your class how it went, or send a private message to your lecturer.
 nextTour: "Next",
 skipTour: "Skip",
 doneTour: "Start practising",
-/* Session 7 bilingual surface */
 navHome: "Home",
 navDict: "Dictionary",
 navComm: "Community",
+navPractice: "Practice",
 navSet: "Settings",
 listenPaper: "Listen & write on paper",
 typeAnswers: "Type my answers",
@@ -1428,15 +1402,13 @@ startPractising: "Start practising",
 closeGuide: "Close guide"
 };
 
-/* The English dictionary is the single source of truth; S is its short alias.
-STRINGS_SI mirrors every key the visible interface uses, so the one-tap
-English | සිංහල switch can translate the whole shell instantly. */
 var S = STRINGS_EN;
 var STRINGS_SI = {
 appName: "Smart Dictation Player",
 navHome: "\u0db8\u0dd4\u0dbd\u0dca \u0db4\u0dd2\u0da7\u0dd4\u0dc0",
 navDict: "\u0dc1\u0db6\u0dca\u0daf\u0d9a\u0ddd\u0dc2\u0dba",
 navComm: "\u0db4\u0dca\u200d\u0dbb\u0da2\u0dcf\u0dc0",
+navPractice: "\u0db4\u0dd4\u0dc4\u0dd4\u0dab\u0dd4\u0dc0",
 navSet: "\u0dc3\u0dd0\u0d9a\u0dc3\u0dd4\u0db8\u0dca",
 startDict: "\u0da9\u0dd2\u0d9a\u0dca\u0da7\u0dda\u0dc2\u0db1\u0dca \u0d86\u0dbb\u0db8\u0dca\u0db7 \u0d9a\u0dbb\u0db1\u0dca\u0db1",
 listenPaper: "\u0d85\u0dc3\u0dcf \u0d9a\u0ddc\u0dc5\u0dba\u0d9a \u0dbd\u0dd2\u0dba\u0db1\u0dca\u0db1",
@@ -1463,7 +1435,6 @@ startPractising: "\u0db4\u0dd4\u0dbb\u0dd4\u0daf\u0dd4 \u0d9a\u0dbb\u0db1\u0dca\
 closeGuide: "\u0db8\u0dcf\u0dbb\u0dca\u0d9c\u0ddd\u0db4\u0daf\u0dda\u0dc1\u0dba \u0dc0\u0dc3\u0db1\u0dca\u0db1"
 };
 
-/* current-language lookup: every visible shell string goes through this. */
 function T(key) {
 var lang = "en";
 try { if (typeof DB !== "undefined" && DB && DB.data && DB.data.settings) lang = DB.data.settings.lang || "en"; } catch (e) {}
@@ -1471,7 +1442,6 @@ if (lang === "si" && STRINGS_SI[key] !== undefined) return STRINGS_SI[key];
 return STRINGS_EN[key] !== undefined ? STRINGS_EN[key] : String(key);
 }
 
-/* Session 7 bilingual Welcome Guide, shown on first run and from Guide. */
 var GUIDE = {
 en: {
 title: "Welcome & Complete User Guide",
@@ -1495,12 +1465,9 @@ steps: [
 }
 };
 
-/* ============================================================
-SECTION 3 - UTILITIES
-============================================================ */
+/* SECTION 3 - UTILITIES */
 var U = {};
 
-/* Small failures do not take away access to saved work. No payload is logged. */
 var Errors = {
 items: [], reporting: false,
 text: function () { return JSON.stringify(this.items, null, 2); },
@@ -1529,8 +1496,6 @@ return result;
 };
 };
 
-/* Every class name goes through the same guarded path: trim, split, drop
-empty tokens, never throw. Works on old WebViews (one token per call). */
 U.setCls = function (el, name, on) {
 if (!el || !el.classList) return;
 var toks = sdpTokens([name]);
@@ -1539,9 +1504,7 @@ try { if (on) el.classList.add(toks[i]); else el.classList.remove(toks[i]); }
 catch (err) { Errors.report(err, "class set"); }
 }
 };
-/* Build a class string from any mix of strings, arrays or falsy values. */
 U.cx = function () { return sdpTokens(arguments).join(" "); };
-/* One widget failing must never blank a whole screen. */
 U.widget = function (name, fn) {
 try { return fn(); }
 catch (err) {
@@ -1565,7 +1528,6 @@ catch (err) { return fallback; }
 };
 
 U.$ = function (sel, root) {
-/* a timer that fires while the page is being torn down must never throw */
 try {
 var r = root || document;
 return r && r.querySelector ? r.querySelector(sel) : null;
@@ -1580,7 +1542,6 @@ return r && r.querySelectorAll ? Array.prototype.slice.call(r.querySelectorAll(s
 
 U.el = function (tag, cls, txt) {
 var e = document.createElement(tag);
-/* className is filtered too, so a dynamically built class can never be junk */
 if (cls) { var c = U.cx(cls); if (c) e.className = c; }
 if (txt !== null && txt !== undefined) e.textContent = String(txt);
 return e;
@@ -1622,7 +1583,6 @@ node.addEventListener(type, handler, o);
 return handler;
 };
 
-/* event delegation helper: fn runs for the closest element matching sel */
 U.delegate = function (root, type, sel, fn) {
 U.on(root, type, function (ev) {
 var t = ev.target;
@@ -1667,7 +1627,6 @@ U.dateKey = function (d) {
 d = U.validDate(d);
 return d.getFullYear() + "-" + U.pad2(d.getMonth() + 1) + "-" + U.pad2(d.getDate());
 };
-/* Monday = 0 */
 U.weekdayIndex = function (d) { return (U.validDate(d).getDay() + 6) % 7; };
 
 U.relTime = function (ts) {
@@ -1802,9 +1761,7 @@ if (n) n.textContent = msg || "";
 
 U.escapeFree = function (s) { return U.trim(s); };
 
-/* ============================================================
-SECTION 4 - STORE (safe localStorage + versioned schema)
-============================================================ */
+/* SECTION 4 - STORE (safe localStorage + versioned schema) */
 var Mem = {};
 var Store = {
 blocked: false,
@@ -1832,9 +1789,6 @@ try { window.localStorage.removeItem(k); } catch (e) { delete Mem[k]; }
 }
 };
 
-/* The 30 Cambridge B1 "Travel & Transport" words, each with a British
-meaning (m), a B1 example sentence (s) and a UK dictionary MP3. Every older
-list is removed in v8: Session 7 - Travel & Transport is the only list. */
 var SAMPLE_LIST_NAME = "Session 7 - Travel & Transport";
 var UK_MP3_BASE = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
 function ukMp3(word) {
@@ -1874,6 +1828,20 @@ var SAMPLE_WORDS = [
 { w: "windscreen", m: "the large glass window at the front of a car, bus, or other vehicle", s: "Clean the car windscreen carefully so you can see clearly in the rain.", audio: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/windscreen--_gb_1.mp3" }
 ];
 
+var IPA = {
+"guidebook": "\u02c8\u0261a\u026adb\u028ak", "handlebars": "\u02c8h\u00e6ndlb\u0251\u02d0z", "harbour": "\u02c8h\u0251\u02d0b\u0259",
+"helicopter": "\u02c8hel\u026ak\u0252pt\u0259", "hitchhike": "\u02c8h\u026at\u0283ha\u026ak", "immigration": "\u02cc\u026am\u026a\u02c8\u0261re\u026a\u0283n",
+"journey": "\u02c8d\u0292\u025c\u02d0ni", "luggage": "\u02c8l\u028c\u0261\u026ad\u0292", "machine": "m\u0259\u02c8\u0283i\u02d0n",
+"mechanic": "m\u0259\u02c8k\u00e6n\u026ak", "nationality": "\u02ccn\u00e6\u0283\u0259\u02c8n\u00e6l\u0259ti", "on business": "\u0252n \u02c8b\u026azn\u0259s",
+"on vacation": "\u0252n v\u0259\u02c8ke\u026a\u0283n", "overnight": "\u02cc\u0259\u028av\u0259\u02c8na\u026at", "passenger": "\u02c8p\u00e6s\u026and\u0292\u0259",
+"public transport": "\u02ccp\u028cbl\u026ak \u02c8tr\u00e6nsp\u0254\u02d0t", "reception": "r\u026a\u02c8sep\u0283n", "reservation": "\u02ccrez\u0259\u02c8ve\u026a\u0283n",
+"road sign": "\u02c8r\u0259\u028ad sa\u026an", "signpost": "\u02c8sa\u026anp\u0259\u028ast", "spaceship": "\u02c8spe\u026as\u0283\u026ap",
+"suitcase": "\u02c8su\u02d0tke\u026as", "tourist information centre": "\u02c8t\u028a\u0259r\u026ast \u02cc\u026anf\u0259\u02c8me\u026a\u0283n \u02c8sent\u0259",
+"traffic lights": "\u02c8tr\u00e6f\u026ak la\u026ats", "tunnel": "\u02c8t\u028cnl", "tyre/tire": "\u02c8ta\u026a\u0259",
+"vehicle": "\u02c8vi\u02d0\u0259kl", "visa": "\u02c8vi\u02d0z\u0259", "waiting room": "\u02c8we\u026at\u026a\u014b ru\u02d0m",
+"windscreen": "\u02c8w\u026andskri\u02d0n"
+};
+
 var WORD_BANK = (function () {
 var bank = Object.create(null);
 function add(w, m, s) {
@@ -1896,14 +1864,13 @@ version: 2,
 published: true,
 updatedAt: Date.now()
 };
-/* Session 7 is Thursday 22 October 2026 at the CCBE Galle Branch. */
 var plan = { weekdays: ["", "", "", "", "", "", ""], dates: { "2026-10-22": SAMPLE_LIST_ID }, pinned: SAMPLE_LIST_ID, defaultList: SAMPLE_LIST_ID };
 return {
 v: CONFIG.schema,
 settingsRev: CONFIG.settingsRev,
 settings: {
-theme: "dark", size: "m", hc: false, perf: "full", lang: "en",
-voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false,
+theme: "dark", size: "m", hc: false, perf: "auto", lang: "en",
+voiceName: "", rate: 0.88, volume: 1, mode: "paper", showWord: false, haptics: false, lowData: false,
 writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, advance: "auto",
 repeats: 2, shuffle: false, sentence: false, numbers: true, usSpelling: "half"
 },
@@ -1945,6 +1912,7 @@ dictCache: {},
 profile: { nickname: "", deviceId: U.uid("dev"), badges: {}, streak: { count: 0, last: "" } },
 admin: { pinHash: "", pinSalt: "", fails: 0, lockUntil: 0, lastActive: 0 },
 remoteVer: 0,
+ver: 0,
 tourSeen: false
 };
 }
@@ -1954,6 +1922,16 @@ data: null,
 saveTimer: null,
 load: function () {
 var raw = Store.get(CONFIG.key);
+/* v13 reads the previous build's storage once, so a phone that already has
+   results and comments never loses them when the key changes. */
+if (!raw) {
+var legacy = "";
+try { legacy = Store.get("sdp.v12_liquid") || ""; } catch (eL) { legacy = ""; }
+if (legacy) {
+raw = legacy;
+try { Store.set(CONFIG.key, legacy); } catch (eW) {}
+}
+}
 var d = null;
 if (raw) {
 try { d = JSON.parse(raw); } catch (e) { d = null; }
@@ -1965,22 +1943,13 @@ try { d = automatic ? JSON.parse(automatic) : null; } catch (err) { d = null; }
 if (!d || typeof d !== "object" || Array.isArray(d) || !Array.isArray(d.lists)) d = defaultData();
 }
 if ((!d.v || d.v < 2) && raw && !Store.get(CONFIG.key + ".before-v2")) Store.set(CONFIG.key + ".before-v2", raw);
-/* v8/v9: every phone and browser that still holds a pre-Session-7 cache
-drops its saved dictation snapshot, past sessions, queued jobs, word lists,
-plan and session before anything reads them, then migrate() installs
-Session 7 - Travel & Transport (30 words, 5 second timer). v9 additionally
-purges any male device voice, so one single British female professor voice
-(Amy) can speak every sound. */
 if (!d.settingsRev || d.settingsRev < 9) DB.dropOld(d);
-/* v10: the Apple Liquid Glass upgrade keeps Session 7 but drops any stale
-   pre-v10 cached snapshot so no old surface or audio state survives. */
-if (!d.settingsRev || d.settingsRev < 12) DB.dropOld(d);
+if (!d.settingsRev || d.settingsRev < 13) DB.dropOld(d);
 d = DB.migrate(d);
 this.data = d;
 if (this.data.session.autoDay) this.data.session.day = DAYS[U.weekdayIndex(new Date())];
 DB.refreshSessionDate(this.data);
 if (!this.data.profile.nickname) this.data.profile.nickname = UI.makeNickname();
-/* Additive schema-1 repair. Keep an existing lecturer's changed PIN. */
 if (!this.data.admin.pinHash) {
 Admin.seedPin(this.data.admin);
 this.saveNow();
@@ -1988,7 +1957,6 @@ this.saveNow();
 this.saveNow();
 return d;
 },
-/* v8: remove every trace of an older session cache. */
 dropOld: function (d) {
 if (!d || typeof d !== "object") return d;
 delete d.snapshot;
@@ -1996,13 +1964,6 @@ delete d.sessions;
 delete d.outbox;
 return d;
 },
-/* v8/v9 (Session 7 - Travel & Transport): a device that still holds an older
-class loses every cached word list, plan, session and queued job, sees the
-new bilingual Welcome Guide again, and loads the 30 travel words with the
-five second writing timer. Called by both load() and migrate() so a cache
-can never survive an upgrade. v9 also drops any male window.speechSynthesis
-voice name so the unified British female professor voice (Amy) is never
-mixed with a male speaker. */
 resetToV9: function (d, base) {
 if (!d || typeof d !== "object") return d;
 base = base || defaultData();
@@ -2046,8 +2007,6 @@ if (!d.plan.dates || typeof d.plan.dates !== "object" || Array.isArray(d.plan.da
 if (!Array.isArray(d.session.ready)) d.session.ready = base.session.ready;
 if (!Array.isArray(d.session.praise)) d.session.praise = base.session.praise;
 if (!d.v) d.v = 1;
-/* One-time default correction, not an every-load preference reset.
-Preserve an original copy before any schema-1 repair or defaults change. */
 if (d.v < 2) {
 d.settings.sentence = false;
 d.settings.repeats = 2;
@@ -2083,40 +2042,27 @@ if (!d.plan.defaultList || !DB.findList(d, d.plan.defaultList)) d.plan.defaultLi
 if (!d.session.ready || !d.session.ready.length) d.session.ready = base.session.ready;
 if (!d.session.praise || !d.session.praise.length) d.session.praise = base.session.praise;
 if (d.history.length > CONFIG.maxHistory) d.history = d.history.slice(0, CONFIG.maxHistory);
-/* v8: a settingsRev below 8 is replaced unconditionally - even if a list
-still happens to carry the right id - so nothing from the previous Session (or any
-older session) can ever come back. */
 if (!d.settingsRev || d.settingsRev < 8) DB.resetToV9(d, base);
-/* v10 (Apple WWDC25 Liquid Glass material system): migrate any remaining
-   pre-v10 device onto Session 7 with the new material tokens. */
-if (!d.settingsRev || d.settingsRev < 12) DB.resetToV12(d, base);
+if (!d.settingsRev || d.settingsRev < 13) DB.resetToV13(d, base);
 if (!DB.findList(d, SAMPLE_LIST_ID)) {
 d.lists = JSON.parse(JSON.stringify(base.lists));
 d.plan = JSON.parse(JSON.stringify(base.plan));
 d.session.listId = SAMPLE_LIST_ID;
 }
-/* v9 (ONE unified British female professor voice, Amy): a male
-window.speechSynthesis voice saved by an older build is purged on every
-migrate(). The mandated male pattern is tested against the name only when
-the name is not a women's voice - "Female" itself contains "male", so a
-"Google UK English Female" voice must never be purged. */
 if (d.settings && typeof d.settings.voiceName === "string" && d.settings.voiceName && !/female/i.test(d.settings.voiceName) && /Daniel|Oliver|Arthur|George|Ryan|Male|David|Mark|James|Thomas|Fred|Alex|Aaron/i.test(d.settings.voiceName)) d.settings.voiceName = "";
 if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CONFIG.maxComments);
 if (d.settings.hc !== true && d.settings.hc !== "on") d.settings.hc = false;
 if (d.settings.theme === "auto" || ["light","dark"].indexOf(d.settings.theme) < 0) d.settings.theme = "dark";
-if (d.settings.perf === "auto" || ["full","lite"].indexOf(d.settings.perf) < 0) d.settings.perf = "full";
-d.settingsRev = 12;
+if (["auto","full","lite"].indexOf(d.settings.perf) < 0) d.settings.perf = "auto";
+d.settingsRev = 13;
 d.v = CONFIG.schema;
 return d;
 },
-/* v10 (Session 7 keeps its 30 words and 5 second timer): installs the Apple
-   Liquid Glass material defaults and purges any leftover male voice name. */
 resetToV10: function (d, base) {
 DB.resetToV9(d, base);
 d.settingsRev = 10;
 return d;
 },
-/* v11: Auto becomes dark + full once; later manual choices are retained. */
 resetToV11: function (d, base) {
 DB.resetToV10(d, base);
 d.settings.theme = "dark";
@@ -2124,7 +2070,6 @@ d.settings.perf = "full";
 d.settingsRev = 11;
 return d;
 },
-/* v12: the full Liquid Glass desktop + mobile stage is forced once; manual choices stay. */
 resetToV12: function (d, base) {
 DB.resetToV11(d, base);
 d.settings.theme = "dark";
@@ -2132,14 +2077,16 @@ d.settings.perf = "full";
 d.settingsRev = 12;
 return d;
 },
-/* Defect A: a stale unplanned date moves to today; a published date never
-changes. */
+resetToV13: function (d, base) {
+DB.resetToV12(d, base);
+d.settings.perf = "auto";
+d.settingsRev = 13;
+return d;
+},
 refreshSessionDate: function (d) {
 d = d || this.data;
 var s = d.session, today = U.dateKey(new Date()), planned = (d.plan && d.plan.dates) ? d.plan.dates[s.date] : null;
 if (!s.date || (!planned && s.date < today)) { s.date = today; s.day = DAYS[U.weekdayIndex(new Date())]; return true; }
-/* a date the lecturer planned keeps the class day they typed: Session 7 is
-Thursday 22 October, even if the calendar weekday differs. */
 var day = new Date(s.date + "T12:00:00");
 if (isFinite(day.getTime()) && !(planned && s.day)) s.day = DAYS[U.weekdayIndex(day)];
 return false;
@@ -2163,8 +2110,6 @@ this.trimCache();
 try {
 var text = JSON.stringify(this.data);
 Store.set(CONFIG.key, text);
-/* A7.3/A7.5: the .bak copy costs a second synchronous write, so the per-word
-snapshot asks for a light save and skips it. */
 if (!skipBackup) Store.set(CONFIG.key + ".bak", text);
 } catch (e) { UI.warnStorage(); Errors.report(e, "save data"); }
 },
@@ -2177,7 +2122,6 @@ if (over <= 0) return;
 for (var i = 0; i < over; i++) delete c[keys[i]];   /* FIFO cap keeps localStorage small */
 },
 reset: function () {
-/* Keep both recovery copies. Reset is possible only after a separate confirmation. */
 if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
 Store.set(CONFIG.key + ".beforeReset", JSON.stringify(this.data));
 this.data = defaultData();
@@ -2219,9 +2163,7 @@ this.saveNow();
 return { ok: true, lists: this.data.lists.length, results: this.data.history.length };
 }
 };
-/* ============================================================
-SECTION 5 - PURE JS SHA-256 (used only when crypto.subtle is missing)
-============================================================ */
+/* SECTION 5 - PURE JS SHA-256 (used only when crypto.subtle is missing) */
 var Sha = (function () {
 var K = [
 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -2284,9 +2226,7 @@ return out;
 };
 })();
 
-/* ============================================================
-SECTION 6 - UI CORE (theme, perf, toasts, sheets, modals, layers)
-============================================================ */
+/* SECTION 6 - UI CORE (theme, perf, toasts, sheets, modals, layers) */
 var UI = {
 tab: "home",
 stack: [],
@@ -2294,7 +2234,6 @@ lastFocus: null,
 perfMode: "full",
 frameMs: 0,
 
-/* ---------- theme / size / performance ---------- */
 applyTheme: function () {
 var t = DB.data.settings.theme || "dark";
 var mode = (t === "light") ? "light" : "dark";
@@ -2303,12 +2242,23 @@ document.body.setAttribute("data-theme", mode);
 var dark = mode === "dark";
 var meta = U.$("meta[name=theme-color]");
 if (meta) meta.setAttribute("content", dark ? "#0a0f1e" : "#eaf0fb");
-var themeBtn = U.$("#themeBtn");
+var themeBtn = U.$("#btnTheme") || U.$("#themeBtn");
 if (themeBtn) {
 themeBtn.textContent = dark ? "☀" : "☾";
 themeBtn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
 themeBtn.setAttribute("title", dark ? "Switch to light theme" : "Switch to dark theme");
 }
+},
+toggleTheme: function () {
+var next = DB.data.settings.theme === "light" ? "dark" : "light";
+DB.data.settings.theme = next;
+DB.saveNow();
+this.applyTheme();
+this.toast(next === "dark" ? "Dark theme" : "Light theme", { icon: "i-info", ms: 1600 });
+},
+openWelcomeGuide: function (full) {
+if (typeof welcomeGuide === "function") return welcomeGuide(full);
+return null;
 },
 applyTint: function (tint) {
 var t = tint === "frost" || tint === "smoke" ? tint : "clear";
@@ -2316,7 +2266,7 @@ U.setCls(document.body, "tint-frost", t === "frost");
 U.setCls(document.body, "tint-smoke", t === "smoke");
 var host = U.$("#segTint");
 if (!host) return;
-var buttons = U.$("button", host), active = 0;
+var buttons = U.$$("button", host), active = 0;
 for (var i = 0; i < buttons.length; i++) {
 var on = buttons[i].getAttribute("data-tint") === t;
 buttons[i].setAttribute("aria-pressed", on ? "true" : "false");
@@ -2327,9 +2277,6 @@ if (indicator) indicator.style.transform = "translateX(" + (active * 100) + "%)"
 },
 applySize: function () { document.documentElement.setAttribute("data-size", DB.data.settings.size || "m"); },
 applyHc: function () { var on = DB.data.settings.hc === true || DB.data.settings.hc === "on"; document.documentElement.setAttribute("data-hc", on ? "on" : "off"); },
-/* Session 7: one tap translates the whole shell. English is the base
-dictionary (STRINGS_EN, aliased as S); STRINGS_SI holds the Sinhala copy.
-Dictation audio itself always stays British English (en-GB). */
 applyLang: function () {
 var lang = "en";
 try { lang = (DB.data && DB.data.settings && DB.data.settings.lang) || "en"; } catch (e) {}
@@ -2356,57 +2303,186 @@ this.applyLang();
 if (this.tab === "home") Screens.home();
 },
 
+bindLiquidControls: function (host) {
+host = host || document;
+var root = document.documentElement;
+var st = DB.data.settings;
+function pick(sel) {
+var el = null;
+try { el = host && host.querySelector ? host.querySelector(sel) : null; } catch (e) {}
+return el || U.$(sel);
+}
+var sliders = [
+["#sBlur", "#outBlur", "--gb", 1, "px", "glassBlur", 14],
+["#sSat", "#outSat", "--gs", 100, "\u00d7", "glassSat", 160],
+["#sBrt", "#outBrt", "--gbr", 100, "", "glassBrt", 103]
+];
+for (var i = 0; i < sliders.length; i++) (function (cfg) {
+var input = pick(cfg[0]), output = pick(cfg[1]);
+if (!input || input.__lgBound) return;
+input.__lgBound = 1;
+var saved = st[cfg[5]];
+if (typeof saved === "number") input.value = String(saved);
+function paint() {
+var raw = Number(input.value), value = raw / cfg[3];
+root.style.setProperty(cfg[2], cfg[3] === 1 ? value + cfg[4] : value.toFixed(2));
+if (output) output.textContent = String(value) + cfg[4];
+}
+U.on(input, "input", function () {
+paint();
+st[cfg[5]] = Number(input.value);
+DB.save();
+});
+if (typeof saved === "number") paint();
+})(sliders[i]);
+var tint = pick("#segTint");
+if (tint && !tint.__lgBound) {
+tint.__lgBound = 1;
+U.delegate(tint, "click", "button", function (ev, b) {
+var t = b.getAttribute("data-tint") || "clear";
+st.glassTint = t;
+UI.applyTint(t);
+DB.save();
+});
+}
+UI.applyTint(st.glassTint || "clear");
+var perf = pick("#segPerf");
+if (perf && !perf.__lgBound) {
+perf.__lgBound = 1;
+U.delegate(perf, "click", "button", function (ev, b) { UI.setPerf(b.getAttribute("data-perf") || "auto"); });
+}
+UI.applyPerf();
+var stage = pick("#lgStage"), orb = pick("#orb");
+if (!stage || !orb || orb.__lgBound) return;
+orb.__lgBound = 1;
+var drag = null;
+function moveOrb(x, y) {
+var rect = stage.getBoundingClientRect();
+var w = orb.offsetWidth || 140, h = orb.offsetHeight || 140;
+orb.style.left = U.clamp(x, 0, Math.max(0, rect.width - w)) + "px";
+orb.style.top = U.clamp(y, 0, Math.max(0, rect.height - h)) + "px";
+}
+function centreOrb() {
+var rect = stage.getBoundingClientRect();
+moveOrb((rect.width - (orb.offsetWidth || 140)) * 0.42, 44);
+}
+U.on(orb, "pointerdown", function (e) {
+var rect = orb.getBoundingClientRect();
+drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top };
+U.setCls(orb, "dragging", true);
+try { orb.setPointerCapture(e.pointerId); } catch (ignored) {}
+e.preventDefault();
+});
+U.on(orb, "pointermove", function (e) {
+if (!drag || e.pointerId !== drag.id) return;
+var rect = stage.getBoundingClientRect();
+moveOrb(e.clientX - rect.left - drag.x, e.clientY - rect.top - drag.y);
+});
+function drop(e) {
+if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+drag = null;
+U.setCls(orb, "dragging", false);
+try { orb.releasePointerCapture(e.pointerId); } catch (ignored) {}
+}
+U.on(orb, "pointerup", drop);
+U.on(orb, "pointercancel", drop);
+U.on(orb, "keydown", function (e) {
+var rect = stage.getBoundingClientRect(), current = orb.getBoundingClientRect(), step = e.shiftKey ? 30 : 12;
+var x = current.left - rect.left, y = current.top - rect.top;
+if (e.key === "ArrowLeft") x -= step;
+else if (e.key === "ArrowRight") x += step;
+else if (e.key === "ArrowUp") y -= step;
+else if (e.key === "ArrowDown") y += step;
+else if (e.key === "Enter" || e.key === " ") { centreOrb(); e.preventDefault(); return; }
+else return;
+moveOrb(x, y);
+e.preventDefault();
+});
+centreOrb();
+},
 prefers: function (q) {
 try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; }
 },
+finePointer: function () { return this.prefers("(hover: hover) and (pointer: fine)"); },
 autoPerf: function () {
-this.autoDowngraded = false;
+if (this.prefers("(prefers-reduced-motion: reduce)") || this.prefers("(prefers-reduced-transparency: reduce)")) return "lite";
+if ((window.innerWidth || 1024) <= 860) return "lite";
+if (this.prefers("(pointer: coarse)")) return "lite";
+if (U.nav("hardwareConcurrency", 8) <= 4) return "lite";
+if (U.nav("deviceMemory", 8) <= 4) return "lite";
+var connection = null;
+try { connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection; } catch (e) { connection = null; }
+if (connection && (connection.saveData || /2g|3g/i.test(String(connection.effectiveType || "")))) return "lite";
 return "full";
 },
+perfLabel: function () {
+var want = (DB.data && DB.data.settings && DB.data.settings.perf) || "auto";
+if (this.perfMode === "lite") return want === "auto" ? "⚡ Auto Lite (60 FPS)" : "⚡ Lite (60 FPS)";
+return want === "auto" ? "✨ Auto Full (60 FPS)" : "✨ Full";
+},
 applyPerf: function () {
-var want = DB.data.settings.perf || "full";
-var mode = want === "lite" ? "lite" : "full";
-this.autoDowngraded = false;
+var want = (DB.data && DB.data.settings && DB.data.settings.perf) || "auto";
+var mode;
+if (want === "lite" || want === "full") { mode = want; if (want === "full") this.autoDowngraded = false; }
+else { if (this.autoDowngraded) mode = "lite"; else { mode = this.autoPerf(); this.autoDowngraded = mode === "lite"; } }
 this.perfMode = mode;
 document.documentElement.setAttribute("data-perf", mode);
-document.body.setAttribute("data-perf", mode);
+if (document.body) document.body.setAttribute("data-perf", mode);
 var bg = U.$("#bg");
 if (bg) bg.setAttribute("data-anim", (mode === "full" && !this.prefers("(prefers-reduced-motion: reduce)")) ? "on" : "off");
+var badge = U.$("#btnPerf");
+if (badge) {
+badge.textContent = mode === "lite" ? "⚡ Lite" : "✨ Full";
+badge.setAttribute("aria-label", this.perfLabel() + " - tap to switch between Lite and Full");
+badge.setAttribute("aria-pressed", mode === "lite" ? "true" : "false");
+}
+var status = U.$("#perfStatus");
+if (status) status.textContent = this.perfLabel();
+var seg = U.$("#segPerf");
+if (seg) {
+var buttons = U.$$("button", seg);
+for (var i = 0; i < buttons.length; i++) buttons[i].setAttribute("aria-pressed", buttons[i].getAttribute("data-perf") === want ? "true" : "false");
+}
 },
-/* A7.1: sample at most 60 frames once on startup, take the median, then
-cancel the animation frame loop permanently - no infinite rAF on phones. */
+togglePerf: function () { this.setPerf(this.perfMode === "lite" ? "full" : "lite"); },
+setPerf: function (mode) {
+var next = mode === "full" ? "full" : (mode === "auto" ? "auto" : "lite");
+DB.data.settings.perf = next;
+this.autoDowngraded = false;
+DB.save();
+this.applyPerf();
+this.toast(this.perfMode === "lite" ? "⚡ Lite mode - 60 FPS, same Liquid Glass" : "✨ Full glass mode", { icon: "i-target", ms: 2200 });
+},
 frameProbe: function (cb) {
-if (!window.requestAnimationFrame) { this.frameMs = 30; this.applyPerf(); cb && cb(); return; }
+if (!window.requestAnimationFrame) { this.applyPerf(); cb && cb(); return; }
 if (this.frameWatchStarted) return;
 this.frameWatchStarted = true;
-var last = 0, samples = [], request = null, handle = null, finished = false;
-function finish() {
-if (finished) return;
-finished = true;
-if (window.cancelAnimationFrame && handle !== null) window.cancelAnimationFrame(handle);
-request = null; handle = null;
+var samples = [], first = 0, last = 0, handle = null, stopped = false;
+function stop() {
+if (stopped) return;
+stopped = true;
+if (handle !== null && window.cancelAnimationFrame) window.cancelAnimationFrame(handle);
+handle = null;
 UI.recordFrames(samples);
 cb && cb();
 }
 function step(t) {
-request = null;
-if (finished) return;
-if (last) samples.push(t - last);
+if (stopped) return;
+if (!first) first = t; else samples.push(t - last);
 last = t;
-if (samples.length >= 60) { finish(); return; }
-request = window.requestAnimationFrame(step);
-handle = request;
+if (t - first >= 1200) { stop(); return; }
+handle = window.requestAnimationFrame(step);
 }
-request = window.requestAnimationFrame(step);
-handle = request;
-setTimeout(finish, 2500);   /* a hidden first frame must never hang the probe */
+handle = window.requestAnimationFrame(step);
+setTimeout(stop, 1600);   /* a hidden first frame must never hang the probe */
 },
 recordFrames: function (samples) {
-if (!samples.length) return;
-samples.sort(function (a, b) { return a - b; });
-var median = samples[Math.floor(samples.length / 2)];
+if (!samples || !samples.length) { this.applyPerf(); return; }
+var copy = samples.slice(0);
+copy.sort(function (a, b) { return a - b; });
+var median = copy[Math.floor(copy.length / 2)];
 this.frameMs = Math.round(median * 10) / 10;
-this.autoDowngraded = false;
+if (median > 19) this.autoDowngraded = true;   /* under ~52 FPS: switch to Lite */
 this.applyPerf();
 },
 pauseAnimations: function (paused) {
@@ -2416,7 +2492,6 @@ if (paused) bg.setAttribute("data-anim", "off");
 else if (this.perfMode === "full" && !this.prefers("(prefers-reduced-motion: reduce)")) bg.setAttribute("data-anim", "on");
 },
 
-/* ---------- toasts ---------- */
 toast: function (msg, opts) {
 var o = opts || {};
 var host = U.$("#toasts");
@@ -2449,7 +2524,6 @@ UI._warned = true;
 UI.toast(S.storageBlocked, { icon: "i-alert", ms: 9000 });
 },
 
-/* ---------- segmented controls ---------- */
 segInit: function (host, onChange) {
 if (!host) return;
 U.delegate(host, "click", "button", function (ev, b) {
@@ -2481,7 +2555,6 @@ thumb.style.width = act.offsetWidth + "px";
 thumb.style.transform = "translateX(" + act.offsetLeft + "px)";
 },
 
-/* ---------- focus management ---------- */
 trap: function (root) {
 var sel = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 function handler(ev) {
@@ -2496,7 +2569,6 @@ root.addEventListener("keydown", handler);
 return function () { root.removeEventListener("keydown", handler); };
 },
 
-/* ---------- bottom sheet ---------- */
 sheet: function (o) {
 var self = this;
 this.closeTop();
@@ -2542,7 +2614,6 @@ if (top.onClose) U.safe(top.onClose, "close screen")();
 if (this.lastFocus && this.lastFocus.focus) { try { this.lastFocus.focus(); } catch (e) {} }
 },
 
-/* ---------- full screen layer ---------- */
 layer: function (o) {
 var self = this;
 this.lastFocus = document.activeElement;
@@ -2588,7 +2659,6 @@ if (this.stack[i].type === "sheet") { this.closeSheet(); return true; }
 return false;
 },
 
-/* ---------- confirm modal ---------- */
 confirm: function (o) {
 var self = this;
 var host = U.$("#modals");
@@ -2620,7 +2690,6 @@ setTimeout(function () { try { ok.focus(); } catch (e) {} }, 40);
 return close;
 },
 
-/* ---------- nickname ---------- */
 adjs: ["Calm", "Happy", "Brave", "Gentle", "Lucky", "Quiet", "Bright", "Cosy", "Swift", "Kind", "Cheerful", "Wise"],
 animals: ["Otter", "Panda", "Robin", "Dolphin", "Koala", "Falcon", "Hedgehog", "Turtle", "Lynx", "Badger", "Heron", "Puffin"],
 makeNickname: function () {
@@ -2629,10 +2698,9 @@ var b = this.animals[Math.floor(Math.random() * this.animals.length)];
 return a + " " + b + " " + Math.floor(Math.random() * 90 + 10);
 },
 
-/* ---------- tabs ---------- */
 setTab: function (name) {
 this.tab = name;
-var names = ["home", "dict", "comm", "set"];
+var names = ["home", "practice", "dict", "comm", "set"];
 for (var i = 0; i < names.length; i++) {
 var btn = U.$("#tab-" + names[i]);
 var scr = U.$("#screen-" + names[i]);
@@ -2642,13 +2710,13 @@ if (scr) scr.className = "screen" + (on ? "" : " hidden");
 }
 try { window.scrollTo(0, 0); } catch (ignored) {}
 if (name === "home") Screens.home();
+else if (name === "practice") Screens.practice();
 else if (name === "dict") Screens.dict();
 else if (name === "comm") Screens.comm();
 else if (name === "set") Screens.settings();
 setTimeout(function () { U.$$(".seg").forEach(UI.segSync); }, 30);
 },
 
-/* ---------- home screen helpers ---------- */
 statBox: function (label, value, icon, tile) {
 var host = U.el("div", tile ? "statbox tile" : "glass card pad-s statbox", null);
 var d = tile ? U.el("div", "glass statbox-in", null) : host;
@@ -2666,9 +2734,7 @@ if (text) d.appendChild(U.el("p", "small", text));
 return d;
 }
 };
-/* ============================================================
-SECTION 7 - LIBRARY HELPERS
-============================================================ */
+/* SECTION 7 - LIBRARY HELPERS */
 function writeSecs(word) {
 var st = DB.data.settings;
 if (st.writeMode === "fixed") return U.clamp(st.writeFixed, 3, 60);
@@ -2721,7 +2787,7 @@ return Math.round(per);
 },
 audio: function () {
 var a = U.$("#sdpAudio");
-if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "auto"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
+if (!a) { a = U.el("audio", null, null); a.id = "sdpAudio"; a.preload = "none"; a.playsInline = true; a.crossOrigin = "anonymous"; document.body.appendChild(a); }
 return a;
 },
 sessionLabel: function () {
@@ -2732,7 +2798,6 @@ if (s.no) parts.push("Session " + s.no);
 if (s.day) parts.push(s.day);
 return parts.join(" · ") || "Session";
 },
-/* shuffle with a seed so Back always works */
 shuffleSeeded: function (n, seed) {
 var a = [], i;
 for (i = 0; i < n; i++) a.push(i);
@@ -2763,7 +2828,6 @@ DB.save();
 }
 };
 
-/* UK / US spelling pairs used for marking */
 var US_UK = {
 color: "colour", colors: "colours", favorite: "favourite", favorites: "favourites",
 neighbor: "neighbour", neighbors: "neighbours", neighborhood: "neighbourhood",
@@ -2778,18 +2842,13 @@ defense: "defence", license: "licence", airplane: "aeroplane", tire: "tyre",
 mom: "mum", elevator: "lift", vacation: "holiday"
 };
 
-/* ============================================================
-SECTION 8 - SCREENS
-============================================================ */
+/* SECTION 8 - SCREENS */
 var Screens = {
 
-/* ---------- HOME ---------- */
   home: function () {
 var d = DB.data, st = d.settings, list = Lib.current();
 
-/* Each widget is isolated: if one fails the rest of Home still renders. */
 U.widget("home-announcement", function () {
-/* announcement */
 var ann = U.$("#homeAnn");
 ann.textContent = "";
 var a = d.announcement;
@@ -2811,9 +2870,7 @@ ann.appendChild(b);
 
 U.widget("home-hero", function () {
 
-/* hero */
 var ses = d.session || {};
-/* SESSION 7 \u00b7 22/10/2026 \u00b7 CCBE GALLE BRANCH */
 var when = "";
 if (ses.date) {
 var bits = String(ses.date).split("-");
@@ -2843,7 +2900,6 @@ meta.appendChild(c3);
 
 U.widget("home-resume", function () {
 
-/* resume */
 var snap = d.snapshot;
 var rc = U.$("#homeResume");
 if (snap && snap.words && snap.words.length && snap.index < snap.words.length) {
@@ -2864,12 +2920,11 @@ UI.segValue(U.$("#segMode"), st.mode);
 
 U.widget("home-stats", function () {
 
-/* stats */
 var stats = U.$("#homeStats");
 stats.textContent = "";
 var streak = (d.profile.streak && d.profile.streak.count) || 0;
 var lastScore = null;
-for (var i = 0; i < (d.results||[]).length; i++) { lastScore = d.results[i]; break; }
+if ((d.results || []).length) lastScore = d.results[d.results.length - 1];
 stats.appendChild(UI.statBox("day streak", String(streak), "i-flame", true));
 stats.appendChild(UI.statBox("last score", lastScore ? (lastScore.score + "/" + lastScore.wordCount) : "\u2013", "i-target", true));
 stats.appendChild(UI.statBox("sessions done", String(d.history.length), "i-check", true));
@@ -2878,7 +2933,6 @@ stats.appendChild(UI.statBox("sessions done", String(d.history.length), "i-check
 
 U.widget("home-sessions", function () {
 
-/* past sessions */
 var host = U.$("#homeSessions");
 host.textContent = "";
 var sess = (d.sessions || []).slice(0, 10);
@@ -2900,9 +2954,101 @@ host.appendChild(row);
 });
 }
 });
+
+UI.bindLiquidControls(U.$("#screen-home"));
 },
 
-/* ---------- DICTIONARY ---------- */
+pracMode: "flash",
+pracIndex: 0,
+pracFlipped: false,
+pracSay: function (text) { Speech.unlock(); Speech.say([text], {}, function () {}); },
+practice: function () {
+var self = this;
+var host = U.$("#pracStage");
+if (!host) return;
+var list = Lib.current();
+var words = (list && list.words) || [];
+var seg = U.$("#pracMode");
+if (seg && !seg.__pracBound) {
+seg.__pracBound = 1;
+U.delegate(seg, "click", "button", function (ev, b) {
+self.pracMode = b.getAttribute("data-p") || "flash";
+self.pracIndex = 0;
+self.pracFlipped = false;
+UI.segSet(seg, b);
+Screens.practice();
+});
+}
+host.textContent = "";
+var counter = U.$("#pracCount");
+if (counter) counter.textContent = words.length ? (Math.min(this.pracIndex + 1, words.length) + " / " + words.length) : "0 / 0";
+if (!words.length) { host.appendChild(UI.emptyState("i-book", "Nothing to practise yet", "Ask your lecturer to publish this week's list.")); return; }
+if (this.pracMode === "audio") {
+renderChunked(host, words, function (it, i) {
+var row = U.el("div", "listrow", null);
+row.appendChild(U.el("div", "n", String(i + 1)));
+row.appendChild(U.el("div", "w", it.w));
+var play = U.btn("", "i-vol", "sm soft");
+play.setAttribute("aria-label", "Hear " + it.w);
+U.on(play, "click", function () { self.pracSay(it.w); });
+row.appendChild(play);
+host.appendChild(row);
+});
+return;
+}
+var index = this.pracIndex % words.length;
+var word = words[index];
+if (this.pracMode === "quiz") {
+var options = [word.w], guard = 0;
+while (options.length < Math.min(4, words.length) && guard++ < 60) {
+var other = words[Math.floor(Math.random() * words.length)].w;
+if (options.indexOf(other) < 0) options.push(other);
+}
+options.sort();
+var q = U.el("div", "stack", null);
+q.appendChild(U.el("p", "small muted", "Which word means: \u201c" + (word.m || word.w) + "\u201d?"));
+var fb = U.el("p", "small strong", "");
+options.forEach(function (opt) {
+var b = U.btn(opt, null, "block soft");
+U.on(b, "click", function () {
+var right = opt === word.w;
+fb.textContent = right ? "\u2713 Correct - " + word.w : "\u2717 It was " + word.w;
+U.setCls(fb, "ok", right);
+U.setCls(fb, "no", !right);
+self.pracIndex++;
+setTimeout(function () { if (UI.tab === "practice") Screens.practice(); }, 750);
+});
+q.appendChild(b);
+});
+q.appendChild(fb);
+host.appendChild(q);
+return;
+}
+var card = U.el("div", "glass card r2 center", null);
+card.setAttribute("role", "button");
+card.setAttribute("tabindex", "0");
+card.style.minHeight = "150px";
+card.style.display = "flex";
+card.style.flexDirection = "column";
+card.style.justifyContent = "center";
+card.appendChild(U.el("div", "tiny muted", this.pracFlipped ? "meaning - tap to show the word" : "word - tap to show the meaning"));
+card.appendChild(U.el("b", this.pracFlipped ? "small" : "", this.pracFlipped ? (word.m || "") : word.w));
+function flip() { self.pracFlipped = !self.pracFlipped; Screens.practice(); }
+U.on(card, "click", flip);
+U.on(card, "keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+host.appendChild(card);
+var row = U.el("div", "btn-row tight", null);
+row.style.marginTop = "10px";
+var hear = U.btn("Hear", "i-vol", "soft");
+U.on(hear, "click", function () { self.pracSay(word.w); });
+var know = U.btn("Know it", "i-check", "primary");
+U.on(know, "click", function () { self.pracIndex++; self.pracFlipped = false; Screens.practice(); });
+var again = U.btn("Practise", "i-repeat", "soft");
+U.on(again, "click", function () { self.pracIndex++; self.pracFlipped = false; Screens.practice(); });
+row.appendChild(hear); row.appendChild(know); row.appendChild(again);
+host.appendChild(row);
+},
+
 dictSrc: "list",
 dict: function () {
 var self = this;
@@ -3008,11 +3154,9 @@ actions: [U.btn("Done", null, "primary block")]
 });
 },
 
-/* ---------- COMMUNITY ---------- */
 commFilter: "all",
 comm: function () {
 var d = DB.data;
-/* summary strip */
 var sum = U.$("#commSummary");
 sum.textContent = "";
 var counts = { finished: 0, problem: 0, notdone: 0, comment: 0 };
@@ -3047,7 +3191,6 @@ if (unread) { badge.textContent = String(unread); U.setCls(badge, "hidden", fals
 else U.setCls(badge, "hidden", true);
 }
 
-/* optional fallback contact buttons (lecturer can set these) */
 var fb = U.$("#msgFallback");
 fb.textContent = "";
 if (d.contactEmail || d.contactPhone) {
@@ -3075,7 +3218,6 @@ U.setCls(fb, "hidden", true);
 }
 },
 
-/* ---------- SETTINGS ---------- */
 settings: function () {
 var d = DB.data, st = d.settings;
 var host = U.$("#setBody");
@@ -3167,10 +3309,7 @@ U.on(b, "click", fn);
 return b;
 }
 
-/* ---- Voice ---- */
 var v = card("Voice");
-/* v9: ONE unified British female professor voice speaks every sound, so
-the app can never switch between male and female speakers mid-dictation. */
 var uniLbl = U.el("label", "field", null);
 uniLbl.appendChild(U.el("span", "lbl", "Active unified voice"));
 var uniPill = U.el("div", "chip good", "British Female Professor Voice (Amy \u00b7 en-GB)");
@@ -3226,7 +3365,6 @@ v.appendChild(sliderRow("Volume", 0, 1, 0.1, "volume", function (x) { return Mat
 v.appendChild(switchRow("Read the example sentence", "Say a B1 sentence with each word", "sentence"));
 v.appendChild(switchRow("Say the number", "\u201cNumber 7.\u201d before each word", "numbers"));
 
-/* ---- Dictation ---- */
 var p = card("Dictation");
 p.appendChild(segRow("Word repeats", [{ id: 1, label: "Once" }, { id: 2, label: "Twice" }, { id: 3, label: "Three times" }], st.repeats, function (val) { st.repeats = Number(val); DB.save(); }));
 p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { st.writeMode = val; DB.save(); Screens.settings(); }));
@@ -3236,8 +3374,8 @@ p.appendChild(sliderRow("Pause after the sentence", 0.4, 3, 0.2, "pauseSent", fu
 p.appendChild(segRow("Moving on", [{ id: "auto", label: "Auto-advance" }, { id: "manual", label: "I tap Next" }], st.advance, function (val) { st.advance = val; DB.save(); }));
 p.appendChild(switchRow("Shuffle the order", "Same shuffled order every time, so Back still works", "shuffle"));
 p.appendChild(switchRow("Show the word on screen", "Helps weaker learners; hides the spelling challenge", "showWord"));
+p.appendChild(switchRow("Low data mode", "Countdowns and numbers use the offline British voice, so only the 30 words download", "lowData"));
 
-/* ---- Appearance ---- */
 var ap = card("Appearance");
 ap.appendChild(segRow("Theme", [{ id: "auto", label: "Auto" }, { id: "light", label: "Light" }, { id: "dark", label: "Dark" }], st.theme, function (val) { st.theme = val; DB.save(); UI.applyTheme(); }));
 ap.appendChild(segRow("Text size", [{ id: "s", label: "A\u2212" }, { id: "m", label: "A" }, { id: "l", label: "A+" }, { id: "xl", label: "A++" }], st.size, function (val) { st.size = val; DB.save(); UI.applySize(); }));
@@ -3246,7 +3384,6 @@ ap.appendChild(segRow("Performance", [{ id: "auto", label: "Auto" }, { id: "full
 var perfInfo = U.el("p", "tiny muted", "Now: " + UI.perfMode + " mode \u00b7 measured frame " + UI.frameMs + " ms");
 ap.appendChild(perfInfo);
 
-/* ---- Liquid Glass Material Mixer ---- */
 var mix = card("Liquid Glass Mixer");
 mix.appendChild(U.el("p", "tiny muted", "Blur, saturate and brightness of every glass surface - tune the Apple WWDC25 material live."));
 function mixerRow(title, prop, min, max, step, def, unit) {
@@ -3297,7 +3434,6 @@ tseg.appendChild(b);
 tp.appendChild(tseg);
 mix.appendChild(tp);
 
-/* ---- Install ---- */
 var ins = card(S.installTitle);
 ins.appendChild(U.el("p", "small muted", "iPhone and iPad: tap Share, then Add to Home Screen. Android: tap the menu, then Install app. This keeps your data safe and gives you a full-screen app."));
 var instRow = U.el("div", "btn-row tight", null);
@@ -3307,7 +3443,6 @@ U.on(helpBtn, "click", function () { Help.install(); });
 instRow.appendChild(helpBtn);
 ins.appendChild(instRow);
 
-/* ---- My data ---- */
 var md = card("My data");
 md.appendChild(actionRow("Download backup", "Your results and published words. Unlock lecturer mode for a full backup.", "i-down", function () {
 var ok = U.download("dictation-backup-" + U.dateKey(new Date()) + ".json", DB.exportAll(), "application/json");
@@ -3321,7 +3456,6 @@ U.copy(t).then(function (ok) { if (ok) UI.toast(S.copied, { icon: "i-check" }); 
 md.appendChild(actionRow("Restore from backup", "Paste a backup or choose a file", "i-up", function () { DataTools.restore(); }));
 md.appendChild(actionRow("Reset app data", "Deletes words, results and messages on this device", "i-trash", function () { DataTools.reset(); }, "danger"));
 
-/* ---- About ---- */
 var ab = card(S.about);
 var creditBox = U.el("div", "credit", null);
 creditBox.style.display = "block";
@@ -3337,10 +3471,11 @@ var help2 = U.btn("How it works", "i-help", "sm soft");
 U.on(help2, "click", function () { Help.howTo(); });
 abRow.appendChild(privacy); abRow.appendChild(help2);
 ab.appendChild(abRow);
+
+UI.bindLiquidControls(host);
 }
 };
 
-/* chunked rendering: 50 rows per frame so long lists stay smooth */
 function renderChunked(host, items, build) {
 var i = 0, adminOnly = !!(Admin && Admin.context);
 function step() {
@@ -3359,9 +3494,7 @@ else setTimeout(step, 16);
 step();
 }
 
-/* ============================================================
-SECTION 9 - HELP / ABOUT SHEETS
-============================================================ */
+/* SECTION 9 - HELP / ABOUT SHEETS */
 var Help = {
 install: function () {
 UI.sheet({
@@ -3412,9 +3545,7 @@ actions: [U.btn("Close", null, "primary block")]
 }
 };
 
-/* ============================================================
-SECTION 10 - DATA TOOLS (backup / restore / reset)
-============================================================ */
+/* SECTION 10 - DATA TOOLS (backup / restore / reset) */
 var DataTools = {
 restore: function () {
 UI.sheet({
@@ -3526,9 +3657,7 @@ window.location.reload();
 }
 
 };
-/* ============================================================
-SECTION 11 - SPEECH (UK English only, defensive)
-============================================================ */
+/* SECTION 11 - SPEECH (UK English only, defensive) */
 var Speech = {
 supported: false,
 voices: [],
@@ -3572,7 +3701,6 @@ isUK: function (v) {
 if (!v) return false;
 var lang = this.normLang(v.lang), name = String(v.name || "");
 if (/^(?:en|eng)-(?:gb|gbr|uk)(?:-|$)/.test(lang)) return true;
-/* Names never override a voice explicitly labelled US or another region. */
 if (lang && !/^(en|eng)$/.test(lang)) return false;
 return /\b(UK English|British|Daniel|Kate|Serena|Hazel|George|Susan|Libby|Sonia|Ryan)\b/i.test(name);
 },
@@ -3594,11 +3722,6 @@ if (uks.length && NoVoice.cardOpen) NoVoice.close();
 UI.renderNet();
 },
 
-/* v9: male device voices are NEVER chosen while the device has any female
-voice. The offline fallback ranks ONLY British female voices in this fixed
-order, so window.speechSynthesis can never mix a man into the dictation.
-"Female" itself contains "male", so the mandated male pattern is never
-tested against a women's voice name. */
 isMaleName: function (n) {
 n = String(n || "");
 if (!n) return false;
@@ -3637,8 +3760,6 @@ if (n === this.femaleRank[r] || n.indexOf(this.femaleRank[r]) >= 0) { this.chose
 this.chosen = females[0];
 return this.chosen;
 }
-/* Only non-male offline voices remain candidates. The online Amy voice
-still leads every sound; known male device voices are never selected. */
 if (saved) {
 for (i = 0; i < this.ukVoices.length; i++) if (this.ukVoices[i].name === saved) { this.chosen = this.ukVoices[i]; return this.chosen; }
 }
@@ -3652,12 +3773,6 @@ return this.chosen;
 voiceName: function () { return this.chosen ? this.chosen.name : (this.allowNonUK ? "non-UK English voice" : ""); },
 isUkVoice: function () { return !!this.chosen && this.isUK(this.chosen); },
 
-/* ---------- v2.0.0 four-tier British audio engine -------------------
-Tier 1  recorded Cambridge/Oxford UK dictionary MP3 for the word
-Tier 2  the device en-GB Web Speech voice
-Tier 3  streamed cloud British TTS through the shared #sdpAudio element
-Tier 4  any installed English voice (u.lang = "en-GB") + a WebAudio chime
-A missing device voice can therefore never block a dictation. */
 audio: null,
 audioEl: null,
 audioStarted: false,
@@ -3670,7 +3785,7 @@ var a = U.$("#sdpAudio");
 if (!a) {
 a = document.createElement("audio");
 a.id = "sdpAudio";
-a.setAttribute("preload", "auto");
+a.setAttribute("preload", "none");
 a.setAttribute("playsinline", "");
 try { a.crossOrigin = "anonymous"; } catch (e1) {}
 try { document.body.appendChild(a); } catch (e) {}
@@ -3679,35 +3794,23 @@ this.audio = a;
 this.audioEl = a;
 return a;
 },
-/* a slash alternative is written, never spoken: "tyre/tire" -> "tyre" */
 speakText: function (w) {
 var t = String(w === null || w === undefined ? "" : w);
 var cut = t.indexOf("/");
 if (cut > 0) t = t.slice(0, cut);
 return U.trim(t);
 },
-/* v9: "tyre/tire" is ALWAYS spoken as "tyre", so the professor voice says
-it naturally. Only a single slash-alternative word is cut this way; a
-sentence that happens to contain a slash is kept whole. */
 cleanSpeech: function (text) {
 var t = U.trim(String(text === null || text === undefined ? "" : text));
 if (/^[^\s\/]+\/[^\s\/]+$/.test(t)) t = t.split("/")[0];
 return U.trim(t);
 },
 normKey: function (w) { return String(w || "").toLowerCase().replace(/[^a-z' \-]/g, "").replace(/\s+/g, " ").trim(); },
-/* a recorded British source: Oxford/Cambridge gstatic (_gb_), the Free
-Dictionary UK files (-uk.mp3) or any _gb_/_uk_ name */
 isBritishAudio: function (url) {
 if (typeof url !== "string" || !/^https:\/\/[^\s]+\.(mp3|ogg|oga|wav)(?:[?#].*)?$/i.test(url)) return false;
 var base = url.split("?")[0].split("#")[0].toLowerCase();
 return /(_gb_|_gb\.|_gb-|-gb\.|-gb_|-uk\.|-uk_|-uk-|_uk\.|_uk_|_uk-|-uk\/|_uk\/)/.test(base);
 },
-/* Tier 1 sources, in order: the word object's own URL, the cached
-dictionary audio, the Oxford/Cambridge gstatic UK MP3, the Free Dictionary
-API UK file, then the Wiktionary "En-uk-" recording. Every URL in the list
-is British; each one is tried before any synthetic voice is used. A prompt
-with no word of its own (a greeting, "Number 3") has no dictionary entry,
-so it goes straight to Tier 2 instead of hunting for a recording. */
 mp3Candidates: function (explicit, text, word) {
 var out = [], i, seen = Object.create(null), uniq = [];
 function push(url) {
@@ -3732,8 +3835,6 @@ push("https://commons.wikimedia.org/wiki/Special:FilePath/En-uk-" + encodeURICom
 for (i = 0; i < out.length; i++) if (this.isBritishAudio(out[i])) uniq.push(out[i]);
 return uniq.length ? uniq : out;   /* a real recording always beats a synthetic voice */
 },
-/* the single best recorded British source for a word (kept for Diagnostics
-and the dictionary card): cached UK audio first, then the CDN pattern. */
 mp3For: function (text, word) {
 var t = this.normKey(U.trim(String(word || text || "")));
 if (!t || t.length > 24) return "";
@@ -3744,23 +3845,12 @@ return ukMp3(t);
 streamUrl: function (text) {
 return CONFIG.ttsHost + encodeURIComponent(this.cleanSpeech(text));
 },
-/* v9 UNIFIED VOICE. Every utterance - "Are you ready?", "3", "2", "1",
-"Number 1.", single words, multi-word phrases and spelling letters - is
-spoken by the SAME AWS Polly British female neural professor "Amy" (en-GB)
-on #sdpAudio, streamed through a free, open host with no key. */
 amyUrl: function (text) { return CONFIG.ttsBackupHost + encodeURIComponent(this.cleanSpeech(text)); },
 backupUrl: function (text) { return this.amyUrl(text); },
-/* The only two playback sources in the whole app, in order: the primary
-"Amy" female voice, then the Google Translate en-GB female failover (only
-if "Amy" fails to load). No Oxford/dictionary MP3 - half of those are
-recorded by men - and no other TTS voice, so a male and a female speaker
-can never alternate inside one dictation. */
 streamSources: function (text) {
 return [this.amyUrl(text), this.streamUrl(text)];
 },
 anyEnglish: function () {
-/* Tier 4: an English female voice is preferred even when it is not en-GB;
-the utterance is still labelled en-GB and pitched like the professor. */
 var female = /\b(female|woman|amy|sonia|libby|samantha|victoria|karen|moira|tessa|serena|kate|martha|stephanie|shelley|hazel|zira|aria|jenny)\b/i;
 var first = null;
 for (var i = 0; i < this.voices.length; i++) {
@@ -3771,9 +3861,6 @@ if (female.test(String(v.name || "")) && !this.isMaleName(v.name)) return v;
 }
 return first;
 },
-/* STOP EVERYTHING. One shared audio element and the device synthesiser can
-never sound at the same time: this is the first thing a new part does, so a
-preloaded file, a stale stream or a leftover utterance cannot echo. */
 halt: function () {
 if (this.watchdog) { clearTimeout(this.watchdog); this.watchdog = null; }
 try {
@@ -3788,9 +3875,6 @@ this.audioStarted = false;
 this.busy = false;
 return true;
 },
-/* zero-lag preload: the next word's unified "Amy" female voice URL is
-fetched during the 5-second writing countdown, so every word plays with
-0 ms delay. */
 preloadCache: {},
 preload: function (text) {
 var t = U.trim(String(text || ""));
@@ -3812,16 +3896,9 @@ this.preloadCache[key] = a;
 return a;
 } catch (e) { return ""; }
 },
-/* one <audio> element for every spoken sound: iOS only lets an element that
-has already played inside a tap be started again from a timer.
-cb(ok, started): "started" says the source really produced sound, so a
-caller must NEVER speak the same text again through speechSynthesis. */
 playAudio: function (src, rate, ms, cb) {
 var self = this;
 var done = U.once(cb || function () {});
-/* the shared element asks for a CORS-friendly copy first (crossorigin
-="anonymous"); if a host does not send the headers the same file is
-played once more without them, so no word is ever silenced. */
 this.playOnce(src, rate, ms, function (ok, started) {
 if (ok || started) { done(ok, started); return; }
 self.playOnce(src, rate, ms, done, true);
@@ -3833,8 +3910,6 @@ cb = U.once(cb || function () {});
 var a = this.el();
 this.audioEl = a;
 if (!a || !src) { cb(false, false); return; }
-/* a browser that cannot decode audio at all (or a headless test DOM) must not
-   spend seconds timing out: go straight to the device voice. */
 try {
 if (a.canPlayType && !a.canPlayType("audio/mpeg") && !a.canPlayType("audio/ogg") && !a.canPlayType("audio/wav")) { cb(false, false); return; }
 } catch (eCap) {}
@@ -3851,11 +3926,6 @@ self.busy = false;
 a.onended = null; a.onerror = null; a.onstalled = null; a.onplaying = null; a.onplay = null; a.ontimeupdate = null;
 cb(!!ok, started);
 }
-/* the recording is really sounding: it now OWNS this part. Only a
-   generous completion timeout may end it - never a synthetic voice.
-   A blocked request must never count as "started": the check needs real
-   evidence that sound is playing (a play() promise alone is not enough,
-   Chromium resolves it optimistically while the file is still loading). */
 function begun() {
 if (started || settled) return;
 var heard = false;
@@ -3864,19 +3934,34 @@ if (!heard) return;
 started = true;
 self.audioOk = true;
 self.audioStarted = true;
+self.remember(src);
 if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
 liveTimer = setTimeout(function () { try { a.pause(); } catch (e) {} done(true); }, Math.max(6000, ms || 6000));
 }
-/* the connection never produced sound within 2200 ms: safe to try the next
-   tier, because nothing has been heard yet. */
 connectTimer = setTimeout(function () {
 if (started || settled) return;
 begun();
 if (started || settled) return;
 try { a.pause(); } catch (e) {}
 done(false);
-}, 2200);
+}, 3500);
+var same = false;
+try { same = !!src && a.src === src && a.readyState >= 2; } catch (eSame) { same = false; }
 try { a.pause(); } catch (e) {}
+if (same) {
+a.onplaying = begun; a.onplay = begun; a.ontimeupdate = begun;
+a.onended = function () { done(true); };
+a.onerror = function () { done(false); };
+try { a.playbackRate = Math.max(0.75, Math.min(1.25, rate === undefined ? 0.88 : rate)); a.currentTime = 0; } catch (eR) { a.currentTime = 0; }
+self.busy = true;
+self.remember(src);
+try {
+var replay = a.play();
+if (replay && replay.then) replay.then(function () { begun(); }, function () { if (!started) done(false); });
+else begun();
+} catch (e3) { done(false); }
+return;
+}
 if (plain) { try { a.removeAttribute("crossorigin"); a.crossOrigin = null; } catch (e2) {} }
 a.src = src;
 a.volume = DB.data ? U.clamp(DB.data.settings.volume, 0, 1) : 1;
@@ -3912,7 +3997,6 @@ o.start(t + pair[1]); o.stop(t + pair[1] + 0.22);
 });
 } catch (e) {}
 },
-/* one short label for the Ready sheet and Settings > Voice */
 audioLabel: function () {
 var online = U.nav("onLine", true) !== false;
 if (online) return "UK Audio Ready: British Female Professor Voice (Amy \u00b7 en-GB)";
@@ -3920,17 +4004,38 @@ if (this.anyEnglish()) return "UK Audio Ready: English device voice (offline)";
 return "No British audio on this device - words are shown";
 },
 audioReady: function () { return !!(this.ukVoices.length || U.nav("onLine", true) !== false || this.anyEnglish()); },
+lastAudioUrl: "",
+audioBlobCache: {},
+remember: function (url) {
+if (!url) return;
+this.lastAudioUrl = url;
+this.audioBlobCache[url] = 1;
+var keys = Object.keys(this.audioBlobCache);
+while (keys.length > 35) { delete this.audioBlobCache[keys.shift()]; }
+},
+lowData: function () {
+try { if (DB.data && DB.data.settings && DB.data.settings.lowData === true) return true; } catch (e) {}
+try {
+var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+return !!(c && c.saveData);
+} catch (e2) { return false; }
+},
+isTarget: function (text) {
+var key = this.normKey(text), lists = (DB.data && DB.data.lists) || [], i, j, words;
+for (i = 0; i < lists.length; i++) {
+words = (lists[i] && lists[i].words) || [];
+for (j = 0; j < words.length; j++) if (words[j] && this.normKey(words[j].w) === key) return true;
+}
+return false;
+},
 
-/* must be called synchronously inside a user gesture on iOS / Chrome */
 unlock: function () {
 this.readVoices();
-/* one shared element for every recorded and streamed British source,
-unlocked synchronously inside the very first tap (iOS / Chrome). */
 var a = U.$("#sdpAudio");
 if (!a) {
 a = U.el("audio", null, null);
 a.id = "sdpAudio";
-a.setAttribute("preload", "auto");
+a.setAttribute("preload", "none");
 a.setAttribute("playsinline", "");
 try { a.crossOrigin = "anonymous"; } catch (e0) {}
 document.body.appendChild(a);
@@ -3979,15 +4084,13 @@ if (cur) out.push(cur);
 return out;
 },
 
-/* speak an array of text parts in order; cb() is always called exactly once.
-v9 UNIFIED VOICE ENGINE: every part - "Are you ready?", "3", "2", "1",
-"Number 1.", single words like "guidebook", multi-word phrases like
-"tourist information centre" and every spelling letter - is played through
-the single #sdpAudio element with ONE British female professor voice
-("Amy", en-GB), then the Google Translate en-GB female failover. Only when
-BOTH produce no sound at all may the device voice take that one part
-(British female ranked first; a male voice only if the device has no
-female voice at all). A missing device voice can never block a dictation. */
+/* one call for any button that speaks a word: reuses the buffered MP3 on a
+repeat, falls through Amy -> Google en-GB -> the female British device voice */
+playSmartAudio: function (text, rate, onEnd) {
+var done = U.once(onEnd || function () {});
+if (!U.trim(text)) { done({ ok: false }); return; }
+this.say([text], { rate: rate === undefined ? 0.88 : rate }, done);
+},
 say: function (parts, opts, cb) {
 var self = this;
 var o = opts || {};
@@ -4015,15 +4118,8 @@ if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 setTimeout(next, ms || Math.max(60, o.gap === undefined ? 100 : o.gap));
 }
-/* The shared #sdpAudio element - the unified "Amy" female voice, then the
-Google en-GB female failover, one source at a time.
-STRICT SINGLE-ENGINE LOCK: once this beat has actually produced sound, it is
-never spoken again by speechSynthesis. The only way down to the device voice
-is a failure BEFORE playback started (onerror or the 2200 ms connection
-timeout inside playOnce). There is no retry queue and no rewind of the queue
-index (the queue index is never decremented), so #sdpAudio ("Amy") and window.speechSynthesis can NEVER
-both speak the same beat. */
 function stream(text, rate) {
+if (self.lowData() && !self.isTarget(text)) { voice(text, rate); return; }
 var sources = self.streamSources(text);
 var attempt = 0, partDone = false, audioStarted = false, guard = null;
 function release() { if (guard) { clearTimeout(guard); guard = null; } }
@@ -4033,7 +4129,6 @@ partDone = true;
 release();
 if (token !== self.token) { finish({ ok: false, err: "canceled" }); return; }
 if (ok) { qi++; step(60); return; }
-/* nothing was ever heard: the device British voice may speak it once */
 streamDead = true;
 self.lastTier = "none";
 voice(text, rate);
@@ -4055,19 +4150,13 @@ if (ok) { ended(true); return; }
 tryNext();
 });
 }
-/* connection guard: only ever fires while nothing has been heard. The
-shared element flips self.audioStarted the moment it really plays, so a
-word that is already sounding can never be spoken a second time. */
 guard = setTimeout(function () {
 if (partDone || audioStarted || self.audioStarted) return;
 try { if (self.audioEl && self.audioEl.currentTime > 0) { audioStarted = true; return; } } catch (eG) {}
 ended(false);
-}, 2400);
+}, 3500);
 tryNext();
 }
-/* Offline fallback (and the last resort when both female TTS URLs produced
-no sound): the device's own voice - British female ranked first, males only
-if no female voice exists - never a second engine on the same beat. */
 function voice(text, rate) {
 if (!self.supported || self.textOnly) { qi++; step(60); return; }
 var uk = self.ukVoices.length > 0;
@@ -4096,7 +4185,6 @@ self.onInterrupt = null;
 try { hook(); } catch (e1) {}
 return;
 }
-/* no retry and no stream echo: a spoken part advances exactly once */
 qi++;
 step();
 }
@@ -4115,19 +4203,16 @@ if (canceled()) return;
 if (qi >= queue.length) { finish({ ok: true }); return; }
 var text = queue[qi];
 var rate = U.clamp(o.rate || (DB.data ? DB.data.settings.rate : 0.88), 0.65, 1.15);
-/* every part starts from silence: stop the previous engine first */
 try { if (self.audioEl) { self.audioEl.onended = null; self.audioEl.onerror = null; self.audioEl.onplaying = null; self.audioEl.onplay = null; self.audioEl.ontimeupdate = null; self.audioEl.pause(); } } catch (eLock) {}
 try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (eLock2) {}
 self.audioStarted = false;
 if (online && !streamDead) { stream(text, rate); return; }
 voice(text, rate);
 }
-/* iOS needs a short gap after a cancel before the next speak */
 setTimeout(next, 90);
 return token;
 },
 
-/* British style spelling: "double ell" for repeated letters */
 spellText: function (word) {
 var w = String(word || "").toLowerCase().replace(/[^a-z\-']/g, "");
 var out = [], prev = "";
@@ -4154,7 +4239,6 @@ return this.say(parts, { rate: Math.max(0.6, (DB.data ? DB.data.settings.rate : 
 }
 };
 
-/* "No UK voice" guidance card */
 var NoVoice = {
 cardOpen: false,
 open: function (onContinue, onOther) {
@@ -4202,10 +4286,10 @@ else UI.toast("Still no UK voice. Try the steps above, then tap again.", { icon:
 close: function () { this.cardOpen = false; UI.closeSheet(); }
 };
 
-/* ============================================================
-SECTION 12 - ENGINE (one scheduler, run-ID tokens)
-============================================================ */
+/* SECTION 12 - ENGINE (one scheduler, run-ID tokens) */
 var Eng = {
+/* the 5 second per-word timer, readable from the UI and the tests */
+writeSecs: function () { return writeSecs(); },
 st: "idle",           /* idle | ready | speaking | waiting | paused | finished */
 runId: 0,
 words: [],
@@ -4240,12 +4324,6 @@ this.timers.push(id);
 return id;
 },
 
-/* v9 strict two-repeat scheduler: the word is spoken EXACTLY st.repeats
-times (2 by default - never 3 or 4). Every reading is the unified "Amy"
-British female voice: no extra leading word beat, so a "repeat" setting of
-2 can never produce 3 or 4 readings. Default shape per word:
-say "Number N." -> wait 400 -> say word -> wait pauseWord -> say word ->
-write (5-second countdown, with the next word preloaded as Amy audio). */
 buildBeats: function (i) {
 var st = DB.data.settings;
 var real = this.order && this.order[i] !== undefined ? this.order[i] : i;
@@ -4278,8 +4356,6 @@ if (!list || !list.words || !list.words.length) {
 UI.toast("No words to practise yet. Ask your lecturer to publish a list.", { icon: "i-alert", ms: 6000 });
 return;
 }
-/* A1: a missing device voice never blocks a dictation - the four-tier British
-engine takes over. */
 
 this.stop(true);
 this.words = list.words.slice(0);
@@ -4327,8 +4403,6 @@ this.openPlayer();
 this.runItem(this.idx);
 },
 
-/* A7.3: a word step is debounced 400 ms; finish, pause and publish flush it
-immediately. */
 saveSnapshot: function () {
 if (this.st === "idle" || this.st === "finished") return;
 var self = this;
@@ -4349,7 +4423,6 @@ settingsAtStart: JSON.parse(JSON.stringify(DB.data.settings))
 DB.saveNow(true);   /* A7.3: a word step writes one key, never two */
 },
 
-/* ---------- the scheduler ---------- */
 runItem: function (i) {
 this.runId++;
 this.clearTimers();
@@ -4384,7 +4457,6 @@ self.runBeat(n + 1);
 this.after(b.ms || 500, function () { if (!stale()) self.runBeat(n + 1); });
 } else if (b.t === "write") {
 this.st = "waiting";
-/* zero-lag: the next word is pre-fetched during the writing timer */
 this.preloadNext();
 this.status(b.status || S.yourTurn);
 this.paint();
@@ -4437,7 +4509,6 @@ if (n && n.textContent !== text) n.textContent = text;
 U.live(text);
 },
 
-/* ---------- controls ---------- */
 playPause: function () {
 if (this.st === "paused") this.resume();
 else if (this.st === "idle" || this.st === "finished") { if (!this.layer) this.start({}); }
@@ -4458,7 +4529,6 @@ resume: function () {
 if (this.st !== "paused") return;
 this.st = "speaking";
 this.requestWake();
-/* replay the current beat from its start */
 var n = this.beatIdx;
 this.runId++;
 this.runBeat(n);
@@ -4485,7 +4555,6 @@ currentWord: function () {
 var real = this.order && this.order[this.idx] !== undefined ? this.order[this.idx] : this.idx;
 return this.words[real] || null;
 },
-/* warm the browser cache for word i + 1 so it starts with 0 ms of lag */
 preloadNext: function () {
 try {
 var next = this.idx + 1;
@@ -4526,8 +4595,6 @@ this.interrupt(function (done) {
 Speech.say([w.w], { rate: Math.max(0.55, DB.data.settings.rate - 0.25), volume: DB.data.settings.volume, word: w.w }, done);
 });
 },
-/* one-off action: bump the run id so the main chain stops, speak, then return
-to the writing step of the same word. run(done) must call done() when finished. */
 interrupt: function (run) {
 this.runId++;
 this.clearTimers();
@@ -4583,7 +4650,6 @@ if (DB.data.settings.haptics && navigator.vibrate) navigator.vibrate(ms);
 } catch (e) {}
 },
 
-/* ---------- wake lock ---------- */
 requestWake: function () {
 var self = this;
 try {
@@ -4612,9 +4678,7 @@ n.textContent = ok ? S.wakeOk : S.autoLock;
 U.setCls(n, "hidden", false);
 }
 };
-/* ============================================================
-SECTION 13 - PLAYER UI
-============================================================ */
+/* SECTION 13 - PLAYER UI */
 Eng.openPlayer = function () {
 var self = this;
 if (this.layer) UI.closeLayer(this.layer);
@@ -4622,13 +4686,11 @@ this.layer = UI.layer({
 title: Lib.sessionLabel() + (DB.data.session.title ? " — " + DB.data.session.title : ""),
 backLabel: "Exit",
 body: function (body, L, foot, rightSlot) {
-/* v12: vibrant colour (stripes + warm orb) sits DIRECTLY behind .wordcard.glass. */
 var back = U.el("div", "player-backdrop", null);
 back.setAttribute("aria-hidden", "true");
 back.appendChild(U.el("div", "stripes", null));
 back.appendChild(U.el("div", "player-orb", null));
 L.insertBefore(back, L.firstChild);
-/* header right: show word + flag */
 var sw = U.btn("", "i-eye", "icon ghost");
 sw.setAttribute("aria-label", S.showWord);
 sw.setAttribute("aria-pressed", String(self.showWord));
@@ -4642,7 +4704,6 @@ rightSlot.appendChild(sw);
 var top = U.el("div", "stack", null);
 top.style.alignItems = "center";
 
-/* progress */
 var prow = U.el("div", "spread", null);
 prow.style.width = "100%";
 var count = U.el("b", "mono", "0 / 0");
@@ -4662,7 +4723,6 @@ pfill.style.width = "0%";
 pbar.appendChild(pfill);
 top.appendChild(pbar);
 
-/* word card */
 var card = U.el("div", "glass card wordcard", null);
 var status = U.el("div", "small muted", S.listening);
 status.id = "plStatus";
@@ -4680,7 +4740,6 @@ wake.style.marginTop = "8px";
 card.appendChild(wake);
 top.appendChild(card);
 
-/* lens + countdown */
 var mid = U.el("div", "row", null);
 mid.style.justifyContent = "center";
 mid.style.gap = "22px";
@@ -4730,7 +4789,6 @@ cd.appendChild(num);
 mid.appendChild(cd);
 top.appendChild(mid);
 
-/* typing input */
 if (self.mode === "type") {
 var inp = U.el("input", "ansinput", null);
 inp.type = "text";
@@ -4754,7 +4812,6 @@ top.appendChild(inp);
 }
 body.appendChild(top);
 
-/* controls */
 var grid = U.el("div", "ctrlgrid", null);
 grid.style.marginTop = "14px";
 var mk = function (label, icon, fn, cls) {
@@ -4776,7 +4833,6 @@ mk(T("previous"), "i-prev", function () { self.prev(); });
 mk(T("next"), "i-next", function () { self.next(); }, "primary");
 body.appendChild(grid);
 
-/* footer */
 var frow = U.el("div", "btn-row", null);
 var finish = U.btn(S.finishEarly, "i-flag", "soft");
 finish.style.flex = "1 1 auto";
@@ -4905,7 +4961,6 @@ var b = U.btn(T("imReady"), "i-play", "primary xl block");
 U.on(b, "click", function () {
 if (counting || token !== self.runId) return;
 counting = true; b.disabled = true;
-/* The gesture unlocks audio on iOS; no automatic dictation on load. */
 Speech.unlock(); self.requestWake();
 var big = U.$("#readyNum"), count = 3, rate = DB.data.settings.rate;
 function active() { return token === self.runId && sh.parentNode; }
@@ -4920,7 +4975,6 @@ if (!active()) return; count--; self.after(320, step);
 });
 return b;
 })(), (function () {
-/* the countdown is optional - skipping still starts inside a user tap */
 var sk = U.btn("Skip countdown", "i-next", "ghost");
 U.on(sk, "click", function () {
 Speech.unlock();
@@ -4933,8 +4987,6 @@ self.runItem(0);
 return sk;
 })()]
 });
-/* the greeting is spoken aloud on whatever British tier this device has, but
-never over a run that already started (say() bumps the speech token). */
 var greetRun = self.runId;
 setTimeout(function () {
 if (self.runId !== greetRun) return;
@@ -4943,9 +4995,7 @@ Speech.say([phrase], { rate: DB.data.settings.rate, volume: DB.data.settings.vol
 return sh;
 };
 
-/* ============================================================
-SECTION 14 - RESULTS
-============================================================ */
+/* SECTION 14 - RESULTS */
 function diffChars(a, b) {
 a = String(a || ""); b = String(b || "");
 var n = a.length, m = b.length, i, j;
@@ -4967,8 +5017,6 @@ while (y < m) { out.push({ c: b.charAt(y), ok: false, missing: true }); y++; }
 return out;
 }
 
-/* A6: a finished dictation is announced to the class at once - anonymous
-nickname, score and device line. */
 function publishCompletion(rec, action) {
 var d = DB.data, i, c = null;
 if (!rec || !d) return null;
@@ -4987,14 +5035,11 @@ d.comments.unshift(c);
 if (d.comments.length > CONFIG.maxComments) d.comments.length = CONFIG.maxComments;
 rec.commId = c.id;
 Cloud.queue({ action: "comment", cid: c.id, name: c.name, status: c.status, text: c.text, meta: c.meta });
-/* the Community tab of every phone updates the second a student finishes */
 Cloud.postCompletion(rec);
 return c;
 }
 
 var Results = {
-/* UK spelling map applied word by word, so "drivers licence",
-"driver's licence" and "driver's license" are all understood. */
 ukSpelling: function (s) {
 var parts = U.norm(s).split(" "), out = [];
 for (var i = 0; i < parts.length; i++) out.push(US_UK[parts[i]] || parts[i]);
@@ -5005,7 +5050,6 @@ answerState: function (answer, target) {
 var a = this.stripApostrophe(answer), t = this.stripApostrophe(target);
 if (!a) return "empty";
 if (a === t) return "ok";
-/* "tyre/tire": either British or American spelling is fully correct */
 if (t.indexOf("/") >= 0) {
 var forms = t.split("/");
 for (var fi = 0; fi < forms.length; fi++) if (a === U.trim(forms[fi])) return "ok";
@@ -5053,17 +5097,13 @@ rows: res.rows
 };
 DB.data.history.unshift(rec);
 if (DB.data.history.length > CONFIG.maxHistory) DB.data.history.length = CONFIG.maxHistory;
-/* Every real completion is recorded locally as a student result too, so
-the lecturer's Class stats can only ever show numbers that happened. */
 Cloud.mergeResults([{
 id: rec.id, ts: rec.ts, sessionNo: rec.sessionNo, wordCount: rec.wordCount,
 score: Math.round(rec.score), percent: rec.percent, deviceType: rec.deviceType,
 ukVoice: rec.ukVoice, mode: rec.mode, name: (DB.data.profile && DB.data.profile.nickname) || "Student"
 }]);
-/* A6 automatic completion post + the once-per-session backup copy (A7.3) */
 publishCompletion(rec);
 DB.saveNow();
-/* streak */
 var today = U.dateKey(new Date());
 var st = DB.data.profile.streak;
 if (st.last !== today) {
@@ -5071,9 +5111,7 @@ var yest = new Date(Date.now() - 86400000);
 st.count = (st.last === U.dateKey(yest)) ? (st.count + 1) : 1;
 st.last = today;
 }
-/* mistakes */
 res.rows.forEach(function (r) { if (r.state === "wrong" || r.state === "empty") Lib.addMistake(r.word); });
-/* badges */
 var bg = DB.data.profile.badges;
 bg.first = true;
 if (st.count >= 5) bg.streak5 = true;
@@ -5092,7 +5130,6 @@ var L = UI.layer({
 title: T("results"),
 backLabel: "Done",
 body: function (body) {
-/* score ring */
 var ringWrap = U.el("div", "scorering", null);
 var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 svg.setAttribute("width", "132"); svg.setAttribute("height", "132");
@@ -5127,9 +5164,6 @@ var metaLine = U.el("p", "center tiny muted", "Session " + (rec.sessionNo || "\u
 " \u00b7 " + U.dur(rec.durationSec) + " \u00b7 " + (rec.ukVoice ? "UK voice" : "non-UK voice") + (rec.selfScored ? " \u00b7 self-scored" : ""));
 body.appendChild(metaLine);
 
-/* A7.2 paper mode: an interactive self-check. Every word appears as a
-numbered row with Got it right / Missed it buttons; the score ring,
-the history entry and the community post update live as you tap. */
 if (rec.mode === "paper") {
 var box = U.el("div", "glass card pad-s r2", null);
 box.style.marginTop = "14px";
@@ -5156,6 +5190,8 @@ if (lbl && lbl.firstChild) lbl.firstChild.textContent = n + " / " + rec.wordCoun
 if (fgc) { try { fgc.setAttribute("stroke-dashoffset", (C * (1 - rec.percent / 100)).toFixed(1)); } catch (e) {} }
 var recs = DB.data.history;
 for (var j = 0; j < recs.length; j++) if (recs[j].id === rec.id) { recs[j].score = rec.score; recs[j].percent = rec.percent; recs[j].selfScored = true; recs[j].marks = rec.marks; break; }
+var shared = DB.data.results || [];
+for (var sr = 0; sr < shared.length; sr++) if (shared[sr].id === rec.id) { shared[sr].score = Math.round(rec.score); shared[sr].percent = rec.percent; break; }
 publishCompletion(rec, "update");
 DB.save();
 }
@@ -5208,7 +5244,6 @@ box.appendChild(markHost);
 body.appendChild(box);
 }
 
-/* per-word review */
 if (rec.mode === "type" && rec.rows && rec.rows.length) {
 body.appendChild(U.el("h3", null, S.review));
 var host = U.el("div", null, null);
@@ -5239,7 +5274,6 @@ host.appendChild(row);
 });
 }
 
-/* actions */
 var acts = U.el("div", "stack", null);
 acts.style.marginTop = "16px";
 var text = Results.reportText(rec);
@@ -5280,7 +5314,6 @@ setTimeout(function () { Comm.composer("finished"); }, 250);
 acts.appendChild(share); acts.appendChild(copy); acts.appendChild(pract); acts.appendChild(comment);
 body.appendChild(acts);
 
-/* history */
 if (DB.data.history.length > 1) {
 body.appendChild(U.el("h3", null, "Your last sessions"));
 var hh = U.el("div", null, null);
@@ -5379,24 +5412,45 @@ if (Speech.supported) {
 Speech.say([line], { rate: DB.data.settings.rate, volume: DB.data.settings.volume }, function () {
 setTimeout(build, 250);
 });
-/* safety: never leave the student waiting on speech that never ends */
 setTimeout(build, 7000);
 } else {
 UI.toast(line, { icon: "i-check", ms: 6000 });
 build();
 }
 };
-/* ============================================================
-SECTION 15 - DICTIONARY LOOKUP (optional, cached, offline-safe)
-============================================================ */
+/* SECTION 15 - DICTIONARY LOOKUP (optional, cached, offline-safe) */
 var Dict = {
 audioEl: null,
+embedded: function (key) {
+var lists = (DB.data && DB.data.lists) || [], i, j, k, words, w, keys;
+for (i = 0; i < lists.length; i++) {
+words = (lists[i] && lists[i].words) || [];
+for (j = 0; j < words.length; j++) {
+w = words[j];
+if (!w || !w.m || !w.w) continue;
+keys = [U.norm(w.w)].concat(String(w.w).split("/").map(function (p) { return U.norm(p); }));
+for (k = 0; k < keys.length; k++) {
+if (keys[k] !== key) continue;
+return { ipa: IPA[U.norm(w.w)] || "", pos: w.pos || "", meaning: w.m, example: w.s || "",
+audio: w.audio || "", ukSource: true, embedded: true, ts: Date.now() };
+}
+}
+}
+return null;
+},
 lookup: function (word, cb) {
 var key = U.norm(word);
 if (!key) { cb && cb(null); return; }
 var cache = DB.data.dictCache[key];
 var fresh = cache && cache.ukSource !== undefined && cache.ts && (Date.now() - cache.ts < 7 * 86400000);
 if (fresh) { cb && cb(cache); return; }
+var local = Dict.embedded(key);
+if (local) {
+DB.data.dictCache[key] = local;
+DB.save();
+cb && cb(local);
+return;
+}
 if (!window.fetch) { cb && cb(cache || null); return; }
 if (U.nav("onLine", true) === false) { cb && cb(cache || null); return; }
 var token = U.uid("dk");
@@ -5421,8 +5475,6 @@ done = true;
 clearTimeout(timer);
 var res = Dict.parse(json);
 if (res) Dict.store(key, res);
-/* the free Dictionary API sometimes has no example sentence: Wiktionary
-fills the gap, and its open British recordings become an extra source */
 if (!res || !U.trim(res.example) || !res.audio) {
 Dict.wikiLookup(key, function (extra) {
 if (extra) Dict.store(key, extra);
@@ -5439,9 +5491,6 @@ cb && cb(cache || null);
 });
 },
 
-/* every real example sentence the dictionary returns counts: the primary
-sense first, then the other senses. Nothing is thrown away because of a
-word-count rule. */
 pickExample: function (entry) {
 var ms = (entry && entry.meanings) || [], i, j;
 for (i = 0; i < ms.length; i++) {
@@ -5453,7 +5502,6 @@ if (ex && U.trim(ex)) return U.clip(String(ex), 400);
 }
 return "";
 },
-/* Source 1c: any British recording the entry advertises, UK first. */
 pickAudio: function (entry) {
 var ph = (entry && entry.phonetics) || [], best = "", rank = 9, ipa = "";
 for (var i = 0; i < ph.length; i++) {
@@ -5484,7 +5532,6 @@ if (!ipa && !meaning && !audio) return null;
 return { ipa: audio ? ipa : "", meaning: meaning, audio: audio, example: example, pos: pos, ukSource: Speech.isBritishAudio(audio) };
 } catch (err) { return null; }
 },
-/* Source 1d + fallback meaning/example: the open Wiktionary REST API. */
 wikiLookup: function (word, cb) {
 cb = U.once(cb || function () {});
 if (!window.fetch || U.nav("onLine", true) === false) { cb(null); return; }
@@ -5550,17 +5597,13 @@ DB.save(true);   /* light save: a cached lookup never costs a backup copy */
 return merged;
 },
 
-/* v9: the SAME unified British female professor voice (Amy) speaks here
-too - never a male dictionary MP3 and never a second engine. */
 speak: function (word, rate) {
 var r = rate === undefined ? DB.data.settings.rate : rate;
 Speech.say([word], { rate: r, word: word }, function () {});
 }
 };
 
-/* ============================================================
-SECTION 16 - COMMUNITY (anonymous comments + private message)
-============================================================ */
+/* SECTION 16 - COMMUNITY (anonymous comments + private message) */
 var Comm = {
 statuses: [
 { id: "finished", label: "Finished successfully", cls: "finished" },
@@ -5573,7 +5616,6 @@ for (var i = 0; i < this.statuses.length; i++) if (this.statuses[i].id === id) r
 return "Just a comment";
 },
 
-/* strip links, hide long digit strings (phone numbers), clip length */
 sanitize: function (text, max) {
 var s = U.trim(text);
 s = s.replace(/(https?:\/\/|www\.)[^\s]+/gi, "[link removed]");
@@ -5690,7 +5732,6 @@ count.id = "ccCount";
 b.appendChild(count);
 U.on(ta, "input", function () { count.textContent = ta.value.length + " / " + CONFIG.commentLen; });
 
-/* honeypot: hidden from people, tempting for bots */
 var hp = U.el("input", null, null);
 hp.type = "text";
 hp.name = "website";
@@ -5813,9 +5854,7 @@ return btn;
 });
 }
 };
-/* ============================================================
-SECTION 17 - ADMIN (PIN + lecturer panel)
-============================================================ */
+/* SECTION 17 - ADMIN (PIN + lecturer panel) */
 var Admin = {
 unlocked: false,
 pin: "",
@@ -5826,7 +5865,6 @@ draft: {},
 editListId: "",
 context: false,
 
-/* ---------- PIN hashing ---------- */
 toBytes: function (s) {
 var out = [];
 for (var i = 0; i < s.length; i++) {
@@ -5838,8 +5876,6 @@ else out.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));
 return new Uint8Array(out);
 },
 seedPin: function (admin) {
-/* Public convenience lock, NOT an authentication boundary. Legacy seed is
-upgraded to a device-specific PBKDF2 hash on successful login. */
 admin.pinSalt = "c56a80f01b264e39";
 admin.pinHash = "5cc8204af44727a4da3b0d615fb32939b0f86d8b660efaaf9772fde9d753428b";
 admin.pinKdf = "sha256"; admin.pinRehashed = false;
@@ -5874,7 +5910,6 @@ return Array.prototype.map.call(bytes, function (b) { return ("0" + b.toString(1
 } catch (e) { return U.uid("s").replace(/[^a-z0-9]/gi, ""); }
 },
 
-/* ---------- entry point ---------- */
 open: function () {
 var a = DB.data.admin;
 if (this.unlocked) { this.panel(); return; }
@@ -5957,9 +5992,6 @@ if (!/^[0-9]$/.test(String(k || ""))) return;
 if (entry.length >= CONFIG.maxPin) return;
 entry += k;
 paint();
-/* auto-unlock the moment the four-digit lecturer PIN is complete.
-The digits stay in the box so a longer (5-8 digit) PIN can still
-be typed after the four-digit attempt. */
 if (!autoTried && mode !== "create" && mode !== "confirm" && entry.length === CONFIG.minPin) {
 autoTried = true;
 if (DB.data.admin.lockUntil > Date.now()) return;
@@ -5968,7 +6000,6 @@ submit(entry);
 }
 }
 U.delegate(pad, "click", "button", function (ev, btn) { key(btn.getAttribute("data-k")); });
-/* a physical keyboard works too while the PIN sheet is open */
 var onKey = function (ev) {
 var k = ev.key;
 if (k === "Enter") { ev.preventDefault(); key("enter"); }
@@ -5987,7 +6018,6 @@ var pin = entry; entry = ""; paint(); submit(pin);
 function submit(pin) {
 if (mode === "create") {
 if (!/^[0-9]{4,8}$/.test(pin)) { setMsg("Use 4 to 8 digits only."); shake(); return; }
-/* UI.sheet() already closes the sheet on top, so do not close again here */
 self.pad("confirm", pin);
 return;
 }
@@ -6017,8 +6047,6 @@ self.pin = pin;
 UI.closeSheet();
 self.unlock();
 } else if (res && res.err !== "locked") {
-/* the server is unreachable or has no ADMIN_PIN: fall back to
-the PIN stored on this device so the lecturer is never locked out */
 var la = DB.data.admin;
 self.hashPin(pin, la.pinSalt, function (localHash) {
 if (self.authRun !== authRun || !sh.parentNode) return;
@@ -6035,7 +6063,6 @@ shake();
 });
 return;
 }
-/* local verify */
 var a = DB.data.admin;
 enter.disabled = true;
 self.hashPin(pin, a.pinSalt, function (hash) {
@@ -6072,8 +6099,6 @@ shake();
 }
 },
 onClose: function () {
-/* only detach the keyboard: Admin.authRun is owned by lock()/pad(), and
-bumping it here would cancel the next pad that replaces this sheet */
 if (self._pinKey) { document.removeEventListener("keydown", self._pinKey, true); self._pinKey = null; }
 }
 });
@@ -6122,9 +6147,6 @@ UI.toast("Locked because the app was in the background.", { icon: "i-lock" });
 this.bgSince = 0;
 },
 
-/* ---------- messy text parser ---------- */
-/* classes run only on Tuesday (2) and Wednesday (3): today when it is a
-class day, then the next eight Tuesday/Wednesday dates. */
 classDates: function (now) {
 var dates = [], d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
 if (d.getDay() === 2 || d.getDay() === 3) dates.push(U.dateKey(d));
@@ -6134,8 +6156,6 @@ return dates;
 wordsText: function (words) {
 return "word,sentence,meaning\n" + words.map(function (x) { return [x.w, x.s || "", x.m || ""].map(U.csvCell).join(","); }).join("\n");
 },
-/* A single delimiter decision for the whole paste. Quote-aware, including
-escaped quotes and embedded newlines. No per-line comma-column guessing. */
 readRows: function (text, delimiter) {
 var rows = [], row = [], cell = "", quoted = false;
 for (var i = 0; i < text.length; i++) {
@@ -6185,8 +6205,6 @@ function add(w, sentence, meaning, rowNo) {
 if (mode === "plain list" && /[\t|]/.test(w)) { problems.push("Item " + rowNo + ": mixed column separators; use one format for the whole paste."); return; }
 w = U.trim(w).replace(/^\s*(?:[-*\u2013\u2014]\s+|\d+\s*[.)\-:]\s*)/, "");
 w = U.trim(w).replace(/^['"]|['"]$/g, "").replace(/\s+/g, " ")
-/* a pasted part-of-speech tag is never part of the word:
-"driver's licence(n)" -> "driver's licence" */
 .replace(/\s*\((?:n|v|adj|adv|prep|conj|pron|det|num|noun|verb|adjective|adverb|excl|phr|phrase|phrasal verb)\)\s*$/i, "")
 .replace(/\s*[,;:]+\s*$/, "");
 if (!w) return;
@@ -6210,8 +6228,6 @@ self.autoFill(out);
 return { items: out, problems: problems, dupes: dupes, mode: mode };
 },
 
-/* A2.3: B1 bank, then a background dictionary lookup, then a B1 template, so
-m and s are never blank. */
 tplMeaning: function (w) { return "a B1 word you can use in your own sentence: " + String(w || "").toLowerCase(); },
 tplSentence: function (w) { return "This week we are learning the word \u201c" + w + "\u201d \u2014 can you write your own sentence with it?"; },
 bankHit: function (w) {
@@ -6236,7 +6252,6 @@ if (!U.trim(gap[i].s)) gap[i].s = self.tplSentence(gap[i].w);
 self.enrich(gap);
 return items;
 },
-/* background enrichment: no extra button for the lecturer to remember */
 enrich: function (items) {
 if (!items || !items.length || !window.fetch || U.nav("onLine", true) === false) return;
 var self = this, todo = items.slice(0, 40), i = 0, changed = 0;
@@ -6274,8 +6289,6 @@ el.textContent = !items.length ? "Paste a list to begin"
 : items.length + (items.length === 1 ? " word ready" : " words ready") + (ready === items.length ? " \u2014 meanings & sentences auto-filled" : " \u00b7 " + ready + " with meaning & sentence");
 U.setCls(el, "good", items.length > 0 && ready === items.length);
 },
-/* one-tap publish: replace the list, publish it, point the active session
-and the plan at it, queue the cloud sync and repaint Home. */
 saveAll: function (list, items, dates, target) {
 var d = DB.data, now = U.dateKey(new Date());
 if (!list || !items || !items.length) { UI.toast("Add some words before publishing.", { icon: "i-alert" }); return; }
@@ -6294,8 +6307,6 @@ this.syncSessionFromList(list);
 this.publish(list, true);
 this.flushDraft(list);
 DB.saveNow();
-/* A9: one live broadcast. Every phone that is open in class repaints with
-the new words, session number, day, date and title immediately. */
 var sent = Cloud.publishLive(Cloud.repoPayload(), function (res) {
 if (res && res.ok) UI.toast("Live broadcast sent to all open phones.", { icon: "i-cloud", ms: 5000 });
 });
@@ -6303,8 +6314,6 @@ Screens.home();
 UI.renderNet();
 UI.toast("Saved & published to all students \u00b7 " + list.words.length + " words \u00b7 Session " + (d.session.no || "1") + " \u00b7 v" + list.version + (sent ? " \u00b7 live sync" : " \u00b7 will send when online"), { icon: "i-check", ms: 6000 });
 },
-/* Defect A: a list called "Session 4 words" always drives "SESSION 4" in the
-Hero kicker, so the kicker and the title can never contradict each other. */
 syncSessionFromList: function (list) {
 var d = DB.data, s = d.session;
 var m = /^Session\s+(\d+[A-Za-z]?)\b/i.exec(String((list && list.name) || ""));
@@ -6317,14 +6326,12 @@ s.autoDay = false;
 this.manualSession = false;
 return s;
 },
-/* the kept draft copy is dropped once a list is live (A7.3 storage) */
 flushDraft: function (list) {
 if (!list) return;
 delete list.draftText; delete list.draftFormat;
 if (this.draft) delete this.draft[list.id];
 Eng.flushSnapshot();
 },
-/* ---------- the panel ---------- */
 layer: null,
 tab: "words",
 panel: function () {
@@ -6404,12 +6411,10 @@ host.appendChild(c);
 return inner;
 }
 };
-/* ---------- TAB 1: WORDS & PLANNER ---------- */
 Admin.tabWords = function (host) {
 var self = this;
 var d = DB.data;
 
-/* --- library --- */
 var libBox = this.card(host, "Word lists");
 var rows = U.el("div", null, null);
 libBox.appendChild(rows);
@@ -6467,7 +6472,6 @@ paintLib();
 var sample = U.btn("Insert the 30 " + SAMPLE_LIST_NAME, "i-plus", "sm soft");
 U.on(sample,"click",function () { var l = {id:U.uid("list"),name:SAMPLE_LIST_NAME,words:SAMPLE_WORDS.map(function (x) { return {w:x.w,s:x.s,m:x.m,audio:x.audio||ukMp3(x.w)}; }),version:2,published:false,draft:true}; d.lists.push(l); self.editListId=l.id; DB.saveNow(); self.renderTab(); }); libBox.appendChild(sample);
 
-/* --- editor --- */
 var list = this.editListId ? Lib.byId(this.editListId) : d.lists[0];
 if (!list) return;
 this.editListId = list.id;
@@ -6485,8 +6489,6 @@ ta.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
 ta.style.fontSize = "16px";
 ta.value = this.draft[list.id] !== undefined ? this.draft[list.id] : list.draftText !== undefined ? list.draftText : self.wordsText(list.words);
 ed.appendChild(ta);
-/* A4: one tap right under the paste box does the whole job - save, sync the
-session header, publish for students and broadcast live. */
 var livePub = U.btn("Save & Publish Live Now (" + list.words.length + " words)", "i-cloud", "primary block xl");
 livePub.style.marginTop = "8px";
 livePub.style.position = "sticky";
@@ -6563,8 +6565,6 @@ function refresh() {
 if (!self.unlocked) return;
 parsed = self.parseWords(ta.value, format); remember(); renderPreview(); self.setBadge(badge, parsed);
 }
-/* one code path for both publish buttons: parse what is in the box right
-now, refuse to publish a broken list, save + sync + broadcast on success. */
 function publishNow() {
 var finalWords = self.parseWords(ta.value, format);
 self.setBadge(badge, finalWords);
@@ -6657,7 +6657,6 @@ U.on(json, "click", function () { var text = JSON.stringify({ name: list.name, w
 brow2.appendChild(bImp); brow2.appendChild(fi); brow2.appendChild(bExp); brow2.appendChild(csv); brow2.appendChild(json);
 ed.appendChild(brow2);
 
-/* auto-fill meanings + IPA (online, small batches) */
 var brow3 = U.el("div", "btn-row tight", null);
 brow3.style.marginTop = "8px";
 var bFill = U.btn("Fill missing meaning / sentence (online)", "i-cloud", "soft");
@@ -6688,8 +6687,6 @@ prog.textContent = "Looking up " + i + " of " + todo.length + "\u2026";
 Dict.lookup(w.w, function (res) {
 if (!self.unlocked) return;
 if (res && res.meaning && !w.m) w.m = U.clip(res.meaning, 120);
-/* any real dictionary example sentence is kept - the old 8-to-14 word
-filter threw away three quarters of the real sentences. */
 if (res && res.example && !w.s) w.s = U.clip(res.example, 400);
 list.draft = true;
 setTimeout(stepFn, 120);
@@ -6699,8 +6696,6 @@ setTimeout(stepFn, 120);
 brow3.appendChild(bFill); brow3.appendChild(prog);
 ed.appendChild(brow3);
 
-/* A8: the second 30-row table is gone. Reordering, deleting and editing all
-happen in the one table above, so a low-end phone builds far fewer nodes. */
 var libAct = U.el("div", "btn-row tight", null);
 libAct.style.marginTop = "8px";
 var bDup = U.btn("Duplicate list", "i-copy", "sm soft");
@@ -6755,7 +6750,6 @@ self.renderTab();
 libAct.appendChild(bDup); libAct.appendChild(bRen); libAct.appendChild(bDel);
 ed.appendChild(libAct);   /* the list actions stay in the single words card */
 
-/* --- planner --- */
 var pl = this.card(host, "Planner (which list on which day)");
 var published = Lib.published();
 function optList(sel, cur) {
@@ -6862,7 +6856,6 @@ U.on(saveWeek, "click", function () { d.plan.lastWeek = d.plan.weekdays.slice(0)
 prow.appendChild(copyWeek); prow.appendChild(clearWeek); prow.appendChild(saveWeek);
 pl.appendChild(prow);
 
-/* --- publish --- */
 var targetRow = U.el("div", "planrow", null);
 targetRow.appendChild(U.el("span", "small", "Publish for"));
 var target = U.el("select", null, null); target.id = "publishTarget"; target.setAttribute("aria-label", "Publish for");
@@ -6955,8 +6948,6 @@ function wordRow(x) { var o = { w: x.w, s: x.s || "", m: x.m || "" }; if (x.audi
 Admin.publish = function (list, quiet) {
 if (!list) return;
 if (!list.words.length) { UI.toast("Add some words before publishing.", { icon: "i-alert" }); return; }
-/* every published word carries its recorded British MP3 so a phone can play
-it without knowing anything about the dictionary sites */
 list.words.forEach(function (x) { if (!x.audio) x.audio = ukMp3(x.w); });
 list.published = true;
 list.draft = false;
@@ -6992,7 +6983,6 @@ this.renderTab();
 }
 };
 
-/* ---------- TAB 2: SESSION ---------- */
 Admin.tabSession = function (host) {
 var self = this;
 var s = DB.data.session;
@@ -7080,7 +7070,6 @@ U.on(tIn, "input", U.debounce(function () { s.title = U.clip(tIn.value, 80); DB.
 l4.appendChild(tIn);
 c1.appendChild(l4);
 
-/* phrases */
 function phraseBox(title, key) {
 var box = self.card(host, title);
 var listHost = U.el("div", null, null);
@@ -7136,7 +7125,6 @@ var label = U.el("label", "field", null); label.appendChild(U.el("span", "lbl", 
 var input = U.el("input", null, null); input.type = "number"; input.min = item[2]; input.max = item[3]; input.step = item[4]; input.value = DB.data.settings[item[0]];
 U.on(input, "change", function () { DB.data.settings[item[0]] = U.clamp(input.value,item[2],item[3]); DB.saveNow(); }); label.appendChild(input); timing.appendChild(label);
 });
-/* default student settings */
 var c3 = this.card(host, "Default student settings");
 var st = DB.data.settings;
 function sw(title, sub, key) {
@@ -7226,7 +7214,6 @@ nextRow.style.marginTop = "12px";
 var nextBtn = U.btn("Next session", "i-next", "soft");
 U.on(nextBtn, "click", function () {
 bump(1);
-/* jump to the next Tuesday or Wednesday, not to the same weekday */
 var base = s.date ? new Date(s.date + "T12:00:00") : new Date();
 var next = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1, 12);
 while (next.getDay() !== 2 && next.getDay() !== 3) next.setDate(next.getDate() + 1);
@@ -7241,7 +7228,6 @@ UI.toast("Next session ready: " + s.no + " \u00b7 " + s.day + " \u00b7 " + U.fmt
 nextRow.appendChild(nextBtn);
 c3.appendChild(nextRow);
 };
-/* ---------- TAB 3: ANNOUNCEMENT + INBOX ---------- */
 Admin.tabAnnounce = function (host) {
 var self = this;
 var d = DB.data;
@@ -7309,7 +7295,6 @@ Screens.home();
 brow.appendChild(post); brow.appendChild(clear);
 c1.appendChild(brow);
 
-/* inbox */
 var unread = d.inbox.filter(function (m) { return !m.read; }).length;
 var c2 = this.card(host, "Private messages" + (unread ? " (" + unread + " unread)" : ""));
 var filterRow = U.el("div", "row", null);
@@ -7389,7 +7374,6 @@ U.on(fUn, "click", function () { paintInbox(true); });
 paintInbox(false);
 };
 
-/* ---------- TAB 4: COMMENTS ---------- */
 Admin.tabComments = function (host) {
 var self = this;
 var d = DB.data;
@@ -7501,11 +7485,8 @@ U.on(fRep, "click", function () { paint("reported"); });
 paint("visible");
 };
 
-/* ---------- TAB 5: CLASS STATS ---------- */
 Admin.tabStats = function (host) {
 var d = DB.data;
-/* Defect B: class numbers are real student completions (live cloud events
-merged in), never the lecturer's own history. Zero means zero. */
 var rows = (d.results || []).slice(0);
 var students = {}, bySession = {}, devices = {}, noUk = 0, sum = 0;
 rows.forEach(function (r) {
@@ -7578,12 +7559,10 @@ if (!U.download("class-results.csv", U.csv(out), "text/csv")) U.selectForCopy(U.
 b4.appendChild(csv);
 };
 
-/* ---------- TAB 6: SETTINGS & TOOLS ---------- */
 Admin.tabTools = function (host) {
 var self = this;
 var d = DB.data;
 
-/* cloud setup */
 var c0 = this.card(host, "Share data between phones"); Cloud.wizard(c0);
 var contactBox = this.card(host, "No-cloud contact");
 contactBox.appendChild(U.el("p", "small muted", "Students can send their saved comment or message privately with WhatsApp, Email or Share."));
@@ -7593,7 +7572,6 @@ var input = U.el("input", null, null); input.type = key === "email" ? "email" : 
 U.on(input, "change", function () { d.lecturerContact[key] = U.clip(input.value, 120); DB.saveNow(); }); label.appendChild(input); contactBox.appendChild(label);
 });
 
-/* PIN */
 var c1 = this.card(host, "Lecturer PIN");
 c1.appendChild(U.el("p", "small muted", Cloud.mode
 ? "In cloud mode the PIN is checked on the server only. Change it by editing ADMIN_PIN in the Apps Script project (Project settings \u203a Script properties)."
@@ -7652,7 +7630,6 @@ return ok;
 c1.appendChild(ch);
 }
 
-/* data */
 var c2 = this.card(host, "Data");
 var bk = U.btn("Download full backup", "i-down", "soft block");
 U.on(bk, "click", function () {
@@ -7681,7 +7658,6 @@ UI.toast("Sample data restored", { icon: "i-check" });
 });
 c2.appendChild(sm);
 
-/* contact fallback */
 var c3 = this.card(host, "Student contact buttons (optional)");
 c3.appendChild(U.el("p", "small muted", "If you set these, students see an E-mail and a WhatsApp button next to the private message form. Useful when there is no cloud."));
 var eIn = U.el("input", null, null);
@@ -7699,7 +7675,6 @@ pIn.style.marginTop = "8px";
 U.on(pIn, "input", U.debounce(function () { d.contactPhone = U.clip(pIn.value, 30); DB.save(); }, 300));
 c3.appendChild(pIn);
 
-/* tools */
 var c4 = this.card(host, "Tools");
 var dev = U.btn("Check my device", "i-target", "soft block");
 U.on(dev, "click", function () { Diag.open(); });
@@ -7731,9 +7706,7 @@ for (var i = 0; i < 12; i++) lines.appendChild(U.el("i", null, null));
 host.appendChild(lines);
 try { window.print(); } catch (e) { UI.toast("Printing is blocked in this browser.", { icon: "i-alert" }); }
 };
-/* ============================================================
-SECTION 18 - CLOUD (optional Google Apps Script layer)
-============================================================ */
+/* SECTION 18 - CLOUD (optional Google Apps Script layer) */
 var Cloud = {
 url: "",
 mode: false,
@@ -7744,11 +7717,17 @@ fails: 0,
 pollTimer: null,
 flushing: false,
 pendingState: null,
-/* verified live-channel bookkeeping (never a hardcoded badge) */
 syncedAt: 0,
 stateAt: 0,
 live: { sse: null, ok: false, at: 0, err: "", retry: null, timer: null, posting: false, flushing: false },
 liveMode: false,
+dataSaver: function () {
+try {
+if (DB.data && DB.data.settings && DB.data.settings.lowData === true) return true;
+var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+return !!(c && c.saveData);
+} catch (e) { return false; }
+},
 
 valid: function (u) {
 return typeof u === "string" && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,200}\/exec$/.test(u);
@@ -7778,7 +7757,6 @@ try { Store.set("sdp.cloudurl", u); } catch (e) {}
 return { ok: true };
 },
 
-/* POST as text/plain (simple request, no CORS preflight) with an 8 s timeout */
 post: function (obj, cb) {
 cb = U.once(cb);
 var self = this;
@@ -7872,8 +7850,6 @@ flush: function () {
 var self = this;
 if (this.flushing) return;
 if (U.nav("onLine", true) === false) { UI.renderNet(); return; }
-/* no Apps Script link configured: the free ntfy live channel does the
-sending, so a job in the outbox never stays "1 waiting" forever. */
 if (!this.mode) { this.flushLive(); return; }
 if (!DB.data.outbox.length) { UI.renderNet(); return; }
 this.flushing = true;
@@ -8044,13 +8020,7 @@ Eng.st = keep;
 if (UI.tab === "home") Screens.home();
 },
 
-/* ======================= v2.0.0 real-time class engine ==================
-Three public ntfy.sh topics (state / comm / inbox) carry the class in real
-time: free, open source, no key, CORS-enabled, cached and streamed over
-SSE. The same state is still mirrored to ./data/session.json. */
 topic: function (name) { return CONFIG.ntfyHost + "/" + name; },
-/* repoPayload() wraps the state under .session (the ./data/session.json
-shape): the live topics carry the inner state object itself. */
 stateOf: function (payload) {
 var body = payload || this.repoPayload();
 if (body && body.session && body.version && !body.lists) body = body.session;
@@ -8060,7 +8030,6 @@ liveOn: function () {
 try { return typeof window.fetch === "function" && U.nav("onLine", true) !== false; }
 catch (e) { return false; }
 },
-/* ---- send ------------------------------------------------------------ */
 postLive: function (body, topic, cb) {
 cb = U.once(cb || function () {});
 var self = this, text = "";
@@ -8075,7 +8044,6 @@ cb({ ok: true, at: self.live.at });
 }, function () { self.live.err = "network"; self.live.ok = false; cb({ ok: false, err: "network" }); });
 } catch (e2) { cb({ ok: false, err: "blocked" }); }
 },
-/* ---- receive --------------------------------------------------------- */
 readFeed: function (text, onItem) {
 var lines = String(text || "").split("\n");
 for (var i = 0; i < lines.length; i++) {
@@ -8091,7 +8059,7 @@ var self = this;
 cb = U.once(cb || function () {});
 if (!this.liveOn()) { cb(false); return; }
 try {
-fetch(this.topic(topic) + "/json?poll=1&since=all", { cache: "no-store" }).then(function (r) {
+fetch(this.topic(topic) + "/json?poll=1&since=24h").then(function (r) {
 if (!r || !r.ok) throw new Error("http " + (r && r.status));
 return r.text();
 }).then(function (text) {
@@ -8120,6 +8088,7 @@ UI.renderNet();
 },
 liveOpen: function () {
 if (this.live.sse || !window.EventSource || !this.liveOn()) return;
+if (document.hidden || this.dataSaver()) return;
 var self = this;
 try {
 var es = new EventSource(this.topic(CONFIG.ntfyState + "," + CONFIG.ntfyComm) + "/sse");
@@ -8158,16 +8127,10 @@ livePoll: function () {
 var self = this;
 if (this.live.timer) return;
 this.live.timer = setInterval(function () {
-if (!self.liveOn()) { UI.renderNet(); return; }
+if (!self.liveOn() || document.hidden || self.dataSaver()) return;
 if (!self.live.sse) self.liveOpen();
-self.pullLive();
-self.flushLive();
-}, CONFIG.livePollMs);
+}, 300000);
 },
-/* whichever payload is newest wins, so the Home screen always shows the
-real published session number, day, date, title and words. */
-/* renamed from applyState: the Apps Script state reader already owns that
-name, and two keys with one name are an ES5 syntax error. */
 applyLiveState: function (s, source) {
 if (!s || typeof s !== "object" || Array.isArray(s)) return 0;
 var d = DB.data;
@@ -8184,8 +8147,6 @@ UI.renderNet();
 if (UI.tab === "home") Screens.home();
 return changed || 1;
 },
-/* Defect A: "Session 4 words" drives SESSION 4 in the kicker, so kicker and
-title can never contradict each other. */
 syncSessionHeader: function (d) {
 d = d || DB.data;
 var s = d.session, list = Lib.byId(s.listId) || Lib.current() || d.lists[0];
@@ -8248,7 +8209,6 @@ if (d.inbox.length > CONFIG.maxInbox) d.inbox.length = CONFIG.maxInbox;
 if (added) DB.save(true);
 return added;
 },
-/* ---- the lecturer publishes: one POST fans out to every phone --------- */
 publishLive: function (payload, cb) {
 var body = this.stateOf(payload);
 var now = Date.now();
@@ -8270,7 +8230,6 @@ comments: d.comments.filter(function (c) { return c && c.id && c.auto; }).slice(
 };
 this.postLive(body, CONFIG.ntfyComm, function (res) { cb && cb(res); });
 },
-/* ---- outbox flush over the live channel (the "1 waiting" fix) --------- */
 liveJobs: function () {
 var stateIds = [], commIds = [], inboxIds = [];
 DB.data.outbox.forEach(function (job) {
@@ -8320,8 +8279,6 @@ var i = 0, sent = 0;
 (function stepFn() {
 if (i >= jobs.length) {
 self.live.posting = false;
-/* anything that did not go through stays queued and retries with the
-backoff, so the counter always empties by itself */
 if (DB.data.outbox.length) self.scheduleFlush();
 DB.save(true);
 UI.renderNet();
@@ -8336,12 +8293,8 @@ setTimeout(stepFn, 140);
 });
 })();
 },
-/* ---- boot: repository JSON + cached ntfy state + live SSE, at once ---- */
 bootSync: function () {
 var self = this;
-/* the two static files are read first, cache-busted, so a phone always
-lands on the live Session 7 list; the ntfy topics stream in parallel
-and never wait for an Apps Script link to exist. */
 if (this.repoServed()) this.fetchRepo(function (ok) {
 if (ok) { self.syncedAt = Date.now(); if (Eng.st === "idle") Screens.home(); }
 UI.renderNet();
@@ -8447,7 +8400,6 @@ return c;
 }
 };
 
-/* Sharing tools: compact plain base64url fallback works on older devices. */
 Cloud.wizard = function (host) {
 if (!Admin.unlocked) return;
 function step(title, text) {
@@ -8511,12 +8463,6 @@ fifth.appendChild(ghRow); fifth.appendChild(ghOut);
 var student = U.btn("Student link", "i-share", "soft"); U.on(student, "click", function () { Links.student(); }); host.appendChild(student);
 var list = U.btn("Share this list (no server)", "i-share", "soft"); U.on(list, "click", function () { Links.shareList(Lib.byId(Admin.editListId) || Lib.current()); }); host.appendChild(list);
 };
-/* ============================================================
-SECTION - ALWAYS-ON ONLINE MODE (static files on GitHub Pages)
-The published B1 session lives in ./data/session.json next to index.html,
-so a phone in class needs no server and no setup: fetching those two static
-files *is* the sync. A Google Apps Script link still wins when configured.
-============================================================ */
 Cloud.repoOnline = false;
 Cloud.repoVer = "";
 Cloud.repoAt = 0;
@@ -8524,26 +8470,46 @@ Cloud.repoChecked = 0;
 Cloud.repoServed = function () {
 try { return /^https?:$/.test(window.location.protocol) && U.nav("onLine", true) !== false; } catch (e) { return false; }
 };
-Cloud.fetchRepo = function (cb) {
+Cloud.repoFetched = false;
+Cloud.repoBusy = false;
+Cloud.fetchRepo = function (cb, force) {
 var self = this;
 if (!window.fetch || !this.repoServed()) { cb && cb(false); return; }
-var got = 0, ver = null, ses = null;
-function finish() {
+if (this.repoBusy) { cb && cb(false); return; }
+if (this.repoFetched && !force) { cb && cb(this.repoOnline); return; }
+this.repoBusy = true;
+function finish(ok) {
+self.repoBusy = false;
+self.repoFetched = true;
 self.repoChecked = Date.now();
-if (ses && Array.isArray(ses.lists) && ses.lists.length) { self.repoOnline = true; self.applyRepo(ses); }
-if (ver) { self.repoVer = String(ver.version || ""); self.repoAt = Number(ver.updatedAt || self.repoAt) || 0; }
 UI.renderNet();
-cb && cb(self.repoOnline);
+cb && cb(!!ok);
 }
-["version.json", "session.json"].forEach(function (name, idx) {
-try {
-fetch("./data/" + name + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) {
+function loadSession(remoteVer) {
+fetch("./data/session.json").then(function (r) {
 if (!r.ok) throw new Error("http " + r.status);
 return r.json();
-}).then(function (json) { if (idx) ses = json; else ver = json; }, function () {}).then(finish2, finish2);
-} catch (e) { finish2(); }
-function finish2() { got++; if (got === 2) finish(); }
-});
+}).then(function (ses) {
+if (ses && Array.isArray(ses.lists) && ses.lists.length) {
+self.repoOnline = true;
+self.applyRepo(ses);
+DB.data.ver = Math.max(Number(DB.data.ver || 0), remoteVer || 0);
+DB.save(true);
+}
+finish(true);
+}, function () { finish(self.repoOnline); });
+}
+fetch("./data/version.json").then(function (r) {
+if (!r.ok) throw new Error("http " + r.status);
+return r.json();
+}).then(function (ver) {
+self.repoVer = String((ver && ver.version) || "");
+self.repoAt = Number(ver && ver.updatedAt) || 0;
+self.repoVersion = Number(ver && ver.ver) || 0;
+var mine = Number((DB.data && DB.data.ver) || 0);
+if (!force && self.repoVersion && mine && self.repoVersion <= mine) { finish(self.repoOnline); return; }
+loadSession(self.repoVersion);
+}, function () { finish(false); });
 };
 Cloud.applyRepo = function (s) {
 var d = DB.data, changed = 0;
@@ -8609,7 +8575,6 @@ if (UI.tab === "comm") Screens.comm();
 return changed;
 };
 
-/* ---------- GitHub Direct Publish (one tap from the lecturer's phone) ------ */
 Cloud.ghToken = function (value) {
 if (value === undefined) { try { return Store.get("sdp.ghToken") || ""; } catch (e) { return ""; } }
 try { if (value) Store.set("sdp.ghToken", value); else Store.del("sdp.ghToken"); } catch (e2) {}
@@ -8789,7 +8754,6 @@ data.w.forEach(function (x) { b.appendChild(U.el("div", "tiny", x.w + " — " + 
 var add = U.btn("Add", "i-plus", "primary block"); U.on(add, "click", function () { Links.add(data); UI.closeSheet(); }); b.appendChild(add);
 }}); }, 100);
 }
-/* Plain links stay synchronous on iOS 12; compressed links are an optional upgrade. */
 if (hash.slice(6).indexOf("z.") !== 0) {
 try { preview(Links.decode(hash.slice(6))); } catch (err) { UI.toast("This list link could not be read. Ask for a new link.", {icon:"i-alert"}); }
 } else {
@@ -8823,9 +8787,7 @@ var share = U.btn("Share sheet", "i-share", "soft"); U.on(share,"click",function
 }
 };
 
-/* ============================================================
-SECTION 19 - DIAGNOSTICS
-============================================================ */
+/* SECTION 19 - DIAGNOSTICS */
 var Diag = {
 browser: function () {
 var ua = U.nav("userAgent", "") || "";
@@ -8926,9 +8888,7 @@ return c;
 }
 };
 
-/* ============================================================
-SECTION 20 - BOOT
-============================================================ */
+/* SECTION 20 - BOOT */
 UI.renderNet = function () {
 var chip = U.$("#chipNet");
 var txt = U.$("#chipNetText");
@@ -8936,7 +8896,6 @@ if (!chip || !txt) return;
 var online = U.nav("onLine", true) !== false;
 var outbox = DB.data ? DB.data.outbox.length : 0;
 var waiting = outbox ? " \u00b7 " + outbox + " waiting" : "";
-/* the real, verified time of the last successful sync - never a fixed text */
 var live = Cloud.syncedAt || Cloud.live.at || 0;
 var synced = live ? " \u00b7 Synced " + U.relTime(live) : "";
 var label = "", good = false;
@@ -8947,7 +8906,6 @@ label = "Offline \u00b7 Saved on device";
 label = "Syncing\u2026";
 good = true;
 } else if (Cloud.live.ok || Cloud.repoOnline || Cloud.syncedAt) {
-/* only a real HTTP 200 / EventSource open may claim live sync */
 label = "Online \u00b7 Live Sync" + synced;
 good = true;
 } else {
@@ -9057,15 +9015,12 @@ card.appendChild(row);
 host.appendChild(card);
 }
 
-/* Session 7: the Welcome & Complete User Guide. Opens by itself on first run
-(tourSeen is reset for every upgrade) and any time a student taps Guide. */
 function welcomeGuide() {
 var lang = (DB.data.settings && DB.data.settings.lang) || "en";
 var g = GUIDE[lang] || GUIDE.en;
 var sh = UI.sheet({
 title: T("welcomeTitle"),
 body: function (b) {
-/* 1. language selector, right at the top */
 var pick = U.el("div", "seg", null);
 pick.setAttribute("role", "tablist");
 pick.setAttribute("aria-label", "Language / \u0db7\u0dcf\u0dc2\u0dcf\u0dc0");
@@ -9084,7 +9039,6 @@ pick.appendChild(t);
 });
 b.appendChild(pick);
 
-/* 2. creator and idea banner */
 var credit = U.el("div", "glass card pad-s r2 credit", null);
 credit.style.display = "block";
 credit.style.margin = "10px 0";
@@ -9092,7 +9046,6 @@ credit.style.textAlign = "center";
 credit.appendChild(U.el("b", null, g.credit));
 b.appendChild(credit);
 
-/* 3. complete step-by-step guide, in the chosen language */
 g.steps.forEach(function (step, i) {
 var row = U.el("div", "guide-step", null);
 row.appendChild(U.el("span", "n", String(i + 1)));
@@ -9128,97 +9081,41 @@ welcomeGuide();
 }
 
 
-function initLiquidPlayground() {
-var root = document.documentElement;
-function range(id, outId, prop, divisor, suffix) {
-var input = U.$(id), output = U.$(outId);
-if (!input || !output) return;
-U.on(input, "input", function () {
-var raw = Number(input.value), value = raw / divisor;
-root.style.setProperty(prop, String(value) + (divisor === 1 ? suffix : ""));
-output.textContent = String(value) + suffix;
-});
-}
-range("#sBlur", "#outBlur", "--gb", 1, "px");
-range("#sSat", "#outSat", "--gs", 100, "×");
-range("#sBrt", "#outBrt", "--gbr", 100, "");
-UI.applyTint(DB.data.settings.glassTint || "clear");
-U.delegate(U.$("#segTint"), "click", "button", function (ev, button) {
-var tint = button.getAttribute("data-tint") || "clear";
-DB.data.settings.glassTint = tint;
-UI.applyTint(tint);
-DB.save();
-});
-var stage = U.$("#lgStage"), orb = U.$("#orb"), drag = null;
-if (!stage || !orb) return;
-function bounds() { return stage.getBoundingClientRect(); }
-function moveOrb(x, y) {
-var rect = bounds(), w = orb.offsetWidth || 140, h = orb.offsetHeight || 140;
-orb.style.left = U.clamp(x, 0, Math.max(0, rect.width - w)) + "px";
-orb.style.top = U.clamp(y, 0, Math.max(0, rect.height - h)) + "px";
-}
-function centreOrb() {
-var rect = bounds();
-moveOrb((rect.width - (orb.offsetWidth || 140)) * 0.42, 44);
-}
-U.on(orb, "pointerdown", function (e) {
-var rect = orb.getBoundingClientRect();
-drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top };
-U.setCls(orb, "dragging", true);
-try { orb.setPointerCapture(e.pointerId); } catch (ignored) {}
-e.preventDefault();
-});
-U.on(orb, "pointermove", function (e) {
-if (!drag || e.pointerId !== drag.id) return;
-var rect = bounds();
-moveOrb(e.clientX - rect.left - drag.x, e.clientY - rect.top - drag.y);
-});
-function drop(e) {
-if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
-drag = null;
-U.setCls(orb, "dragging", false);
-try { orb.releasePointerCapture(e.pointerId); } catch (ignored) {}
-}
-U.on(orb, "pointerup", drop);
-U.on(orb, "pointercancel", drop);
-U.on(orb, "keydown", function (e) {
-var rect = bounds(), current = orb.getBoundingClientRect(), step = e.shiftKey ? 30 : 12;
-var x = current.left - rect.left, y = current.top - rect.top;
-if (e.key === "ArrowLeft") x -= step;
-else if (e.key === "ArrowRight") x += step;
-else if (e.key === "ArrowUp") y -= step;
-else if (e.key === "ArrowDown") y += step;
-else if (e.key === "Enter" || e.key === " ") { centreOrb(); e.preventDefault(); return; }
-else return;
-moveOrb(x, y);
-e.preventDefault();
-});
-centreOrb();
-}
+function initLiquidPlayground() { UI.bindLiquidControls(document); }
 function initDockMagnification() {
 var dock = U.$("#tabbar");
 if (!dock) return;
+var buttons = [], rects = [], frame = 0, pointerX = 0, over = null;
 function reset() {
-var buttons = U.$$("button", dock);
 for (var i = 0; i < buttons.length; i++) buttons[i].style.transform = "";
 }
-U.on(dock, "pointermove", function (e) {
-if (e.pointerType === "touch") { reset(); return; }
-/* macOS dock: the icon under the pointer is fully magnified (deterministic on
-   every engine) and its neighbours follow the distance falloff. */
-var buttons = U.$$("button", dock);
-var over = e.target || null;
-while (over && over.parentNode !== dock) over = over.parentNode;
+function measure() {
+buttons = U.$$("button", dock);
+rects = [];
+for (var i = 0; i < buttons.length; i++) rects.push(buttons[i].getBoundingClientRect());
+}
+function flush() {
+frame = 0;
 for (var i = 0; i < buttons.length; i++) {
-var rect = buttons[i].getBoundingClientRect();
-var distance = Math.abs(e.clientX - (rect.left + rect.width / 2));
+var rect = rects[i];
+if (!rect) continue;
+var distance = Math.abs(pointerX - (rect.left + rect.width / 2));
 var power = buttons[i] === over ? 1 : Math.max(0, 1 - distance / 190);
 buttons[i].style.transform = "translateY(" + (-10 * power).toFixed(2) + "px) scale(" + (1 + 0.28 * power).toFixed(3) + ")";
 }
+}
+U.on(dock, "pointermove", function (e) {
+if (!e || e.pointerType === "touch") { reset(); return; }
+if (UI.perfMode !== "full" || !UI.finePointer()) { reset(); return; }
+if (!buttons.length) measure();
+over = e.target || null;
+while (over && over !== dock && over.parentNode !== dock) over = over.parentNode;
+pointerX = e.clientX;
+if (!frame) frame = window.requestAnimationFrame ? window.requestAnimationFrame(flush) : (flush(), 0);
 }, { passive: true });
 U.on(dock, "pointerleave", reset);
+U.on(window, "resize", function () { measure(); }, { passive: true });
 }
-
 function boot() {
   Store.test();
   DB.load();
@@ -9235,28 +9132,25 @@ Links.readHash();
 U.on(window, "hashchange", function () { Links.readHash(); });
 makeAppIcon();
 
-/* tabs */
 U.delegate(U.$("#tabbar"), "click", "button", function (ev, b) {
 UI.setTab(b.getAttribute("data-tab"));
 });
-U.on(U.$("#btnLock"), "click", function () { Admin.open(); });
-U.on(U.$("#themeBtn"), "click", function () {
-DB.data.settings.theme = DB.data.settings.theme === "light" ? "dark" : "light";
-DB.saveNow();
-UI.applyTheme();
-});
+U.on(U.$("#btnAdmin"), "click", function () { Admin.open(); });
+U.on(U.$("#btnTheme"), "click", function () { UI.toggleTheme(); });
 U.on(U.$("#btnLang"), "click", function () {
 UI.setLang(DB.data.settings.lang === "si" ? "en" : "si");
 UI.toast(DB.data.settings.lang === "si" ? "\u0dc3\u0dd2\u0d82\u0dc4\u0dbd \u0db4\u0da7\u0dd2\u0dad\u0dca\u0dad" : "English", { icon: "i-info", ms: 1600 });
 });
-U.on(U.$("#btnGuide"), "click", function () { welcomeGuide(); });
+U.on(U.$("#btnGuide"), "click", function () { UI.openWelcomeGuide(); });
+U.on(U.$("#btnGuideTop"), "click", function () { UI.openWelcomeGuide(); });
+U.on(U.$("#btnPerf"), "click", function () { UI.togglePerf(); });
 U.on(U.$("#btnRefresh"), "click", function () {
 if (!Cloud.mode) {
 if (Cloud.repoServed()) {
 UI.toast("Checking the live B1 session\u2026", { icon: "i-refresh", ms: 1600 });
 Cloud.fetchRepo(function (ok) {
 UI.toast(ok ? "Live session is up to date." : "Using the list saved on this device.", { icon: ok ? "i-check" : "i-info", ms: 4000 });
-});
+}, true);
 } else UI.toast("Everything is already on this device.", { icon: "i-info" });
 return;
 }
@@ -9269,11 +9163,10 @@ UI.renderNet();
 U.on(U.$("#chipNet"), "click", function () {
 if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); Cloud.flush(); UI.renderNet(); }
 else if (Cloud.repoServed()) {
-Cloud.fetchRepo(function (ok) { UI.toast(ok ? "Live B1 session is up to date." : "Still using the list saved on this device.", { icon: ok ? "i-check" : "i-info", ms: 4000 }); });
+Cloud.fetchRepo(function (ok) { UI.toast(ok ? "Live B1 session is up to date." : "Still using the list saved on this device.", { icon: ok ? "i-check" : "i-info", ms: 4000 }); }, true);
 } else UI.toast("Your lecturer can add a cloud link to share data between phones.", { icon: "i-cloud", ms: 5000 });
 });
 
-/* home actions */
 U.on(U.$("#btnStart"), "click", function () {
 Speech.unlock();
 Eng.start({});
@@ -9296,7 +9189,6 @@ Speech.unlock();
 Eng.start({});
 });
 
-/* dictionary */
 U.on(U.$("#dictSearch"), "input", U.debounce(function () { Screens.dict(); }, 200));
 U.delegate(U.$("#dictTabs"), "click", "button", function (ev, b) {
 Screens.dictSrc = b.getAttribute("data-src");
@@ -9304,7 +9196,6 @@ UI.segSet(U.$("#dictTabs"), b);
 Screens.dict();
 });
 
-/* community */
 U.on(U.$("#btnCompose"), "click", function () { Comm.composer(null); });
 U.on(U.$("#btnMsg"), "click", function () { Comm.message(); });
 U.delegate(U.$("#commFilters"), "click", "button", function (ev, b) {
@@ -9313,7 +9204,6 @@ UI.segSet(U.$("#commFilters"), b);
 Screens.comm();
 });
 
-/* visibility, connectivity, background lock */
 U.on(document, "visibilitychange", function () {
 if (document.hidden) {
 UI.pauseAnimations(true);
@@ -9332,7 +9222,6 @@ if (Eng.wakeLock === null && (Eng.st === "speaking" || Eng.st === "waiting")) En
 }
 });
 U.on(window, "online", function () {
-/* a reconnect re-opens the live stream and sends the whole outbox at once */
 Cloud.liveClose(); Cloud.liveOpen();
 Cloud.pullLive(function () { Cloud.flush(); });
 Cloud.flush();
@@ -9340,6 +9229,18 @@ UI.renderNet();
 UI.toast("Back online \u2013 sending anything that was waiting.", { icon: "i-cloud" });
 });
 U.on(window, "offline", function () { UI.renderNet(); });
+U.on(window, "storage", function (e) {
+if (!e || e.key !== CONFIG.key || !e.newValue) return;
+try {
+var next = JSON.parse(e.newValue);
+if (!next || !Array.isArray(next.lists)) return;
+DB.data = DB.migrate(next);
+DB.data.tourSeen = true;
+UI.applyTheme(); UI.applyLang(); UI.applyPerf();
+UI.renderNet();
+UI.setTab(UI.tab || "home");
+} catch (err) { Errors.report(err, "cross-tab sync"); }
+});
 U.on(window, "focus", function () {
 if (!Cloud.live.sse) Cloud.liveOpen();
 if (Cloud.mode) { Cloud.pullState(); Cloud.pullComments(); }
@@ -9362,7 +9263,6 @@ else if (mq.addListener) mq.addListener(handler);
 }
 } catch (e) {}
 
-/* speech interruption: a phone call, Siri or another app takes the audio */
 Speech.onInterrupt = function () {
 if (Eng.st === "speaking" || Eng.st === "waiting") {
 Eng.pause();
@@ -9378,13 +9278,10 @@ window.speechSynthesis.addEventListener && window.speechSynthesis.addEventListen
 }
 
 UI.renderNet();
-/* A5 + A9: repository JSON, the cached live state and the SSE stream are all
-contacted on boot; the newest payload wins. */
 Cloud.bootSync();
 UI.setTab("home");
 UI.applyPerf();
 UI.frameProbe(function () { UI.applyPerf(); });
-/* Opening the file makes no network requests. Sync begins on the first user tap. */
 var syncStarted = false;
 function beginSync() {
 if (syncStarted) return;
@@ -9403,32 +9300,31 @@ setTimeout(function () { Admin.open(); }, 350);
 if (!Links.importPending) setTimeout(firstRunTour, 700);
 }
 
-/* --- Liquid Glass: pointer-tracked specular hotspot ---.
-   Throttled to a single requestAnimationFrame flag so the main thread stays at
-   60 fps; touch events are skipped so mobile scrolling stays 100% native. */
 (function () {
-var ticking = false;
-var mx = "50%";
-var my = "-30%";
-function applyPointer() {
-ticking = false;
+var frame = 0, card = null, rect = null, x = 0, y = 0;
+function flush() {
+frame = 0;
+if (!card || !rect || UI.perfMode !== "full") return;
+var mx = Math.round(((x - rect.left) / Math.max(1, rect.width)) * 100);
+var my = Math.round(((y - rect.top) / Math.max(1, rect.height)) * 100);
 try {
-document.documentElement.style.setProperty("--mx", mx);
-document.documentElement.style.setProperty("--my", my);
+card.style.setProperty("--mx", mx + "%");
+card.style.setProperty("--my", my + "%");
 } catch (e) {}
 }
 U.on(document, "pointermove", function (e) {
-if (e && e.pointerType === "touch") return;
-mx = Math.round((e.clientX / Math.max(1, innerWidth)) * 100) + "%";
-my = Math.round((e.clientY / Math.max(1, innerHeight)) * 100) + "%";
-if (!ticking) {
-ticking = true;
-window.requestAnimationFrame(applyPointer);
-}
+if (!e || e.pointerType === "touch" || UI.perfMode !== "full" || !UI.finePointer()) return;
+var target = e.target && e.target.closest ? e.target.closest(".glass") : null;
+if (target !== card) { card = target; rect = null; }
+if (!card) return;
+if (!rect) rect = card.getBoundingClientRect();
+x = e.clientX; y = e.clientY;
+if (!frame) frame = window.requestAnimationFrame ? window.requestAnimationFrame(flush) : (flush(), 0);
 }, { passive: true });
+U.on(window, "scroll", function () { rect = null; }, { passive: true });
+U.on(window, "resize", function () { rect = null; });
 })();
 
-/* global safety nets */
 window.addEventListener("error", function (ev) {
 Errors.report(ev && ev.error ? ev.error : { message: ev && ev.message }, "window error");
 });
@@ -9436,7 +9332,6 @@ window.addEventListener("unhandledrejection", function (ev) {
 Errors.report(ev && ev.reason || "A background task failed.", "background promise");
 });
 
-/* Lecturer methods and all their descendant event handlers re-check the lock. */
 ["panel", "renderTab", "card", "publish", "saveAll", "tabWords", "tabSession", "tabAnnounce", "tabComments", "tabStats", "tabTools", "printView"].forEach(function (key) {
 var original = Admin[key];
 Admin[key] = function () {
@@ -9446,7 +9341,6 @@ try { return original.apply(this, arguments); } finally { Admin.context = before
 };
 });
 
-/* Screen-level containment plus widget-level containment in sheet/layer/confirm. */
 Object.keys(Screens).forEach(function (key) {
 if (typeof Screens[key] === "function") Screens[key] = U.safe(Screens[key], "screen: " + key);
 });
@@ -9461,7 +9355,6 @@ else { try { boot(); } catch (e2) { fatalCard(e2); } }
 fatalCard(e3);
 }
 
-/* expose a small, documented surface for debugging (no internals required) */
 window.SDP = {
 version: APP_VERSION,
 build: BUILD_DATE,

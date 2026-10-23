@@ -19,7 +19,7 @@ const packaged=require('@sparticuz/chromium');
  /* v2.0.0: only close the first-run tour if it is open, and press Unlock only while the
     pad is still showing - a four-digit PIN auto-submits and closes the sheet itself. */
  if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();
- await page.locator('#btnLock').click();
+ await page.locator('#btnAdmin').click();
  for(const n of require('./test-pin.cjs').split(''))await page.locator('#pinPad [data-k="'+n+'"]').click();
  const go=page.locator('#pinSubmit');
  if(await go.count())await go.click({timeout:1500}).catch(()=>{});

@@ -25,17 +25,17 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6,
     "theme": "dark",
-    "perf": "full"
+    "perf": "auto"
   },
-  "ver": 12,
-  "version": "2.0.0",
-  "buildDate": "2026-10-22",
+  "ver": 13,
+  "version": "2.1.0",
+  "buildDate": "2026-10-23",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
     "lecturerInCharge": "Sumodya Sewmini",
     "en": "Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini",
-    "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කඨිකාචාර්ය: Sumodya Sewmini"
+    "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
     "primary": "AWS Polly Amy (en-GB) via Streamelements",
@@ -46,5 +46,29 @@
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
+  },
+  "appVersion": "2.1.0",
+  "settingsRev": 13,
+  "performance": {
+    "mode": "auto",
+    "lite": {
+      "gb": "8px",
+      "gs": 1.35,
+      "gbr": 1.02
+    },
+    "full": {
+      "gb": "14px",
+      "gs": 1.6,
+      "gbr": 1.03
+    },
+    "probeMs": 1200,
+    "medianBudgetMs": 19
+  },
+  "dataSaving": {
+    "preload": "none",
+    "audioReuse": true,
+    "dictionaryFromMemory": true,
+    "versionPollOncePerBoot": true,
+    "ntfyPollWindow": "24h"
   }
 }

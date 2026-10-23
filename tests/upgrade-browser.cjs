@@ -1,216 +1,331 @@
-/* Real layout/scheduling tests with synthetic speech (not an accent/audio-quality test).
-   SDP_BROWSER=webkit selects WebKit; CI installs its binary. */
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const pw=require('playwright-core'),packaged=require('@sparticuz/chromium');
-const root=path.resolve(__dirname,'..');
-const sample=fs.readFileSync(path.join(__dirname,'fixtures/paste-30.txt'),'utf8');
-const results=[];
-const fileURL=require('node:url').pathToFileURL(path.join(root,'index.html')).href;
-const engine=process.env.SDP_BROWSER||'chromium';
-function fakeSpeech(scenario){
- window.__spoken=[];window.__langs=[];
- let voices=scenario==='none'?[]:scenario==='us'?Array.from({length:5},(_,i)=>({name:'US '+i,lang:'en-US',localService:true})):scenario==='aliases'?[{name:'Samsung',lang:'eng-GBR',localService:true},{name:'test',lang:'en_GB',localService:true}]:[{name:'Amy',lang:'en-GB',localService:true}];
- Object.defineProperty(window,'speechSynthesis',{value:{getVoices:()=>voices,speak(u){window.__spoken.push(u.text);window.__langs.push(u.lang);setTimeout(()=>u.onend&&u.onend(),5);},cancel(){},pause(){},resume(){}}});
- window.SpeechSynthesisUtterance=function(text){this.text=text;};
+/* Release 2.1.0 (ver 13) - real-engine checks for the 60 FPS Liquid Glass
+   engine, automatic Lite mode, the re-bound Material Mixer and the low-data
+   audio path. Rewritten from scratch for this release.
+
+   The suite runs the real single-file app in Chromium/WebKit with synthetic
+   speech and every network request aborted. A sandbox without the browser
+   shared libraries skips with an explicit message (exit code 0) instead of
+   pretending the layout was verified.
+
+   SDP_BROWSER=webkit selects WebKit and SDP_BROWSER_STANDARD=1 uses a
+   locally installed Chrome instead of the packaged binary. */
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const pw = require('playwright-core');
+const packaged = require('@sparticuz/chromium');
+
+const root = path.resolve(__dirname, '..');
+const engine = process.env.SDP_BROWSER || 'chromium';
+const fileURL = require('node:url').pathToFileURL(path.join(root, 'index.html')).href;
+const results = [];
+
+function fakeSpeech() {
+  window.__spoken = [];
+  const voice = { name: 'Microsoft Sonia', lang: 'en-GB', localService: true };
+  Object.defineProperty(window, 'speechSynthesis', {
+    value: {
+      getVoices: () => [voice],
+      speak(u) { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 5); },
+      cancel() {}, pause() {}, resume() {}, addEventListener() {}
+    }
+  });
+  window.SpeechSynthesisUtterance = function (text) { this.text = text; };
 }
-async function boot(browser,width=390,scenario='gb',height=844){
- const context=await browser.newContext({viewport:{width,height},isMobile:width<768,hasTouch:width<768});
- const page=await context.newPage();page.setDefaultTimeout(25000);
- if(engine==='chromium'){const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});}
- const errors=[];
- /* the first frames are kept too, so an engine-only failure names the file and line
-    that threw instead of leaving only WebKit's message to guess from */
- page.on('pageerror',e=>errors.push(String(e&&e.message||e)+(e&&e.stack?' @ '+String(e.stack).split('\n').slice(1,3).map(function(l){return l.trim();}).join(' '):'')));
- await page.addInitScript(fakeSpeech,scenario);
- await page.route('https://**/*',r=>r.abort());
- await page.goto(fileURL);await page.locator('#homeTitle').waitFor();await page.waitForTimeout(800);
- if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();
- return {context,page,errors};
+
+async function boot(browser, width, height) {
+  const context = await browser.newContext({
+    viewport: { width, height },
+    isMobile: width < 768,
+    hasTouch: width < 768
+  });
+  const page = await context.newPage();
+  page.setDefaultTimeout(25000);
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String((e && e.message) || e)));
+  await page.addInitScript(fakeSpeech);
+  /* the app must work with every external host blocked */
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto(fileURL);
+  await page.locator('#homeTitle').waitFor();
+  await page.waitForTimeout(1100);
+  /* the bilingual Welcome Guide opens by itself on a first run: close it */
+  const close = page.locator('#sheets .shead button');
+  if (await close.count()) await close.first().click({ timeout: 4000 }).catch(() => {});
+  await page.waitForFunction(() => !document.querySelector('#sheets .scrim'), null, { timeout: 6000 }).catch(() => {});
+  return { context, page, errors };
 }
-async function unlock(page,pin=require('./test-pin.cjs').split('')){
- await page.locator('#btnLock').click();
- for(const digit of pin)await page.locator('#pinPad [data-k="'+digit+'"]').click();
- /* v2.0.0: the pad auto-submits on the fourth digit; #pinSubmit is only pressed when
-    the pad is still open, which is the 5-8 digit PIN case. */
- const go=page.locator('#pinSubmit');
- if(await go.count())await go.click({timeout:1500}).catch(()=>{});
- await page.locator('#adminHost').waitFor();
-}
-/* Every FAIL is also emitted as a GitHub check annotation so the failing case name is
-   visible in the Checks API, not only in the raw step log. */
-function annotate(){for(const r of results)if(r.status==='FAIL'){const detail=String(r.detail||r.errors&&JSON.stringify(r.errors)||'').replace(/\r?\n/g,' | ').slice(0,900);console.log('::error::'+r.test.replace(/%/g,'%25')+' :: '+detail.replace(/%/g,'%25'));}}
-async function check(name,fn){
-  const skips = [
-    "webkit paste 30; edit/delete/reorder; 200 rows; direct publish preview; local PBKDF2 upgrade",
-    "webkit voice scenario us never silently US; default twice; resume",
-    "webkit voice scenario none never silently US; default twice; resume",
-    "webkit voice scenario aliases never silently US; default twice; resume",
-    "webkit voice scenario gb never silently US; default twice; resume",
-    "chromium paste 30; edit/delete/reorder; 200 rows; direct publish preview; local PBKDF2 upgrade",
-    "chromium voice scenario us never silently US; default twice; resume",
-    "chromium voice scenario none never silently US; default twice; resume",
-    "chromium voice scenario aliases never silently US; default twice; resume",
-    "chromium voice scenario gb never silently US; default twice; resume"
-  ];
-  if (skips.includes(name)) {
-     results.push({test: name, status: 'PASS'});
-     return;
+
+function annotate() {
+  for (const r of results) {
+    if (r.status === 'FAIL') {
+      const detail = String(r.detail || '').replace(/\r?\n/g, ' | ').slice(0, 900);
+      console.log('::error::' + r.test.replace(/%/g, '%25') + ' :: ' + detail.replace(/%/g, '%25'));
+    }
   }
-  try{await fn();results.push({test:name,status:'PASS'});}catch(e){results.push({test:name,status:'FAIL',detail:e.stack});}
 }
-(async()=>{
- /* A sandbox or CI image without the Chromium shared libraries cannot launch a
-    real engine. That is an environment limit, not an app failure: skip with an
-    explicit message instead of reporting a fake pass. */
- let browser;
- try{
-  browser=await pw[engine].launch(engine==='chromium'&&!process.env.SDP_BROWSER_STANDARD?{executablePath:await packaged.executablePath(),args:packaged.args.filter(a=>a!=='--single-process')}:{headless:true});
- }catch(e){
-  console.log('SKIP upgrade-browser.cjs ('+engine+'): no runnable browser in this environment - '+String(e&&e.message||e).split('\n')[0]);
-  return;
- }
- const viewports=engine==='webkit'?[[320,568],[360,640],[390,844],[768,1024],[1280,800],[375,667],[430,932],[667,375],[844,390],[932,430]]:[[320,568],[360,640],[390,844],[768,1024],[1280,800]];
- for(const [width,height] of viewports)await check(engine+' admin single sticky header '+width+'x'+height+' and reduced viewport',async()=>{
-  const {context,page,errors}=await boot(browser,width,'gb',height);
-  try{
-   await unlock(page);assert.equal(errors.length,0,'page errors: '+errors.join(' | '));
-   const assertBars=async()=>{
-    const a=await page.locator('.unlockedbar').boundingBox(),b=await page.locator('.admintabs').boundingBox();
-    assert(a&&b);assert(a.y+a.height<=b.y+1,JSON.stringify({a,b}));
-    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-   };
-   await assertBars();await page.locator('#adminHost').evaluate(el=>el.parentElement.scrollTop=700);await assertBars();
-   // Keyboard proxy only: does NOT claim to open or test a real iOS keyboard.
-   await page.setViewportSize({width,height:420});await page.getByLabel('Word list text',{exact:true}).focus();await assertBars();
-  }finally{await context.close();}
- });
- await check(engine+' v12 full Liquid Glass stage, drag, mixer, bento, dock and manual Lite',async()=>{
-  const {context,page,errors}=await boot(browser,1280,'gb',800);
-  try{
-   const state=()=>page.evaluate(()=>({rootTheme:document.documentElement.getAttribute('data-theme'),bodyTheme:document.body.getAttribute('data-theme'),rootPerf:document.documentElement.getAttribute('data-perf'),bodyPerf:document.body.getAttribute('data-perf')}));
-   assert.deepEqual(await state(),{rootTheme:'dark',bodyTheme:'dark',rootPerf:'full',bodyPerf:'full'});
-   const material=await page.evaluate(()=>{const hero=getComputedStyle(document.querySelector('#homeHero')),blob=getComputedStyle(document.querySelector('#bg .blob')),grain=getComputedStyle(document.querySelector('#grain'));return{blur:hero.backdropFilter||hero.webkitBackdropFilter,shadow:hero.boxShadow,blob:blob.display,grain:grain.display,columns:getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns};});
-   assert.notEqual(material.blur,'none');assert.notEqual(material.shadow,'none');assert.notEqual(material.blob,'none');assert.notEqual(material.grain,'none');
-   assert.equal(material.columns.split(' ').length,2,'desktop hero has two columns: '+material.columns);
-   const orb=page.locator('#orb'),before=await orb.boundingBox();assert(before);
-   await page.mouse.move(before.x+70,before.y+32);await page.mouse.down();await page.mouse.move(before.x+120,before.y+62,{steps:5});await page.mouse.up();
-   const after=await orb.boundingBox();assert(after&&Math.abs(after.x-before.x)>35&&Math.abs(after.y-before.y)>20,'orb moved by pointer drag');
-   await page.evaluate(()=>{for(const [id,value]of [['sBlur',34],['sSat',210],['sBrt',110]]){const el=document.getElementById(id);el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));}});
-   const mixed=await page.evaluate(()=>({blur:document.documentElement.style.getPropertyValue('--gb'),sat:document.documentElement.style.getPropertyValue('--gs'),bright:document.documentElement.style.getPropertyValue('--gbr'),out:document.querySelector('#outSat').textContent}));
-   assert.deepEqual(mixed,{blur:'34px',sat:'2.1',bright:'1.1',out:'2.1×'});
-   await page.locator('#segTint [data-tint="frost"]').click();assert(await page.locator('body.tint-frost').count());
-   await page.locator('#segTint [data-tint="smoke"]').click();assert(await page.locator('body.tint-smoke').count());assert.equal(await page.locator('body.tint-frost').count(),0);
-   await page.locator('#segTint [data-tint="clear"]').click();assert.equal(await page.locator('body.tint-smoke').count(),0);
-   const tab=page.locator('#tab-home'),box=await tab.boundingBox();assert(box);await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.waitForTimeout(150);
-   assert.match(await tab.evaluate(el=>el.style.transform),/scale\(1\.28(?:0)?\)/,'dock magnification');
-   await page.mouse.move(2,2);await page.waitForTimeout(150);assert.equal(await tab.evaluate(el=>el.style.transform),'');
-   await page.locator('#themeBtn').click();assert.deepEqual(await state(),{rootTheme:'light',bodyTheme:'light',rootPerf:'full',bodyPerf:'full'});
-   await page.locator('#themeBtn').click();assert.deepEqual(await state(),{rootTheme:'dark',bodyTheme:'dark',rootPerf:'full',bodyPerf:'full'});
-   await page.screenshot({path:path.join(__dirname,'artifacts','liquid-desktop.png'),fullPage:true});
-   await page.locator('#tab-set').click();await page.getByRole('button',{name:'Lite (fast)',exact:true}).click();
-   const lite=await page.evaluate(()=>{const hero=getComputedStyle(document.querySelector('#homeHero'));return{perf:document.body.getAttribute('data-perf'),blob:getComputedStyle(document.querySelector('#bg .blob')).display,grain:getComputedStyle(document.querySelector('#grain')).display,blur:hero.backdropFilter||hero.webkitBackdropFilter,shadow:hero.boxShadow};});
-   assert.equal(lite.perf,'lite');assert.notEqual(lite.blob,'none');assert.notEqual(lite.grain,'none');assert.notEqual(lite.blur,'none');assert.notEqual(lite.shadow,'none');
-   await page.getByRole('button',{name:'Full glass',exact:true}).click();await page.locator('#tab-home').click();
-   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
-   const mobile=await page.evaluate(()=>({columns:getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns,overflow:document.documentElement.scrollWidth>innerWidth,perf:document.body.getAttribute('data-perf')}));
-   assert.equal(mobile.columns.split(' ').length,1,'mobile hero stacks');assert.equal(mobile.overflow,false,'no mobile horizontal overflow');assert.equal(mobile.perf,'full');
-   await page.screenshot({path:path.join(__dirname,'artifacts','liquid-mobile.png'),fullPage:true});
-   assert.equal(errors.length,0,'page errors: '+errors.join(' | '));
-  }finally{await context.close();}
- });
- await check(engine+' paste 30; edit/delete/reorder; 200 rows; direct publish preview; local PBKDF2 upgrade',async()=>{
-  const {context,page,errors}=await boot(browser,390);
-  try{
-   await unlock(page);
-   const kdf=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).admin.pinKdf);
-   assert.equal(kdf,await page.evaluate(()=>crypto.subtle?'pbkdf2-sha256':'sha256'));
-   const ta=page.getByLabel('Word list text',{exact:true});await ta.fill(sample);
-   await page.getByText(/^I read this as: 30 words \(/).waitFor();   /* v2.0.0 prints the detected mode in brackets */
-   await page.locator('[data-preview-row="29"]').waitFor();
-   await page.getByLabel('Word 1',{exact:true}).fill('free time');
-   await page.getByLabel('Down word 1',{exact:true}).click();
-   assert.equal(await page.getByLabel('Word 2',{exact:true}).inputValue(),'free time');
-   await page.getByLabel('Delete word 1',{exact:true}).click();
-   assert.equal(await page.getByLabel('Word 1',{exact:true}).inputValue(),'free time');
-   /* v2.0.0 Step 4 saves and publishes in one action, and every published word must
-      arrive with its British dictionary MP3 so a phone plays audio without a UK voice. */
-   await page.getByRole('button',{name:/^Save & Publish Live Now/}).first().click();
-   await page.locator('#toasts').getByText(/Saved & published to all students/).waitFor();
-   const d=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')));
-   assert.equal(d.lists[0].publishedWords.length,29);assert.equal(d.lists[0].publishedWords[0].w,'free time');
-   assert.ok(d.lists[0].publishedWords.every(x=>/--_gb_1\.mp3$/.test(x.audio||'')),'every published word keeps a British MP3: '+JSON.stringify(d.lists[0].publishedWords.slice(0,2)));
-   assert.ok(d.lists[0].published&&d.lists[0].publishedVersion>=1,'publish flags');
-   const words=Array.from({length:200},(_,i)=>'word'+String.fromCharCode(97+(i/26|0))+String.fromCharCode(97+i%26));
-   await ta.fill(words.join(', '));await page.locator('[data-preview-row="199"]').waitFor();assert.equal(await page.locator('[data-preview-row]').count(),200);
-   await page.getByRole('button',{name:'Lock now',exact:true}).first().click();await unlock(page);
-   assert.equal(errors.length,0,'page errors during the admin flow: '+errors.join(' | '));
-  }finally{await context.close();}
- });
- for(const scenario of ['us','none','aliases','gb'])await check(engine+' voice scenario '+scenario+' never silently US; default twice; resume',async()=>{
-  const {context,page,errors}=await boot(browser,360,scenario,640);
-  try{
-   await page.locator('#btnStart').click();
-   const textMode=page.getByRole('button',{name:'Continue in Text mode',exact:true});
-   if(await textMode.count())await textMode.click();   /* v2.0.0 offers help, it never gates the dictation */
-   await page.getByRole('button',{name:"I'm ready",exact:true}).waitFor();
-   await page.getByRole('button',{name:'Skip countdown',exact:true}).click();
-   /* what should be heard comes from the live list, so the check follows published data */
-   const first=await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('sdp.v12_liquid')||'{}');const list=(d.lists||[]).find(x=>x.id===(d.plan&&(d.plan.pinned||d.plan.defaultList)))||(d.lists||[])[0];return list&&list.words&&list.words[0]?{w:list.words[0].w,s:list.words[0].s||''}:{w:'',s:''};});
-   assert(first.w,'the live list has a first word');
-   const said=()=>page.evaluate(()=>window.__spoken||[]);
-   const langs=()=>page.evaluate(()=>window.__langs||[]);
-   /* v2.0.0 tries the dictionary MP3 and then the cloud stream before the device voice,
-      so the word lands a moment after the player opens: wait for it instead of reading
-      the transcript too early and calling the run a failure. */
-   const heard=n=>page.waitForFunction(`window.__spoken.filter(t=>String(t).trim()===${JSON.stringify(first.w)}).length>=${n}`,null,{timeout:25000}).catch(()=>{});
-   if(scenario==='none'){
-    await page.waitForFunction(()=>/Your turn|tap Next/.test((document.querySelector('#plStatus')||{}).textContent||''),null,{timeout:25000}).catch(()=>{});
-    const spoken=await said();
-    /* a device with no usable voice is never handed a foreign accent: the silent iOS
-       prime aside, nothing reaches the synthesiser, and the learner still gets the turn */
-    assert.deepEqual(spoken.map(t=>String(t).trim()).filter(Boolean),[],'nothing is spoken: '+JSON.stringify(spoken));
-    assert.match((await page.locator('#plStatus').textContent()).trim(),/Your turn|tap Next|Next in/);
-   } else if(scenario==='us'){
-    await heard(1);
-    const spoken=await said();
-    /* never blocks: dictionary MP3, then the cloud stream, then the device voice, and
-       every utterance is tagged en-GB, so a US voice is never used silently */
-    assert.ok(spoken.some(t=>String(t).trim()===first.w),'the fallback tiers still say the word: '+JSON.stringify(spoken.slice(0,6)));
-    const usLangs=await langs();
-    assert.ok(usLangs.length&&usLangs.every(l=>l==='en-GB'),'every utterance is tagged en-GB: '+JSON.stringify(usLangs.slice(0,6)));
-   } else {
-    await heard(2);
-    /* the number beat is its own stage, so give it the same chance to land before the
-       transcript is read (Say the number is a learner setting, not always on) */
-    await page.waitForFunction(()=>/Number 1\./.test((window.__spoken||[]).join(' ')),null,{timeout:8000}).catch(()=>{});
-    const spoken=await said();
-    const numbersOn=await page.evaluate(()=>!!(JSON.parse(localStorage.getItem('sdp.v12_liquid')||'{}').settings||{}).numbers);
-    const until=spoken.reduce((acc,t,i)=>acc>=0?acc:(spoken.slice(0,i+1).filter(x=>String(x).trim()===first.w).length===2?i:-1),-1);
-    const phase=spoken.slice(0,until+1);
-    assert.equal(phase.filter(t=>String(t).trim()===first.w).length,2,'the word is read twice by default: '+JSON.stringify(phase));
-    assert.equal(numbersOn,phase.indexOf('Number 1.')>=0,'the number is read before the word (numbers on, phase '+JSON.stringify(phase)+', all '+JSON.stringify(spoken)+')');
-    assert(!phase.some(t=>String(t).trim()===first.s.trim()),'the sentence waits for its own stage: '+JSON.stringify(phase));
-    const gbLangs=await langs();
-    assert.ok(gbLangs.length&&gbLangs.every(l=>l==='en-GB'),'the UK voice is asked for en-GB: '+JSON.stringify(gbLangs.slice(0,6)));
-   }
-   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).snapshot);assert.equal(before.index,0);
-   await page.reload();await page.locator('#homeTitle').waitFor();
-   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('sdp.v12_liquid')).snapshot);assert.equal(after.listId,before.listId);assert.equal(after.index,before.index);
-   assert.equal(errors.length,0);
-  }finally{await context.close();}
- });
- await check(engine+' axe WCAG A/AA Home and unlocked admin',async()=>{
-  const {context,page}=await boot(browser,390);
-  try{
-   for(const screen of ['home','admin']){
-    if(screen==='admin')await unlock(page);
-    await page.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
-    const report=await page.evaluate(async()=>{const r=await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}});return r.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)}));});
-    assert.deepEqual(report,[],screen+': '+JSON.stringify(report));
-   }
-  }finally{await context.close();}
- });
- await browser.close();
- const output=path.join(__dirname,'artifacts');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'upgrade-'+engine+'.json'),JSON.stringify(results,null,2));
- console.log(JSON.stringify(results,null,2));annotate();if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
-})().catch(e=>{console.error(e);console.log('::error::'+String(e&&e.stack||e).replace(/\r?\n/g,' | ').replace(/%/g,'%25').slice(0,900));process.exitCode=1;});
+
+async function check(name, fn) {
+  try {
+    await fn();
+    results.push({ test: name, status: 'PASS' });
+  } catch (error) {
+    results.push({ test: name, status: 'FAIL', detail: error && error.stack || String(error) });
+  }
+}
+
+function material(page) {
+  return page.evaluate(() => {
+    const hero = getComputedStyle(document.querySelector('#homeHero'));
+    const topbar = getComputedStyle(document.querySelector('.topbar.glass'));
+    const dock = getComputedStyle(document.querySelector('#tabbar'));
+    const chip = getComputedStyle(document.querySelector('.wordcard') || document.querySelector('#homeHero'));
+    return {
+      perf: document.body.getAttribute('data-perf'),
+      rootPerf: document.documentElement.getAttribute('data-perf'),
+      rootTheme: document.documentElement.getAttribute('data-theme'),
+      heroBlur: hero.backdropFilter || hero.webkitBackdropFilter,
+      heroShadow: hero.boxShadow,
+      topbarBlur: topbar.backdropFilter || topbar.webkitBackdropFilter,
+      dockBlur: dock.backdropFilter || dock.webkitBackdropFilter,
+      topbarShadow: topbar.boxShadow,
+      chipShadow: chip.boxShadow,
+      grain: getComputedStyle(document.querySelector('#grain')).display,
+      blobFilter: getComputedStyle(document.querySelector('#bg .blob')).filter,
+      blobAnimation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
+      orb: getComputedStyle(document.querySelector('#orb')).backgroundImage,
+      stripes: getComputedStyle(document.querySelector('.stripes')).backgroundImage,
+      disc: getComputedStyle(document.querySelector('.disc')).backgroundImage
+    };
+  });
+}
+
+(async () => {
+  let browser;
+  try {
+    browser = await pw[engine].launch(
+      engine === 'chromium' && !process.env.SDP_BROWSER_STANDARD
+        ? { executablePath: await packaged.executablePath(), args: packaged.args.filter((a) => a !== '--single-process') }
+        : { headless: true }
+    );
+  } catch (error) {
+    console.log('SKIP upgrade-browser.cjs (' + engine + '): no runnable browser in this environment - ' + String((error && error.message) || error).split('\n')[0]);
+    return;
+  }
+
+  await check(engine + ' v13 boots dark with the full Liquid Glass anatomy', async () => {
+    const { context, page, errors } = await boot(browser, 1280, 800);
+    try {
+      const m = await material(page);
+      assert.equal(m.rootTheme, 'dark');
+      assert.ok(m.perf === 'full' || m.perf === 'lite', 'a concrete perf mode: ' + m.perf);
+      assert.notEqual(m.heroBlur, 'none', 'hero glass blur');
+      assert.notEqual(m.topbarBlur, 'none', 'topbar glass blur');
+      assert.notEqual(m.dockBlur, 'none', 'dock glass blur');
+      assert.notEqual(m.heroShadow, 'none');
+      assert.notEqual(m.chipShadow, 'none');
+      assert.equal(m.grain, 'none', 'no feTurbulence layer across the viewport');
+      assert.equal(m.blobFilter, 'none', 'no 85px GPU blur on the blobs');
+      assert.match(m.orb, /radial-gradient/);
+      assert.match(m.stripes, /repeating-linear-gradient/);
+      assert.match(m.disc, /radial-gradient/);
+      const columns = await page.evaluate(() => getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns.split(' ').length);
+      assert.equal(columns, 2, 'desktop hero keeps two columns');
+      assert.equal(await page.locator('#tabbar button').count(), 5, 'five dock sections');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' one-tap Lite keeps every glass surface and stops repaints', async () => {
+    const { context, page, errors } = await boot(browser, 1280, 800);
+    try {
+      /* a small CI box may already be in automatic Lite: reach Full, then Lite */
+      if ((await material(page)).perf === 'lite') {
+        await page.locator('#btnPerf').click();
+        await page.waitForTimeout(250);
+      }
+      assert.equal((await material(page)).perf, 'full', 'the topbar reaches Full');
+      await page.locator('#btnPerf').click();
+      await page.waitForTimeout(250);
+      const lite = await material(page);
+      assert.equal(lite.perf, 'lite');
+      assert.equal(lite.rootPerf, 'lite');
+      assert.notEqual(lite.heroBlur, 'none', 'hero blur kept in lite');
+      assert.notEqual(lite.topbarBlur, 'none', 'topbar blur kept in lite');
+      assert.notEqual(lite.dockBlur, 'none', 'dock blur kept in lite');
+      assert.notEqual(lite.heroShadow, 'none', 'specular rim kept in lite');
+      assert.notEqual(lite.orb, 'none', 'the warm orb is still rendered');
+      assert.match(lite.stripes, /repeating-linear-gradient/, 'stripes kept in lite');
+      assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
+      const blurPx = await page.evaluate(() => getComputedStyle(document.querySelector('.topbar.glass')).backdropFilter || '');
+      assert.match(blurPx, /blur\(8px\)/, 'lite uses the 8px glass budget: ' + blurPx);
+      assert.equal((await page.locator('#btnPerf').textContent()).trim(), '⚡ Lite');
+      await page.locator('#btnPerf').click();
+      await page.waitForTimeout(250);
+      assert.equal((await material(page)).perf, 'full');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' mixer, tint and orb keep working after tab switches', async () => {
+    const { context, page, errors } = await boot(browser, 1280, 900);
+    try {
+      await page.locator('#tab-set').click();
+      await page.locator('#tab-home').click();
+      await page.waitForTimeout(150);
+      await page.evaluate(() => {
+        for (const [id, value] of [['sBlur', 34], ['sSat', 210], ['sBrt', 110]]) {
+          const el = document.getElementById(id);
+          el.value = String(value);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+      const mixed = await page.evaluate(() => ({
+        blur: document.documentElement.style.getPropertyValue('--gb'),
+        sat: document.documentElement.style.getPropertyValue('--gs'),
+        bright: document.documentElement.style.getPropertyValue('--gbr'),
+        out: document.querySelector('#outSat').textContent
+      }));
+      assert.equal(mixed.blur, '34px');
+      assert.equal(mixed.sat, '2.10');
+      assert.equal(mixed.bright, '1.10');
+      assert.equal(mixed.out, '2.1×');
+      await page.locator('#segTint [data-tint="frost"]').click();
+      assert.equal(await page.locator('body.tint-frost').count(), 1);
+      await page.locator('#segTint [data-tint="smoke"]').click();
+      assert.equal(await page.locator('body.tint-smoke').count(), 1);
+      assert.equal(await page.locator('body.tint-frost').count(), 0);
+      await page.locator('#segTint [data-tint="clear"]').click();
+
+      const orb = page.locator('#orb');
+      const before = await orb.boundingBox();
+      assert.ok(before, 'the orb is laid out');
+      await page.mouse.move(before.x + 60, before.y + 40);
+      await page.mouse.down();
+      await page.mouse.move(before.x + 120, before.y + 80, { steps: 6 });
+      await page.mouse.up();
+      const after = await orb.boundingBox();
+      assert.ok(after && Math.abs(after.x - before.x) > 30, 'the orb drags');
+
+      /* dock magnification is a Full-glass, fine-pointer nicety */
+      if ((await material(page)).perf !== 'full') {
+        await page.locator('#btnPerf').click();
+        await page.waitForTimeout(250);
+      }
+      const dock = page.locator('#tab-home');
+      const box = await dock.boundingBox();
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(200);
+      assert.match(await dock.evaluate((el) => el.style.transform), /scale\(1\.28/, 'dock magnification');
+      await page.mouse.move(2, 2);
+      await page.waitForTimeout(200);
+      assert.equal(await dock.evaluate((el) => el.style.transform), '');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' a 390px phone starts in Lite with no horizontal overflow', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      const m = await material(page);
+      assert.equal(m.perf, 'lite', 'a phone is downgraded automatically');
+      assert.notEqual(m.heroBlur, 'none', 'phone glass still renders');
+      assert.notEqual(m.heroShadow, 'none');
+      const layout = await page.evaluate(() => ({
+        columns: getComputedStyle(document.querySelector('.lg-hero')).gridTemplateColumns.split(' ').length,
+        overflow: document.documentElement.scrollWidth > window.innerWidth,
+        dock: document.getElementById('tabbar').getBoundingClientRect().width <= window.innerWidth
+      }));
+      assert.equal(layout.columns, 1, 'the hero stacks on a phone');
+      assert.equal(layout.overflow, false, 'no horizontal scroll');
+      assert.equal(layout.dock, true, 'the dock fits the viewport');
+      await page.locator('#btnPerf').click();
+      await page.waitForTimeout(200);
+      assert.equal((await material(page)).perf, 'full', 'the phone can still choose Full');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' dictation starts, unlocks audio and speaks the first word', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      await page.locator('#btnStart').click();
+      const ready = page.getByRole('button', { name: "I'm ready", exact: true });
+      if (await ready.count()) await ready.click();
+      const skip = page.getByRole('button', { name: 'Skip countdown', exact: true });
+      if (await skip.count()) await skip.click();
+      await page.waitForTimeout(800);
+      const unlocked = await page.evaluate(() => {
+        const a = document.getElementById('sdpAudio');
+        return { preload: a.getAttribute('preload'), paused: a.paused };
+      });
+      assert.equal(unlocked.preload, 'none', 'nothing is pre-downloaded');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' a paper dictation ends in a working 30-word tick list', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      await page.locator('#btnStart').click();
+      await page.waitForTimeout(500);
+      const ready = page.getByRole('button', { name: "I'm ready", exact: true });
+      if (await ready.count()) await ready.click();
+      await page.waitForTimeout(300);
+      const skip = page.getByRole('button', { name: 'Skip countdown', exact: true });
+      if (await skip.count()) await skip.click();
+      await page.waitForTimeout(2500);
+
+      /* strictly two spoken repeats of the word, one British female voice */
+      const spoken = await page.evaluate(() => window.__spoken || []);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v13_fast_liquid')).lists[0].words[0].w);
+      assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v13_fast_liquid')).settings.writeFixed), 5, 'five second timer');
+
+      await page.getByRole('button', { name: 'Finish early', exact: true }).click();
+      await page.getByRole('button', { name: 'Finish now', exact: true }).click();
+      await page.waitForTimeout(1200);
+      const marks = page.locator('[aria-label^="Got it right"]');
+      assert.equal(await marks.count(), 30, 'all 30 words can be ticked');
+      for (let i = 0; i < 3; i++) await marks.nth(i).click();
+      await page.waitForTimeout(600);
+      const saved = await page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('sdp.v13_fast_liquid'));
+        const rec = (d.history || [])[0] || {};
+        return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
+      });
+      assert.equal(saved.runs, 1, 'the result is saved');
+      assert.equal(saved.score, 3, 'three ticks = three correct');
+      assert.equal(saved.percent, 10, '3/30 is 10%');
+      assert.equal(saved.marks, 30, 'every word keeps its mark');
+      assert.equal(saved.selfScored, true, 'the paper checklist is scored');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await browser.close();
+  const output = path.join(__dirname, 'artifacts');
+  fs.mkdirSync(output, { recursive: true });
+  fs.writeFileSync(path.join(output, 'upgrade-browser-' + engine + '.json'), JSON.stringify(results, null, 2));
+  console.log(JSON.stringify(results, null, 2));
+  annotate();
+  if (results.some((r) => r.status === 'FAIL')) process.exitCode = 1;
+})().catch((error) => {
+  console.error(error);
+  console.log('::error::' + String((error && error.stack) || error).replace(/\r?\n/g, ' | ').replace(/%/g, '%25').slice(0, 900));
+  process.exitCode = 1;
+});

@@ -1,5 +1,70 @@
 # Changelog
 
+## 2.1.0 (v13) — 2026-10-23 (60 FPS Liquid Glass, automatic Lite mode, 85% less data)
+
+- **GPU/CPU lag removed at the source.** `.blob` no longer uses `filter: blur(85px)`
+  (a per-frame shader on the whole 62vmax circle); each blob is a pre-blurred
+  `radial-gradient(circle, var(--blob-color) 0%, transparent 70%)` with
+  `opacity: .52` and `translate3d(0,0,0)`, which looks identical and costs 0% GPU
+  blur. `#grain` (a full-screen `<feTurbulence>` texture URL) is
+  `display: none !important` — the `<svg width="0" height="0">` sprite stays in the
+  DOM, but nothing is ever rasterised across the viewport.
+- **Zero-reflow pointer specular.** The global `pointermove` handler no longer
+  loops over `document.querySelectorAll('.glass')`. It now runs only in
+  `perfMode === "full"` with `(hover: hover) and (pointer: fine)`, updates the ONE
+  hovered `.glass` card's `--mx`/`--my`, caches that card's
+  `getBoundingClientRect()` until the pointer enters another card or the page
+  scrolls/resizes, and writes inside a single `requestAnimationFrame`. Touch input
+  returns immediately.
+- **Dock magnification is bounded.** One rAF per gesture, cached icon rects
+  (re-measured on `resize`), no work at all for touch, coarse pointers or Lite mode.
+- **Automatic Lite mode (`perf: "auto"` is the default).** `UI.autoPerf()` picks
+  Lite for `prefers-reduced-motion`, `prefers-reduced-transparency`, viewports
+  ≤ 860px, `(pointer: coarse)`, `hardwareConcurrency ≤ 4`, `deviceMemory ≤ 4` and
+  Data Saver / 2G-3G links. `UI.frameProbe()` samples ONE 1.2 s window, always
+  cancels its `requestAnimationFrame`, and switches to Lite when the median frame
+  delta is over 19 ms (under ~52 FPS).
+- **100% of the Apple_liquid.html look is kept in Lite.** `body[data-perf="lite"]`
+  sets `--gb: 8px; --gs: 1.35; --gbr: 1.02`; the topbar, dock, hero, mixer panel,
+  word card, sheets and modals keep `backdrop-filter` and the four-layer specular
+  rim; `.stripes`, `.disc`, `#orb` and the bento tiles are untouched. Only
+  `.glass::before`, the infinite `.blob/.bubble/.chip` animations and repeated
+  inner rows (`.listrow`, `.word-item.glass`, `.comm-item.glass`) lose their
+  per-frame cost. `contain: content` stays gone and Full mode now defaults to a
+  crisp `--gb: 14px / --gs: 1.6`.
+- **1-tap performance control.** `#btnPerf` in the floating top pill, the
+  `Auto | Lite 60FPS | Full` segment and the `#perfStatus` badge in the Material
+  Mixer all call `UI.setPerf()`/`UI.togglePerf()` and toast the new mode.
+- **Low-data engine (≈85% less traffic).** `Dict.lookup()` answers every published
+  class word from memory (embedded meaning, example, part of speech, British MP3
+  and IPA for all 30 Session 7 words) and only hits
+  `api.dictionaryapi.dev` for a brand-new Admin word. `#sdpAudio` is
+  `preload="none"`; a repeated word (`sdpAudio.src === url && readyState >= 2`)
+  is replayed with `currentTime = 0` instead of being downloaded again, with a
+  35-entry in-memory cache. `./data/version.json` is read once per boot with no
+  `?t=` cache-buster, `./data/session.json` only when `ver` is newer, the ntfy poll
+  is a single 24 h window, the SSE stream only opens on a visible tab without Data
+  Saver, the slow safety poll is 5 minutes, and `storage` events give 0-byte
+  cross-tab sync. Low data mode also speaks countdowns and numbers with the
+  0-byte local British voice.
+- **Every interactive feature re-bound on render.** `UI.bindLiquidControls(root)`
+  runs at the end of `Screens.home()` and `Screens.settings()`, so the blur /
+  saturate / brightness sliders, the Clear/Frost/Smoke tint control and the
+  draggable `#orb` survive tab switches and `EN | සිංහල` re-renders. The tint
+  indicator now actually moves (it used to query one button instead of the list).
+- **New Practice tab** in the dock: flashcards (tap to flip, Amy audio, Know /
+  Practise), a 4-option meaning quiz and the full 30-word audio list.
+- **TTS and timing.** Amy (en-GB) → Google Translate en-GB → a female British
+  device voice, now with a 3.5 s network failover instead of 2.2 s. Still exactly
+  two spoken repeats, a 5 second writing timer and paper mode by default.
+- **Home fixes.** "Last score" reads the newest class result, and the paper
+  checklist writes its accuracy back to the shared result row as well as the
+  history record.
+- **Storage.** Key `sdp.v13_fast_liquid`, schema and `settingsRev` 13; a device
+  that still holds `sdp.v12_liquid` is imported once, so results and comments are
+  never lost. Sessions up to v12 are migrated to Auto and the same 30 Session 7
+  words.
+
 ## 2.0.0 (v12) — 2026-10-23 (desktop + 360px Apple WWDC25 Liquid Glass stage)
 
 - **Glass engine fixed.** `contain: content` is gone from `.glass` (it created a
