@@ -305,6 +305,9 @@ function material(page) {
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
 
       const orb = page.locator('#orb');
+      /* tint clicks auto-scrolled the page (content below the fold on some font
+         metrics); the orb must be in view before hit-testing the press point */
+      await page.evaluate(() => window.scrollTo(0, 0));
       /* the glass panel (z-index 2) deliberately sits over the orb (z-index 1);
          only the sliver above the panel is hittable, so probe the press point */
       const press = await page.evaluate(() => {
