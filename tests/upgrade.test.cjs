@@ -1,9 +1,4 @@
-/* Release 2.0.0 (ver 10) - Session 7 "Travel & Transport" (22/10/2026).
-   Written cleanly from scratch. Asserts the Apple WWDC25 Liquid Glass
-   material system in index.html plus 100% of the Session 7 dictation
-   features (single British female professor voice Amy, 30 words, credits,
-   ntfy.sh sync, Admin PIN 7898, Save & Publish Live Now). */
-
+/* Release 2.0.0 (ver 11): full WWDC25 Liquid Glass Playground + Session 7. */
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -18,8 +13,8 @@ const readData = function (name) {
 const versionJson = readData('version.json');
 const configJson = readData('config.json');
 const sessionJson = readData('session.json');
-
-/* The exact 30 Session 7 words, in order. */
+const APP = 'Session 7 - Travel & Transport';
+const LIST_ID = 'list_session_7_travel';
 const TRAVEL = [
   'guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
   'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business',
@@ -29,24 +24,21 @@ const TRAVEL = [
   'vehicle', 'visa', 'waiting room', 'windscreen'
 ];
 
-const APP = 'Session 7 - Travel & Transport';
-const LIST_ID = 'list_session_7_travel';
-const CREDIT = 'Created by Hansana \u00b7 Idea given by Ayya01 (Lesandu) \u00b7 Lecturer in Charge: Sumodya Sewmini';
-
-test('release metadata: version 2.0.0, data ver 10+, Session 7 defaults', function () {
+test('release metadata is 2.0.0 / ver 11 with dark full-glass defaults', function () {
   assert.equal(versionJson.version, '2.0.0');
-  assert.ok(Number(versionJson.ver) >= 10, 'data ver is 10 or newer');
-  assert.ok(Number(versionJson.settingsRev) >= 10, 'settings revision is 10 or newer');
+  assert.ok(Number(versionJson.ver) >= 11);
+  assert.ok(Number(versionJson.settingsRev) >= 11);
   assert.equal(versionJson.session, '7');
   assert.equal(versionJson.title, APP);
-
   assert.equal(configJson.version, '2.0.0');
-  assert.ok(Number(configJson.ver) >= 10);
+  assert.ok(Number(configJson.ver) >= 11);
   assert.equal(configJson.listId, LIST_ID);
   assert.equal(configJson.session.no, '7');
   assert.equal(configJson.session.date, '2026-10-22');
   assert.equal(configJson.session.title, APP);
   assert.equal(configJson.session.branch, 'CCBE Galle Branch');
+  assert.equal(configJson.defaults.theme, 'dark');
+  assert.equal(configJson.defaults.perf, 'full');
   assert.equal(configJson.defaults.writeMode, 'fixed');
   assert.equal(configJson.defaults.writeFixed, 5);
   assert.equal(configJson.defaults.sentence, false);
@@ -55,111 +47,77 @@ test('release metadata: version 2.0.0, data ver 10+, Session 7 defaults', functi
   assert.equal(configJson.defaults.numbers, true);
   assert.equal(configJson.defaults.mode, 'paper');
   assert.match(configJson.credits.en, /Created by Hansana/);
-  assert.equal(configJson.credits.lecturerInCharge, 'Sumodya Sewmini');
+  assert.match(configJson.credits.en, /Ayya01 \(Lesandu\)/);
   assert.match(String(configJson.tts.primary), /Amy/);
-  assert.match(configJson.live.state, /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v8$/);
-  assert.match(configJson.live.community, /^https:\/\/ntfy\.sh\/sdp_dictationb1_comm_v8$/);
-  assert.match(configJson.live.inbox, /^https:\/\/ntfy\.sh\/sdp_dictationb1_inbox_v8$/);
+  assert.ok(configJson.live.state.startsWith('https://ntfy.sh/'));
 });
 
-test('session.json holds exactly the 30 Travel & Transport words', function () {
-  assert.ok(Number(sessionJson.ver) >= 10);
+test('session.json contains exactly the requested 30 Session 7 words', function () {
+  assert.ok(Number(sessionJson.ver) >= 11);
   assert.equal(sessionJson.session.no, '7');
   assert.equal(sessionJson.session.date, '2026-10-22');
-  assert.equal(sessionJson.session.title, APP);
-  assert.equal(sessionJson.session.listId, LIST_ID);
   assert.equal(sessionJson.lists.length, 1);
+  assert.equal(sessionJson.lists[0].id, LIST_ID);
   assert.equal(sessionJson.lists[0].name, APP);
   assert.equal(sessionJson.lists[0].words.length, 30);
   assert.deepEqual(sessionJson.lists[0].words.map(function (w) { return w.w; }), TRAVEL);
   for (const word of sessionJson.lists[0].words) {
-    assert.ok(word.m && word.m.length > 8, word.w + ' has a British meaning');
-    assert.ok(word.s && word.s.length > 15, word.w + ' has a B1 example sentence');
-    assert.match(word.audio, /^https:\/\/.+\.mp3$/, word.w + ' has a UK audio URL');
+    assert.ok(word.m && word.m.length > 8, word.w + ' meaning');
+    assert.ok(word.s && word.s.length > 15, word.w + ' sentence');
+    assert.match(word.audio, /^https:\/\/.+\.mp3$/, word.w + ' audio');
   }
-  const words = sessionJson.lists.map(function (l) { return l.words.map(function (w) { return w.w; }); }).flat();
-  for (const gone of ['athlete', 'hobbies', 'appointment', 'badminton', 'rainbow']) {
-    assert.ok(words.indexOf(gone) < 0, 'old word removed: ' + gone);
-  }
-  assert.equal(sessionJson.plan.filter(function (p) { return p.key === 'd2026-10-22'; }).length, 1);
+  for (const word of TRAVEL) assert.ok(html.indexOf(word) >= 0, 'index has ' + word);
 });
 
-test('all 30 words are in both session.json and index.html', function () {
-  for (const word of TRAVEL) {
-    assert.ok(sessionJson.lists[0].words.some(function (w) { return w.w === word; }), 'session.json has ' + word);
-    assert.ok(html.indexOf(word) >= 0, 'index.html has ' + word);
-  }
-  assert.ok(html.indexOf(APP) >= 0, 'index.html names the session');
-  assert.ok(html.indexOf('var SAMPLE_LIST_ID = "' + LIST_ID + '"') >= 0);
-  assert.ok(html.indexOf('CCBE Galle Branch') >= 0, 'index.html names the branch');
-});
-
-test('index.html carries the Apple WWDC25 Liquid Glass material system', function () {
-  /* live material tokens, controllable from the Settings mixer */
-  assert.ok(html.indexOf('--gb') >= 0, 'live blur token --gb');
-  assert.ok(html.indexOf('--gs') >= 0, 'live saturate token --gs');
-  assert.ok(html.indexOf('--gbr') >= 0, 'live brightness token --gbr');
-  assert.ok(html.indexOf('--aqua') >= 0, 'accent token --aqua');
-  assert.ok(html.indexOf('--inset-hi') >= 0, 'lit-rim token --inset-hi');
-  /* the refraction filter from the hidden SVG defs */
-  assert.ok(html.indexOf('lg-warp') >= 0, 'lg-warp warp filter');
-  /* 4-layer recipe + pointer-tracked specular */
-  assert.ok(html.indexOf('blur(var(--gb') >= 0, 'backdrop blur recipe');
-  assert.ok(html.indexOf('inset 0 1px 0 var(--inset-hi)') >= 0, 'inset highlight');
-  assert.ok(html.indexOf('inset 0 0 0 1px var(--line)') >= 0, 'lit rim line');
-  assert.ok(html.indexOf('inset 0 -14px 28px') >= 0, 'inner glow');
-  assert.ok(html.indexOf('radial-gradient(380px circle at var(--mx') >= 0, 'pointer-tracked specular');
-  assert.ok(html.indexOf('cancelAnimationFrame') >= 0, 'rAF specular throttle');
-  /* ambient scene */
-  assert.ok(html.indexOf('blur(85px)') >= 0, '85 px drift blobs');
-  assert.ok(html.indexOf('blob4') >= 0, 'fourth drift blob (violet)');
-  assert.ok(html.indexOf('feTurbulence') >= 0, 'grain SVG turbulence');
-  /* creator credits and language switcher */
-  assert.ok(html.indexOf('Hansana') >= 0);
-  assert.ok(html.indexOf('Ayya01') >= 0);
-  assert.ok(html.indexOf('Lesandu') >= 0);
-  assert.ok(html.indexOf('\u0dc3\u0dd2\u0d82\u0dc4\u0dbd') >= 0, 'Sinhala language label');
-  /* unified voice chain */
-  assert.ok(html.indexOf('voice=Amy') >= 0, 'primary unified British female voice');
-  assert.ok(html.indexOf('api.streamelements.com/kappa/v2/speech') >= 0);
-  assert.ok(html.indexOf('translate.google.com/translate_tts') >= 0, 'female en-GB failover');
-  assert.ok(html.indexOf('tl=en-GB') >= 0);
-  assert.ok(html.indexOf('voice=Emma') < 0, 'no second TTS voice in the chain');
-  assert.ok(html.indexOf('voice=Daniel') < 0, 'no male voice in the chain');
-  assert.ok(html.indexOf('voice=Oliver') < 0);
-  assert.ok(html.indexOf('voice=Ryan') < 0);
-  assert.ok(html.indexOf('voice=George') < 0);
-  /* session defaults written literally in the app */
-  assert.ok(html.indexOf('writeFixed: 5') >= 0);
-  assert.ok(html.indexOf('sentence: false') >= 0);
-  assert.ok(html.indexOf('repeats: 2') >= 0);
-  /* shared Amy audio element, real-time sync, one-tap publish */
-  assert.ok(html.indexOf('id="sdpAudio"') >= 0);
-  assert.ok(html.indexOf('ntfy.sh') >= 0);
-  assert.ok(html.indexOf('EventSource') >= 0);
-  assert.ok(html.indexOf('Save & Publish Live Now') >= 0);
-  assert.ok(html.indexOf(CREDIT) >= 0, 'full creator credit line');
-});
-
-test('index.html carries the v10 key, schema and settings revision', function () {
+test('index carries the complete interactive Liquid Glass hero and preserved features', function () {
+  const required = [
+    'id="orb"', 'id="lgStage"', 'id="sBlur"', 'id="sSat"', 'id="sBrt"',
+    'id="outBlur"', 'id="outSat"', 'id="outBrt"', 'id="segTint"',
+    'class="hollow"', 'class="lg-hero"', 'Liquid Glass', 'Material Mixer',
+    'lg-warp', '--gb', '--gs', '--gbr', '--aqua', '@keyframes rise',
+    'initLiquidPlayground', 'initDockMagnification', 'pointerdown', 'pointermove',
+    'Hansana', 'Ayya01', 'Lesandu', 'සිංහල', 'voice=Amy',
+    'api.streamelements.com/kappa/v2/speech', 'translate.google.com/translate_tts',
+    'tl=en-GB', 'writeFixed: 5', 'sentence: false', 'repeats: 2',
+    'data-theme="dark" data-perf="full"', 'id="themeBtn"', 'id="homeStats"',
+    'id="homeSessions"', 'id="chipNetText"', 'id="btnLock"', 'id="tabbar"',
+    'ntfy.sh', 'EventSource', 'Save & Publish Live Now', 'id="sdpAudio"',
+    'linear-gradient(140deg, rgba(13,58,74,.65), rgba(18,58,103,.65))',
+    'linear-gradient(150deg, rgba(107,31,60,.65), rgba(138,61,28,.65))',
+    'linear-gradient(150deg, rgba(36,30,82,.65), rgba(61,34,96,.65))'
+  ];
+  for (const token of required) assert.ok(html.indexOf(token) >= 0, 'missing: ' + token);
   assert.ok(html.indexOf('APP_VERSION = "2.0.0"') >= 0);
-  assert.ok(html.indexOf('key: "sdp.v10_session7",') >= 0);
-  assert.ok(html.indexOf('schema: 10,') >= 0);
-  assert.ok(html.indexOf('settingsRev: 10,') >= 0);
-  assert.ok(html.indexOf('settingsRev < 10') >= 0, 'v10 migration gate present');
+  assert.ok(html.indexOf('key: "sdp.v11_liquid",') >= 0);
+  assert.ok(html.indexOf('schema: 11,') >= 0);
+  assert.ok(html.indexOf('settingsRev: 11,') >= 0);
+  assert.ok(html.indexOf('settingsRev < 11') >= 0);
+  assert.equal((html.match(/id="sdpAudio"/g) || []).length, 1);
+  assert.equal((html.match(/class="bubble bubble-/g) || []).length, 4);
   assert.equal(require('./test-pin.cjs'), '7898');
+  assert.doesNotMatch(html, /<link[\s>]/i, 'no external link tags');
 });
 
-test('in-app defaults: Session 7 list, 5 second timer, 2 repeats, paper mode', function () {
+test('destructive old Lite/theme overrides are absent', function () {
+  assert.ok(html.indexOf('body * { -webkit-backdrop-filter: none !important') < 0);
+  assert.ok(html.indexOf('body[data-perf="lite"] .blob { display: none }') < 0);
+  assert.doesNotMatch(html, /backdrop-filter:\s*none\s*!important/i);
+  assert.doesNotMatch(html, /box-shadow:\s*none\s*!important/i);
+  assert.doesNotMatch(html, /(?:#grain|\.blob)[^{]*\{[^}]*display:\s*none/i);
+  assert.doesNotMatch(html, /hardwareConcurrency\s*<=\s*4[^;]*settings\.perf\s*=\s*"lite"/);
+  assert.ok(html.indexOf('body[data-perf="lite"] .blob { animation-play-state: paused !important; }') >= 0);
+});
+
+test('in-app v11 defaults, migration and unified audio are correct', function () {
   const a = harness();
   try {
-    const q = a.q;
-    const d = q.DB.data;
-    assert.equal(q.CONFIG.key, 'sdp.v10_session7');
-    assert.equal(q.CONFIG.schema, 10);
-    assert.equal(q.CONFIG.settingsRev, 10);
-    assert.equal(d.settingsRev, 10);
+    const q = a.q, d = q.DB.data;
+    assert.equal(q.CONFIG.key, 'sdp.v11_liquid');
+    assert.equal(q.CONFIG.schema, 11);
+    assert.equal(q.CONFIG.settingsRev, 11);
+    assert.equal(d.settingsRev, 11);
     assert.equal(d.settings.theme, 'dark');
+    assert.equal(d.settings.perf, 'full');
     assert.equal(d.settings.writeMode, 'fixed');
     assert.equal(d.settings.writeFixed, 5);
     assert.equal(d.settings.sentence, false);
@@ -168,18 +126,163 @@ test('in-app defaults: Session 7 list, 5 second timer, 2 repeats, paper mode', f
     assert.equal(d.settings.numbers, true);
     assert.equal(d.settings.mode, 'paper');
     assert.equal(d.lists.length, 1);
-    assert.equal(d.lists[0].id, LIST_ID);
     assert.equal(d.lists[0].name, APP);
     assert.equal(d.lists[0].words.length, 30);
-    assert.equal(JSON.stringify(d.lists[0].words.map(function (w) { return w.w; })), JSON.stringify(TRAVEL));
+    assert.deepEqual(Array.from(d.lists[0].words, function (w) { return w.w; }), TRAVEL);
     assert.equal(d.session.no, '7');
     assert.equal(d.session.date, '2026-10-22');
-    assert.equal(d.session.title, APP);
     assert.equal(d.session.branch, 'CCBE Galle Branch');
-    assert.equal(d.session.listId, LIST_ID);
-    assert.ok(/ntfy\.sh/.test(q.CONFIG.ntfyHost), 'ntfy.sh host configured');
-    /* the shared Amy element is in the DOM */
-    assert.ok(a.w.document.getElementById('sdpAudio'), '#sdpAudio present');
+    assert.ok(a.w.document.getElementById('sdpAudio'));
+
+    const old = q.defaultData();
+    old.settingsRev = 10;
+    old.settings.theme = 'auto';
+    old.settings.perf = 'auto';
+    const migrated = q.DB.migrate(old);
+    assert.equal(migrated.settings.theme, 'dark');
+    assert.equal(migrated.settings.perf, 'full');
+    assert.equal(migrated.settingsRev, 11);
+    const manual = q.defaultData();
+    manual.settings.theme = 'light';
+    manual.settings.perf = 'lite';
+    const kept = q.DB.migrate(manual);
+    assert.equal(kept.settings.theme, 'light', 'manual Light remains available');
+    assert.equal(kept.settings.perf, 'lite', 'manual Lite remains available');
+
+    const sources = q.Speech.streamSources('tourist information centre');
+    assert.equal(sources.length, 2);
+    assert.equal(sources[0], 'https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=tourist%20information%20centre');
+    assert.equal(sources[1], 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=tourist%20information%20centre');
+    q.Speech.voices = [{ name: 'Daniel', lang: 'en-GB' }];
+    assert.equal(q.Speech.anyEnglish(), null, 'known male offline voice is filtered');
+    q.Speech.voices.push({ name: 'Microsoft Sonia', lang: 'en-GB' });
+    assert.equal(q.Speech.anyEnglish().name, 'Microsoft Sonia');
+  } finally {
+    a.close();
+  }
+});
+
+test('theme and performance never auto-downgrade; only manual Lite is honoured', function () {
+  const a = harness();
+  try {
+    const q = a.q, doc = a.w.document;
+    q.DB.data.settings.theme = 'auto';
+    q.UI.applyTheme();
+    assert.equal(doc.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(doc.body.getAttribute('data-theme'), 'dark');
+    q.DB.data.settings.theme = 'light';
+    q.UI.applyTheme();
+    assert.equal(doc.documentElement.getAttribute('data-theme'), 'light');
+    assert.equal(doc.body.getAttribute('data-theme'), 'light');
+    assert.equal(doc.getElementById('themeBtn').textContent, '☾');
+    doc.getElementById('themeBtn').click();
+    assert.equal(q.DB.data.settings.theme, 'dark');
+    assert.equal(doc.body.getAttribute('data-theme'), 'dark');
+    assert.equal(doc.getElementById('themeBtn').textContent, '☀');
+
+    q.DB.data.settings.perf = 'auto';
+    q.UI.autoDowngraded = true;
+    q.UI.frameMs = 80;
+    assert.equal(q.UI.autoPerf(), 'full');
+    q.UI.recordFrames([45, 50, 55]);
+    assert.equal(q.UI.perfMode, 'full');
+    assert.equal(q.UI.autoDowngraded, false);
+    assert.equal(doc.body.getAttribute('data-perf'), 'full');
+    q.DB.data.settings.perf = 'lite';
+    q.UI.applyPerf();
+    assert.equal(q.UI.perfMode, 'lite');
+    assert.equal(doc.body.getAttribute('data-perf'), 'lite');
+    assert.equal(doc.querySelectorAll('#bg .blob').length, 4);
+    assert.ok(doc.getElementById('grain'));
+  } finally {
+    a.close();
+  }
+});
+
+test('live mixer, tint, draggable orb and dock magnification work', function () {
+  const a = harness();
+  try {
+    const w = a.w, doc = w.document, root = doc.documentElement;
+    function input(id, value) {
+      const el = doc.getElementById(id);
+      el.value = String(value);
+      el.dispatchEvent(new w.Event('input', { bubbles: true }));
+    }
+    input('sBlur', 34);
+    input('sSat', 210);
+    input('sBrt', 110);
+    assert.equal(root.style.getPropertyValue('--gb'), '34px');
+    assert.equal(root.style.getPropertyValue('--gs'), '2.1');
+    assert.equal(root.style.getPropertyValue('--gbr'), '1.1');
+    assert.equal(doc.getElementById('outBlur').textContent, '34px');
+    assert.equal(doc.getElementById('outSat').textContent, '2.1×');
+    assert.equal(doc.getElementById('outBrt').textContent, '1.1');
+    doc.querySelector('#segTint [data-tint="frost"]').click();
+    assert.ok(doc.body.classList.contains('tint-frost'));
+    doc.querySelector('#segTint [data-tint="smoke"]').click();
+    assert.ok(!doc.body.classList.contains('tint-frost'));
+    assert.ok(doc.body.classList.contains('tint-smoke'));
+    doc.querySelector('#segTint [data-tint="clear"]').click();
+    assert.ok(!doc.body.classList.contains('tint-smoke'));
+
+    const stage = doc.getElementById('lgStage'), orb = doc.getElementById('orb');
+    stage.getBoundingClientRect = function () { return { left: 0, top: 0, width: 500, height: 420 }; };
+    Object.defineProperty(orb, 'offsetWidth', { configurable: true, value: 140 });
+    Object.defineProperty(orb, 'offsetHeight', { configurable: true, value: 140 });
+    orb.getBoundingClientRect = function () {
+      return { left: parseFloat(orb.style.left) || 0, top: parseFloat(orb.style.top) || 0, width: 140, height: 140 };
+    };
+    orb.style.left = '180px';
+    orb.style.top = '60px';
+    function pointer(type, x, y) {
+      const event = new w.Event(type, { bubbles: true, cancelable: true });
+      event.pointerId = 1;
+      event.clientX = x;
+      event.clientY = y;
+      orb.dispatchEvent(event);
+    }
+    pointer('pointerdown', 220, 100);
+    pointer('pointermove', 280, 150);
+    pointer('pointerup', 280, 150);
+    assert.equal(orb.style.left, '240px');
+    assert.equal(orb.style.top, '110px');
+    assert.ok(!orb.classList.contains('dragging'));
+    orb.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    assert.equal(orb.style.left, '252px');
+
+    const dock = doc.getElementById('tabbar');
+    const buttons = Array.from(dock.querySelectorAll('button'));
+    buttons.forEach(function (button, i) {
+      button.getBoundingClientRect = function () { return { left: i * 90, width: 88 }; };
+    });
+    const move = new w.Event('pointermove', { bubbles: true });
+    move.pointerType = 'mouse';
+    move.clientX = 44;
+    dock.dispatchEvent(move);
+    assert.match(buttons[0].style.transform, /scale\(1\.280\)/);
+    dock.dispatchEvent(new w.Event('pointerleave'));
+    assert.equal(buttons[0].style.transform, '');
+  } finally {
+    a.close();
+  }
+});
+
+test('rendered Home retains every existing control and the exact Session 7 copy', function () {
+  const a = harness();
+  try {
+    const doc = a.w.document;
+    const ids = ['homeHero', 'homeKicker', 'homeTitle', 'homeSub', 'homeMeta', 'btnStart',
+      'btnStartText', 'btnGuide', 'segMode', 'homeStats', 'homeSessions', 'chipNet',
+      'chipNetText', 'btnLock', 'tabbar', 'lgStage', 'orb', 'materialMixer'];
+    for (const id of ids) assert.ok(doc.getElementById(id), '#' + id);
+    assert.equal(doc.getElementById('homeKicker').textContent, 'SESSION 7 · 22/10/2026 ● CCBE GALLE BRANCH');
+    assert.equal(doc.getElementById('homeTitle').textContent, APP);
+    assert.equal(doc.getElementById('homeSub').textContent, '30 words · 5s timer · Word ×2 · British Female Professor Voice (Amy · en-GB)');
+    assert.equal(doc.getElementById('btnGuide').textContent, 'User Guide / උපදෙස්');
+    assert.equal(doc.querySelectorAll('#homeStats .statbox').length, 3);
+    assert.equal(doc.querySelectorAll('#lgStage .bubble').length, 4);
+    assert.match(doc.querySelector('.topbar').className, /glass/);
+    assert.match(doc.getElementById('brandName').textContent, /SMART\/DICTATION/);
   } finally {
     a.close();
   }

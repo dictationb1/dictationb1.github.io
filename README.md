@@ -4,7 +4,7 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Release status
 
-**2.0.0 (v8, 2026-10-22) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the four-tier British **female professor** audio chain on every device, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, creator credits (Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini), the one-tap **Save & Publish Live Now** editor, always-on online mode through `data/*.json` and the v8 ntfy live channel, and the auto-lite performance work. An older install drops its cached lists, plan, session and snapshot on first load (`settingsRev < 8`), shows the Welcome Guide again and lands on Session 7. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
+**2.0.0 (v11, 2026-10-23) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the unified British **female professor Amy** audio chain, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, creator credits (Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini), the one-tap **Save & Publish Live Now** editor, and real-time sync through `data/*.json` and the v8 ntfy live channel. The Home screen is now the full Apple WWDC25 Liquid Glass Hero Playground: a floating glass navbar, two-column hero, draggable glowing orb, live Material Mixer, animated bubbles and chips, saturated stat tiles, and a magnifying macOS-style dock. Dark theme and full glass are the defaults on every device; there is no automatic Lite downgrade, and manual Lite still preserves blobs, grain, blur, and shadows. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
 
 ## Add next week's words in three steps (candidate)
 
@@ -16,10 +16,10 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Saved data and migration
 
-- The key stays `sdp.v1`; the schema inside it advances from 1 to 2.
-- A one-time migration turns example sentences OFF and sets repeats to two. Subsequent changes to these settings are retained, not reset at each launch.
-- Lists, published snapshots, history, answers, planner, custom PIN verifier, and queued jobs remain in place.
-- The original pre-migration JSON is retained as `sdp.v1.before-v2` when storage is available. Existing recovery/backup keys remain supported.
+- The current key is `sdp.v11_liquid`; `CONFIG.schema` and `settingsRev` are `11`.
+- A v11 migration installs Session 7 and changes old `auto` theme/performance preferences to `dark`/`full`. Later explicit Light or Lite choices are retained.
+- Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, and paper mode.
+- The original pre-migration JSON is retained as `sdp.v11_liquid.before-v2` when storage is available. Existing recovery/backup keys remain supported.
 - Export a backup before experimenting. Browser storage can be cleared by the user or operating system. This candidate has not added an installable PWA or persistent-storage guarantee.
 
 ## The lecturer PIN is a convenience lock
@@ -36,10 +36,10 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
 2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v1` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
 3. In the console for this site, run this convenience-lock recovery only on your own device:
    ```js
-   var d = JSON.parse(localStorage.getItem('sdp.v1'));
+   var d = JSON.parse(localStorage.getItem('sdp.v11_liquid'));
    if (!d || !Array.isArray(d.lists)) throw new Error('Stop: saved data is not valid');
    d.admin = {};
-   localStorage.setItem('sdp.v1', JSON.stringify(d));
+   localStorage.setItem('sdp.v11_liquid', JSON.stringify(d));
    location.reload();
    ```
    Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
@@ -52,9 +52,9 @@ Three public [ntfy.sh](https://ntfy.sh) topics carry the class in real time. ntf
 
 | Topic | What travels on it |
 | --- | --- |
-| `sdp_dictationb1_state_v2` | the published session: number, day, date, title, the 30 words and the plan |
-| `sdp_dictationb1_comm_v2` | community posts and every student completion (`Completed Session 4 · Score: 27/30 (90%)`) |
-| `sdp_dictationb1_inbox_v2` | a student's private message to the lecturer |
+| `sdp_dictationb1_state_v8` | the published session: number, day, date, title, the 30 words and the plan |
+| `sdp_dictationb1_comm_v8` | community posts and every student completion (`Completed Session 4 · Score: 27/30 (90%)`) |
+| `sdp_dictationb1_inbox_v8` | a student's private message to the lecturer |
 
 On load the app fetches `./data/session.json?t=…`, polls `…/json?poll=1&since=all` for the cached messages and opens one `EventSource` stream; whichever payload is newest (`publishedAt`/`ver`) wins. Publishing from Admin mode posts once and every open phone repaints. If a network blocks ntfy, the repository JSON still updates students on their next load, and the status chip says exactly which state the device is in (`Online · Live B1 Session v2.0.0 · Synced …`, `Syncing…`, `Offline · Saved on device`).
 
