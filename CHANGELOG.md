@@ -1,5 +1,52 @@
 # Changelog
 
+## 2.3.0 (v15) — 2026-10-23 (Universal Liquid Glass sliding pill transitions)
+
+- **Sliding capsule everywhere.** `#tabbar` now hosts `<span class="tab-ind"
+  id="tabInd">` as its first child: a screenshot-exact glowing Liquid Glass
+  capsule that glides over Home | Dictionary | Practice | Community | Settings
+  via GPU `translate3d(idx * 100%)` with the spring curve
+  `cubic-bezier(.2, .9, .25, 1.35)`. The dock is a 560 px grid pill with its
+  own deep refraction, and each activated `.screen` morphs in with the new
+  `screenMorphIn` keyframes.
+- **Every segmented pill shares one recipe.** `.seg` and `.seg-tint` use the
+  same `rgba(10, 15, 30, .58)` track and glowing `.thumb` / `.seg-ind`
+  capsule (`.48s` spring on `transform` + `width`). `UI.segSync()` slides
+  either indicator with `translate3d(offsetLeft - 4)`, the Perf mode, Practice
+  switcher and Welcome Guide language pills gained their missing thumbs, and
+  the Settings "Writing time" row toggles in place instead of re-rendering —
+  a click never destroys the pill it animates. Lite mode never disables pill
+  motion (`body[data-perf="lite"] .seg .thumb { transition: none; }` does not
+  exist in the source).
+- **Buttons breathe.** `.glass`, `.btn`, `.gbtn`, `button.chip` and
+  `.topbar .icon-btn` spring on `transform`, `background-color`, `box-shadow`,
+  `border-color` and `color`; hover lifts `translate3d(0, -2px) scale(1.02)`
+  and press compresses `translate3d(0, 1px) scale(.95)` on buttons, dock tabs
+  and seg controls.
+- **Clear / Frost / Smoke morph tokens.** Frost is `rgba(220, 238, 255, .22)`,
+  Smoke is `rgba(6, 10, 24, .66)` with `--inset-hi: rgba(150, 182, 255, .48)`,
+  and `UI.setTint()` slides every `.seg-ind` with `translate3d(i * 100%)`
+  across all pills without re-rendering Home or Settings.
+- **Floating Hansana badge retained.** The `#credit.credit.glass` pill stays
+  above the dock on phones (`bottom: calc(84px + env(safe-area-inset-bottom,
+  0px))` at `<= 680px`) with `creditLoop()`, `sheen` and `ping` active in both
+  Full and Lite modes.
+- **60 FPS on every device.** All indicators animate only through composited
+  `transform`/`opacity` (`will-change: transform, width`), blobs stay
+  pre-blurred radial gradients, `#grain` stays hidden, the single 1.2 s frame
+  probe still downgrades above a 19 ms median, and Auto Lite still covers
+  <= 860 px viewports, <= 4 cores / <= 4 GB, Data Saver and reduced motion.
+- **Release and migration.** `APP_VERSION` is `2.3.0`; the storage key is
+  `sdp.v15_liquid`, `schema`/`settingsRev`/`data.ver` are `15`. v14, v13 and
+  v12 storage migrates without losing class results. Session 7 (30 words,
+  fixed 5 s timer, two repeats, Amy en-GB voice chain) and Admin PIN 7898 are
+  unchanged.
+- **Verification.** `tests/upgrade.test.cjs` is regenerated from scratch
+  (24 checks) covering the dock slide, pill retention, tint morphs, credit
+  loop, frame probe, low-data engine and v14 -> v15 migration;
+  `tests/check.cjs`, `tests/phase1.cjs` and `tests/upgrade-browser.cjs` pass
+  with 0 errors.
+
 ## 2.2.0 (v14) — 2026-10-23 (animated Hansana badge and liquid tint morphs)
 
 - **Floating creator badge.** Adds the fixed `#credit.credit.glass` pill with the
