@@ -102,7 +102,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
- let html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace('  Store.test();\n  DB.load();','  throw new Error("QA boot failure");\n  Store.test();\n  DB.load();');
+ let html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/function boot\(\)\{\s*Store\.test\(\);\s*DB\.load\(\);/, 'function boot(){ throw new Error("QA boot failure");');
  await page.setContent(html);await page.waitForTimeout(500);
  const box=await page.locator('#fatal .flex-card').boundingBox();
  results.push({test:'Chromium 390px Full-mode fatal card centred and within viewport after animation',status:box&&box.x>=0&&box.x+box.width<=390&&box.y>=0&&box.y+box.height<=844&&Math.abs(box.x+box.width/2-195)<2?'PASS':'FAIL',box});

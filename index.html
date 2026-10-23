@@ -3501,55 +3501,6 @@ ap.appendChild(switchRow("High contrast","Solid surfaces and stronger lines","hc
 ap.appendChild(segRow("Performance",[{id:"auto",label:"Auto"},{id:"full",label:"Full glass"},{id:"lite",label:"Lite (fast)"}],st.perf,function(val){st.perf=val;DB.save();UI.applyPerf();}));
 var perfInfo=U.el("p","tiny muted","Now: "+UI.perfMode+" mode \u00b7 measured frame "+UI.frameMs+" ms");
 ap.appendChild(perfInfo);
-var mix=card("Liquid Glass Mixer");
-mix.appendChild(U.el("p","tiny muted","Blur, saturate and brightness of every glass surface - tune the Apple WWDC25 material live."));
-function mixerRow(title,prop,min,max,step,def,unit){
-var wrap=U.el("div","ctl",null);
-wrap.style.margin="10px 0";
-var top=U.el("div","spread",null);
-top.appendChild(U.el("b","small",title));
-var val=U.el("span","small muted mono",null);
-top.appendChild(val);
-wrap.appendChild(top);
-var r=U.el("input",null,null);
-r.type="range";
-r.min=String(min);
-r.max=String(max);
-r.step=String(step);
-r.value=String(def);
-r.setAttribute("aria-label",title);
-function paint(){
-var v=Number(r.value),min=Number(r.min),max=Number(r.max),value=prop==="--gb"?v:v/100;
-r.style.setProperty("--fill",((v-min)/(max-min)*100)+"%");
-document.documentElement.style.setProperty(prop,prop==="--gb"?value+"px":value.toFixed(2));
-val.textContent=String(value)+unit;
-var key=prop==="--gb"?"glassBlur":(prop==="--gs"?"glassSat":"glassBrt");
-st[key]=v;
-}
-U.on(r,"input",function(){paint();DB.save();});
-paint();
-wrap.appendChild(r);
-mix.appendChild(wrap);
-}
-mixerRow("Blur","--gb",4,40,1,st.glassBlur||14,"px");
-mixerRow("Saturate","--gs",100,260,1,st.glassSat||160,"×");
-mixerRow("Brightness","--gbr",90,130,1,st.glassBrt||103,"");
-var tp=U.el("div",null,null);
-tp.style.margin="10px 0";
-tp.appendChild(U.el("div","tiny muted strong","Tint mode"));
-var tseg=U.el("div","seg-tint",null);
-tseg.setAttribute("role","group");
-tseg.setAttribute("aria-label","Glass tint mode");
-tseg.appendChild(U.el("span","seg-ind",null));
-var tints=[["Clear",0],["Frost",1],["Smoke",2]];
-for(var ti=0;ti<tints.length;ti++){
-var b=U.el("button",null,tints[ti][0]);
-b.type="button";
-b.setAttribute("data-tint",String(tints[ti][1]));
-tseg.appendChild(b);
-}
-tp.appendChild(tseg);
-mix.appendChild(tp);
 var ins=card(S.installTitle);
 ins.appendChild(U.el("p","small muted","iPhone and iPad: tap Share, then Add to Home Screen. Android: tap the menu, then Install app. This keeps your data safe and gives you a full-screen app."));
 var instRow=U.el("div","btn-row tight",null);
