@@ -1,5 +1,6 @@
-/* Smart Dictation Player 2.2.0 (schema 14) release verification.
-   This file is regenerated as a complete suite; it never patches app source. */
+/* Smart Dictation Player 2.3.0 (schema 15) release verification.
+   This file is regenerated as a complete suite for every release; it never
+   patches app source and it never depends on regex surgery over old tests. */
 'use strict';
 
 const assert = require('node:assert/strict');
@@ -25,6 +26,8 @@ const WORDS = [
   'vehicle', 'visa', 'waiting room', 'windscreen'
 ];
 const CREDIT = 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini';
+const GLASS_SPRING = 'transition: transform .42s cubic-bezier(.2, .9, .25, 1.35), background-color .48s cubic-bezier(.2, .9, .25, 1.35), background .48s ease, box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), border-color .38s ease, color .32s ease;';
+const PILL_SPRING = 'transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), width .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease !important;';
 const tests = [];
 
 function test(name, fn) { tests.push({ name, fn }); }
@@ -53,20 +56,21 @@ function device(a, options) {
 }
 function flush() { return new Promise((resolve) => setImmediate(resolve)); }
 function has(token, label) { assert.ok(html.indexOf(token) >= 0, label || token); }
+function lacks(token, label) { assert.equal(html.indexOf(token), -1, label || token); }
 
 /* ---------------------------------------------------------- release data */
 
-test('v14 / 2.2.0 metadata and automatic performance defaults are consistent', function () {
-  for (const data of [version, config, session]) assert.ok(Number(data.ver) >= 14, 'ver >= 14');
-  assert.equal(version.appVersion, '2.2.0');
-  assert.equal(version.version, '2.2.0');
-  assert.equal(version.settingsRev, 14);
+test('v15 / 2.3.0 metadata and automatic performance defaults are consistent', function () {
+  for (const data of [version, config, session]) assert.ok(Number(data.ver) >= 15, 'ver >= 15');
+  assert.equal(version.appVersion, '2.3.0');
+  assert.equal(version.version, '2.3.0');
+  assert.equal(version.settingsRev, 15);
   assert.equal(version.session, '7');
   assert.equal(version.title, TITLE);
   assert.equal(version.updatedAt, '2026-10-23T00:00:00Z');
-  assert.equal(config.appVersion, '2.2.0');
-  assert.equal(config.version, '2.2.0');
-  assert.equal(config.settingsRev, 14);
+  assert.equal(config.appVersion, '2.3.0');
+  assert.equal(config.version, '2.3.0');
+  assert.equal(config.settingsRev, 15);
   assert.equal(config.listId, LIST_ID);
   assert.deepEqual(config.session, {
     no: '7', day: 'Thursday', date: '2026-10-22', title: TITLE,
@@ -86,14 +90,14 @@ test('v14 / 2.2.0 metadata and automatic performance defaults are consistent', f
   assert.equal(config.dataSaving.audioReuse, true);
   assert.match(config.tts.primary, /Amy/);
   assert.equal(config.credits.en, CREDIT);
-  has('APP_VERSION = "2.2.0"');
-  has('key: "sdp.v14_liquid"');
-  has('schema: 14');
-  has('settingsRev: 14');
+  has('APP_VERSION = "2.3.0"');
+  has('key: "sdp.v15_liquid"');
+  has('schema: 15');
+  has('settingsRev: 15');
 });
 
 test('Session 7 retains the exact 30-word Travel & Transport assignment', function () {
-  assert.equal(session.appVersion, '2.2.0');
+  assert.equal(session.appVersion, '2.3.0');
   assert.equal(session.session.no, '7');
   assert.equal(session.session.date, '2026-10-22');
   assert.equal(session.session.branch, 'CCBE Galle Branch');
@@ -112,37 +116,104 @@ test('Session 7 retains the exact 30-word Travel & Transport assignment', functi
   has('SAMPLE_LIST_ID = "list_session_7_travel"');
 });
 
-/* ------------------------------------------------------ static UI contract */
+/* ------------------------------------------- static liquid glass contract */
 
-test('the floating Hansana badge, sheen, ping and liquid tint engine are shipped', function () {
+test('the screenshot-exact sliding Liquid Glass dock indicator ships on #tabbar', function () {
+  const required = [
+    '<span class="tab-ind" id="tabInd" aria-hidden="true"></span>',
+    'id="tabInd"',
+    'class="tab-ind"',
+    '#tabInd, .tab-ind {position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 999px;',
+    'background: radial-gradient(circle at 50% 15%, rgba(160, 185, 255, .28), rgba(255, 255, 255, .09) 72%);',
+    'box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .62), inset 0 0 0 1.5px rgba(155, 180, 255, .52), 0 6px 18px rgba(0, 0, 0, .38);',
+    'transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease, box-shadow .35s ease !important;',
+    'pointer-events: none; z-index: 0; will-change: transform;',
+    '#tabbar {position: fixed; bottom: calc(12px + var(--safe-b)); left: 50%; transform: translateX(-50%); z-index: 50; width: min(560px, calc(100vw - 16px)); display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch; gap: 0; padding: 6px; border-radius: 999px;',
+    'background: rgba(10, 15, 30, .74);',
+    'inset 0 1px 0 rgba(255,255,255,.38), inset 0 0 0 1px rgba(127,214,247,.28), 0 18px 46px rgba(2,6,20,.58); overflow: hidden;',
+    '#tabbar button {position: relative; z-index: 1; border: 0; background: transparent !important; border-radius: 999px; min-height: 58px; padding: 6px 4px;',
+    'color: rgba(241, 244, 255, .70); font: 700 12px "Manrope", system-ui, sans-serif;',
+    'transition: color .35s ease, transform .35s cubic-bezier(.2, .9, .25, 1.35) !important;',
+    '#tabbar button[aria-selected="true"] { color: #96b6ff !important; background: transparent !important; }',
+    '#tabbar button[aria-selected="true"] svg { color: #96b6ff; filter: drop-shadow(0 0 8px rgba(150, 182, 255, .35));',
+    'U.$$("#tabbar button[data-tab]")',
+    'if (ind) ind.style.transform = "translate3d(" + (idx * 100) + "%, 0, 0)";',
+    'animation: screenMorphIn .38s cubic-bezier(.2, .9, .25, 1.35) both',
+    '@keyframes screenMorphIn { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.992); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }'
+  ];
+  for (const token of required) has(token);
+  assert.equal((html.match(/id="tabInd"/g) || []).length, 1, 'exactly one #tabInd');
+  lacks('contain: content', 'no contain:content anywhere, .glass included');
+  lacks('contain: paint');
+  assert.doesNotMatch(html, /<link[\s>]/i, 'zero external link tags');
+  assert.doesNotMatch(html, /fonts\.googleapis|cdn\.jsdelivr|unpkg\.com/i);
+});
+
+test('every segmented pill shares the glowing Liquid Glass capsule recipe', function () {
+  const required = [
+    '.seg, .seg-tint {position: relative; display: flex; align-items: center; gap: 0; padding: 4px; border-radius: 999px; background: rgba(10, 15, 30, .58); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 1px rgba(127,214,247,.22); overflow: hidden;}',
+    '.seg .thumb, .seg-tint .seg-ind {position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 999px; background: radial-gradient(circle at 50% 15%, rgba(160, 185, 255, .30), rgba(92, 208, 244, .16) 75%); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .68), inset 0 0 0 1.5px rgba(155, 180, 255, .50), 0 4px 14px rgba(0, 0, 0, .34);',
+    PILL_SPRING,
+    'pointer-events: none; z-index: 0; will-change: transform, width;',
+    '.seg-tint .seg-ind { width: calc((100% - 8px) / 3); }',
+    '.seg button, .seg-tint button {position: relative; z-index: 1; flex: 1 1 0; border: 0; background: transparent !important; border-radius: 999px; color: var(--dim); font-weight: 700; cursor: pointer; transition: color .32s ease, transform .32s cubic-bezier(.2, .9, .25, 1.35) !important;',
+    '.seg button[aria-selected="true"], .seg button[aria-pressed="true"], .seg-tint button.active {color: #96b6ff !important;}',
+    'var thumb = U.$(".thumb", host) || U.$(".seg-ind", host);',
+    'var act = U.$(\'button[aria-selected="true"], button[aria-pressed="true"], button.active\', host);',
+    'if (!act) { thumb.style.width = "0px"; return; }',
+    'thumb.style.width = act.offsetWidth + "px";',
+    'thumb.style.transform = "translate3d(" + (act.offsetLeft - 4) + "px, 0, 0)";',
+    '<span class="thumb" aria-hidden="true"></span><button type="button" data-perf="auto"',
+    '"translate3d(" + (i * 100) + "%, 0, 0)"',
+    'window.setTimeout(function () { UI.segSync(pick); }, 60);'
+  ];
+  for (const token of required) has(token);
+  /* the pill must keep sliding in Lite mode on every device */
+  lacks('body[data-perf="lite"] .seg .thumb', 'Lite never disables the sliding seg thumb');
+  lacks('.seg .thumb { transition: none', 'the seg thumb never loses its transition');
+  lacks('body[data-perf="lite"] .seg', 'no Lite rule targets segs at all');
+});
+
+test('Clear / Frost / Smoke morph tokens and button micro-physics are exact', function () {
+  has('body.tint-clear { --glass-tint: rgba(255, 255, 255, .085); --inset-hi: rgba(255, 255, 255, .45); --line: rgba(255, 255, 255, .14); }');
+  has('body.tint-frost { --glass-tint: rgba(220, 238, 255, .22); --inset-hi: rgba(255, 255, 255, .82);');
+  has('body.tint-smoke { --glass-tint: rgba(6, 10, 24, .66); --inset-hi: rgba(150, 182, 255, .48);');
+  has('setTint');
+  has('data-tint="0"');
+  has('data-tint="1"');
+  has('data-tint="2"');
+  has(GLASS_SPRING);
+  has('.gbtn, button.chip, .topbar .icon-btn { transition:');
+  has('.btn:hover, .gbtn:hover, button.chip:hover { transform: translate3d(0, -2px, 0) scale(1.02); }');
+  has('.btn:active, .gbtn:active, button.chip:active, #tabbar button:active, .seg button:active, .seg-tint button:active { transform: translate3d(0, 1px, 0) scale(.95); }');
+});
+
+test('the floating Hansana badge, sheen, ping and low-data engine are shipped', function () {
   const required = [
     'id="credit"', 'class="credit glass"', 'credits goes to', '<b>Hansana</b>',
+    'role="note" aria-label="Credits go to Hansana"',
     'creditLoop', 'UI.initCreditBadge', 'initCreditBadge();', '@keyframes sheen',
     '@keyframes ping', '.credit.in .ring', '.credit::after', '.credit.snap',
+    'bottom: calc(84px + env(safe-area-inset-bottom, 0px))',
     '💧 Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini',
-    '.seg-tint', '.seg-ind', 'tint-clear', 'tint-frost', 'tint-smoke', 'setTint',
-    'data-tint="0"', 'data-tint="1"', 'data-tint="2"', 'tint-morph',
+    '.seg-tint', '.seg-ind', 'tint-clear', 'tint-frost', 'tint-smoke', 'tint-morph',
     '.stripes', '.disc', 'id="orb"', 'id="sBlur"', '--gb', '--fill',
     'radial-gradient(circle, var(--blob-color) 0%, transparent 70%)',
-    '#grain { display: none !important; }', 'body[data-perf="lite"] { --gb: 8px; --gs: 1.35; --gbr: 1.02; }'
+    '#grain { display: none !important; }',
+    'body[data-perf="lite"] { --gb: 8px; --gs: 1.35; --gbr: 1.02; }',
+    'preload="none"',
+    'voice=Amy',
+    'translate.google.com/translate_tts',
+    'tl=en-GB'
   ];
   for (const token of required) has(token);
   assert.equal((html.match(/id="credit"/g) || []).length, 1);
   assert.equal((html.match(/id="sdpAudio"/g) || []).length, 1);
-  assert.equal(html.indexOf('filter: blur(85px)'), -1);
-  assert.equal(html.indexOf('contain: content'), -1);
-  assert.equal(html.indexOf('contain: paint'), -1);
-  assert.doesNotMatch(html, /<link[\s>]/i, 'zero external link tags');
-  assert.doesNotMatch(html, /fonts\.googleapis|cdn\.jsdelivr|unpkg\.com/i);
-  has('preload="none"');
-  has('voice=Amy');
-  has('translate.google.com/translate_tts');
-  has('tl=en-GB');
+  assert.equal(html.indexOf('filter: blur(85px)'), -1, 'blobs are pre-blurred gradients, not 85px filters');
 });
 
 test('glass and badge transitions remain enabled in both performance modes', function () {
-  has('transition: background-color .48s cubic-bezier(.2, .9, .25, 1.35), box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), -webkit-backdrop-filter .48s ease, backdrop-filter .48s ease, transform .45s cubic-bezier(.2, .9, .25, 1.35);');
-  has('transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease;');
+  has(GLASS_SPRING);
   has('animation: sheen 3.6s ease-in-out 1.2s infinite;');
   has('animation: ping 1.3s ease-out .15s 1;');
   has('body.tint-frost .glass');
@@ -230,7 +301,7 @@ test('manual Lite / Full switching retains the glass controls', function () {
     assert.equal(doc.body.getAttribute('data-perf'), 'full');
     doc.querySelector('#segPerf [data-perf="auto"]').click();
     assert.equal(a.q.DB.data.settings.perf, 'auto');
-    assert.equal(a.q.DB.data.settingsRev, 14);
+    assert.equal(a.q.DB.data.settingsRev, 15);
   } finally { a.close(); }
 });
 
@@ -304,7 +375,7 @@ test('setTint morphs without re-rendering, synchronises every pill and persists 
     assert.ok(!doc.body.classList.contains('tint-clear'));
     assert.ok(doc.body.classList.contains('tint-morph'));
     assert.equal(q.DB.data.settings.glassTint, 1);
-    for (const ind of doc.querySelectorAll('.seg-tint .seg-ind')) assert.equal(ind.style.transform, 'translateX(100%)');
+    for (const ind of doc.querySelectorAll('.seg-tint .seg-ind')) assert.equal(ind.style.transform, 'translate3d(100%, 0, 0)');
     for (const host of doc.querySelectorAll('.seg-tint')) {
       assert.equal(host.querySelector('[data-tint="1"]').classList.contains('active'), true);
       assert.equal(host.querySelector('[data-tint="1"]').getAttribute('aria-pressed'), 'true');
@@ -325,6 +396,7 @@ test('setTint morphs without re-rendering, synchronises every pill and persists 
     doc.querySelector('#segTint [data-tint="0"]').click();
     assert.ok(doc.body.classList.contains('tint-clear'));
     assert.equal(q.DB.data.settings.glassTint, 0);
+    for (const ind of doc.querySelectorAll('.seg-tint .seg-ind')) assert.equal(ind.style.transform, 'translate3d(0%, 0, 0)');
   } finally { a.close(); }
 });
 
@@ -411,6 +483,122 @@ test('the draggable orb and fine-pointer dock remain bound', function () {
   } finally { a.close(); }
 });
 
+/* ------------------------------------------- sliding pills, live behaviour */
+
+test('the dock indicator slides with GPU translate3d across all five sections', function () {
+  const a = boot();
+  try {
+    const doc = a.w.document, q = a.q;
+    const ind = doc.getElementById('tabInd');
+    assert.ok(ind, '#tabInd exists');
+    assert.equal(ind, doc.getElementById('tabbar').firstElementChild, 'the capsule is the dock first child');
+    assert.equal(ind.getAttribute('aria-hidden'), 'true');
+    const order = Array.from(doc.querySelectorAll('#tabbar button[data-tab]'))
+      .map((button) => button.getAttribute('data-tab'));
+    assert.deepEqual(order, ['home', 'dict', 'practice', 'comm', 'set'], 'five dock sections in screenshot order');
+    assert.equal(ind.style.transform, 'translate3d(0%, 0, 0)', 'boot lands on Home');
+    const moves = {
+      dict: 'translate3d(100%, 0, 0)',
+      practice: 'translate3d(200%, 0, 0)',
+      comm: 'translate3d(300%, 0, 0)',
+      set: 'translate3d(400%, 0, 0)',
+      home: 'translate3d(0%, 0, 0)'
+    };
+    for (const name of Object.keys(moves)) {
+      q.UI.setTab(name);
+      assert.equal(ind.style.transform, moves[name], name + ' slides');
+      const scr = doc.getElementById('screen-' + name);
+      assert.equal(scr.className, 'screen', name + ' panel morphs in');
+      assert.ok(!scr.classList.contains('hidden'));
+      assert.equal(doc.getElementById('tab-' + name).getAttribute('aria-selected'), 'true');
+    }
+    for (const sel of ['#segMode .thumb', '#dictTabs .thumb', '#commFilters .thumb',
+      '#pracMode .thumb', '#segPerf .thumb', '#segTint .seg-ind']) {
+      assert.ok(doc.querySelector(sel), sel + ' capsule present');
+    }
+  } finally { a.close(); }
+});
+
+test('segSync glides every pill with translate3d and clicks never rebuild the seg DOM', function () {
+  const a = boot();
+  try {
+    const doc = a.w.document, q = a.q;
+
+    /* Home answer mode follows the clicked button */
+    const mode = doc.getElementById('segMode');
+    const modeBtns = mode.querySelectorAll('button');
+    Object.defineProperty(modeBtns[1], 'offsetWidth', { configurable: true, value: 150 });
+    Object.defineProperty(modeBtns[1], 'offsetLeft', { configurable: true, value: 158 });
+    const modeThumb = mode.querySelector('.thumb');
+    modeBtns[1].click();
+    assert.equal(mode.querySelector('.thumb'), modeThumb, 'the answer-mode thumb survives the click');
+    assert.equal(modeThumb.style.width, '150px');
+    assert.equal(modeThumb.style.transform, 'translate3d(154px, 0, 0)');
+    assert.equal(modeBtns[1].getAttribute('aria-selected'), 'true');
+
+    /* Perf mode pill slides through applyPerf -> segSync */
+    const perf = doc.getElementById('segPerf');
+    const perfBtns = perf.querySelectorAll('button');
+    Object.defineProperty(perfBtns[1], 'offsetWidth', { configurable: true, value: 90 });
+    Object.defineProperty(perfBtns[1], 'offsetLeft', { configurable: true, value: 94 });
+    perfBtns[1].click();
+    assert.equal(perf.querySelector('.thumb').style.transform, 'translate3d(90px, 0, 0)');
+    assert.equal(perfBtns[1].getAttribute('aria-pressed'), 'true');
+    assert.equal(q.DB.data.settings.perf, 'lite');
+
+    /* Settings: the Writing time seg stays put and only toggles the seconds row */
+    q.UI.setTab('set');
+    const setBody = doc.getElementById('setBody');
+    const firstChild = setBody.firstChild;
+    const segBefore = setBody.querySelectorAll('.seg').length;
+    const tintsBefore = setBody.querySelectorAll('.seg-tint').length;
+    const auto = setBody.querySelector('[data-tab="auto"]');
+    const fixed = setBody.querySelector('[data-tab="fixed"]');
+    const writeSeg = fixed.parentNode;
+    const wfInput = setBody.querySelector('input[aria-label="Seconds per word"]');
+    assert.ok(wfInput, 'the fixed-time slider is part of the screen');
+    const wfRow = wfInput.parentNode;
+    auto.click();
+    assert.equal(setBody.firstChild, firstChild, 'Settings DOM is retained');
+    assert.equal(setBody.querySelectorAll('.seg').length, segBefore, 'no seg is recreated on click');
+    assert.equal(setBody.querySelectorAll('.seg-tint').length, tintsBefore);
+    assert.equal(fixed.parentNode, writeSeg, 'the Writing time seg survives the click');
+    assert.equal(q.DB.data.settings.writeMode, 'auto');
+    assert.ok(wfRow.classList.contains('hidden'), 'auto hides the fixed row in place');
+    fixed.click();
+    assert.equal(setBody.firstChild, firstChild, 'still no re-render');
+    assert.equal(fixed.parentNode, writeSeg);
+    assert.equal(q.DB.data.settings.writeMode, 'fixed');
+    assert.equal(wfRow.classList.contains('hidden'), false, 'the fixed row returns in place');
+    assert.equal(fixed.getAttribute('aria-pressed'), 'true');
+
+    /* Practice / Dictionary / Community switchers keep their thumb element */
+    q.UI.setTab('practice');
+    const pm = doc.getElementById('pracMode');
+    const pmThumb = pm.querySelector('.thumb');
+    doc.querySelector('#pracMode [data-p="quiz"]').click();
+    assert.equal(doc.getElementById('pracMode'), pm, 'practice seg retained');
+    assert.equal(pm.querySelector('.thumb'), pmThumb);
+    assert.equal(doc.querySelector('#pracMode [data-p="quiz"]').getAttribute('aria-selected'), 'true');
+
+    q.UI.setTab('dict');
+    const dt = doc.getElementById('dictTabs');
+    const dtThumb = dt.querySelector('.thumb');
+    doc.querySelector('#dictTabs [data-src="my"]').click();
+    assert.equal(doc.getElementById('dictTabs'), dt, 'dictionary seg retained');
+    assert.equal(dt.querySelector('.thumb'), dtThumb);
+    assert.equal(doc.querySelector('#dictTabs [data-src="my"]').getAttribute('aria-selected'), 'true');
+
+    q.UI.setTab('comm');
+    const cf = doc.getElementById('commFilters');
+    const cfThumb = cf.querySelector('.thumb');
+    doc.querySelector('#commFilters [data-f="problem"]').click();
+    assert.equal(doc.getElementById('commFilters'), cf, 'community seg retained');
+    assert.equal(cf.querySelector('.thumb'), cfThumb);
+    assert.equal(doc.querySelector('#commFilters [data-f="problem"]').getAttribute('aria-selected'), 'true');
+  } finally { a.close(); }
+});
+
 /* ------------------------------------------------------------ low data */
 
 test('DictAPI answers all Session 7 entries from memory with phon/pos/def/ex and zero fetches', function () {
@@ -485,7 +673,7 @@ test('repository sync reads version once and downloads session only for a newer 
     assert.equal(calls[0], './data/version.json');
     assert.ok(calls.includes('./data/session.json'));
     assert.ok(!calls.some((u) => u.includes('?t=')));
-    assert.ok(a.q.DB.data.ver >= 14);
+    assert.ok(a.q.DB.data.ver >= 15);
 
     calls.length = 0;
     a.q.Cloud.repoFetched = false;
@@ -508,14 +696,15 @@ test('repository sync reads version once and downloads session only for a newer 
 
 /* ------------------------------------------------------- preserved app */
 
-test('in-app Session 7 defaults, schema migration and Amy voice are correct', function () {
+test('in-app Session 7 defaults, v15 schema migration and Amy voice are correct', function () {
   const a = boot();
   try {
     const q = a.q, st = q.DB.data.settings;
-    assert.equal(q.CONFIG.key, 'sdp.v14_liquid');
-    assert.equal(q.CONFIG.schema, 14);
-    assert.equal(q.CONFIG.settingsRev, 14);
-    assert.equal(q.DB.data.settingsRev, 14);
+    assert.equal(q.CONFIG.key, 'sdp.v15_liquid');
+    assert.equal(q.CONFIG.schema, 15);
+    assert.equal(q.CONFIG.settingsRev, 15);
+    assert.equal(q.DB.data.settingsRev, 15);
+    assert.ok(a.w.localStorage.getItem('sdp.v15_liquid'), 'boot writes the v15 key');
     assert.equal(st.perf, 'auto');
     assert.equal(st.writeMode, 'fixed');
     assert.equal(st.writeFixed, 5);
@@ -534,27 +723,38 @@ test('in-app Session 7 defaults, schema migration and Amy voice are correct', fu
     old.settingsRev = 13;
     old.settings.glassTint = 'frost';
     const migrated = q.DB.migrate(old);
-    assert.equal(migrated.settingsRev, 14);
-    assert.equal(migrated.v, 14);
+    assert.equal(migrated.settingsRev, 15);
+    assert.equal(migrated.v, 15);
     assert.equal(migrated.settings.glassTint, 1);
   } finally { a.close(); }
 });
 
-test('upgrading v13/v12 storage preserves results and moves to the v14 key', function () {
+test('upgrading v14 and v13 storage preserves results and moves to the v15 key', function () {
   const a = boot();
   try {
     const q = a.q;
+    const from14 = q.defaultData();
+    from14.settingsRev = 14;
+    from14.history = [{ id: 'from14', score: 26, wordCount: 30, percent: 87 }];
+    a.w.localStorage.setItem('sdp.v14_liquid', JSON.stringify(from14));
+    a.w.localStorage.removeItem(q.CONFIG.key);
+    q.DB.load();
+    assert.equal(q.DB.data.history[0].score, 26, 'v14 results survive the upgrade');
+    assert.equal(q.DB.data.settingsRev, 15);
+    assert.ok(a.w.localStorage.getItem('sdp.v15_liquid'), 'data moves to the v15 key');
+
     const legacy = q.defaultData();
     legacy.settingsRev = 13;
     legacy.history = [{ id: 'old', score: 27, wordCount: 30, percent: 90 }];
     legacy.settings.glassTint = 'smoke';
     a.w.localStorage.setItem('sdp.v13_fast_liquid', JSON.stringify(legacy));
     a.w.localStorage.removeItem(q.CONFIG.key);
+    a.w.localStorage.removeItem('sdp.v14_liquid');
     q.DB.load();
     assert.equal(q.DB.data.history[0].score, 27);
-    assert.equal(q.DB.data.settingsRev, 14);
+    assert.equal(q.DB.data.settingsRev, 15);
     assert.equal(q.DB.data.settings.glassTint, 2);
-    assert.ok(a.w.localStorage.getItem('sdp.v14_liquid'));
+    assert.ok(a.w.localStorage.getItem('sdp.v15_liquid'));
   } finally { a.close(); }
 });
 
@@ -594,6 +794,12 @@ test('bilingual navigation, guide, practice, dictionary, community and Admin PIN
     for (const digit of PIN) doc.querySelector('#pinPad [data-k="' + digit + '"]').click();
     assert.equal(q.Admin.unlocked, true);
     assert.ok(doc.getElementById('adminHost'));
+    const adminTabBtn = doc.querySelector('button[data-tab="words"]');
+    assert.ok(adminTabBtn, 'admin Words & planner tab exists');
+    const adminSeg = adminTabBtn.parentNode;
+    assert.ok(adminSeg.classList.contains('seg'), 'admin tabs are one seg bar');
+    assert.ok(adminSeg.querySelector('.thumb'), 'admin tab seg keeps its sliding thumb');
+    assert.equal(adminSeg.querySelectorAll('button').length, 6);
   } finally { a.close(); }
 });
 

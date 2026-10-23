@@ -1,4 +1,4 @@
-/* Release 2.2.0 (ver 14) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.3.0 (ver 15) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer and the low-data
    audio path. Rewritten from scratch for this release.
 
@@ -136,7 +136,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v14 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v15 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -278,39 +278,61 @@ function material(page) {
       assert.equal(await page.locator('body.tint-frost').count(), 1);
       assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
       assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(225, 240, 255, 0.22)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(220, 238, 255, 0.22)', null, { timeout: 8000 });
       const frost = await page.evaluate(() => ({
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v14_liquid')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v15_liquid')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
-      assert.equal(frost.bg, 'rgba(225, 240, 255, 0.22)');
+      assert.equal(frost.bg, 'rgba(220, 238, 255, 0.22)');
       assert.match(frost.shadow, /180, 225, 255/);
       assert.equal(frost.morph, false);
       assert.equal(frost.saved, 1);
-      assert.deepEqual(frost.indicators, ['translateX(100%)', 'translateX(100%)']);
+      /* browsers normalise the raw `0` channels to `0px` when serialising */
+      const norm = (t) => String(t).replace(/\s+/g, '').replace(/px(?=,|\))/g, '');
+      assert.deepEqual(frost.indicators.map(norm), ['translate3d(100%,0,0)', 'translate3d(100%,0,0)']);
       await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 24, 0.64)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 24, 0.66)', null, { timeout: 8000 });
       const smoke = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
-      assert.equal(smoke, 'rgba(6, 10, 24, 0.64)');
+      assert.equal(smoke, 'rgba(6, 10, 24, 0.66)');
       await page.locator('#segTint [data-tint="0"]').click();
       await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
 
       const orb = page.locator('#orb');
+      /* tint clicks auto-scrolled the page (content below the fold on some font
+         metrics); the orb must be in view before hit-testing the press point */
+      await page.evaluate(() => window.scrollTo(0, 0));
+      /* the glass panel (z-index 2) deliberately sits over the orb (z-index 1);
+         only the sliver above the panel is hittable, so probe the press point */
+      const press = await page.evaluate(() => {
+        const o = document.getElementById('orb');
+        const p = document.getElementById('materialMixer').getBoundingClientRect();
+        const r = o.getBoundingClientRect();
+        const y = Math.min(r.top + 40, (r.top + Math.min(r.bottom, p.top)) / 2);
+        const x = r.left + r.width / 2;
+        const hit = document.elementFromPoint(x, y);
+        return {
+          x: x, y: y, styleTop: o.style.top, orbTop: r.top, panelTop: p.top,
+          hit: hit ? (hit.id || String(hit.className) || hit.tagName) : 'none',
+          ok: !!hit && (hit === o || o.contains(hit))
+        };
+      });
+      assert.ok(press.ok, 'press point hit-tests to the orb: ' + JSON.stringify(press));
       const before = await orb.boundingBox();
       assert.ok(before, 'the orb is laid out');
-      await page.mouse.move(before.x + 60, before.y + 40);
+      await page.mouse.move(press.x, press.y);
       await page.mouse.down();
-      await page.mouse.move(before.x + 120, before.y + 80, { steps: 6 });
+      await page.mouse.move(press.x + 60, press.y + 40, { steps: 6 });
       await page.mouse.up();
       const after = await orb.boundingBox();
-      assert.ok(after && Math.abs(after.x - before.x) > 30, 'the orb drags');
+      assert.ok(after && Math.abs(after.x - before.x) > 30,
+        'the orb drags: ' + JSON.stringify({ press: press, before: before, after: after }));
 
       /* dock magnification is a Full-glass, fine-pointer nicety */
       if ((await material(page)).perf !== 'full') {
@@ -389,9 +411,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v14_liquid')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v15_liquid')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v14_liquid')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v15_liquid')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -401,7 +423,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v14_liquid'));
+        const d = JSON.parse(localStorage.getItem('sdp.v15_liquid'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });

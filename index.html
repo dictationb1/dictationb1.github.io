@@ -32,10 +32,10 @@
 /* v14: dramatic Clear / Frost / Smoke presets, inherited by every glass pane. */
 body.tint-clear { --glass-tint: rgba(255, 255, 255, .085); --inset-hi: rgba(255, 255, 255, .45); --line: rgba(255, 255, 255, .14); }
 :root[data-theme="light"] body.tint-clear { --glass-tint: rgba(255, 255, 255, .55); --inset-hi: rgba(255, 255, 255, .95); --line: rgba(14,20,36,.14); }
-body.tint-frost { --glass-tint: rgba(225, 240, 255, .22); --inset-hi: rgba(255, 255, 255, .82); --line: rgba(255, 255, 255, .32); --shadow: var(--shadow1); }
+body.tint-frost { --glass-tint: rgba(220, 238, 255, .22); --inset-hi: rgba(255, 255, 255, .82); --line: rgba(255, 255, 255, .32); --shadow: var(--shadow1); }
 :root[data-theme="light"] body.tint-frost { --glass-tint: rgba(255, 255, 255, .82); --inset-hi: rgba(255, 255, 255, 1); }
 body.tint-frost .glass { background-color: var(--glass-tint); box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(180, 225, 255, .14), var(--shadow); }
-body.tint-smoke { --glass-tint: rgba(6, 10, 24, .64); --inset-hi: rgba(83, 199, 240, .45); --line: rgba(83, 199, 240, .22); --shadow: var(--shadow1); }
+body.tint-smoke { --glass-tint: rgba(6, 10, 24, .66); --inset-hi: rgba(150, 182, 255, .48); --line: rgba(83, 199, 240, .22); --shadow: var(--shadow1); }
 :root[data-theme="light"] body.tint-smoke { --glass-tint: rgba(30, 42, 78, .38); --inset-hi: rgba(255, 255, 255, .65); }
 body.tint-smoke .glass { background-color: var(--glass-tint); box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(0, 0, 0, .35), var(--shadow); }
 :root[data-hc="on"] {--glass: var(--glass-solid); --glass-2: var(--glass-solid); --glass-3: var(--glass-solid);--edge: var(--ink); --inner: none;--line-2: var(--ink);}
@@ -82,7 +82,7 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 #grain { display: none !important; }
 @media (prefers-reduced-transparency: reduce) {.glass { background: var(--glass-solid); }}
 /* Apple WWDC25 Liquid Glass: the exact 4-layer recipe on every glass surface */
-.glass { position: relative; background-color: var(--glass-tint); border-radius: 24px; -webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), var(--shadow); transition: background-color .48s cubic-bezier(.2, .9, .25, 1.35), box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), -webkit-backdrop-filter .48s ease, backdrop-filter .48s ease, transform .45s cubic-bezier(.2, .9, .25, 1.35); }
+.glass { position: relative; background-color: var(--glass-tint); border-radius: 24px; -webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), var(--shadow); transition: transform .42s cubic-bezier(.2, .9, .25, 1.35), background-color .48s cubic-bezier(.2, .9, .25, 1.35), background .48s ease, box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), border-color .38s ease, color .32s ease; }
 #tabbar, .sheet, .modal, .toast {background-color: var(--glass-tint);border-radius: 24px;border: 0;-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow1);position: relative;}
 .glass.strong { background: var(--glass-2); }
 .glass.deep { box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -14px 28px rgba(255,255,255,.07), var(--shadow2); }
@@ -94,9 +94,11 @@ h3 { font-size: 1.02rem; font-weight: 650; }
 .card.pad-s { padding: 12px; }
 .card.r2 { border-radius: var(--r2); }
 .card.r4 { border-radius: var(--r4); }
-.btn {-webkit-appearance: none; appearance: none;display: inline-flex; align-items: center; justify-content: center; gap: 8px;min-height: var(--tap); padding: 11px 18px;border-radius: 999px; border: 1px solid var(--line-2);background: var(--glass-3); color: var(--ink);font-weight: 620; font-size: .95rem; text-decoration: none;cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;transition: transform 140ms var(--ease), opacity 140ms var(--ease), background 140ms var(--ease);box-shadow: var(--shadow1), var(--inner);user-select: none; -webkit-user-select: none;}
+.btn {-webkit-appearance: none; appearance: none;display: inline-flex; align-items: center; justify-content: center; gap: 8px;min-height: var(--tap); padding: 11px 18px;border-radius: 999px; border: 1px solid var(--line-2);background: var(--glass-3); color: var(--ink);font-weight: 620; font-size: .95rem; text-decoration: none;cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;transition: transform .42s cubic-bezier(.2, .9, .25, 1.35), background-color .48s cubic-bezier(.2, .9, .25, 1.35), background .48s ease, box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), border-color .38s ease, color .32s ease;box-shadow: var(--shadow1), var(--inner);user-select: none; -webkit-user-select: none;}
+.gbtn, button.chip, .topbar .icon-btn { transition: transform .42s cubic-bezier(.2, .9, .25, 1.35), background-color .48s cubic-bezier(.2, .9, .25, 1.35), background .48s ease, box-shadow .48s cubic-bezier(.2, .9, .25, 1.35), border-color .38s ease, color .32s ease; }
 .btn svg { width: 19px; height: 19px; flex: 0 0 auto; }
-.btn:active { transform: scale(.96); }
+.btn:hover, .gbtn:hover, button.chip:hover { transform: translate3d(0, -2px, 0) scale(1.02); }
+.btn:active, .gbtn:active, button.chip:active, #tabbar button:active, .seg button:active, .seg-tint button:active { transform: translate3d(0, 1px, 0) scale(.95); }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 .btn.primary {background: linear-gradient(135deg, #5cd0f4, #3ce0b8);color: #062530;border-color: transparent;box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35);}
 .btn.big { min-height: 60px; font-size: 1.1rem; padding: 14px 26px; }
@@ -119,13 +121,15 @@ button.chip[aria-pressed="true"] { background: linear-gradient(135deg, #5cd0f4, 
 .chip.warn { color: var(--warn); border-color: rgba(168,98,10,.32); }
 .chip.bad { color: var(--bad); border-color: rgba(198,44,61,.32); }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.seg {position: relative; display: flex; gap: 2px; padding: 3px;background: var(--glass-2); border: 1px solid var(--line-2);border-radius: 999px; box-shadow: var(--inner);overflow: hidden;}
+.seg, .seg-tint {position: relative; display: flex; align-items: center; gap: 0; padding: 4px; border-radius: 999px; background: rgba(10, 15, 30, .58); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 1px rgba(127,214,247,.22); overflow: hidden;}
+.seg-tint { margin-top: 8px; }
 .seg.scroll { overflow-x: auto; border-radius: var(--r2); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .seg.scroll::-webkit-scrollbar { display: none; }
-.seg .thumb {position: absolute; top: 3px; bottom: 3px; left: 0; width: 0;background: var(--glass-solid); border-radius: 999px;box-shadow: var(--shadow1); transition: transform var(--dur) var(--ease), width var(--dur) var(--ease);pointer-events: none; z-index: 0;}
-:root[data-theme="dark"] .seg .thumb { background: rgba(255,255,255,.14); }
-.seg button {position: relative; z-index: 1; flex: 1 0 auto;min-height: 38px; padding: 8px 14px; border: 0; background: transparent;border-radius: 999px; font-size: .88rem; font-weight: 620; color: var(--ink-2);cursor: pointer; white-space: nowrap; touch-action: manipulation;-webkit-tap-highlight-color: transparent;}
-.seg button[aria-selected="true"], .seg button[aria-pressed="true"] {color: #062530;background: linear-gradient(135deg, #5cd0f4, #3ce0b8);box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 10px 26px rgba(50,190,200,.35);}
+.seg .thumb, .seg-tint .seg-ind {position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 999px; background: radial-gradient(circle at 50% 15%, rgba(160, 185, 255, .30), rgba(92, 208, 244, .16) 75%); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .68), inset 0 0 0 1.5px rgba(155, 180, 255, .50), 0 4px 14px rgba(0, 0, 0, .34); transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), width .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease !important; pointer-events: none; z-index: 0; will-change: transform, width;}
+.seg .thumb { width: 0; }
+.seg-tint .seg-ind { width: calc((100% - 8px) / 3); }
+.seg button, .seg-tint button {position: relative; z-index: 1; flex: 1 1 0; border: 0; background: transparent !important; border-radius: 999px; color: var(--dim); font-weight: 700; cursor: pointer; transition: color .32s ease, transform .32s cubic-bezier(.2, .9, .25, 1.35) !important; min-height: 38px; padding: 8px 14px; font-size: .88rem; white-space: nowrap; touch-action: manipulation; -webkit-tap-highlight-color: transparent;}
+.seg button[aria-selected="true"], .seg button[aria-pressed="true"], .seg-tint button.active {color: #96b6ff !important;}
 .field { display: block; }
 .field > span.lbl { display: block; font-size: .8rem; font-weight: 640; color: var(--ink-2); margin-bottom: 6px; }
 input[type="text"], input[type="number"], input[type="date"], input[type="search"], input[type="password"], textarea, select {width: 100%; min-height: var(--tap);padding: 12px 14px; font-size: 16px; line-height: 1.35;color: var(--ink); background: var(--glass-3);border: 1px solid var(--line-2); border-radius: var(--r1);-webkit-appearance: none; appearance: none;touch-action: manipulation;}
@@ -150,8 +154,8 @@ input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius
 .stepper { display: inline-flex; align-items: center; gap: 6px; }
 .stepper .val { min-width: 46px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 #app { position: relative; z-index: 1; display: block; max-width: 1140px; margin: 0 auto;padding: calc(82px + var(--safe-t)) 20px calc(104px + var(--safe-b));min-height: 100vh; min-height: 100dvh; }
-.screen { animation: screenIn var(--dur) var(--ease) both; }
-@keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.screen { animation: screenMorphIn .38s cubic-bezier(.2, .9, .25, 1.35) both; }
+@keyframes screenMorphIn { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.992); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; row-gap: 8px; }
 .topbar > .row { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
 #btnLang { font-size: .74rem; padding: 5px 10px; min-height: 30px; }
@@ -170,14 +174,15 @@ input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius
 .brand .t b { display: block; font-size: 1rem; font-weight: 700; letter-spacing: -.02em; }
 .brand .t span { font-size: .72rem; color: var(--ink-2); }
 .brand .t #brandCredit { display: block; font-size: .6rem; line-height: 1.3; font-weight: 600; color: var(--ink-2); white-space: normal; }
-#tabbar {position: fixed; z-index: 50;left: 50%; right: auto; transform: translateX(-50%);bottom: calc(12px + var(--safe-b));width: min(460px, calc(100vw - 20px));display: flex; flex-direction: row; gap: 6px; padding: 7px 10px; border-radius: 999px;}
-#tabbar button {flex: 1 1 0; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;border: 0; background: transparent; border-radius: 22px; color: var(--ink-2);font-size: .68rem; font-weight: 640; cursor: pointer; padding: 6px 2px;touch-action: manipulation; -webkit-tap-highlight-color: transparent;transition: transform 140ms var(--ease);}
+#tabbar {position: fixed; bottom: calc(12px + var(--safe-b)); left: 50%; transform: translateX(-50%); z-index: 50; width: min(560px, calc(100vw - 16px)); display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch; gap: 0; padding: 6px; border-radius: 999px; background: rgba(10, 15, 30, .74); -webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr)); box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 0 0 1px rgba(127,214,247,.28), 0 18px 46px rgba(2,6,20,.58); overflow: hidden;}
+#tabInd, .tab-ind {position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 999px; background: radial-gradient(circle at 50% 15%, rgba(160, 185, 255, .28), rgba(255, 255, 255, .09) 72%); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .62), inset 0 0 0 1.5px rgba(155, 180, 255, .52), 0 6px 18px rgba(0, 0, 0, .38); transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease, box-shadow .35s ease !important; pointer-events: none; z-index: 0; will-change: transform;}
+#tabbar button {position: relative; z-index: 1; border: 0; background: transparent !important; border-radius: 999px; min-height: 58px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: rgba(241, 244, 255, .70); font: 700 12px "Manrope", system-ui, sans-serif; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: color .35s ease, transform .35s cubic-bezier(.2, .9, .25, 1.35) !important;}
 #tabbar button svg { width: 22px; height: 22px; }
-#tabbar button:active { transform: scale(.94); }
-#tabbar button[aria-selected="true"] { color: var(--acc); background: var(--glass-3); }
+#tabbar button[aria-selected="true"] { color: #96b6ff !important; background: transparent !important; }
+#tabbar button[aria-selected="true"] svg { color: #96b6ff; filter: drop-shadow(0 0 8px rgba(150, 182, 255, .35)); transition: transform .38s cubic-bezier(.2, .9, .25, 1.35), color .35s ease; }
 #tabbar button .badge { position: absolute; margin-left: 22px; margin-top: -18px; }
 .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--bad); color: #fff;font-size: .66rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-/* v12: no desktop sidebar - the top bar floats and the dock stays centred at every width. */
+/* top bar floats; the dock stays centred at every width. */
 .hero { padding: 18px; border-radius: var(--r4); overflow: hidden; }
 .hero .kicker { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--acc); }
 .hero .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -347,7 +352,7 @@ table th, table td { text-align: left; padding: 6px; border-bottom: 1px solid va
 body[data-perf="lite"] { --gb: 8px; --gs: 1.35; --gbr: 1.02; }
 body[data-perf="lite"] .blob, body[data-perf="lite"] .bubble, body[data-perf="lite"] .chip-a, body[data-perf="lite"] .chip-b { animation: none !important; }
 body[data-perf="lite"] .glass::before { display: none !important; }
-body[data-perf="lite"] .topbar.glass, body[data-perf="lite"] #tabbar.glass, body[data-perf="lite"] #homeHero.glass, body[data-perf="lite"] .panel.glass, body[data-perf="lite"] .wordcard.glass, body[data-perf="lite"] .sheet, body[data-perf="lite"] .modal {-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1.5px 0 0 var(--inset-hi), inset 0 0 0 1px var(--line), 0 14px 32px rgba(4, 8, 22, .4); }
+body[data-perf="lite"] .topbar.glass, body[data-perf="lite"] #homeHero.glass, body[data-perf="lite"] .panel.glass, body[data-perf="lite"] .wordcard.glass, body[data-perf="lite"] .sheet, body[data-perf="lite"] .modal {-webkit-backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));backdrop-filter: blur(var(--gb)) saturate(var(--gs)) brightness(var(--gbr));box-shadow: inset 0 1.5px 0 0 var(--inset-hi), inset 0 0 0 1px var(--line), 0 14px 32px rgba(4, 8, 22, .4); }
 /* repeated inner rows: hardware-accelerated translucent glass, still the same look */
 body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[data-perf="lite"] .comm-item.glass, body[data-perf="lite"] .guide-step, body[data-perf="lite"] .bento-sessions > .glass {-webkit-backdrop-filter: none;backdrop-filter: none;background-image: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.05)); }
 .topbar.glass { position: fixed; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); z-index: 50; width: min(1100px, calc(100vw - 20px)); margin: 0; padding: 7px 14px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; box-shadow: inset 0 1px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -12px 24px rgba(255,255,255,.06), 0 14px 42px rgba(0,0,0,.28); }
@@ -394,10 +399,6 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .mix-head output { color: var(--aqua); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; }
 .stage input[type="range"] { min-height: 28px; margin: 0; }
 .stage input[type="range"]::-webkit-slider-thumb { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); border-color: rgba(255,255,255,.9); }
-.seg-tint { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 99px; margin-top: 8px; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
-.seg-tint .seg-ind { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 99px; background: linear-gradient(135deg, rgba(92,208,244,.38), rgba(60,224,184,.28)); box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 2px 12px rgba(0,0,0,.32); transition: transform .48s cubic-bezier(.2, .9, .25, 1.35), background .35s ease; pointer-events: none; z-index: 0; }
-.seg-tint button { position: relative; z-index: 1; border: 0; background: none; color: var(--dim); font: 700 13px "Manrope", system-ui, sans-serif; padding: 8px 0; cursor: pointer; border-radius: 99px; transition: color .3s ease, transform .25s var(--ease-spring); }
-.seg-tint button.active { color: var(--ink); }
 .mixer-hint { margin-top: 8px; color: var(--ink-2); font-size: .66rem; text-align: center; }
 .stage .chip { position: absolute; z-index: 3; min-height: 32px; color: var(--ink); background: rgba(255,255,255,.1); animation: bob 4.5s ease-in-out infinite; }
 .chip-a { left: 4px; top: 12px; }
@@ -419,10 +420,10 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .anatomy-stage > .glass { position: relative; z-index: 2; }
 .stripes { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: repeating-linear-gradient(115deg, rgba(127,214,247,.40) 0 22px, rgba(255,255,255,.07) 22px 44px, rgba(255,194,71,.34) 44px 66px, rgba(255,255,255,.06) 66px 88px); }
 .disc { position: absolute; z-index: 0; width: 220px; height: 220px; border-radius: 50%; right: -30px; bottom: -50px; pointer-events: none; background: radial-gradient(circle at 35% 30%, #ff6f61, #7a1f4a); filter: blur(2px); }
-/* the orb stage: clamped, so #orb never causes horizontal scroll on a 360px phone */
+/* orb stage: clamped so #orb never causes horizontal scroll */
 #lgStage.stage { position: relative; min-height: 470px; border-radius: 32px; overflow: hidden; padding: 20px; isolation: isolate; background: radial-gradient(circle at 80% 20%, rgba(83,199,240,.22), transparent 55%), linear-gradient(160deg, #13244d, #0b1530 55%, #182a52); border: 1px solid var(--line); box-shadow: var(--shadow1); }
 .orb { right: 12%; top: 14%; left: auto; }
-/* dictation player: the same refraction through .wordcard.glass and the .lens */
+/* dictation player: same refraction through .wordcard.glass and .lens */
 .layer { background: rgba(10,15,30,.74); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); }
 :root[data-theme="light"] .layer { background: rgba(232,236,244,.82); }
 .layer > .lhead, .layer > .lbody, .layer > .lfoot { position: relative; z-index: 1; }
@@ -430,7 +431,6 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .player-backdrop .stripes { opacity: .34; background-size: 100% 100%; }
 .player-orb { position: absolute; right: -80px; top: 6%; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle at 32% 28%, #ffe3b0, #ff8a5c 45%, #ff4d6d 100%); box-shadow: 0 0 120px 46px rgba(255,110,90,.4); }
 .lens button { background: linear-gradient(135deg, #5cd0f4, #3ce0b8); color: #062530; box-shadow: inset 0 3px 8px rgba(255,255,255,.55), 0 18px 45px rgba(50,190,200,.4); }
-#tabbar button { transform-origin: 50% 100%; transition: transform 120ms ease-out, background 160ms ease; }
 @media (max-width: 860px) {.lg-hero { grid-template-columns: minmax(0,1fr); gap: 16px; }
 .anatomy-stage { padding: 16px; border-radius: 28px; }
 .disc { width: 170px; height: 170px; right: -50px; bottom: -60px; }
@@ -454,10 +454,10 @@ body[data-perf="lite"] .listrow, body[data-perf="lite"] .word-item.glass, body[d
 .chip.good { color: #0a6b3d; background: rgba(15,138,77,.12); }
 html[data-theme="dark"] .chip.good { color: #7fe0ac; }
 
-/* Tint-specific rim/glow wins over the Lite surface optimisations too. */
+/* tint rim/glow also beats the Lite surface optimisation. */
 body.tint-frost[data-perf] .glass { box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(180, 225, 255, .14), var(--shadow); }
 body.tint-smoke[data-perf] .glass { box-shadow: inset 0 1.5px 0 var(--inset-hi), inset 0 0 0 1px var(--line), inset 0 -18px 32px rgba(0, 0, 0, .35), var(--shadow); }
-/* v14 floating liquid-glass credit: intentionally animated in Full AND Lite. */
+/* floating liquid-glass credit: animated in Full AND Lite. */
 .credit { position: fixed; right: 22px; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 70; display: flex; align-items: center; gap: 11px; padding: 11px 18px 11px 13px; border-radius: 99px; overflow: hidden; cursor: pointer; opacity: 0; transform: translateY(90px) scale(.6); filter: blur(10px); transition: transform .85s var(--ease-spring), opacity .55s ease, filter .55s ease; }
 .credit.in { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 .credit.out { opacity: 0; transform: translateY(-72px) scale(.75); filter: blur(8px); transition: transform .7s cubic-bezier(.55,-.15,.6,1), opacity .55s ease, filter .55s ease; }
@@ -476,7 +476,7 @@ body.tint-morph .panel.glass, body.tint-morph #homeHero.glass { animation: tintM
 body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { animation: tintShimmer 420ms ease 1; }
 @keyframes tintMorph { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.012); } }
 @keyframes tintShimmer { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
-@media (max-width: 680px) { #tabbar button { min-height: 50px; } .credit { right: 14px; bottom: calc(82px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px 9px 11px; } }
+@media (max-width: 680px) { #tabbar button { min-height: 50px; } .credit { right: 14px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px 9px 11px; } }
 </style>
 </head>
 <body class="tint-clear" data-theme="dark" data-perf="full">
@@ -554,6 +554,7 @@ body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { 
   </header>
 
   <nav id="tabbar" class="glass" role="tablist" aria-label="Main sections">
+    <span class="tab-ind" id="tabInd" aria-hidden="true"></span>
     <button type="button" role="tab" id="tab-home" data-tab="home" aria-selected="true" aria-controls="screen-home"><svg aria-hidden="true"><use xlink:href="#i-home" href="#i-home"></use></svg><span data-i18n="navHome">Home</span></button>
     <button type="button" role="tab" id="tab-dict" data-tab="dict" aria-selected="false" aria-controls="screen-dict"><svg aria-hidden="true"><use xlink:href="#i-book" href="#i-book"></use></svg><span data-i18n="navDict">Dictionary</span></button>
     <button type="button" role="tab" id="tab-practice" data-tab="practice" aria-selected="false" aria-controls="screen-practice"><svg aria-hidden="true"><use xlink:href="#i-target" href="#i-target"></use></svg><span data-i18n="navPractice">Practice</span></button>
@@ -561,7 +562,7 @@ body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { 
     <button type="button" role="tab" id="tab-set" data-tab="set" aria-selected="false" aria-controls="screen-set"><svg aria-hidden="true"><use xlink:href="#i-gear" href="#i-gear"></use></svg><span data-i18n="navSet">Settings</span></button>
   </nav>
 
-  <!-- ============ HOME: APPLE WWDC25 LIQUID GLASS PLAYGROUND ============ -->
+  <!-- HOME: APPLE WWDC25 LIQUID GLASS PLAYGROUND -->
   <section class="screen" id="screen-home" role="tabpanel" aria-labelledby="tab-home">
     <div id="homeAnn"></div>
     <div class="lg-hero">
@@ -601,7 +602,7 @@ body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { 
             <button type="button" data-tint="1">Frost</button>
             <button type="button" data-tint="2">Smoke</button>
           </div>
-          <div class="seg" id="segPerf" role="group" aria-label="Performance mode" style="margin-top:8px"><button type="button" data-perf="auto" aria-pressed="true">Auto</button><button type="button" data-perf="lite" aria-pressed="false">Lite 60FPS</button><button type="button" data-perf="full" aria-pressed="false">Full</button></div>
+          <div class="seg" id="segPerf" role="group" aria-label="Performance mode" style="margin-top:8px"><span class="thumb" aria-hidden="true"></span><button type="button" data-perf="auto" aria-pressed="true">Auto</button><button type="button" data-perf="lite" aria-pressed="false">Lite 60FPS</button><button type="button" data-perf="full" aria-pressed="false">Full</button></div>
           <p class="mixer-hint" id="perfStatus">⚡ Auto Lite (60 FPS)</p>
           <p class="mixer-hint">↖ drag the glowing orb behind this glass pane</p>
         </div>
@@ -669,6 +670,7 @@ body.tint-morph .panel.glass::before, body.tint-morph #homeHero.glass::before { 
     <div class="glass card r3">
       <div class="spread"><h2>Practice</h2><span class="chip" id="pracCount">0 / 30</span></div>
       <div class="seg" id="pracMode" role="tablist" aria-label="Practice mode" style="margin-top:10px">
+        <span class="thumb" aria-hidden="true"></span>
         <button type="button" role="tab" data-p="flash" data-f="flash" aria-selected="true">Flashcards</button>
         <button type="button" role="tab" data-p="quiz" data-f="quiz" aria-selected="false">Quiz</button>
         <button type="button" role="tab" data-p="audio" data-f="audio" aria-selected="false">Audio list</button>
@@ -1274,15 +1276,15 @@ try { proto[m] = wrapped; } catch (ignored) {}
 })();
 
 /* SECTION 1 - CONFIG */
-var APP_VERSION = "2.2.0";
+var APP_VERSION = "2.3.0";
 var BUILD_DATE = "2026-10-23";
 function buildStamp() { return "v" + APP_VERSION + " (" + BUILD_DATE + ")"; }
 
 var CLOUD_URL = "";
 
 var CONFIG = {
-key: "sdp.v14_liquid",
-schema: 14,
+key: "sdp.v15_liquid",
+schema: 15,
 maxHistory: 200,
 maxComments: 200,
 maxInbox: 200,
@@ -1301,7 +1303,7 @@ ttsBackupHost: "https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
 oxfordMp3: "https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost: "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache: 200,
-settingsRev: 14,
+settingsRev: 15,
 repoOwner: "dictationb1",
 repoName: "dictationb1.github.io",
 classDays: [2, 3],
@@ -1967,9 +1969,9 @@ data: null,
 saveTimer: null,
 load: function () {
 var raw = Store.get(CONFIG.key);
-/* v14 migrates the previous builds without discarding class results. */
+/* migrate the previous builds without discarding class results. */
 if (!raw) {
-var legacyKeys = ["sdp.v13_fast_liquid", "sdp.v12_liquid"], legacy = "";
+var legacyKeys = ["sdp.v14_liquid", "sdp.v13_fast_liquid", "sdp.v12_liquid"], legacy = "";
 for (var lk = 0; lk < legacyKeys.length && !legacy; lk++) {
 try { legacy = Store.get(legacyKeys[lk]) || ""; } catch (eL) { legacy = ""; }
 }
@@ -2100,7 +2102,7 @@ if (d.comments.length > CONFIG.maxComments) d.comments = d.comments.slice(0, CON
 if (d.settings.hc !== true && d.settings.hc !== "on") d.settings.hc = false;
 if (d.settings.theme === "auto" || ["light","dark"].indexOf(d.settings.theme) < 0) d.settings.theme = "dark";
 if (["auto","full","lite"].indexOf(d.settings.perf) < 0) d.settings.perf = "auto";
-d.settingsRev = 14;
+d.settingsRev = 15;
 d.v = CONFIG.schema;
 return d;
 },
@@ -2358,7 +2360,7 @@ U.setCls(document.body, "tint-smoke", i === 2);
 var hosts = U.$$(".seg-tint");
 for (var h = 0; h < hosts.length; h++) {
 var ind = U.$(".seg-ind", hosts[h]);
-if (ind) ind.style.transform = "translateX(" + (i * 100) + "%)";
+if (ind) ind.style.transform = "translate3d(" + (i * 100) + "%, 0, 0)";
 var buttons = U.$$("button", hosts[h]);
 for (var b = 0; b < buttons.length; b++) {
 var on = Number(buttons[b].getAttribute("data-tint")) === i;
@@ -2541,6 +2543,7 @@ var seg = U.$("#segPerf");
 if (seg) {
 var buttons = U.$$("button", seg);
 for (var i = 0; i < buttons.length; i++) buttons[i].setAttribute("aria-pressed", buttons[i].getAttribute("data-perf") === want ? "true" : "false");
+UI.segSync(seg);
 }
 },
 togglePerf: function () { this.setPerf(this.perfMode === "lite" ? "full" : "lite"); },
@@ -2646,12 +2649,12 @@ if (v === val) { UI.segSet(host, list[i]); return; }
 }
 },
 segSync: function (host) {
-var thumb = U.$(".thumb", host);
+var thumb = U.$(".thumb", host) || U.$(".seg-ind", host);
 if (!thumb) return;
-var act = U.$('button[aria-selected="true"], button[aria-pressed="true"]', host);
+var act = U.$('button[aria-selected="true"], button[aria-pressed="true"], button.active', host);
 if (!act) { thumb.style.width = "0px"; return; }
 thumb.style.width = act.offsetWidth + "px";
-thumb.style.transform = "translateX(" + act.offsetLeft + "px)";
+thumb.style.transform = "translate3d(" + (act.offsetLeft - 4) + "px, 0, 0)";
 },
 
 trap: function (root) {
@@ -2800,6 +2803,11 @@ return a + " " + b + " " + Math.floor(Math.random() * 90 + 10);
 setTab: function (name) {
 this.tab = name;
 var names = ["home", "practice", "dict", "comm", "set"];
+var dockBtns = U.$$("#tabbar button[data-tab]");
+var idx = 0;
+for (var d = 0; d < dockBtns.length; d++) { if (dockBtns[d].getAttribute("data-tab") === name) { idx = d; break; } }
+var ind = U.$("#tabInd");
+if (ind) ind.style.transform = "translate3d(" + (idx * 100) + "%, 0, 0)";
 for (var i = 0; i < names.length; i++) {
 var btn = U.$("#tab-" + names[i]);
 var scr = U.$("#screen-" + names[i]);
@@ -3466,8 +3474,10 @@ v.appendChild(switchRow("Say the number", "\u201cNumber 7.\u201d before each wor
 
 var p = card("Dictation");
 p.appendChild(segRow("Word repeats", [{ id: 1, label: "Once" }, { id: 2, label: "Twice" }, { id: 3, label: "Three times" }], st.repeats, function (val) { st.repeats = Number(val); DB.save(); }));
-p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { st.writeMode = val; DB.save(); Screens.settings(); }));
-if (st.writeMode === "fixed") p.appendChild(sliderRow("Seconds per word", 3, 60, 1, "writeFixed", function (x) { return x + " s"; }));
+var wfRow = sliderRow("Seconds per word", 3, 60, 1, "writeFixed", function (x) { return x + " s"; });
+U.setCls(wfRow, "hidden", st.writeMode !== "fixed");
+p.appendChild(segRow("Writing time", [{ id: "auto", label: "Auto (by length)" }, { id: "fixed", label: "Fixed" }], st.writeMode, function (val) { st.writeMode = val; DB.save(); U.setCls(wfRow, "hidden", val !== "fixed"); }));
+p.appendChild(wfRow);
 p.appendChild(sliderRow("Pause after the word", 0.4, 3, 0.2, "pauseWord", function (x) { return x.toFixed(1) + " s"; }));
 p.appendChild(sliderRow("Pause after the sentence", 0.4, 3, 0.2, "pauseSent", function (x) { return x.toFixed(1) + " s"; }));
 p.appendChild(segRow("Moving on", [{ id: "auto", label: "Auto-advance" }, { id: "manual", label: "I tap Next" }], st.advance, function (val) { st.advance = val; DB.save(); }));
@@ -9125,6 +9135,7 @@ body: function (b) {
 var pick = U.el("div", "seg", null);
 pick.setAttribute("role", "tablist");
 pick.setAttribute("aria-label", "Language / \u0db7\u0dcf\u0dc2\u0dcf\u0dc0");
+pick.appendChild(U.el("span", "thumb", null));
 [["en", "English"], ["si", "\u0dc3\u0dd2\u0d82\u0dc4\u0dbd"]].forEach(function (pair) {
 var t = U.el("button", null, pair[1]);
 t.type = "button";
@@ -9139,6 +9150,7 @@ setTimeout(welcomeGuide, 120);
 pick.appendChild(t);
 });
 b.appendChild(pick);
+window.setTimeout(function () { UI.segSync(pick); }, 60);
 
 var credit = U.el("div", "glass card pad-s r2 credit-note", null);
 credit.style.display = "block";
