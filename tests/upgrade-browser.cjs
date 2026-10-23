@@ -291,7 +291,9 @@ function material(page) {
       assert.match(frost.shadow, /180, 225, 255/);
       assert.equal(frost.morph, false);
       assert.equal(frost.saved, 1);
-      assert.deepEqual(frost.indicators, ['translate3d(100%, 0, 0)', 'translate3d(100%, 0, 0)']);
+      /* browsers normalise the raw `0` channels to `0px` when serialising */
+      const norm = (t) => String(t).replace(/\s+/g, '').replace(/px(?=,|\))/g, '');
+      assert.deepEqual(frost.indicators.map(norm), ['translate3d(100%,0,0)', 'translate3d(100%,0,0)']);
       await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
