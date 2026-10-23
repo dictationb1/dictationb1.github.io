@@ -3,8 +3,8 @@
    This also demonstrates why a static-page PIN is not access control. */
 const {createHash}=require('node:crypto');
 const html=require('node:fs').readFileSync(require('node:path').resolve(__dirname,'../index.html'),'utf8');
-const salt=html.match(/admin\.pinSalt = "([a-f0-9]+)";/)[1];
-const hash=html.match(/admin\.pinHash = "([a-f0-9]+)";/)[1];
+const salt=html.match(/admin\.pinSalt\s*=\s*"([a-f0-9]+)";/)[1];
+const hash=html.match(/admin\.pinHash\s*=\s*"([a-f0-9]+)";/)[1];
 let value;
 for(let n=0;n<10000;n++){
  const candidate=String(n).padStart(4,'0');
