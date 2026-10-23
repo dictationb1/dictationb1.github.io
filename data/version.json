@@ -1,9 +1,11 @@
 {
-  "ver": 12,
-  "version": "2.0.0",
-  "buildDate": "2026-10-22",
+  "ver": 13,
+  "appVersion": "2.1.0",
+  "version": "2.1.0",
+  "buildDate": "2026-10-23",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 12,
-  "updatedAt": 1792726338193
+  "settingsRev": 13,
+  "updatedAt": "2026-10-23T00:00:00Z",
+  "updatedAtMs": 1792713600000
 }
