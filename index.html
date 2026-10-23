@@ -9203,12 +9203,16 @@ var buttons = U.$$("button", dock);
 for (var i = 0; i < buttons.length; i++) buttons[i].style.transform = "";
 }
 U.on(dock, "pointermove", function (e) {
-if (window.innerWidth < 900 || e.pointerType === "touch") { reset(); return; }
+if (e.pointerType === "touch") { reset(); return; }
+/* macOS dock: the icon under the pointer is fully magnified (deterministic on
+   every engine) and its neighbours follow the distance falloff. */
 var buttons = U.$$("button", dock);
+var over = e.target || null;
+while (over && over.parentNode !== dock) over = over.parentNode;
 for (var i = 0; i < buttons.length; i++) {
 var rect = buttons[i].getBoundingClientRect();
 var distance = Math.abs(e.clientX - (rect.left + rect.width / 2));
-var power = Math.max(0, 1 - distance / 190);
+var power = buttons[i] === over ? 1 : Math.max(0, 1 - distance / 190);
 buttons[i].style.transform = "translateY(" + (-10 * power).toFixed(2) + "px) scale(" + (1 + 0.28 * power).toFixed(3) + ")";
 }
 }, { passive: true });
