@@ -25,14 +25,17 @@ const results = [];
 function fakeSpeech() {
   window.__spoken = [];
   const voice = { name: 'Microsoft Sonia', lang: 'en-GB', localService: true };
-  Object.defineProperty(window, 'speechSynthesis', {
-    value: {
-      getVoices: () => [voice],
-      speak(u) { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 5); },
-      cancel() {}, pause() {}, resume() {}, addEventListener() {}
-    }
-  });
-  window.SpeechSynthesisUtterance = function (text) { this.text = text; };
+  const synth = {
+    getVoices: () => [voice],
+    speak(u) { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 5); },
+    cancel() {}, pause() {}, resume() {}, addEventListener() {}, removeEventListener() {}
+  };
+  try {
+    Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
+  } catch (e) {
+    try { window.speechSynthesis.getVoices = synth.getVoices; window.speechSynthesis.speak = synth.speak; } catch (e2) {}
+  }
+  try { window.SpeechSynthesisUtterance = function (text) { this.text = text; }; } catch (e3) {}
 }
 
 async function boot(browser, width, height) {
@@ -74,6 +77,24 @@ async function check(name, fn) {
   } catch (error) {
     results.push({ test: name, status: 'FAIL', detail: error && error.stack || String(error) });
   }
+}
+
+/* the ready/countdown sheets repaint while the countdown runs, so a locator can
+   be detached mid-click; this clicks in-page and retries until it lands. */
+async function clickText(page, text, tries) {
+  const n = tries || 40;
+  for (let i = 0; i < n; i++) {
+    const hit = await page.evaluate((label) => {
+      const nodes = Array.from(document.querySelectorAll('#sheets button, #modals button, #layers button'));
+      const hit = nodes.find((b) => (b.textContent || '').trim() === label);
+      if (!hit) return false;
+      hit.click();
+      return true;
+    }, text).catch(() => false);
+    if (hit) return true;
+    await page.waitForTimeout(150);
+  }
+  return false;
 }
 
 function material(page) {
@@ -161,7 +182,10 @@ function material(page) {
       assert.notEqual(lite.orb, 'none', 'the warm orb is still rendered');
       assert.match(lite.stripes, /repeating-linear-gradient/, 'stripes kept in lite');
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
-      const blurPx = await page.evaluate(() => getComputedStyle(document.querySelector('.topbar.glass')).backdropFilter || '');
+      const blurPx = await page.evaluate(() => {
+        const css = getComputedStyle(document.querySelector('.topbar.glass'));
+        return css.backdropFilter || css.webkitBackdropFilter || '';
+      });
       assert.match(blurPx, /blur\(8px\)/, 'lite uses the 8px glass budget: ' + blurPx);
       assert.equal((await page.locator('#btnPerf').textContent()).trim(), '⚡ Lite');
       await page.locator('#btnPerf').click();
@@ -260,11 +284,10 @@ function material(page) {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       await page.locator('#btnStart').click();
-      const ready = page.getByRole('button', { name: "I'm ready", exact: true });
-      if (await ready.count()) await ready.click();
-      const skip = page.getByRole('button', { name: 'Skip countdown', exact: true });
-      if (await skip.count()) await skip.click();
-      await page.waitForTimeout(800);
+      await clickText(page, "I'm ready");
+      await clickText(page, 'Skip countdown');
+      /* the countdown screen repaints itself, so wait for the player beat */
+      await page.waitForFunction(() => /Your turn|Next word|Listening|Paused/.test((document.getElementById('plStatus') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
       const unlocked = await page.evaluate(() => {
         const a = document.getElementById('sdpAudio');
         return { preload: a.getAttribute('preload'), paused: a.paused };
@@ -280,12 +303,8 @@ function material(page) {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       await page.locator('#btnStart').click();
-      await page.waitForTimeout(500);
-      const ready = page.getByRole('button', { name: "I'm ready", exact: true });
-      if (await ready.count()) await ready.click();
-      await page.waitForTimeout(300);
-      const skip = page.getByRole('button', { name: 'Skip countdown', exact: true });
-      if (await skip.count()) await skip.click();
+      await clickText(page, "I'm ready");
+      await clickText(page, 'Skip countdown');
       await page.waitForTimeout(2500);
 
       /* strictly two spoken repeats of the word, one British female voice */
@@ -294,8 +313,8 @@ function material(page) {
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
       assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v13_fast_liquid')).settings.writeFixed), 5, 'five second timer');
 
-      await page.getByRole('button', { name: 'Finish early', exact: true }).click();
-      await page.getByRole('button', { name: 'Finish now', exact: true }).click();
+      assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
+      assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
       await page.waitForTimeout(1200);
       const marks = page.locator('[aria-label^="Got it right"]');
       assert.equal(await marks.count(), 30, 'all 30 words can be ticked');

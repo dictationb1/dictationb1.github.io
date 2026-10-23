@@ -368,8 +368,16 @@ test('2.4 announcements, expiry and lecturer moderation stay separate from priva
  a.q.DB.data.announcement.expires='2026-10-12';a.q.Screens.home();assert(!a.w.document.querySelector('#homeAnn').textContent);
  a.q.DB.data.comments=[{id:'comment-test',name:'Happy Owl',status:'finished',text:'Public QA',ts:a.clock.now}];a.q.Admin.tab='comments';a.q.Admin.renderTab();clickText(a,'Pin');assert(a.q.DB.data.comments[0].pinned);clickText(a,'Hide');a.q.Screens.comm();assert(!a.w.document.querySelector('#commList').textContent.includes('Public QA'));
 }));
-test('4.4 v12 never auto-downgrades full glass; only manual Lite is honoured',()=>withApp({},a=>{
- Object.defineProperty(a.w.navigator,'hardwareConcurrency',{value:2});a.q.DB.data.settings.perf='auto';a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full');assert.equal(a.q.UI.autoPerf(),'full');a.q.UI.recordFrames([45,50,55]);assert.equal(a.q.UI.perfMode,'full');assert.equal(a.q.UI.autoDowngraded,false);a.q.DB.data.settings.perf='full';a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full');a.q.DB.data.settings.perf='lite';a.q.UI.applyPerf();assert.equal(a.w.document.body.getAttribute('data-perf'),'lite');assert.equal(a.w.document.querySelectorAll('#bg .blob').length,4);
+test('4.4 v13 auto mode picks Lite on a weak device and Full on a strong one; manual wins',()=>withApp({},a=>{
+ /* a 2-core phone in Lite: the Liquid Glass surfaces stay, only the paint cost drops */
+ const nav=Object.getOwnPropertyDescriptor(a.w.navigator,'hardwareConcurrency');
+ Object.defineProperty(a.w.navigator,'hardwareConcurrency',{value:2,configurable:true,writable:true});a.q.DB.data.settings.perf='auto';a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'lite');assert.equal(a.q.UI.autoPerf(),'lite');assert.equal(a.w.document.body.getAttribute('data-perf'),'lite');
+ /* a 1280px 8-core desktop measures 60 FPS: Full glass */
+ Object.defineProperty(a.w.navigator,'hardwareConcurrency',{value:8,configurable:true,writable:true});Object.defineProperty(a.w.navigator,'deviceMemory',{value:8,configurable:true,writable:true});Object.defineProperty(a.w,'innerWidth',{value:1280,configurable:true,writable:true});a.w.matchMedia=()=>({matches:false,addEventListener(){}});a.q.UI.autoDowngraded=false;a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full');assert.equal(a.q.UI.autoPerf(),'full');
+ if(nav)Object.defineProperty(a.w.navigator,'hardwareConcurrency',nav);
+ a.q.UI.recordFrames([45,50,55]);assert.equal(a.q.UI.autoDowngraded,true);assert.equal(a.q.UI.perfMode,'lite','slow frames switch to Lite');
+ a.q.DB.data.settings.perf='full';a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full','a manual Full choice is honoured');assert.equal(a.q.UI.autoDowngraded,false);
+ a.q.DB.data.settings.perf='lite';a.q.UI.applyPerf();assert.equal(a.w.document.body.getAttribute('data-perf'),'lite');assert.equal(a.w.document.querySelectorAll('#bg .blob').length,4);
 }));
 
 test('2.4 locked backups exclude lecturer private inbox, PIN hashes and drafts; full backup requires unlock',()=>withApp({},a=>{
@@ -398,13 +406,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'2.0.0'); assert.equal(a.w.SDP.build,'2026-10-22'); assert.equal(a.w.SDP.stamp(),'v2.0.0 (2026-10-22)');
+ assert.equal(a.w.SDP.version,'2.1.0'); assert.equal(a.w.SDP.build,'2026-10-23'); assert.equal(a.w.SDP.stamp(),'v2.1.0 (2026-10-23)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v2.0.0 (2026-10-22)')); assert(txt.includes('My data'));
+ assert(txt.includes('v2.1.0 (2026-10-23)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.0.0 (2026-10-22)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.1.0 (2026-10-23)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
