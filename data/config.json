@@ -28,8 +28,8 @@
     "perf": "auto",
     "glassTint": 0
   },
-  "ver": 19,
-  "version": "2.7.0",
+  "ver": 20,
+  "version": "2.8.0",
   "buildDate": "2026-10-24",
   "credits": {
     "createdBy": "Hansana",
@@ -48,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "2.7.0",
-  "settingsRev": 19,
+  "appVersion": "2.8.0",
+  "settingsRev": 20,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -72,14 +72,14 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v19_incog",
+  "storageKey": "sdp.v20_nopass",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
-    "inputType": "password",
-    "inputMode": "latin",
-    "autocomplete": "new-password",
-    "suggestions": "disabled at OS level (incognito / no personalised learning)",
-    "mirror": "#ansMirror plain-text overlay, never a form",
+    "inputType": "text",
+    "inputMode": "text",
+    "autocomplete": "off",
+    "suggestions": "blocked by the single-space IME sentinel reset after every keystroke",
+    "mirror": "#ansMirror plain-text overlay (#ansMirrorText), never a form",
     "blockedInputTypes": [
       "insertReplacementText",
       "insertFromPaste",

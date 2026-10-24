@@ -1,15 +1,16 @@
 {
-  "ver": 19,
-  "appVersion": "2.7.0",
-  "version": "2.7.0",
+  "ver": 20,
+  "appVersion": "2.8.0",
+  "version": "2.8.0",
   "buildDate": "2026-10-24",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 19,
+  "settingsRev": 20,
   "updatedAt": "2026-10-24T00:00:00Z",
   "updatedAtMs": 1792800000000,
   "features": {
-    "keyboard": "native system keyboard only (password IME incognito + plain-text mirror)",
+    "passwordPopup": "none - #ansInput is type=text with autocomplete=off, never a password field",
+    "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
     "ready": "single far-right close cross, no duplicate exit buttons",
     "feedback": "animated tick, streak breakdown and false-answer correction flow",
     "visual": "swan badge, see-through hero title, Settings mixer, 60 FPS capsules"

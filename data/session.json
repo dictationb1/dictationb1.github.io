@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 19,
+  "ver": 20,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -218,14 +218,14 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "2.7.0",
+  "appVersion": "2.8.0",
   "updatedAt": "2026-10-23T00:00:00Z",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "buildDate": "2026-10-24",
-  "settingsRev": 19,
+  "settingsRev": 20,
   "keyboard": {
-    "engine": "native system keyboard only",
-    "suggestions": "disabled at OS level (incognito)",
+    "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
+    "suggestions": "blocked by the single-space IME sentinel reset after every keystroke",
     "autocorrect": "off",
     "spellcheck": "false"
   }
