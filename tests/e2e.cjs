@@ -132,7 +132,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.7.0 (2026-10-24)'), { stamp: (setTxt.match(/v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)/) || ['none'])[0] });
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.8.0 (2026-10-24)'), { stamp: (setTxt.match(/v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)/) || ['none'])[0] });
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();
