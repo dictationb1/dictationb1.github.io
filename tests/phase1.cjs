@@ -66,8 +66,8 @@ function harness(html = current, opts = {}) {
     send() { w.setTimeout(() => {this.status = 0; this.readyState = 4; if(this.onreadystatechange) this.onreadystatechange();}, 10); }
   };
   w.fetch = url => { requests.push({method: 'fetch', url: String(url)}); return Promise.reject(Error('offline')); };
-  if(opts.raw !== undefined) { w.localStorage.setItem('sdp.v17_type_tick', opts.raw); w.localStorage.setItem('sdp.v17_type_tick', opts.raw); }
-  if(opts.backup) { w.localStorage.setItem('sdp.v17_type_tick.bak', opts.backup); w.localStorage.setItem('sdp.v17_type_tick.bak', opts.backup); }
+  if(opts.raw !== undefined) { w.localStorage.setItem('sdp.v18_nosuggest', opts.raw); w.localStorage.setItem('sdp.v18_nosuggest', opts.raw); }
+  if(opts.backup) { w.localStorage.setItem('sdp.v18_nosuggest.bak', opts.backup); w.localStorage.setItem('sdp.v18_nosuggest.bak', opts.backup); }
   if(opts.cloud) w.localStorage.setItem('sdp.cloudurl', 'https://script.google.com/macros/s/unreachable/exec');
   if(opts.blocked) Object.defineProperty(w, 'localStorage', {get() {throw Error('Storage blocked');}});
   if(opts.offline) Object.defineProperty(w.navigator, 'onLine', {value: false});
@@ -144,8 +144,8 @@ test('1.3 before: emergency backup silently fails but deletes storage at 600ms',
  a.q.DB.saveNow();assert(a.w.localStorage.getItem('sdp.v1'));clickText(a,'Download backup, then reset');a.clock.tick(650);assert.equal(a.w.localStorage.getItem('sdp.v1'),null);
 },original));
 test('1.3 after: failed download and copy fallback never reset or reload', () => withApp({}, a => {
- a.q.DB.data.session.title='Keep this work';a.q.DB.saveNow();const saved=a.w.localStorage.getItem('sdp.v17_type_tick');
- a.q.DataTools.reset();clickText(a,'Download');a.clock.tick(2000);assert.equal(a.w.localStorage.getItem('sdp.v17_type_tick'),saved);
+ a.q.DB.data.session.title='Keep this work';a.q.DB.saveNow();const saved=a.w.localStorage.getItem('sdp.v18_nosuggest');
+ a.q.DataTools.reset();clickText(a,'Download');a.clock.tick(2000);assert.equal(a.w.localStorage.getItem('sdp.v18_nosuggest'),saved);
  assert(a.w.document.querySelector('#sheets textarea').value.includes('Keep this work'));
  assert(!a.w.document.querySelector('#resetConfirm'));
 }));
@@ -156,20 +156,20 @@ test('1.3 second confirmation requires BOTH tick and exact RESET', () => withApp
  tick.checked=true;tick.dispatchEvent(new a.w.Event('change'));assert(!confirm.disabled);
  typed.value='reset';typed.dispatchEvent(new a.w.Event('input'));assert(confirm.disabled);
  typed.value='RESET';typed.dispatchEvent(new a.w.Event('input'));confirm.click();assert.equal(a.q.DB.data.session.title,'');
- assert(a.w.localStorage.getItem('sdp.v17_type_tick.beforeReset').includes('Keep until confirmed'));
- assert(a.w.localStorage.getItem('sdp.v17_type_tick.bak').includes('Keep until confirmed'));
+ assert(a.w.localStorage.getItem('sdp.v18_nosuggest.beforeReset').includes('Keep until confirmed'));
+ assert(a.w.localStorage.getItem('sdp.v18_nosuggest.bak').includes('Keep until confirmed'));
 }));
 test('1.3 result saves and lecturer changes update rolling backup', () => withApp({}, a => {
  a.q.DB.data.session.title='Lecturer update';a.q.DB.save();a.clock.tick(150);
- assert(a.w.localStorage.getItem('sdp.v17_type_tick.bak').includes('Lecturer update'));
+ assert(a.w.localStorage.getItem('sdp.v18_nosuggest.bak').includes('Lecturer update'));
  a.q.DB.data.results.push({id:'qa-result',score:30});a.q.DB.saveNow();
- assert.equal(a.w.localStorage.getItem('sdp.v17_type_tick'),a.w.localStorage.getItem('sdp.v17_type_tick.bak'));
+ assert.equal(a.w.localStorage.getItem('sdp.v18_nosuggest'),a.w.localStorage.getItem('sdp.v18_nosuggest.bak'));
 }));
 test('1.3 corrupt primary restores automatic copy and retains corrupt text', () => {
- let backup;withApp({}, a => {a.q.DB.data.session.title='Recovery data';a.q.DB.saveNow();backup=a.w.localStorage.getItem('sdp.v17_type_tick.bak');});
- withApp({raw:'{corrupt',backup}, a => {assert.equal(a.q.DB.data.session.title,'Recovery data');assert.equal(a.w.localStorage.getItem('sdp.v17_type_tick.recovery'),'{corrupt');});
+ let backup;withApp({}, a => {a.q.DB.data.session.title='Recovery data';a.q.DB.saveNow();backup=a.w.localStorage.getItem('sdp.v18_nosuggest.bak');});
+ withApp({raw:'{corrupt',backup}, a => {assert.equal(a.q.DB.data.session.title,'Recovery data');assert.equal(a.w.localStorage.getItem('sdp.v18_nosuggest.recovery'),'{corrupt');});
 });
-test('1.3 pending save flushed on pagehide', () => withApp({}, a => {a.q.DB.data.session.title='Leaving';a.q.DB.save();a.w.dispatchEvent(new a.w.Event('pagehide'));assert(a.w.localStorage.getItem('sdp.v17_type_tick').includes('Leaving'));}));
+test('1.3 pending save flushed on pagehide', () => withApp({}, a => {a.q.DB.data.session.title='Leaving';a.q.DB.save();a.w.dispatchEvent(new a.w.Event('pagehide'));assert(a.w.localStorage.getItem('sdp.v18_nosuggest').includes('Leaving'));}));
 test('1.4 flex fatal card uses scale-only animation; confirm keeps translate', () => withApp({bootFailure:true}, a => {
  assert(a.w.document.querySelector('#fatal .modal').classList.contains('flex-card'));
  const keyframe=current.match(/@keyframes pop-flex\s*\{[^\n]+/)[0];assert(!keyframe.includes('translate'));assert(current.includes('@keyframes pop {'));
@@ -208,7 +208,7 @@ function enterPin(a, pin) {
 test('2.1 seeded salted PIN unlocks; existing changed PIN survives migration', () => withApp({}, a => {
  assert(a.q.DB.data.admin.pinSalt);assert.equal(a.q.DB.data.admin.pinHash,require('crypto').createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN).digest('hex'));assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
  enterPin(a,DEFAULT_PIN);assert(a.q.Admin.unlocked);assert(a.w.document.querySelector('#adminHost'));assert(!a.w.document.querySelector('#adminHost').textContent.includes(DEFAULT_PIN));
- a.q.DB.data.admin.pinHash='changed';a.q.DB.saveNow();const data=JSON.parse(a.w.localStorage.getItem('sdp.v17_type_tick'));assert.equal(a.q.DB.migrate(data).admin.pinHash,'changed');
+ a.q.DB.data.admin.pinHash='changed';a.q.DB.saveNow();const data=JSON.parse(a.w.localStorage.getItem('sdp.v18_nosuggest'));assert.equal(a.q.DB.migrate(data).admin.pinHash,'changed');
 }));
 test('2.1 five wrong PINs cause five-minute lockout; 8-digit PIN is usable', () => withApp({}, a => {
  for(let i=0;i<5;i++) enterPin(a,'0000');assert(!a.q.Admin.unlocked);assert(a.q.DB.data.admin.lockUntil>a.clock.now);assert.equal(a.q.DB.data.admin.lockUntil-a.clock.now,300000);
@@ -275,7 +275,7 @@ test('3.2 student hash connects automatically and is cleared without load reques
 test('3.3 Unicode link round-trip, explicit preview/Add and split-part assembly', () => {
  let links;withApp({}, a => {a.q.DB.data.announcement={title:'Class notice',text:'Café practice'};links=a.q.Links.listLinks(a.q.Lib.current());assert(links.length>1);assert(links.every(l=>l.length<=2000));const item=a.q.Links.decode(links[0].split('#list=')[1]);assert.equal(item.a.text,'Café practice');});
  let saved;for(const link of links) withApp({hash:'#'+link.split('#')[1],raw:saved}, a => {
-  a.clock.tick(150);assert(a.w.document.querySelector('#sheets').textContent.includes('Add shared list?'));assert.equal(a.w.location.hash,'');assert.equal(a.q.DB.data.lists.length,1);clickText(a,'Add');saved=a.w.localStorage.getItem('sdp.v17_type_tick');
+  a.clock.tick(150);assert(a.w.document.querySelector('#sheets').textContent.includes('Add shared list?'));assert.equal(a.w.location.hash,'');assert.equal(a.q.DB.data.lists.length,1);clickText(a,'Add');saved=a.w.localStorage.getItem('sdp.v18_nosuggest');
  });withApp({raw:saved}, a => {assert.equal(a.q.Lib.current().words.length,30);assert(a.q.Lib.current().id.startsWith('shared_'));assert.equal(a.q.DB.data.announcement.text,'Café practice');});
 });
 test('3.3 malformed linked data is rejected without a fatal card or list changes', () => withApp({hash:'#list=bad!!'}, a => {a.clock.tick(500);assert(!a.crash());assert.equal(a.q.DB.data.lists.length,1);}));
@@ -286,7 +286,7 @@ test('3.4 no-cloud contact offers explicit WhatsApp/Email/Share, private content
 test('3.5 outbox auth uses memory-only PIN, skips locked admin items and flushes student items', () => withApp({}, a => {
  a.q.Cloud.mode=true;a.q.Cloud.url='https://script.google.com/macros/s/validscriptid/exec';a.q.DB.data.outbox=[{action:'publish',cid:'admin-job'},{action:'comment',cid:'student-job'}];
  const requests=[];a.q.Cloud.post=(body,cb)=>{requests.push(body);cb({ok:true,id:'server-comment'});};a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests.length,1);assert.equal(requests[0].action,'comment');assert.equal(a.q.DB.data.outbox.length,1);
- a.q.Admin.unlocked=true;a.q.Admin.pin=DEFAULT_PIN;a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests[1].pin,DEFAULT_PIN);assert.equal(a.q.DB.data.outbox.length,0);assert(!a.w.localStorage.getItem('sdp.v17_type_tick').includes('"pin":'+JSON.stringify(DEFAULT_PIN)));
+ a.q.Admin.unlocked=true;a.q.Admin.pin=DEFAULT_PIN;a.q.Cloud.flush();a.clock.tick(300);assert.equal(requests[1].pin,DEFAULT_PIN);assert.equal(a.q.DB.data.outbox.length,0);assert(!a.w.localStorage.getItem('sdp.v18_nosuggest').includes('"pin":'+JSON.stringify(DEFAULT_PIN)));
 }));
 test('3.5 sync time advances only after successful state reply', () => withApp({cloud:true}, a => {
  assert.equal(a.q.Cloud.updatedAt,0);a.q.Cloud.get=(params,cb)=>cb({ok:false});a.q.Cloud.pullState();assert.equal(a.q.Cloud.updatedAt,0);
@@ -328,16 +328,16 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
    if(!paused) {const index=a.q.Eng.idx;a.q.Eng.pause();a.clock.tick(1000);assert.equal(a.q.Eng.idx,index);a.q.Eng.resume();paused=true;}
   }
  }
- assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem('sdp.v17_type_tick')).history.length);
+ assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem('sdp.v18_nosuggest')).history.length);
  assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='hobbies').length>=2);
  assert(!a.spoken.some(s=>s.text.includes('Reading and gardening')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
- let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem('sdp.v17_type_tick');});
+ let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem('sdp.v18_nosuggest');});
  withApp({raw:saved,voice:'en-GB'}, a=>{assert(!a.w.document.querySelector('#homeResume').classList.contains('hidden'));a.q.Eng.resumeSnapshot();assert.equal(a.q.Eng.idx,index);assert.equal(a.q.Eng.words.length,30);});
 });
 test('4.2 finish saves result before closing speech and queues it while offline', () => withApp({voice:'en-GB',offline:true}, a=>{
- a.q.Eng.start({});a.q.Eng.finish(true);assert.equal(a.q.DB.data.history.length,1);assert.equal(JSON.parse(a.w.localStorage.getItem('sdp.v17_type_tick')).history.length,1);assert(a.q.DB.data.outbox.some(x=>x.action==='result'));
+ a.q.Eng.start({});a.q.Eng.finish(true);assert.equal(a.q.DB.data.history.length,1);assert.equal(JSON.parse(a.w.localStorage.getItem('sdp.v18_nosuggest')).history.length,1);assert(a.q.DB.data.outbox.some(x=>x.action==='result'));
 }));
 test('4.3 dictionary keeps lecturer meaning, Cambridge link and UK-labelled fallback', () => withApp({offline:true},a=>{
  a.q.Screens.wordSheet('neighbour',{w:'neighbour',m:'Lecturer meaning',s:'Our neighbour has a very friendly dog today.'});const sh=a.w.document.querySelector('#sheets');assert(sh.textContent.includes('Lecturer meaning'));assert(sh.textContent.includes('UK voice on this device'));assert(sh.querySelector('a[href^="https://dictionary.cambridge.org/"]'));
@@ -406,13 +406,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'2.5.0'); assert.equal(a.w.SDP.build,'2026-10-23'); assert.equal(a.w.SDP.stamp(),'v2.5.0 (2026-10-23)');
+ assert.equal(a.w.SDP.version,'2.6.0'); assert.equal(a.w.SDP.build,'2026-10-24'); assert.equal(a.w.SDP.stamp(),'v2.6.0 (2026-10-24)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v2.5.0 (2026-10-23)')); assert(txt.includes('My data'));
+ assert(txt.includes('v2.6.0 (2026-10-24)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.5.0 (2026-10-23)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.6.0 (2026-10-24)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };

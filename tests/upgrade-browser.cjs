@@ -1,6 +1,7 @@
-/* Release 2.5.0 (ver 17) - real-engine checks for the 60 FPS Liquid Glass
-   engine, automatic Lite mode, the re-bound Material Mixer and the low-data
-   audio path. Rewritten from scratch for this release.
+/* Release 2.6.0 (ver 18) - real-engine checks for the 60 FPS Liquid Glass
+   engine, automatic Lite mode, the re-bound Material Mixer, the low-data
+   audio path and the v18 typing shield: zero keyboard suggestions, the
+   animated tick / cross marks and the 1-tap cross-mark exits.
 
    The suite runs the real single-file app in Chromium/WebKit with synthetic
    speech and every network request aborted. A sandbox without the browser
@@ -300,7 +301,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v17_type_tick')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -434,9 +435,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v17_type_tick')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v17_type_tick')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -446,7 +447,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v17_type_tick'));
+        const d = JSON.parse(localStorage.getItem('sdp.v18_nosuggest'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -455,6 +456,122 @@ function material(page) {
       assert.equal(saved.percent, 10, '3/30 is 10%');
       assert.equal(saved.marks, 30, 'every word keeps its mark');
       assert.equal(saved.selfScored, true, 'the paper checklist is scored');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' v18 typing shield: no suggestions, tick, cross and 1-tap exits', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      /* the ready sheet always offers a one-tap cross mark */
+      await page.evaluate(() => {
+        document.querySelector('#segMode [data-mode="type"]').click();
+      });
+      await page.waitForTimeout(200);
+      await page.locator('#btnStart').click();
+      await page.waitForFunction(() => !!document.getElementById('btnReadyClose'), null, { timeout: 8000 });
+      await page.locator('#btnReadyClose').click();
+      await page.waitForTimeout(400);
+      const closed = await page.evaluate(() => ({
+        sheets: document.querySelectorAll('#sheets .sheet').length,
+        layers: document.querySelectorAll('#layers .layer').length,
+        state: window.SDP ? 'ok' : 'ok',
+        homeVisible: !document.getElementById('screen-home').classList.contains('hidden')
+      }));
+      assert.equal(closed.sheets, 0, 'the ready sheet closed');
+      assert.equal(closed.layers, 0, 'the player layer closed');
+      assert.equal(closed.homeVisible, true, 'Home is back');
+
+      /* start again and audit the typing deck */
+      await page.locator('#btnStart').click();
+      await clickText(page, "I'm ready");
+      await clickText(page, 'Skip countdown');
+      await page.waitForFunction(() => !!document.getElementById('ansInput'), null, { timeout: 15000 });
+      const deck = await page.evaluate(() => {
+        const i = document.getElementById('ansInput');
+        return {
+          type: i.type,
+          autocomplete: i.getAttribute('autocomplete'),
+          spellcheck: i.getAttribute('spellcheck'),
+          autocorrect: i.getAttribute('autocorrect'),
+          inputmode: i.getAttribute('inputmode'),
+          vkb: document.querySelectorAll('#ansVkb .vkb-key').length,
+          rows: document.querySelectorAll('#ansVkb .vkb-row').length,
+          tick: !!document.getElementById('ansTick'),
+          cross: !!document.getElementById('ansWrong'),
+          closeBtn: !!document.getElementById('btnPlayerClose'),
+          pill: (document.getElementById('plLiveScore') || {}).textContent || ''
+        };
+      });
+      assert.equal(deck.type, 'search', 'the input is not a text field for IMEs');
+      assert.equal(deck.autocomplete, 'one-time-code');
+      assert.equal(deck.spellcheck, 'false');
+      assert.equal(deck.autocorrect, 'off');
+      assert.equal(deck.inputmode, 'none', 'touch devices never open the system keyboard');
+      assert.equal(deck.vkb, 31, 'four QWERTY rows');
+      assert.equal(deck.rows, 4);
+      assert.equal(deck.tick, true);
+      assert.equal(deck.cross, true);
+      assert.equal(deck.closeBtn, true);
+      assert.match(deck.pill, /Correct/);
+
+      /* type the answer with the built-in keyboard: the tick must appear */
+      const word = await page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('sdp.v18_nosuggest'));
+        const l = d.lists[0];
+        return l.words[0].w.split('/')[0];
+      });
+      for (const ch of word) {
+        await page.evaluate((c) => {
+          const key = Array.from(document.querySelectorAll('#ansVkb .vkb-key')).find((b) => b.textContent === c);
+          if (key) key.click();
+        }, ch);
+        await page.waitForTimeout(25);
+      }
+      await page.waitForTimeout(250);
+      const solved = await page.evaluate(() => ({
+        solved: document.getElementById('ansWrap').classList.contains('is-correct'),
+        tick: document.getElementById('ansTick').classList.contains('is-correct'),
+        hero: document.getElementById('plTickHero').classList.contains('is-correct'),
+        slots: document.querySelectorAll('#ansSlots .slot-done').length
+      }));
+      assert.equal(solved.solved, true, 'the input bar glows');
+      assert.equal(solved.tick, true, 'the tick mark animates in');
+      assert.equal(solved.hero, true, 'the Correct! badge shows');
+      assert.ok(solved.slots > 0, 'the letter slots light up');
+
+      /* a wrong answer breaks the streak and shows the correction card */
+      await page.waitForTimeout(1300);
+      await page.evaluate(() => {
+        const i = document.getElementById('ansInput');
+        i.value = 'zzzz';
+        i.dispatchEvent(new Event('input', { bubbles: true }));
+        i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      });
+      await page.waitForTimeout(400);
+      const wrong = await page.evaluate(() => ({
+        cross: document.getElementById('ansWrong').classList.contains('is-wrong'),
+        hero: document.getElementById('plWrongHero').classList.contains('is-wrong'),
+        streak: document.getElementById('plStreakCount').className,
+        compare: (document.getElementById('ansCompare') || {}).textContent || ''
+      }));
+      assert.equal(wrong.cross, true, 'the cross mark shows');
+      assert.equal(wrong.hero, true, 'the Incorrect badge shows');
+      assert.match(wrong.streak, /streak-broken/, 'the streak breaks');
+      assert.match(wrong.compare, /Correct UK spelling/);
+      assert.match(wrong.compare, /Your answer/);
+
+      /* the player cross mark exits in one tap */
+      await page.locator('#btnPlayerClose').click();
+      await page.waitForTimeout(500);
+      const after = await page.evaluate(() => ({
+        layers: document.querySelectorAll('#layers .layer').length,
+        home: !document.getElementById('screen-home').classList.contains('hidden')
+      }));
+      assert.equal(after.layers, 0, 'the player closed');
+      assert.equal(after.home, true, 'Home is back');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
       await context.close();
