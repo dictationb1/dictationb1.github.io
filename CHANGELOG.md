@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.6.0 (v18) — 2026-10-24 (Zero-suggestion typing, tick/cross marks, 1-tap exits)
+
+- **No keyboard suggestions, anywhere.** "Type my answers" now renders a compact
+  Liquid Glass QWERTY keyboard (`#ansVkb`, rows `q..p` / `a..l` / `z..m` + `⌫` /
+  `-` `/` `Space` `✓ Check`) directly under the answer input, and on coarse
+  pointers the input carries `inputmode="none"` so tapping it can never raise a
+  Gboard, Samsung, Helakuru, SwiftKey or iOS suggestion bar. A `⌨️` chip hides or
+  shows the keyboard on desktop, where hardware typing keeps working.
+- **Native IME suppression.** `#ansInput` is a `type="search"` field with
+  `autocomplete="one-time-code"`, `autocorrect="off"`, `spellcheck="false"`,
+  `aria-autocomplete="none"`, Grammarly/1Password opt-outs and a random
+  `sdp_nosuggest_*` name. `beforeinput` rejects `insertReplacementText`,
+  `insertFromPaste`, `insertFromDrop` and multi-character commits, and `paste`,
+  `drop` and `contextmenu` are prevented, so tapping a suggestion chip does nothing.
+- **Animated tick mark.** A matching answer lights every letter slot
+  (`.slot-done`, mint `#39d4b8`), pops `#ansTick` and `#plTickHero`, reveals the
+  word and its meaning in `#plWord` / `#plHint`, plays the crystal chime,
+  vibrates 25 ms and advances after 1050 ms.
+- **Streak breakdown + correction flow.** A wrong answer (Enter/Check or the
+  writing timer reaching zero) breaks the streak immediately
+  (`💔 Streak Broken! (0)` for 1.4 s), counts `✗ Wrong`, shows the animated coral
+  cross (`#ansWrong`, `#plWrongHero`), a gentle two-tone error tone and a
+  side-by-side `#ansCompare` card with `diffChars` highlighting, records the word
+  with `Lib.addMistake`, speaks the correct British spelling once and holds
+  2100 ms with a `Got it → Next` button. Live typing shows
+  `✗ Letter mismatch — check your spelling` as soon as the input stops being a
+  prefix of any accepted variant.
+- **One-tap ✕ exits.** The "Are you ready?" sheet gained a high-contrast cross
+  mark (`#btnReadyClose`) plus `✕ Not ready · Exit` (`#btnNotReady`), and the
+  player topbar gained `#btnPlayerClose` next to the eye icon. All of them (plus
+  the scrim and Escape) run `Eng.cancelReadyAndExit()`: timers cleared, speech
+  stopped, uncommitted snapshot deleted, sheet and layer closed, Home refreshed.
+- **Engineering.** `CONFIG.key = "sdp.v18_nosuggest"`, `schema 18`,
+  `settingsRev 18`, `APP_VERSION 2.6.0`, migration `resetToV18`; duplicate legacy
+  audio URLs, gas-source indentation, dead `.bubble-*`/`.hr`/`.stepper` rules and
+  superseded CSS commentary were trimmed so the single file stays under the
+  442,000-byte target.
+
 ## 2.3.0 (v15) — 2026-10-23 (Universal Liquid Glass sliding pill transitions)
 
 - **Sliding capsule everywhere.** `#tabbar` now hosts `<span class="tab-ind"

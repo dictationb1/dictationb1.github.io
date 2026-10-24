@@ -26,11 +26,12 @@
     "pauseSent": 1.6,
     "theme": "dark",
     "perf": "auto",
-    "glassTint": 0
+    "glassTint": 0,
+    "vkb": true
   },
-  "ver": 17,
-  "version": "2.5.0",
-  "buildDate": "2026-10-23",
+  "ver": 18,
+  "version": "2.6.0",
+  "buildDate": "2026-10-24",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -48,8 +49,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "2.5.0",
-  "settingsRev": 17,
+  "appVersion": "2.6.0",
+  "settingsRev": 18,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -71,5 +72,22 @@
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
+  },
+  "storageKey": "sdp.v18_nosuggest",
+  "keyboard": {
+    "layout": "qwerty",
+    "inputMode": "none on touch",
+    "autocomplete": "one-time-code",
+    "blockedInputTypes": [
+      "insertReplacementText",
+      "insertFromPaste",
+      "insertFromDrop"
+    ]
+  },
+  "feedback": {
+    "tick": "animated liquid glass check mark",
+    "cross": "animated liquid glass cross mark",
+    "streakBreak": "1.4s coral flash with streak reset",
+    "correctionHoldMs": 2100
   }
 }
