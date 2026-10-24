@@ -1,11 +1,11 @@
 {
-  "ver": 21,
-  "appVersion": "2.9.0",
-  "version": "2.9.0",
+  "ver": 22,
+  "appVersion": "3.0.0",
+  "version": "3.0.0",
   "buildDate": "2026-10-24",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 21,
+  "settingsRev": 22,
   "updatedAt": "2026-10-24T00:00:00Z",
   "updatedAtMs": 1792800000000,
   "features": {
@@ -13,7 +13,8 @@
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
     "ready": "single far-right close cross, no duplicate exit buttons",
     "feedback": "animated tick, streak breakdown and false-answer correction flow",
-    "visual": "swan badge, see-through hero title, Settings mixer, 60 FPS capsules",
-    "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})"
+    "visual": "swan badge always visible z-index 9999, see-through hero title, Settings mixer, 60 FPS capsules, guide-credit-pill",
+    "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
+    "defaultMode": "paper"
   }
 }

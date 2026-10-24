@@ -514,11 +514,18 @@ body[data-theme="light"] #homeTitle,body[data-theme="light"] .liquid-glass-text 
 html[data-theme="dark"] .chip.good {color:#7fe0ac;}
 body.tint-frost[data-perf] .glass {box-shadow:inset 0 1.5px 0 var(--inset-hi),inset 0 0 0 1px var(--line),inset 0 -18px 32px rgba(180,225,255,.14),var(--shadow);}
 body.tint-smoke[data-perf] .glass {box-shadow:inset 0 1.5px 0 var(--inset-hi),inset 0 0 0 1px var(--line),inset 0 -18px 32px rgba(0,0,0,.35),var(--shadow);}
-.credit {position:fixed;right:22px;bottom:max(20px,env(safe-area-inset-bottom));z-index:35;display:flex;align-items:center;gap:11px;padding:11px 18px 11px 13px;border-radius:99px;overflow:hidden;cursor:pointer;opacity:0;transform:translateY(90px) scale(.6);filter:blur(10px);transition:transform .85s var(--ease-spring),opacity .55s ease,filter .55s ease;}
+.credit {position:fixed;right:22px;bottom:max(20px,env(safe-area-inset-bottom));z-index:9999 !important;pointer-events:auto;display:flex;align-items:center;gap:11px;padding:11px 18px 11px 13px;border-radius:99px;overflow:hidden;cursor:pointer;opacity:0;transform:translateY(90px) scale(.6);filter:blur(10px);transition:transform .85s var(--ease-spring),opacity .55s ease,filter .55s ease;}
 .credit.in {opacity:1;transform:translateY(0) scale(1);filter:blur(0);}
 .credit.out {opacity:0;transform:translateY(-72px) scale(.75);filter:blur(8px);transition:transform .7s cubic-bezier(.55,-.15,.6,1),opacity .55s ease,filter .55s ease;}
 .credit.snap {transition:none !important;}
 .credit.in:hover {transform:translateY(-4px) scale(1.05);}
+.guide-credit-pill{display:flex;align-items:center;gap:10px;padding:11px 14px 11px 12px;border-radius:999px;margin:0 0 12px;overflow:hidden;z-index:2;}
+.guide-credit-pill .c-swan{width:28px;height:28px;flex:none;overflow:visible;filter:drop-shadow(0 2px 8px rgba(92,199,240,.5));}
+.guide-credit-pill .c-text{display:flex;flex-direction:column;line-height:1.15;}
+.guide-credit-pill .c-text small{font:600 9px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+.guide-credit-pill .c-text b{font:700 14px "Space Grotesk",system-ui,sans-serif;letter-spacing:.01em;color:var(--ink);}
+.guide-credit-pill .credit-sub{font-size:.66rem;color:var(--ink-2);margin-left:6px;line-height:1.3;}
+
 .c-swan {width:32px;height:32px;flex:none;overflow:visible;filter:drop-shadow(0 2px 8px rgba(92,208,244,.5));}
 .c-swan .swan-group {transform-origin:18px 22px;animation:swanFloat 3s ease-in-out infinite !important;}
 .c-swan .swan-wing {transform-origin:20px 21px;animation:swanWing 2.2s ease-in-out infinite alternate !important;}
@@ -543,7 +550,8 @@ body.tint-morph .panel.glass,body.tint-morph #homeHero.glass {animation:tintMorp
 body.tint-morph .panel.glass::before,body.tint-morph #homeHero.glass::before {animation:tintShimmer 420ms ease 1;}
 @keyframes tintMorph {0%,100% {transform:scale(1);} 50% {transform:scale(1.012);}}
 @keyframes tintShimmer {0%,100% {opacity:.35;} 50% {opacity:1;}}
-@media (max-width:680px) {#tabbar button {min-height:50px;} .credit {right:14px;bottom:calc(84px + env(safe-area-inset-bottom, 0px));padding:9px 14px 9px 11px;}}</style>
+@media (max-width:680px) {#tabbar button {min-height:50px;} .credit {right:14px;top:calc(68px + env(safe-area-inset-top, 0px));bottom:auto;z-index:9999 !important;pointer-events:auto;padding:9px 14px 9px 11px;}}
+.sheet ~ .credit,.scrim ~ .credit{bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:9999 !important;}</style>
 </head>
 <body class="tint-clear" data-theme="dark" data-perf="full">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
@@ -1273,13 +1281,13 @@ try{proto[m]=wrapped;}catch(ignored){}
 }
 })();/* SECTION 1 - CONFIG */
 
-var APP_VERSION="2.9.0";
+var APP_VERSION="3.0.0";
 var BUILD_DATE="2026-10-24";
 function buildStamp(){return"v"+APP_VERSION+" ("+BUILD_DATE+")";}
 var CLOUD_URL="";
 var CONFIG={
-key:"sdp.v21_guide_start",
-schema:21,
+key:"sdp.v22_paper_default",
+schema:22,
 maxHistory:200,
 maxComments:200,
 maxInbox:200,
@@ -1298,7 +1306,7 @@ ttsBackupHost:"https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
 oxfordMp3:"https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost:"https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache:200,
-settingsRev:21,
+settingsRev:22,
 repoOwner:"dictationb1",
 repoName:"dictationb1.github.io",
 classDays:[2,3],
@@ -1928,7 +1936,7 @@ saveTimer:null,
 load:function(){
 var raw=Store.get(CONFIG.key);
 if(!raw){
-var legacyKeys=["sdp.v20_nopass","sdp.v19_incog","sdp.v18_nosuggest","sdp.v17_type_tick","sdp.v16_swan","sdp.v15_liquid","sdp.v14_liquid","sdp.v13_fast_liquid","sdp.v12_liquid"],legacy="";
+var legacyKeys=["sdp.v21_guide_start","sdp.v20_nopass","sdp.v19_incog","sdp.v18_nosuggest","sdp.v17_type_tick","sdp.v16_swan","sdp.v15_liquid","sdp.v14_liquid","sdp.v13_fast_liquid","sdp.v12_liquid"],legacy="";
 for(var lk=0;lk<legacyKeys.length&&!legacy;lk++){
 try{legacy=Store.get(legacyKeys[lk])||"";}catch(eL){legacy="";}
 }
@@ -2051,6 +2059,7 @@ if(!d.settingsRev||d.settingsRev<8)DB.resetToV9(d,base);
 if(!d.settingsRev||d.settingsRev<17)DB.resetToV17(d,base);
 if(!d.settingsRev||d.settingsRev<18)DB.resetToV18(d,base);
 if(!d.settingsRev||d.settingsRev<19)DB.resetToV19(d,base);
+if(!d.settingsRev||d.settingsRev<22)DB.resetToV22(d,base);
 if(!DB.findList(d,SAMPLE_LIST_ID)){
 d.lists=JSON.parse(JSON.stringify(base.lists));
 d.plan=JSON.parse(JSON.stringify(base.plan));
@@ -2061,7 +2070,7 @@ if(d.comments.length>CONFIG.maxComments)d.comments=d.comments.slice(0,CONFIG.max
 if(d.settings.hc!==true&&d.settings.hc!=="on")d.settings.hc=false;
 if(d.settings.theme==="auto"||["light","dark"].indexOf(d.settings.theme)<0)d.settings.theme="dark";
 if(["auto","full","lite"].indexOf(d.settings.perf)<0)d.settings.perf="auto";
-d.settingsRev=21;
+d.settingsRev=22;
 d.v=CONFIG.schema;
 return d;
 },
@@ -2116,6 +2125,13 @@ resetToV19:function(d,base){
 if(!d.settingsRev||d.settingsRev<18)DB.resetToV18(d,base);
 if(d.settings&&d.settings.vkb!==undefined)delete d.settings.vkb;
 d.settingsRev=19;
+d.v=CONFIG.schema;
+return d;
+},
+resetToV22:function(d,base){
+if(!d.settingsRev||d.settingsRev<19)DB.resetToV19(d,base);
+if(d.settings) d.settings.mode="paper";
+d.settingsRev=22;
 d.v=CONFIG.schema;
 return d;
 },
@@ -2301,7 +2317,7 @@ this.applyTheme();
 this.toast(next==="dark"?"Dark theme":"Light theme",{icon:"i-info",ms:1600});
 },
 openWelcomeGuide:function(full){
-if(typeof welcomeGuide==="function")return welcomeGuide(full);
+if(typeof welcomeGuide==="function"){var r=welcomeGuide(full);if(UI.showCreditNow)UI.showCreditNow();return r;}
 return null;
 },
 initCreditBadge:function(){
@@ -2329,6 +2345,19 @@ cTimers.push(setTimeout(creditLoop,900));
 }
 function pause(){paused=true;cClear();show();}
 function resume(){if(!paused)return;paused=false;creditLoop();}
+UI.showCreditNow=function(){
+if(!credit)return;
+cClear();
+U.setCls(credit,"out",false);
+U.setCls(credit,"snap",false);
+U.setCls(credit,"in",true);
+void credit.offsetWidth;
+cTimers.push(setTimeout(function(){
+U.setCls(credit,"out",true);
+U.setCls(credit,"in",false);
+cTimers.push(setTimeout(creditLoop,900));
+},5200));
+};
 U.on(credit,"mouseenter",pause);
 U.on(credit,"pointerdown",pause);
 U.on(credit,"mouseleave",resume);
@@ -2377,6 +2406,7 @@ for(var i=0;i<nodes.length;i++){
 var key=nodes[i].getAttribute("data-i18n");
 nodes[i].textContent=T(key);
 }
+try{if(UI.showCreditNow)UI.showCreditNow();}catch(eShow){}
 var hc=U.$("#brandCredit");
 if(hc)hc.textContent=T("creditFull");
 var btn=U.$("#btnLang");
@@ -2945,8 +2975,22 @@ if(text)d.appendChild(U.el("p","small",text));
 return d;
 }
 };
+UI.guideCreditPill=function(){
+var pill=U.el("div","guide-credit-pill glass",null);
+var swan=U.el("span","c-swan",null);
+swan.innerHTML='<svg viewBox="0 0 36 36" width="28" height="28" aria-hidden="true"><g class="swan-group"><ellipse class="swan-ripple" cx="18" cy="30" rx="10" ry="2.5" fill="rgba(83,199,240,.28)"/><path d="M18 8 C12 8 9 13 11 17 C13 20 15 21 18 21 C21 21 23 20 25 17 C27 13 24 8 18 8Z" fill="white" stroke="rgba(83,199,240,.5)" stroke-width="1.2"/><path class="swan-wing" d="M14 12 C10 14 9 17 12 18 C15 19 17 16 16 12Z" fill="white" stroke="rgba(83,199,240,.4)" stroke-width="1"/><circle cx="15" cy="11" r="1.2" fill="#0a0f1e"/><path d="M10 10 L6 9 L8 12Z" fill="#ff6f61"/></g></svg>';
+pill.appendChild(swan);
+var cText=U.el("span","c-text",null);
+cText.appendChild(U.el("small",null,"CREDITS GOES TO"));
+cText.appendChild(U.el("b",null,"Hansana"));
+pill.appendChild(cText);
+var subLine=(DB.data&&DB.data.settings.lang==="si")?"නිර්මාණය: Hansana (Credits goes to Hansana) · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini":"Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini";
+pill.appendChild(U.el("span","credit-sub",subLine));
+return pill;
+};
 UI.startPractisingFromGuide=function(){
 if(DB.data){DB.data.tourSeen=true;DB.data.guideSeen=true;DB.saveNow();}
+if(UI.showCreditNow)UI.showCreditNow();
 Speech.unlock();
 UI.closeSheet();
 UI.setTab("home");
@@ -3120,7 +3164,7 @@ U.setCls(rc,"hidden",true);
 if(d.snapshot){delete d.snapshot;DB.save();}
 }
 U.$("#btnStartText").textContent=T("startDict");
-UI.segValue(U.$("#segMode"),st.mode);
+UI.segValue(U.$("#segMode"),st.mode||"paper");UI.segSync(U.$("#segMode"));
 });
 U.widget("home-stats",function(){
 var stats=U.$("#homeStats");
@@ -9536,6 +9580,7 @@ var g=GUIDE[lang]||GUIDE.en;
 var sh=UI.sheet({
 title:T("welcomeTitle"),
 body:function(b){
+if(UI.showCreditNow)UI.showCreditNow();
 var pick=U.el("div","seg",null);
 pick.setAttribute("role","tablist");
 pick.setAttribute("aria-label","Language / භාෂාව");
@@ -9548,13 +9593,15 @@ t.setAttribute("aria-selected",lang===pair[0]?"true":"false");
 U.on(t,"click",function(){
 if(lang===pair[0])return;
 UI.setLang(pair[0]);
+if(UI.showCreditNow)UI.showCreditNow();
 UI.closeSheet();
-setTimeout(welcomeGuide,120);
+setTimeout(function(){welcomeGuide();if(UI.showCreditNow)UI.showCreditNow();},120);
 });
 pick.appendChild(t);
 });
 b.appendChild(pick);
 window.setTimeout(function(){UI.segSync(pick);},60);
+b.appendChild(UI.guideCreditPill());
 var credit=U.el("div","glass card pad-s r2 credit-note",null);
 credit.style.display="block";
 credit.style.margin="10px 0";
@@ -9586,16 +9633,31 @@ return sh;
 function runTour(){
 var cards=[{t:S.tour1t,b:S.tour1},{t:S.tour2t,b:S.tour2},{t:S.tour3t,b:S.tour3}],n=0;
 function show(){
+if(UI.showCreditNow)UI.showCreditNow();
 var c=cards[n],last=n===cards.length-1;
 var skip=U.btn(S.skipTour,null,"ghost");
 var go=U.btn(last?S.doneTour:S.nextTour,last?"i-play":null,last?"primary xl block":"primary");
 if(last)go.id="btnGuideStart";
 U.on(skip,"click",function(){DB.data.tourSeen=true;DB.saveNow();UI.closeSheet();});
 U.on(go,"click",function(){
+if(UI.showCreditNow)UI.showCreditNow();
 if(n===cards.length-1){UI.startPractisingFromGuide();return;}
-n++;UI.closeSheet();setTimeout(show,120);
+n++;UI.closeSheet();setTimeout(function(){show();if(UI.showCreditNow)UI.showCreditNow();},120);
 });
-UI.sheet({title:c.t+" ("+(n+1)+"/"+cards.length+")",body:function(b){b.appendChild(U.el("p","small",c.b));},actions:[skip,go]});
+UI.sheet({title:c.t+" ("+(n+1)+"/"+cards.length+")",body:function(b){
+var pill=U.el("div","guide-credit-pill glass",null);
+var swan=U.el("span","c-swan",null);
+swan.innerHTML='<svg viewBox="0 0 36 36" width="28" height="28" aria-hidden="true"><g class="swan-group"><ellipse class="swan-ripple" cx="18" cy="30" rx="10" ry="2.5" fill="rgba(83,199,240,.28)"/><path d="M18 8 C12 8 9 13 11 17 C13 20 15 21 18 21 C21 21 23 20 25 17 C27 13 24 8 18 8Z" fill="white" stroke="rgba(83,199,240,.5)" stroke-width="1.2"/><path class="swan-wing" d="M14 12 C10 14 9 17 12 18 C15 19 17 16 16 12Z" fill="white" stroke="rgba(83,199,240,.4)" stroke-width="1"/><circle cx="15" cy="11" r="1.2" fill="#0a0f1e"/><path d="M10 10 L6 9 L8 12Z" fill="#ff6f61"/></g></svg>';
+pill.appendChild(swan);
+var cText=U.el("span","c-text",null);
+cText.appendChild(U.el("small",null,"CREDITS GOES TO"));
+cText.appendChild(U.el("b",null,"Hansana"));
+pill.appendChild(cText);
+var subLine=(DB.data.settings.lang==="si")?"නිර්මාණය: Hansana (Credits goes to Hansana) · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini":"Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini";
+pill.appendChild(U.el("span","credit-sub",subLine));
+b.appendChild(pill);
+b.appendChild(U.el("p","small",c.b));
+},actions:[skip,go]});
 }
 show();
 }
