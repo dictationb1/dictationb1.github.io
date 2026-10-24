@@ -28,8 +28,8 @@
     "perf": "auto",
     "glassTint": 0
   },
-  "ver": 21,
-  "version": "2.9.0",
+  "ver": 22,
+  "version": "3.0.0",
   "buildDate": "2026-10-24",
   "credits": {
     "createdBy": "Hansana",
@@ -48,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "2.9.0",
-  "settingsRev": 21,
+  "appVersion": "3.0.0",
+  "settingsRev": 22,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -72,7 +72,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v21_guide_start",
+  "storageKey": "sdp.v22_paper_default",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
