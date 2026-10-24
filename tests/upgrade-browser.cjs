@@ -1,6 +1,6 @@
-/* Release 2.8.0 (ver 20) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.9.0 (ver 21) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer, the low-data
-   audio path and the v20 no-password native keyboard shield: the custom
+   audio path and the v21 no-password native keyboard shield: the custom
    in-app keyboard is gone, #ansInput is a plain type=text field that only
    keeps a single-space IME sentinel (so no "Save password?" popup and no
    keyboard suggestions) mirrored by #ansMirror, and the animated tick /
@@ -304,7 +304,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v20_nopass')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v21_guide_start')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -438,9 +438,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v20_nopass')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v21_guide_start')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v20_nopass')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v21_guide_start')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -450,7 +450,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v20_nopass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -465,7 +465,42 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v20 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v21 User Guide Start practising launches the ready player on Home', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      await page.evaluate(() => document.getElementById('btnGuideTop').click());
+      const start = page.locator('#btnGuideStart');
+      await start.waitFor({ state: 'visible' });
+      assert.equal((await start.textContent()).trim(), 'Start practising');
+      assert.equal(await start.evaluate((b) => b.className), 'btn primary xl block');
+      assert.equal(await start.locator('svg use').getAttribute('href'), '#i-play');
+      await start.click();
+      await page.waitForFunction(() => {
+        const sheet = document.querySelector('#sheets .sheet');
+        return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
+      }, null, { timeout: 10000 });
+      const launched = await page.evaluate(() => {
+        const saved = JSON.parse(localStorage.getItem('sdp.v21_guide_start'));
+        return {
+          home: !document.getElementById('screen-home').classList.contains('hidden'),
+          ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
+          layers: document.querySelectorAll('#layers .layer').length,
+          tourSeen: saved.tourSeen,
+          guideSeen: saved.guideSeen
+        };
+      });
+      assert.equal(launched.home, true, 'the guide redirects to Home');
+      assert.equal(launched.ready, true, 'Eng.start opens the Are you ready sheet');
+      assert.equal(launched.layers, 1, 'the dictation player is launched');
+      assert.equal(launched.tourSeen, true);
+      assert.equal(launched.guideSeen, true);
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  await check(engine + ' v21 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       /* the ready sheet keeps ONE far-right cross mark and no duplicates */
@@ -534,7 +569,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v20_nopass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

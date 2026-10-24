@@ -29,7 +29,7 @@ function mockSpeech() {
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.volume = 1; this.pitch = 1; this.voice = null; };
 }
 
-const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
+const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
 const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
@@ -116,7 +116,7 @@ async function flow(browser, vp, label, seed) {
   if (seed) await page.addInitScript(s => {
     if (sessionStorage.getItem('__sdpSeeded')) return;
     sessionStorage.setItem('__sdpSeeded', '1');
-    localStorage.setItem('sdp.v20_nopass', s);
+    localStorage.setItem('sdp.v21_guide_start', s);
     localStorage.setItem('sdp.v1', s);
   }, seed);
   await page.route('**/*', r => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
@@ -132,7 +132,7 @@ async function flow(browser, vp, label, seed) {
   /* build stamp */
   await dismissTour(page); await page.locator('#tab-set').click();
   const setTxt = await page.locator('#screen-set').textContent();
-  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.8.0 (2026-10-24)'), { stamp: (setTxt.match(/v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)/) || ['none'])[0] });
+  rec(label + ' Settings shows the build stamp', setTxt.includes('v2.9.0 (2026-10-24)'), { stamp: (setTxt.match(/v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)/) || ['none'])[0] });
 
   /* wrong PIN first */
   await dismissTour(page); await page.locator('#tab-home').click();
@@ -218,7 +218,7 @@ async function flow(browser, vp, label, seed) {
   const histBefore = (snap0.history || []).length;   /* old-build fixture already has one session */
   /* let each word finish speaking, then move on - never cut the speech short */
   for (let i = 0; i < words.length + 6; i++) {
-    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
+    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
     if (done > histBefore) break;
     try { await page.waitForFunction(() => {
       const n = document.querySelector('#plStatus');
@@ -257,14 +257,14 @@ async function flow(browser, vp, label, seed) {
     await page.waitForTimeout(200);
   }
   const snapBefore = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'none';
   });
   const statusBefore = await page.locator('#plStatus').textContent().catch(() => 'no player');
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
   const probe = () => page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     const rc = document.querySelector('#homeResume');
     return { snap: d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'gone', rc: rc ? rc.className : 'missing' };
   });
@@ -300,8 +300,8 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
   await page.waitForTimeout(400);
   const commTxt = await page.locator('#commList').textContent();
-  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
-  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
+  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
+  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
   rec(label + ' anonymous comment posted with name and result badge',
     commTxt.includes('E2E check') && commTxt.includes(who) && !!badge,
     { nickname: who, badge: badge, nameShown: commTxt.includes(who) });
@@ -319,7 +319,7 @@ async function flow(browser, vp, label, seed) {
   /* the app re-saves its own data on unload, so clear the rate window on the
      way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const key = localStorage.getItem('sdp.v20_nopass') ? 'sdp.v20_nopass' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+    const key = localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
@@ -336,7 +336,7 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Send to lecturer', exact: true }).click();
   await page.waitForTimeout(500);
   const priv = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return (d.sentMessages || []).concat(d.inbox || []).map(m => m.text).join('|');
   });
   const sentToast = (await page.locator('#toasts').textContent()).slice(0, 120);
@@ -378,14 +378,14 @@ async function flow(browser, vp, label, seed) {
     await p.evaluate(() => { const b = document.querySelectorAll('#screen-set .switch .sw'); if (b.length) b[0].click(); });
     await p.waitForTimeout(1000);
     oldSeed = await p.evaluate(() => {
-      const key = localStorage.getItem('sdp.v20_nopass') ? 'sdp.v20_nopass' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+      const key = localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
       const d = JSON.parse(localStorage.getItem(key) || localStorage.getItem('sdp.v1') || 'null');
       if (!d) return null;
       d.session = { no: '7', day: 'Monday', autoDay: false, date: '2026-05-04', title: 'Old build session', ready: [], praise: [] };
       d.history = [{ id: 'old-run', score: 12, wordCount: 30, date: '2026-05-04', sessionNo: '7', sessionDay: 'Monday' }];
-      localStorage.setItem('sdp.v20_nopass', JSON.stringify(d));
+      localStorage.setItem('sdp.v21_guide_start', JSON.stringify(d));
       localStorage.setItem('sdp.v1', JSON.stringify(d));
-      return localStorage.getItem('sdp.v20_nopass');
+      return localStorage.getItem('sdp.v21_guide_start');
     });
     await c.close();
   } catch (e) {
@@ -419,7 +419,7 @@ async function flow(browser, vp, label, seed) {
     await p.locator('#sheets textarea[aria-label="Comment text"]').fill('Offline comment stays on this device.');
     await p.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
     await p.waitForTimeout(300);
-    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v20_nopass') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
+    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
     rec('offline: app boots, comment kept on device', !await fatal(p) && st.c.includes('Offline comment') && errs.length === 0, { outbox: st.q, errs });
     await c.close();
   }
