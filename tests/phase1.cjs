@@ -407,13 +407,13 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'2.7.0'); assert.equal(a.w.SDP.build,'2026-10-24'); assert.equal(a.w.SDP.stamp(),'v2.7.0 (2026-10-24)');
+ assert.equal(a.w.SDP.version,'2.8.0'); assert.equal(a.w.SDP.build,'2026-10-24'); assert.equal(a.w.SDP.stamp(),'v2.8.0 (2026-10-24)');
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v2.7.0 (2026-10-24)')); assert(txt.includes('My data'));
+ assert(txt.includes('v2.8.0 (2026-10-24)')); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.7.0 (2026-10-24)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.8.0 (2026-10-24)'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };

@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- v2.0.0: phones must never be stuck on an old cached page -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -16,7 +15,7 @@
 <meta name="description" content="Smart Dictation Player - listen to UK English words and write them down.">
 <title>Smart Dictation Player</title>
 <style>*,*::before,*::after {box-sizing:border-box;}
-:root {--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue","Noto Sans Sinhala","Iskoola Pota","Nirmala UI",Arial,sans-serif;--r1:14px;--r2:20px;--r3:26px;--r4:32px;--tap:44px;--safe-t:env(safe-area-inset-top, 0px);--safe-b:env(safe-area-inset-bottom, 0px);--safe-l:env(safe-area-inset-left, 0px);--safe-r:env(safe-area-inset-right, 0px);--fs:16px;--dur:220ms;--ease:cubic-bezier(.2,.9,.25,1.35);--ease-spring:cubic-bezier(.2,.9,.25,1.35);--dim:var(--ink-2);--shadow:inset 0 -14px 28px rgba(255,255,255,.07),var(--shadow1);/* Apple WWDC25 Liquid Glass material - live,tuned by the Settings mixer */
+:root {--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue","Noto Sans Sinhala","Iskoola Pota","Nirmala UI",Arial,sans-serif;--r1:14px;--r2:20px;--r3:26px;--r4:32px;--tap:44px;--safe-t:env(safe-area-inset-top, 0px);--safe-b:env(safe-area-inset-bottom, 0px);--safe-l:env(safe-area-inset-left, 0px);--safe-r:env(safe-area-inset-right, 0px);--fs:16px;--dur:220ms;--ease:cubic-bezier(.2,.9,.25,1.35);--ease-spring:cubic-bezier(.2,.9,.25,1.35);--dim:var(--ink-2);--shadow:inset 0 -14px 28px rgba(255,255,255,.07),var(--shadow1);
 --gb:14px;/* backdrop blur */
 --gs:1.6;/* saturate */
 --gbr:1.03;/* brightness */
@@ -76,8 +75,6 @@ h3 {font-size:1.02rem;font-weight:650;}
 @keyframes drift3 {to {transform:translate3d(-12vmax,8vmax,0) scale(.92);}}
 @keyframes drift4 {to {transform:translate3d(8vmax,-10vmax,0) scale(1.06);}}
 #grain {display:none !important;}
-/* v16 zero-lag engine:never compute a nested multi-pass blur,and pin the
- floating chrome to its own GPU layer. */
 .glass .glass,.tile .glass,.glass .tile {-webkit-backdrop-filter:none !important;backdrop-filter:none !important;}
 .topbar.glass,#tabbar.glass,#credit.glass {-webkit-backface-visibility:hidden;backface-visibility:hidden;}
 .blob {filter:none !important;}
@@ -281,7 +278,6 @@ input[type="range"]::-moz-range-thumb {width:24px;height:24px;border-radius:50%;
 .ans-input-wrap.is-wrong {animation:ansShake .4s ease;}
 @keyframes ansShake {10%,90% {transform:translateX(-3px);} 30%,70% {transform:translateX(5px);} 50% {transform:translateX(-6px);}}
 #ansInput {position:relative;z-index:2;flex:1 1 auto;min-width:0;width:100%;min-height:42px;text-align:left;background:transparent !important;border:0 !important;outline:0 !important;box-shadow:none !important;color:transparent !important;-webkit-text-fill-color:transparent !important;caret-color:transparent !important;font:600 16px/1.4 "Manrope",system-ui,sans-serif;letter-spacing:.02em;padding:10px 0;}
-#ansInput::-ms-reveal,#ansInput::-ms-clear {display:none;}
 .ans-mirror {position:absolute;left:18px;right:110px;top:50%;transform:translateY(-50%);z-index:1;pointer-events:none;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font:600 16px/1.4 "Manrope",system-ui,sans-serif;color:var(--ink);letter-spacing:.02em;}
 .ans-placeholder {color:var(--dim);font-weight:500;}
 .ans-caret {display:none;width:2px;height:18px;background:var(--aqua);margin-left:1px;animation:blink 1s steps(2) infinite;}
@@ -419,8 +415,6 @@ table th,table td {text-align:left;padding:6px;border-bottom:1px solid var(--lin
 .paste-scroll td {vertical-align:top;}
 .paste-scroll input {font-size:16px;min-width:130px;}
 .paste-scroll td:last-child {min-width:175px;}
-/* v13:automatic Lite mode keeps 100% of the Apple_liquid.html material.
- Only the paint cost changes - every surface stays glass. */
 body[data-perf="lite"] {--gb:8px;--gs:1.35;--gbr:1.02;}
 body[data-perf="lite"] .blob,body[data-perf="lite"] .bubble,body[data-perf="lite"] .chip-a,body[data-perf="lite"] .chip-b {animation:none !important;}
 body[data-perf="lite"] .glass::before {display:none !important;}
@@ -552,7 +546,6 @@ body.tint-morph .panel.glass::before,body.tint-morph #homeHero.glass::before {an
 @media (max-width:680px) {#tabbar button {min-height:50px;} .credit {right:14px;bottom:calc(84px + env(safe-area-inset-bottom, 0px));padding:9px 14px 9px 11px;}}</style>
 </head>
 <body class="tint-clear" data-theme="dark" data-perf="full">
-<!-- one shared media element for every spoken sound (dictionary MP3 / British TTS) -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <defs>
 <g id="icn" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -635,7 +628,6 @@ body.tint-morph .panel.glass::before,body.tint-morph #homeHero.glass::before {an
 <button type="button" role="tab" id="tab-set" data-tab="set" aria-selected="false" aria-controls="screen-set"><svg aria-hidden="true"><use xlink:href="#i-gear" href="#i-gear"></use></svg><span data-i18n="navSet">Settings</span></button>
 </nav>
 
-<!-- HOME: APPLE WWDC25 LIQUID GLASS PLAYGROUND -->
 <section class="screen" id="screen-home" role="tabpanel" aria-labelledby="tab-home">
 <div id="homeAnn"></div>
 <div class="lg-hero">
@@ -1119,7 +1111,6 @@ for (var j = 0; j < data.length; j++) if (String(data[j][0]) === listId) active 
 setCfg('listVer:' + listId, active);
 }
 var version = active + 1;
-/* Remove only an incomplete retry version. Never delete the committed list first. */
 for (var del = data.length - 1; del >= 0; del--) if (String(data[del][0]) === listId && Number(data[del][3]) === version) s.deleteRow(del + 2);
 var chunk = [], size = 2;
 for (var item = 0; item < payload.length; item++) {
@@ -1128,7 +1119,6 @@ if (chunk.length && size + itemSize > 40000) { s.appendRow([listId, name, JSON.s
 chunk.push(payload[item]); size += itemSize;
 }
 if (chunk.length) s.appendRow([listId, name, JSON.stringify(chunk), version]);
-/* All word chunks exist before moving the pointer; old versions remain recoverable. */
 setCfg('listVer:' + listId, version);
 if (body.contact) setCfg('contact', JSON.stringify(body.contact));
 if (body.defaults) setCfg('defaults', JSON.stringify(body.defaults));
@@ -1178,7 +1168,6 @@ return { ok: true };
 }
 return { ok: false, err: 'not found' };
 }
-/* public, rate-limited: a student flags a comment for the lecturer */
 function reportComment(body, cid) {
 if (rateLimited(cid, 'rep', 10, 20)) return { ok: false, err: 'rate' };
 var lock = LockService.getScriptLock();
@@ -1284,13 +1273,13 @@ try{proto[m]=wrapped;}catch(ignored){}
 }
 })();/* SECTION 1 - CONFIG */
 
-var APP_VERSION="2.7.0";
+var APP_VERSION="2.8.0";
 var BUILD_DATE="2026-10-24";
 function buildStamp(){return"v"+APP_VERSION+" ("+BUILD_DATE+")";}
 var CLOUD_URL="";
 var CONFIG={
-key:"sdp.v19_incog",
-schema:19,
+key:"sdp.v20_nopass",
+schema:20,
 maxHistory:200,
 maxComments:200,
 maxInbox:200,
@@ -1309,7 +1298,7 @@ ttsBackupHost:"https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=",
 oxfordMp3:"https://ssl.gstatic.com/dictionary/static/sounds/oxford/",
 ttsHost:"https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&q=",
 maxDictCache:200,
-settingsRev:19,
+settingsRev:20,
 repoOwner:"dictationb1",
 repoName:"dictationb1.github.io",
 classDays:[2,3],
@@ -1938,7 +1927,7 @@ saveTimer:null,
 load:function(){
 var raw=Store.get(CONFIG.key);
 if(!raw){
-var legacyKeys=["sdp.v18_nosuggest","sdp.v17_type_tick","sdp.v16_swan","sdp.v15_liquid","sdp.v14_liquid","sdp.v13_fast_liquid","sdp.v12_liquid"],legacy="";
+var legacyKeys=["sdp.v19_incog","sdp.v18_nosuggest","sdp.v17_type_tick","sdp.v16_swan","sdp.v15_liquid","sdp.v14_liquid","sdp.v13_fast_liquid","sdp.v12_liquid"],legacy="";
 for(var lk=0;lk<legacyKeys.length&&!legacy;lk++){
 try{legacy=Store.get(legacyKeys[lk])||"";}catch(eL){legacy="";}
 }
@@ -2071,7 +2060,7 @@ if(d.comments.length>CONFIG.maxComments)d.comments=d.comments.slice(0,CONFIG.max
 if(d.settings.hc!==true&&d.settings.hc!=="on")d.settings.hc=false;
 if(d.settings.theme==="auto"||["light","dark"].indexOf(d.settings.theme)<0)d.settings.theme="dark";
 if(["auto","full","lite"].indexOf(d.settings.perf)<0)d.settings.perf="auto";
-d.settingsRev=19;
+d.settingsRev=20;
 d.v=CONFIG.schema;
 return d;
 },
@@ -4526,6 +4515,7 @@ var rcw=this.words[this.order[rc]!==undefined?this.order[rc]:rc];
 if(rcw&&this.answers[rc]&&Eng.isAnswerMatch(this.answers[rc],rcw))this.liveCorrectCount++;
 }
 this.st="ready";
+this.typedAnswer=U.clip(String(this.answers[this.idx]||""),100);
 this.openPlayer();
 this.runItem(this.idx);
 },
@@ -4558,9 +4548,9 @@ this.wordSolved=false;
 this.wordWrong=false;
 this.triedWrongOnce=false;
 this.st="speaking";
-if(this.mode==="type"&&this.layer){
-var fresh=U.$("#ansInput",this.layer);
-if(fresh){fresh.value=this.answers[this.idx]||"";Eng.syncMirror(fresh);}
+if(this.mode==="type"){
+this.typedAnswer=U.clip(String(this.answers[this.idx]||""),100);
+if(this.layer)this.syncInputMirror();
 }
 this.paint();
 this.runBeat(0);
@@ -4613,8 +4603,8 @@ this.status(S.yourTurn+" · tap Next when ready");
 if(this.mode==="type"){
 var inp=U.$("#ansInput",this.layer);
 if(inp){
-inp.value=this.answers[this.idx]||"";
-Eng.syncMirror(inp);
+this.typedAnswer=U.clip(String(this.answers[this.idx]||""),100);
+this.syncInputMirror();
 setTimeout(function(){try{inp.focus();}catch(e){}},80);
 }
 var fbReset=U.$("#ansFeedback",this.layer);
@@ -4684,9 +4674,8 @@ if(this.idx<=0){this.runItem(0);return;}
 this.runItem(this.idx-1);
 },
 captureAnswer:function(){
-if(this.mode!=="type"||!this.layer)return;
-var inp=U.$("#ansInput",this.layer);
-if(inp)this.answers[this.idx]=inp.value;
+if(this.mode!=="type")return;
+this.answers[this.idx]=this.typedAnswer||"";
 this.saveSnapshot();
 },
 currentWord:function(){
@@ -4991,24 +4980,23 @@ mirror.appendChild(mirrorText);
 mirror.appendChild(mirrorCaret);
 wrap.appendChild(mirror);
 var inp=U.el("input","ansinput",null);
-inp.type="password";
+inp.type="text";
 inp.id="ansInput";
-inp.name="sdp_incog_"+Math.floor(Math.random()*1e9);
-inp.setAttribute("inputmode","latin");
-inp.setAttribute("autocomplete","new-password");
+inp.name="sdp_field_"+Math.floor(Math.random()*1e9);
+inp.setAttribute("inputmode","text");
+inp.setAttribute("autocomplete","off");
 inp.setAttribute("autocorrect","off");
 inp.setAttribute("autocapitalize","none");
 inp.setAttribute("spellcheck","false");
 inp.setAttribute("aria-autocomplete","none");
-inp.setAttribute("data-gramm","false");
-inp.setAttribute("data-gramm_editor","false");
-inp.setAttribute("data-enable-grammarly","false");
 inp.setAttribute("data-lpignore","true");
 inp.setAttribute("data-1p-ignore","true");
+inp.setAttribute("data-bwignore","true");
 inp.setAttribute("data-form-type","other");
+inp.setAttribute("data-gramm","false");
 inp.setAttribute("aria-label","Your answer");
 wrap.appendChild(inp);
-Eng.syncMirror(inp);
+inp.value=" ";
 var tick=U.el("span","ans-tick",null);
 tick.id="ansTick";
 tick.setAttribute("aria-hidden","true");
@@ -5053,41 +5041,54 @@ var cmp=U.el("div","ans-compare",null);
 cmp.id="ansCompare";
 deck.appendChild(cmp);
 top.appendChild(deck);
-var blockSuggest=function(e){
-var t=e&&e.inputType?e.inputType:"";
-if(t==="insertReplacementText"||t==="insertFromPaste"||t==="insertFromDrop"||(e&&e.data&&e.data.length>1&&t!=="insertText")){
-if(e&&e.preventDefault)e.preventDefault();
+var noteBlock=function(){
 var fbBlock=U.$("#ansFeedback",self.layer);
 if(fbBlock)fbBlock.textContent="✗ Suggestions and pasted answers are blocked — type the word";
-}
 };
-U.on(inp,"beforeinput",blockSuggest);
-U.on(inp,"paste",function(e){if(e&&e.preventDefault)e.preventDefault();});
+U.on(inp,"beforeinput",function(e){
+var t=e&&e.inputType?e.inputType:"";
+if(t==="insertReplacementText"||t==="insertFromPaste"||t==="insertFromDrop"){if(e.preventDefault)e.preventDefault();noteBlock();}
+});
+U.on(inp,"paste",function(e){if(e&&e.preventDefault)e.preventDefault();noteBlock();});
 U.on(inp,"drop",function(e){if(e&&e.preventDefault)e.preventDefault();});
 U.on(inp,"contextmenu",function(e){if(e&&e.preventDefault)e.preventDefault();});
-U.on(inp,"input",function(){
-Eng.syncMirror(inp);
-self.answers[self.idx]=U.clip(inp.value,100);
-self.saveSnapshot();
-self.paintSlots();
-if(!self.wordSolved&&self.countdown&&self.countdown.left<4&&self.countdown.bump)self.countdown.bump(4);
-var wNow=self.currentWord();
-if(wNow&&!self.wordSolved&&!self.wordWrong){
-var val=String(inp.value||"");
-var fbNow=U.$("#ansFeedback",self.layer);
-if(val&&!Eng.isPrefixMatch(val,wNow)){
-if(fbNow)fbNow.textContent="✗ Letter mismatch — check your spelling";
-}else if(fbNow){
-fbNow.textContent="";
+U.on(inp,"input",function(e){
+if(self.wordSolved){inp.value=" ";return;}
+var raw=String(inp.value||"");
+var it=(e&&e.inputType)?String(e.inputType):"";
+var cur=String(self.typedAnswer||"");
+if(it==="insertReplacementText"||it==="insertFromPaste"||it==="insertFromDrop"){inp.value=" ";noteBlock();return;}
+if(raw===""||it==="deleteContentBackward"||it==="deleteContentForward"){
+self.typedAnswer=cur.slice(0,-1);
+}else if(raw.charAt(0)===" "){
+var added=raw.slice(1);
+if(added.length===1)self.typedAnswer=U.clip(cur+added,100);
+else if(added.length>1&&!it)self.typedAnswer=U.clip(added,100);
+}else{
+if(raw.length===1)self.typedAnswer=U.clip(cur+raw,100);
+else if(!it||it==="insertText")self.typedAnswer=U.clip(raw,100);
 }
-if(Eng.isAnswerMatch(val,wNow))self.onTypeCorrect();
+inp.value=" ";
+try{if(inp.setSelectionRange)inp.setSelectionRange(1,1);}catch(err){}
+self.syncInputMirror();
+self.onTypeInputUpdate();
+});
+U.on(inp,"keydown",function(e){
+if(e.key==="Backspace"){
+e.preventDefault();
+self.typedAnswer=String(self.typedAnswer||"").slice(0,-1);
+inp.value=" ";
+self.syncInputMirror();
+self.onTypeInputUpdate();
+}else if(e.key==="Enter"){
+e.preventDefault();
+self.submitTypeAnswer();
 }
 });
-U.on(inp,"keyup",function(){Eng.syncMirror(inp);});
-U.on(inp,"focus",function(){Eng.syncMirror(inp);});
-U.on(inp,"click",function(){Eng.syncMirror(inp);});
-U.on(inp,"blur",function(){Eng.syncMirror(inp);});
-U.on(inp,"keydown",function(e){if(e.key==="Enter"){e.preventDefault();self.checkTypeAnswer();}});
+U.on(inp,"keyup",function(){self.syncInputMirror();});
+U.on(inp,"focus",function(){self.syncInputMirror();});
+U.on(inp,"click",function(){self.syncInputMirror();});
+U.on(inp,"blur",function(){self.syncInputMirror();});
 }
 body.appendChild(top);
 var grid=U.el("div","ctrlgrid",null);
@@ -5195,11 +5196,7 @@ if(strEl&&!badNow&&strEl.className.indexOf("streak-broken")>=0){strEl.className=
 this.paintSlots();
 this.paintLiveScore();
 }
-var inp=U.$("#ansInput",this.layer);
-if(inp&&this.mode==="type"){
-if(document.activeElement!==inp)inp.value=this.answers[this.idx]||"";
-this.syncMirror(inp);
-}
+if(this.mode==="type")this.syncInputMirror();
 };
 Eng.getTargetVariants=function(wObj){
 var raw=String((wObj&&wObj.w!==undefined&&wObj.w!==null)?wObj.w:(wObj||""));
@@ -5227,33 +5224,28 @@ var variants=Eng.getTargetVariants(wObj);
 for(var i=0;i<variants.length;i++)if(variants[i].indexOf(t)===0)return true;
 return false;
 };
-Eng.isTouch=function(){
-try{
-if(window.matchMedia&&window.matchMedia("(pointer: coarse)").matches)return true;
-return Number(navigator.maxTouchPoints||0)>0;
-}catch(e){return false;}
-};
-Eng.syncMirror=function(inp){
-if(!inp)return;
-var wrap=inp.parentNode;
-if(!wrap)return;
-var mirror=U.$("#ansMirror",wrap),mirrorText=U.$("#ansMirrorText",wrap);
-var val=String(inp.value||"");
+Eng.syncInputMirror=function(){
+var inp=this.layer?U.$("#ansInput",this.layer):null;
+if(this.answers&&this.idx!==undefined&&typeof this.typedAnswer==="string")this.answers[this.idx]=this.typedAnswer;
+if(!inp||!inp.parentNode)return;
+var mirrorText=U.$("#ansMirrorText",inp.parentNode);
 if(mirrorText){
-mirrorText.textContent=val;
-if(!val)mirrorText.appendChild(U.el("span","ans-placeholder","Type the word you hear…"));
+if(this.typedAnswer){mirrorText.textContent=this.typedAnswer;mirrorText.className="";}
+else{mirrorText.textContent="Type the word you hear…";mirrorText.className="ans-placeholder";}
 }
+var mirror=U.$("#ansMirror",inp.parentNode);
 if(mirror){
 var focused=false;
 try{focused=document.activeElement===inp;}catch(eF){}
 mirror.className=focused?"ans-mirror is-focused":"ans-mirror";
 }
+inp.value=" ";
+try{if(inp.setSelectionRange)inp.setSelectionRange(1,1);}catch(eS){}
 };
 Eng.clearTypeInput=function(){
-var inp=this.layer?U.$("#ansInput",this.layer):null;
-if(!inp)return;
-inp.value="";
-this.syncMirror(inp);
+this.typedAnswer="";
+if(!this.layer)return;
+this.syncInputMirror();
 };
 Eng.wordPhon=function(w){
 try{
@@ -5280,8 +5272,7 @@ var words=primary.split(" ");
 var letterCount=primary.replace(/ /g,"").length;
 var chip=U.el("span","ans-hint-chip",words.length>1?(words.length+" words · "+primary.length+" letters"):(letterCount+" letters"));
 host.appendChild(chip);
-var inp=U.$("#ansInput",this.layer);
-var typed=U.norm(inp?inp.value:"");
+var typed=U.norm(this.typedAnswer||"");
 var solved=!!this.wordSolved&&Eng.isAnswerMatch(typed,w);
 var ti=0;
 for(var p=0;p<words.length;p++){
@@ -5305,11 +5296,12 @@ Eng.onTypeCorrect=function(){
 var self=this;
 if(!this.layer||this.mode!=="type"||this.wordSolved)return;
 var w=this.currentWord();
-var inp=U.$("#ansInput",this.layer);
-if(!w||!inp||!Eng.isAnswerMatch(inp.value,w))return;
+if(!w||!Eng.isAnswerMatch(this.typedAnswer,w))return;
 this.wordSolved=true;
 this.wordWrong=false;
-this.answers[this.idx]=U.clip(inp.value,100);
+this.answers[this.idx]=U.clip(this.typedAnswer,100);
+var inp=U.$("#ansInput",this.layer);
+if(inp)inp.value=" ";
 this.liveCorrectCount=(this.liveCorrectCount||0)+1;
 this.liveStreakCount=(this.liveStreakCount||0)+1;
 this.bestStreak=Math.max(this.bestStreak||0,this.liveStreakCount||0);
@@ -5349,12 +5341,11 @@ this.after(1050,function(){if(self.layer)self.next();});
 };
 Eng.checkTypeAnswer=function(){
 if(!this.layer||this.mode!=="type")return;
-var inp=U.$("#ansInput",this.layer);
 var w=this.currentWord();
-if(!inp||!w)return;
+if(!w)return;
 if(this.wordSolved||this.wordWrong){this.clearTimers();this.next();return;}
-if(Eng.isAnswerMatch(inp.value,w)){this.onTypeCorrect();return;}
-var val=U.norm(inp.value);
+if(Eng.isAnswerMatch(this.typedAnswer,w)){this.onTypeCorrect();return;}
+var val=U.norm(this.typedAnswer);
 var fb=U.$("#ansFeedback",this.layer);
 if(fb&&val&&US_UK[val]===U.norm(String(w.w).split("/")[0])){
 this.onTypeWrong("american");
@@ -5362,6 +5353,20 @@ if(fb)fb.textContent="American spelling — UK spelling: "+w.w;
 return;
 }
 this.onTypeWrong("check");
+};
+Eng.submitTypeAnswer=function(){this.checkTypeAnswer();};
+Eng.onTypeInputUpdate=function(){
+if(!this.layer||this.mode!=="type")return;
+var wNow=this.currentWord();
+this.saveSnapshot();
+this.paintSlots();
+if(!wNow||this.wordSolved||this.wordWrong)return;
+if(this.countdown&&this.countdown.left<4&&this.countdown.bump)this.countdown.bump(4);
+var val=String(this.typedAnswer||"");
+var fbNow=U.$("#ansFeedback",this.layer);
+if(val&&!Eng.isPrefixMatch(val,wNow)){if(fbNow)fbNow.textContent="✗ Letter mismatch — check your spelling";}
+else if(fbNow){fbNow.textContent="";}
+if(Eng.isAnswerMatch(val,wNow))this.onTypeCorrect();
 };
 Eng.paintCompare=function(typed,w){
 var self=this;
@@ -5401,9 +5406,10 @@ var self=this;
 if(!this.layer||this.mode!=="type"||this.wordSolved||this.wordWrong)return;
 var w=this.currentWord();
 if(!w)return;
-var inp=U.$("#ansInput",this.layer);
-var typed=inp?U.clip(String(inp.value||""),100):"";
+var typed=U.clip(String(this.typedAnswer||""),100);
 this.wordWrong=true;
+var inp=U.$("#ansInput",this.layer);
+if(inp)inp.value=" ";
 if(this.countdown&&this.countdown.t){clearInterval(this.countdown.t);this.countdown.t=null;}
 if(this.countdown)this.countdown.left=0;
 var broke=(this.liveStreakCount||0)>0;

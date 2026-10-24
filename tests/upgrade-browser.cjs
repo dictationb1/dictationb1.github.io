@@ -1,8 +1,10 @@
-/* Release 2.7.0 (ver 19) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.8.0 (ver 20) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer, the low-data
-   audio path and the v19 native-keyboard incognito shield: the custom
-   in-app keyboard is gone, #ansInput is a stealth password IME mirrored by
-   #ansMirror, and the animated tick / cross marks keep their 1-tap exits.
+   audio path and the v20 no-password native keyboard shield: the custom
+   in-app keyboard is gone, #ansInput is a plain type=text field that only
+   keeps a single-space IME sentinel (so no "Save password?" popup and no
+   keyboard suggestions) mirrored by #ansMirror, and the animated tick /
+   cross marks keep their 1-tap exits.
 
    The suite runs the real single-file app in Chromium/WebKit with synthetic
    speech and every network request aborted. A sandbox without the browser
@@ -302,7 +304,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v19_incog')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v20_nopass')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -436,9 +438,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v19_incog')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v20_nopass')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v19_incog')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v20_nopass')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -448,7 +450,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v19_incog'));
+        const d = JSON.parse(localStorage.getItem('sdp.v20_nopass'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -463,7 +465,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v19 native incognito keyboard: no suggestions, mirror, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v20 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       /* the ready sheet keeps ONE far-right cross mark and no duplicates */
@@ -514,12 +516,12 @@ function material(page) {
           pill: (document.getElementById('plLiveScore') || {}).textContent || ''
         };
       });
-      assert.equal(deck.type, 'password', 'the stealth IME hides every suggestion');
-      assert.equal(deck.autocomplete, 'new-password');
+      assert.equal(deck.type, 'text', 'a plain text field never opens the password manager');
+      assert.equal(deck.autocomplete, 'off');
       assert.equal(deck.spellcheck, 'false');
       assert.equal(deck.autocorrect, 'off');
-      assert.equal(deck.inputmode, 'latin', 'the native system keyboard opens');
-      assert.match(deck.name, /^sdp_incog_\d+$/, 'a random name defeats form autofill');
+      assert.equal(deck.inputmode, 'text', 'the native system keyboard opens');
+      assert.match(deck.name, /^sdp_field_\d+$/, 'a random name defeats form autofill');
       assert.equal(deck.vkb, 0, 'the custom keyboard is gone');
       assert.equal(deck.toggle, false, 'the Keyboard toggle is gone');
       assert.equal(deck.mirror, true, 'the plain-text mirror exists');
@@ -532,7 +534,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v19_incog'));
+        const d = JSON.parse(localStorage.getItem('sdp.v20_nopass'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
@@ -545,9 +547,13 @@ function material(page) {
       await page.waitForTimeout(250);
       const mirrored = await page.evaluate(() => ({
         text: document.getElementById('ansMirrorText').textContent,
-        empty: document.getElementById('ansInput').value === ''
+        sentinel: document.getElementById('ansInput').value === ' ',
+        type: document.getElementById('ansInput').type,
+        autocomplete: document.getElementById('ansInput').getAttribute('autocomplete')
       }));
-      assert.equal(mirrored.empty, false, 'the native field holds the typed word');
+      assert.equal(mirrored.sentinel, true, 'only the single-space IME sentinel is left in the field');
+      assert.equal(mirrored.type, 'text');
+      assert.equal(mirrored.autocomplete, 'off');
       assert.equal(mirrored.text, word, 'the mirror paints the plain letters');
       const solved = await page.evaluate(() => ({
         solved: document.getElementById('ansWrap').classList.contains('is-correct'),
