@@ -1,7 +1,8 @@
-/* Release 2.6.0 (ver 18) - real-engine checks for the 60 FPS Liquid Glass
+/* Release 2.7.0 (ver 19) - real-engine checks for the 60 FPS Liquid Glass
    engine, automatic Lite mode, the re-bound Material Mixer, the low-data
-   audio path and the v18 typing shield: zero keyboard suggestions, the
-   animated tick / cross marks and the 1-tap cross-mark exits.
+   audio path and the v19 native-keyboard incognito shield: the custom
+   in-app keyboard is gone, #ansInput is a stealth password IME mirrored by
+   #ansMirror, and the animated tick / cross marks keep their 1-tap exits.
 
    The suite runs the real single-file app in Chromium/WebKit with synthetic
    speech and every network request aborted. A sandbox without the browser
@@ -301,7 +302,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v19_incog')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -435,9 +436,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v19_incog')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v18_nosuggest')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v19_incog')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -447,7 +448,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v18_nosuggest'));
+        const d = JSON.parse(localStorage.getItem('sdp.v19_incog'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -462,17 +463,20 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v18 typing shield: no suggestions, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v19 native incognito keyboard: no suggestions, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
-      /* the ready sheet always offers a one-tap cross mark */
+      /* the ready sheet keeps ONE far-right cross mark and no duplicates */
       await page.evaluate(() => {
         document.querySelector('#segMode [data-mode="type"]').click();
       });
       await page.waitForTimeout(200);
       await page.locator('#btnStart').click();
-      await page.waitForFunction(() => !!document.getElementById('btnReadyClose'), null, { timeout: 8000 });
-      await page.locator('#btnReadyClose').click();
+      await page.waitForFunction(() => !!document.querySelector('#sheets .shead button'), null, { timeout: 8000 });
+      assert.equal(await page.locator('#btnReadyClose').count(), 0, 'no duplicate header cross');
+      assert.equal(await page.locator('#btnNotReady').count(), 0, 'no duplicate footer exit');
+      assert.equal(await page.locator('#sheets .shead button').count(), 1, 'one far-right cross only');
+      await page.locator('#sheets .shead button').click();
       await page.waitForTimeout(400);
       const closed = await page.evaluate(() => ({
         sheets: document.querySelectorAll('#sheets .sheet').length,
@@ -491,46 +495,60 @@ function material(page) {
       await page.waitForFunction(() => !!document.getElementById('ansInput'), null, { timeout: 15000 });
       const deck = await page.evaluate(() => {
         const i = document.getElementById('ansInput');
+        const m = document.getElementById('ansMirror');
         return {
           type: i.type,
           autocomplete: i.getAttribute('autocomplete'),
           spellcheck: i.getAttribute('spellcheck'),
           autocorrect: i.getAttribute('autocorrect'),
           inputmode: i.getAttribute('inputmode'),
+          name: i.name,
           vkb: document.querySelectorAll('#ansVkb .vkb-key').length,
-          rows: document.querySelectorAll('#ansVkb .vkb-row').length,
+          toggle: !!document.getElementById('btnVkbToggle'),
+          mirror: !!m,
+          mirrorText: !!document.getElementById('ansMirrorText'),
+          mirrorCaret: !!(m && m.querySelector('.ans-caret')),
           tick: !!document.getElementById('ansTick'),
           cross: !!document.getElementById('ansWrong'),
           closeBtn: !!document.getElementById('btnPlayerClose'),
           pill: (document.getElementById('plLiveScore') || {}).textContent || ''
         };
       });
-      assert.equal(deck.type, 'search', 'the input is not a text field for IMEs');
-      assert.equal(deck.autocomplete, 'one-time-code');
+      assert.equal(deck.type, 'password', 'the stealth IME hides every suggestion');
+      assert.equal(deck.autocomplete, 'new-password');
       assert.equal(deck.spellcheck, 'false');
       assert.equal(deck.autocorrect, 'off');
-      assert.equal(deck.inputmode, 'none', 'touch devices never open the system keyboard');
-      assert.equal(deck.vkb, 31, 'four QWERTY rows');
-      assert.equal(deck.rows, 4);
+      assert.equal(deck.inputmode, 'latin', 'the native system keyboard opens');
+      assert.match(deck.name, /^sdp_incog_\d+$/, 'a random name defeats form autofill');
+      assert.equal(deck.vkb, 0, 'the custom keyboard is gone');
+      assert.equal(deck.toggle, false, 'the Keyboard toggle is gone');
+      assert.equal(deck.mirror, true, 'the plain-text mirror exists');
+      assert.equal(deck.mirrorText, true);
+      assert.equal(deck.mirrorCaret, true);
       assert.equal(deck.tick, true);
       assert.equal(deck.cross, true);
       assert.equal(deck.closeBtn, true);
       assert.match(deck.pill, /Correct/);
 
-      /* type the answer with the built-in keyboard: the tick must appear */
+      /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v18_nosuggest'));
+        const d = JSON.parse(localStorage.getItem('sdp.v19_incog'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
-      for (const ch of word) {
-        await page.evaluate((c) => {
-          const key = Array.from(document.querySelectorAll('#ansVkb .vkb-key')).find((b) => b.textContent === c);
-          if (key) key.click();
-        }, ch);
-        await page.waitForTimeout(25);
-      }
+      await page.evaluate((value) => {
+        const i = document.getElementById('ansInput');
+        i.focus();
+        i.value = value;
+        i.dispatchEvent(new Event('input', { bubbles: true }));
+      }, word);
       await page.waitForTimeout(250);
+      const mirrored = await page.evaluate(() => ({
+        text: document.getElementById('ansMirrorText').textContent,
+        empty: document.getElementById('ansInput').value === ''
+      }));
+      assert.equal(mirrored.empty, false, 'the native field holds the typed word');
+      assert.equal(mirrored.text, word, 'the mirror paints the plain letters');
       const solved = await page.evaluate(() => ({
         solved: document.getElementById('ansWrap').classList.contains('is-correct'),
         tick: document.getElementById('ansTick').classList.contains('is-correct'),

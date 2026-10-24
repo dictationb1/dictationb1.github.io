@@ -26,11 +26,10 @@
     "pauseSent": 1.6,
     "theme": "dark",
     "perf": "auto",
-    "glassTint": 0,
-    "vkb": true
+    "glassTint": 0
   },
-  "ver": 18,
-  "version": "2.6.0",
+  "ver": 19,
+  "version": "2.7.0",
   "buildDate": "2026-10-24",
   "credits": {
     "createdBy": "Hansana",
@@ -49,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "2.6.0",
-  "settingsRev": 18,
+  "appVersion": "2.7.0",
+  "settingsRev": 19,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -73,11 +72,14 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v18_nosuggest",
+  "storageKey": "sdp.v19_incog",
   "keyboard": {
-    "layout": "qwerty",
-    "inputMode": "none on touch",
-    "autocomplete": "one-time-code",
+    "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
+    "inputType": "password",
+    "inputMode": "latin",
+    "autocomplete": "new-password",
+    "suggestions": "disabled at OS level (incognito / no personalised learning)",
+    "mirror": "#ansMirror plain-text overlay, never a form",
     "blockedInputTypes": [
       "insertReplacementText",
       "insertFromPaste",
@@ -88,6 +90,7 @@
     "tick": "animated liquid glass check mark",
     "cross": "animated liquid glass cross mark",
     "streakBreak": "1.4s coral flash with streak reset",
-    "correctionHoldMs": 2100
+    "correctionHoldMs": 2100,
+    "exit": "single far-right close cross on the ready sheet and in the player topbar"
   }
 }

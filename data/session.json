@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 18,
+  "ver": 19,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -218,14 +218,14 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "2.6.0",
+  "appVersion": "2.7.0",
   "updatedAt": "2026-10-23T00:00:00Z",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "buildDate": "2026-10-24",
-  "settingsRev": 18,
+  "settingsRev": 19,
   "keyboard": {
-    "layout": "qwerty",
-    "suggestions": "blocked",
+    "engine": "native system keyboard only",
+    "suggestions": "disabled at OS level (incognito)",
     "autocorrect": "off",
     "spellcheck": "false"
   }
