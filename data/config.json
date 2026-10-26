@@ -28,9 +28,9 @@
     "perf": "auto",
     "glassTint": 0
   },
-  "ver": 22,
-  "version": "3.0.0",
-  "buildDate": "2026-10-24",
+  "ver": 23,
+  "version": "3.1.0",
+  "buildDate": "2026-10-26",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -48,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.0.0",
-  "settingsRev": 22,
+  "appVersion": "3.1.0",
+  "settingsRev": 23,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -72,7 +72,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v22_paper_default",
+  "storageKey": "sdp.v23_sumi_swan",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -97,5 +97,13 @@
     "cta": "#btnGuideStart",
     "helper": "UI.startPractisingFromGuide",
     "action": "close guide, unlock speech, show Home, Eng.start({})"
+  },
+  "mode": "paper",
+  "swan": {
+    "stage": "100vw x 100vh fixed viewport",
+    "durationMs": 12000,
+    "engine": "window.SwanStage",
+    "pressure": "six-stage variable-radius cubic Bezier ribbon",
+    "storage": "sdp.v23_sumi_swan"
   }
 }

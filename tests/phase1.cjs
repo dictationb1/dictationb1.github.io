@@ -173,7 +173,7 @@ test('1.3 corrupt primary restores automatic copy and retains corrupt text', () 
 test('1.3 pending save flushed on pagehide', () => withApp({}, a => {a.q.DB.data.session.title='Leaving';a.q.DB.save();a.w.dispatchEvent(new a.w.Event('pagehide'));assert(a.w.localStorage.getItem(STORE_KEY).includes('Leaving'));}));
 test('1.4 flex fatal card uses scale-only animation; confirm keeps translate', () => withApp({bootFailure:true}, a => {
  assert(a.w.document.querySelector('#fatal .modal').classList.contains('flex-card'));
- const keyframe=current.match(/@keyframes pop-flex\s*\{[^\n]+/)[0];assert(!keyframe.includes('translate'));assert(current.includes('@keyframes pop {'));
+ const keyframe=current.match(/@keyframes pop-flex\s*\{[\s\S]*?\}\s*\}/)[0];assert(!keyframe.includes('translate'));assert(/@keyframes pop\s*\{/.test(current));
 }));
 test('1.5 injected script removed, gas-source retained, 20 sections kept', () => {
  assert(!/__CF\$|cdn-cgi|challenge-platform/.test(current));
@@ -407,13 +407,18 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- assert.equal(a.w.SDP.version,'2.9.0'); assert.equal(a.w.SDP.build,'2026-10-24'); assert.equal(a.w.SDP.stamp(),'v2.9.0 (2026-10-24)');
+ const expectedVersion=current.match(/var APP_VERSION="([^"]+)"/)[1];
+ const expectedBuild=current.match(/var BUILD_DATE="([^"]+)"/)[1];
+ const expectedStamp='v'+expectedVersion+' ('+expectedBuild+')';
+ assert.equal(a.w.SDP.version,expectedVersion); assert.equal(a.w.SDP.build,expectedBuild); assert.equal(a.w.SDP.stamp(),expectedStamp);
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
- assert(txt.includes('v2.9.0 (2026-10-24)')); assert(txt.includes('My data'));
+ assert(txt.includes(expectedStamp)); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
+ const expectedVersion=current.match(/var APP_VERSION="([^"]+)"/)[1];
+ const expectedBuild=current.match(/var BUILD_DATE="([^"]+)"/)[1];
  assert(a.crash());
- assert(a.w.document.querySelector('#fatal').textContent.includes('Build v2.9.0 (2026-10-24)'));
+ assert(a.w.document.querySelector('#fatal').textContent.includes('Build v'+expectedVersion+' ('+expectedBuild+')'));
 }));
 test('1.9 one failing Home widget leaves the other widgets on screen', () => withApp({}, a => {
  const real=a.q.UI.statBox; a.q.UI.statBox=function(){ throw new Error('Stat widget failed'); };
