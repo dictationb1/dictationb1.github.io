@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.0 (v29) — 2026-10-27 (All saved GitHub videos, seamless PC ambilight, gallery playlist)
+
+- Scanned every tracked media asset and every remote branch. `CONFIG.repoVideos` (also mirrored into `data/config.json`, `data/session.json` and `data/version.json`) lists each saved video; `CONFIG.repoMedia` preserves the posters and QA images. `LiveWallpaper.discoverGitHubVideos()` reads the GitHub tree API, filters `.mp4/.webm/.mov/.m4v` blobs, URL-encodes spaces with `encodeURI`, merges new uploads and caches the result in localStorage under `sdp.gh_videos_cache` for ten minutes. The topbar refresh and the in-sheet **🔄 Refresh Videos from GitHub** button force an immediate re-scan.
+- Removed the vertical 9:16 rectangle seam on 16:9 monitors with a synchronized dual-layer backdrop: blurred, saturated `#bgLiveAmbilight` under `#bgLiveVideo`, plus a horizontal edge-feather mask on portrait videos viewed on wide screens. Mobile and landscape videos return to `cover`, clear the mask and pause/hide the ambilight layer to save battery. `#bgLiveCanvas` still sleeps at 0% CPU when idle.
+- 🎬 `#btnLiveVideo` and Settings → Live Wallpaper open the Liquid Glass Live Wallpaper Studio sheet: a `.video-gallery-list` of every repository video with a glowing **✓ Active** badge, **▶ Select** and **⏭ Next Video**, a `.seg` playlist pill (loop / auto-cycle / video off), a device picker backed by IndexedDB, and a GitHub refresh button. `DB.data.settings.activeVideoSrc` and `videoPlaylistMode` persist locally and travel with the lecturer's published session.
+- Bumped `CONFIG.key` to `sdp.v29_gh_videos`, schema/settingsRev to 29 and `APP_VERSION` to `3.7.0`. `resetToV29` migrates v27/v28 learners without losing their data. All v22–v28 dictation, typing, search, guide, credit, feedback and 120 FPS features remain; the single-file app is still strict ES5, self-contained and 418,917 bytes.
+
 ## 3.6.0 (v28) — 2026-10-27 (Live video wallpaper, local picker and idle-sleeping neon)
 
 - Added a composited `#bgLiveWrap` with a compact bundled, muted H.264 portrait bunny video and WebP poster. `window.LiveWallpaper.fitVideo()` preserves the whole portrait on wide screens and fills phones; video plays in both Lite and Full. The small Hansana swan credit badge remains; the full-screen swan drawing does not.

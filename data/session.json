@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 28,
+  "ver": 29,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -8,7 +8,9 @@
     "title": "Session 7 - Travel & Transport",
     "listId": "list_session_7_travel",
     "branch": "CCBE Galle Branch",
-    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH"
+    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH",
+    "mode": "paper",
+    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4"
   },
   "lists": [
     {
@@ -218,16 +220,44 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "3.6.0",
+  "appVersion": "3.7.0",
   "updatedAt": "2026-10-27T00:00:00Z",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "buildDate": "2026-10-27",
-  "settingsRev": 28,
+  "settingsRev": 29,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
     "autocorrect": "off",
     "spellcheck": "false"
   },
-  "mode": "paper"
+  "mode": "paper",
+  "storageKey": "sdp.v29_gh_videos",
+  "repoVideos": [
+    {
+      "id": "vid_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "poster": "./assets/bunny-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/bunny-poster.webp",
+    "./qa/evidence/fatal-390.png",
+    "./qa/evidence/home-390.png"
+  ],
+  "repoFallbacks": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./bunny-live-wallpaper.mp4",
+    "./assets/live-wallpaper.mp4",
+    "./live-wallpaper.mp4",
+    "./media.mp4",
+    "./assets/swan-lake.mp4"
+  ],
+  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
+  "ghVideosCache": "sdp.gh_videos_cache",
+  "ghVideosTtl": 600000,
+  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "videoPlaylistMode": "loop"
 }

@@ -1,11 +1,11 @@
 {
-  "ver": 28,
-  "appVersion": "3.6.0",
-  "version": "3.6.0",
+  "ver": 29,
+  "appVersion": "3.7.0",
+  "version": "3.7.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 28,
+  "settingsRev": 29,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -18,7 +18,39 @@
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
     "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "liveWallpaper": "Portrait/wide framing, local MP4/WebM picker and IndexedDB persistence"
+    "liveWallpaper": "Portrait/wide framing, local MP4/WebM picker and IndexedDB persistence",
+    "githubVideos": "CONFIG.repoVideos + GitHub tree API auto-discovery, cached 10 minutes under sdp.gh_videos_cache",
+    "ambilight": "Dual synchronized video layers with horizontal edge feathering remove the 9:16 box seam on 16:9 monitors",
+    "gallery": "One-tap GitHub video gallery, loop/cycle/off playlist, local MP4 picker with IndexedDB persistence",
+    "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish"
   },
-  "mode": "paper"
+  "mode": "paper",
+  "storageKey": "sdp.v29_gh_videos",
+  "repoVideos": [
+    {
+      "id": "vid_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "poster": "./assets/bunny-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/bunny-poster.webp",
+    "./qa/evidence/fatal-390.png",
+    "./qa/evidence/home-390.png"
+  ],
+  "repoFallbacks": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./bunny-live-wallpaper.mp4",
+    "./assets/live-wallpaper.mp4",
+    "./live-wallpaper.mp4",
+    "./media.mp4",
+    "./assets/swan-lake.mp4"
+  ],
+  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
+  "ghVideosCache": "sdp.gh_videos_cache",
+  "ghVideosTtl": 600000,
+  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "videoPlaylistMode": "loop"
 }

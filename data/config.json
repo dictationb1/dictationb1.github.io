@@ -27,10 +27,12 @@
     "theme": "dark",
     "perf": "auto",
     "glassTint": 0,
-    "wallpaperVideo": true
+    "wallpaperVideo": true,
+    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "videoPlaylistMode": "loop"
   },
-  "ver": 28,
-  "version": "3.6.0",
+  "ver": 29,
+  "version": "3.7.0",
   "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
@@ -49,8 +51,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.6.0",
-  "settingsRev": 28,
+  "appVersion": "3.7.0",
+  "settingsRev": 29,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -74,7 +76,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v28_live_video",
+  "storageKey": "sdp.v29_gh_videos",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -138,6 +140,76 @@
       "key": "custom_bg"
     },
     "defaultEnabled": true,
-    "framing": "Portrait on wide screens: contain; portrait on mobile and universal landscape: cover"
-  }
+    "framing": "Portrait on wide screens: contain + synchronized ambilight + horizontal edge feathering; portrait on mobile and universal landscape: cover",
+    "backdrop": "#bgLiveAmbilight",
+    "ambilight": {
+      "selector": "#bgLiveAmbilight",
+      "blur": "34px",
+      "saturate": 1.55,
+      "brightness": 0.68,
+      "opacity": 0.78,
+      "transition": "opacity .9s ease"
+    },
+    "featherMask": "linear-gradient(90deg, transparent 0%, rgba(0,0,0,.2) 22%, #000 33%, #000 67%, rgba(0,0,0,.2) 78%, transparent 100%)",
+    "playlist": [
+      "loop",
+      "cycle",
+      "off"
+    ],
+    "gallery": "#btnLiveVideo",
+    "scan": "#btnScanGhVideos",
+    "localPicker": "#btnPickVideoFile",
+    "repoVideos": [
+      {
+        "id": "vid_bunny_live_wallpaper",
+        "title": "Bunny Live Wallpaper",
+        "src": "./assets/bunny-live-wallpaper.mp4",
+        "poster": "./assets/bunny-poster.webp"
+      }
+    ],
+    "repoMedia": [
+      "./assets/bunny-live-wallpaper.mp4",
+      "./assets/bunny-poster.webp",
+      "./qa/evidence/fatal-390.png",
+      "./qa/evidence/home-390.png"
+    ],
+    "repoFallbacks": [
+      "./assets/bunny-live-wallpaper.mp4",
+      "./bunny-live-wallpaper.mp4",
+      "./assets/live-wallpaper.mp4",
+      "./live-wallpaper.mp4",
+      "./media.mp4",
+      "./assets/swan-lake.mp4"
+    ],
+    "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
+    "ghVideosCache": "sdp.gh_videos_cache",
+    "ghVideosTtl": 600000
+  },
+  "repoVideos": [
+    {
+      "id": "vid_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "poster": "./assets/bunny-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/bunny-poster.webp",
+    "./qa/evidence/fatal-390.png",
+    "./qa/evidence/home-390.png"
+  ],
+  "repoFallbacks": [
+    "./assets/bunny-live-wallpaper.mp4",
+    "./bunny-live-wallpaper.mp4",
+    "./assets/live-wallpaper.mp4",
+    "./live-wallpaper.mp4",
+    "./media.mp4",
+    "./assets/swan-lake.mp4"
+  ],
+  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
+  "ghVideosCache": "sdp.gh_videos_cache",
+  "ghVideosTtl": 600000,
+  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "videoPlaylistMode": "loop"
 }
