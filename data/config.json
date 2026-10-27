@@ -26,10 +26,11 @@
     "pauseSent": 1.6,
     "theme": "dark",
     "perf": "auto",
-    "glassTint": 0
+    "glassTint": 0,
+    "wallpaperVideo": true
   },
-  "ver": 27,
-  "version": "3.5.0",
+  "ver": 28,
+  "version": "3.6.0",
   "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
@@ -48,8 +49,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.5.0",
-  "settingsRev": 27,
+  "appVersion": "3.6.0",
+  "settingsRev": 28,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -64,16 +65,16 @@
     },
     "probeMs": 1200,
     "medianBudgetMs": 19,
-    "background": "Static pre-blurred radial gradients; no continuous animation-frame loop"
+    "background": "GPU-isolated fixed video, with canvas RAF only while short-lived ripples/sparks exist"
   },
   "dataSaving": {
-    "preload": "none",
+    "preload": "none (dictation audio only)",
     "audioReuse": true,
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v27_clean_fast",
+  "storageKey": "sdp.v28_live_video",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -119,5 +120,24 @@
       "meaning"
     ],
     "updates": "cached and invalidated on data changes"
+  },
+  "wallpaper": {
+    "stage": "#bgLiveWrap",
+    "video": "#bgLiveVideo",
+    "canvas": "#bgLiveCanvas",
+    "defaultVideo": "./assets/bunny-live-wallpaper.mp4",
+    "poster": "./assets/bunny-poster.webp",
+    "preload": "auto",
+    "modes": [
+      "lite",
+      "full"
+    ],
+    "storage": {
+      "database": "sdp_wallpaper_db",
+      "store": "videos",
+      "key": "custom_bg"
+    },
+    "defaultEnabled": true,
+    "framing": "Portrait on wide screens: contain; portrait on mobile and universal landscape: cover"
   }
 }

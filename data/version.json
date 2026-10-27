@@ -1,11 +1,11 @@
 {
-  "ver": 27,
-  "appVersion": "3.5.0",
-  "version": "3.5.0",
+  "ver": 28,
+  "appVersion": "3.6.0",
+  "version": "3.6.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 27,
+  "settingsRev": 28,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -17,7 +17,8 @@
     "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
-    "ambient": "Static aqua, coral, amber and violet radial gradients; no wallpaper engine or continuous animation-frame loop"
+    "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
+    "liveWallpaper": "Portrait/wide framing, local MP4/WebM picker and IndexedDB persistence"
   },
   "mode": "paper"
 }
