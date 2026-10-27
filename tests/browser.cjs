@@ -34,8 +34,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      contacted: publishing and completions wait for a real user action. */
   const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v[0-9]+\/json\?poll=1&since=24h$/;
   const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v[0-9]+,sdp_dictationb1_comm_v[0-9]+\/sse$/;
-  const strays=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!live.test(u)&&!sse.test(u));
-  const otherHosts=requests.filter(u=>!/(^|\/)data\/(session|version)\.json$/.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
+  const staticOk=/(^|\/)data\/(session|version)\.json(\?v=32)?$/;const strays=requests.filter(u=>!staticOk.test(u)&&!live.test(u)&&!sse.test(u));
+  const otherHosts=requests.filter(u=>!staticOk.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
   await closeSheet(page);
   await unlockPin(page);
@@ -46,7 +46,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v31_assets_only') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v32_crystal_video') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -62,7 +62,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v31_assets_only') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v32_crystal_video') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -73,7 +73,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v31_assets_only','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v32_crystal_video','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -98,6 +98,33 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   } else {
     results.push({test:'Original Chromium fatal card is off-screen (before evidence)',status:'SKIP',detail:'historical baseline commit 7577968 is unavailable'});
   }
+  await context.close();
+ }
+ {
+  /* v32 gate: the bundled bunny MP4 really decodes and autoplays in Chromium,
+     and the see-through glass never hides it behind the Home hero. */
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
+  let ok=false,state={};
+  try {
+   await page.waitForFunction(()=>{const v=document.getElementById('bgLiveVideo');
+    return v&&v.readyState>=2&&v.paused===false&&v.videoWidth>0;},null,{timeout:12000});
+   state=await page.evaluate(()=>{const v=document.getElementById('bgLiveVideo');
+    const hero=getComputedStyle(document.getElementById('homeHero'));
+    return {readyState:v.readyState,paused:v.paused,videoWidth:v.videoWidth,
+     filter:getComputedStyle(v).filter,opacity:getComputedStyle(v).opacity,
+     src:v.getAttribute('src'),wrap:getComputedStyle(document.getElementById('bgLiveWrap')).display,
+     heroBg:hero.backgroundColor,heroBlur:hero.backdropFilter||hero.webkitBackdropFilter,
+     scrim:getComputedStyle(document.getElementById('bgContrastScrim')).backgroundImage};});
+   ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
+    state.filter.indexOf('brightness(1.02)')>=0&&state.opacity==='1'&&
+    state.src==='./assets/bunny-live-wallpaper.mp4'&&state.wrap!=='none'&&
+    state.heroBg.indexOf('rgba(6, 10, 22, 0.28)')>=0&&state.heroBlur.indexOf('blur(4px)')>=0&&
+    errors.length===0;
+  } catch(e){state.error=String(e);}
+  results.push({test:'Chromium v32 live bunny video decodes, autoplays and shines through the glass',status:ok?'PASS':'FAIL',detail:state,errors});
   await context.close();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.

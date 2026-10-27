@@ -81,7 +81,7 @@ function bootTraffic(a) {
      an Apps Script call or any other host is still a failure. */
   const live = /^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v8\/json\?poll=1&since=24h$/;
   const sse = /^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v8,sdp_dictationb1_comm_v8\/sse$/;
-  const staticFile = /^\.\/data\/(version|session)\.json$/;
+  const staticFile = /^\.\/data\/(version|session)\.json(\?v=32)?$/;
   return a.requests.every(r => r.method === 'fetch' && (staticFile.test(r.url) || live.test(r.url) || sse.test(r.url))) &&
     !a.requests.some(r => r.method !== 'fetch') &&
     !a.requests.some(r => /script\.google\.com|api\.github\.com/.test(r.url));
