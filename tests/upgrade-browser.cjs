@@ -292,7 +292,7 @@ function material(page) {
       assert.equal(await page.locator('body.tint-frost').count(), 1);
       assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
       assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(220, 238, 255, 0.22)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(16, 26, 52, 0.72)', null, { timeout: 8000 });
       const frost = await page.evaluate(() => ({
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
@@ -301,7 +301,7 @@ function material(page) {
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
-      assert.equal(frost.bg, 'rgba(220, 238, 255, 0.22)');
+      assert.equal(frost.bg, 'rgba(16, 26, 52, 0.72)');
       assert.match(frost.shadow, /180, 225, 255/);
       assert.equal(frost.morph, false);
       assert.equal(frost.saved, 1);
@@ -311,9 +311,9 @@ function material(page) {
       await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 24, 0.66)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(4, 7, 16, 0.82)', null, { timeout: 8000 });
       const smoke = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
-      assert.equal(smoke, 'rgba(6, 10, 24, 0.66)');
+      assert.equal(smoke, 'rgba(4, 7, 16, 0.82)');
       await page.locator('#segTint [data-tint="0"]').click();
       await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
@@ -499,7 +499,7 @@ function material(page) {
   await check(engine + ' local MP4 starts immediately, survives reload via IndexedDB, pauses and resets', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
-      /* v29: the topbar opens the GitHub gallery; the Settings card keeps the
+      /* v29/v30: the topbar opens the GitHub gallery; the Settings card keeps the
          one-tap native device picker. */
       await openTab(page, 'tab-set');
       const choose = page.waitForEvent('filechooser');

@@ -319,7 +319,7 @@ async function flow(browser, vp, label, seed) {
   /* the app re-saves its own data on unload, so clear the rate window on the
      way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const key = localStorage.getItem('sdp.v29_gh_videos') ? 'sdp.v29_gh_videos' : localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+    const key = localStorage.getItem('sdp.v30_studio') ? 'sdp.v30_studio' : localStorage.getItem('sdp.v29_gh_videos') ? 'sdp.v29_gh_videos' : localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
