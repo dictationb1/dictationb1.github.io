@@ -61,8 +61,15 @@ async function boot(browser, width, height) {
      on a loaded CI runner its timer can fire later than a fixed sleep. */
   const close = page.locator('#sheets .shead button').first();
   await close.waitFor({ state: 'visible', timeout: 12000 });
-  await close.click({ timeout: 6000 });
+  // Dismiss setup via the actual handler without waiting for headless WebKit's
+  // first animated sheet to become geometrically stable. Pointer interactions
+  // are exercised separately in the guide, ready-screen and player tests.
+  await close.evaluate((button) => button.click());
   await page.waitForFunction(() => !document.querySelector('#sheets .scrim'), null, { timeout: 6000 });
+  await page.waitForFunction(() => {
+    const credit = document.getElementById('credit');
+    return credit && getComputedStyle(credit).opacity === '1';
+  }, null, { timeout: 8000 });
   return { context, page, errors };
 }
 
