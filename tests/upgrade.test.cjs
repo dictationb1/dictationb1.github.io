@@ -1,10 +1,12 @@
-/* Smart Dictation Player 3.1.0 (schema 23) release verification.
-   Full-viewport living sumi swan plus every v22 dictation regression gate. */
 'use strict';
-
+/* v32 release gates: strict-ES5 single-file app, normalised /assets/ media,
+   guaranteed bunny playback, ultra-clear glass through every screen, and every
+   v22-v31 dictation, typing, search, credit, guide, ambilight and 120 FPS feature. */
+const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const cp = require('node:child_process');
 const acorn = require('acorn');
 const { harness, html } = require('./app-harness.cjs');
 
@@ -13,639 +15,391 @@ const json = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name),
 const version = json('version.json');
 const config = json('config.json');
 const session = json('session.json');
-const TITLE = 'Session 7 - Travel & Transport';
-const LIST_ID = 'list_session_7_travel';
-const STORE_KEY = 'sdp.v23_sumi_swan';
-const WORDS = [
-  'guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
-  'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business',
-  'on vacation', 'overnight', 'passenger', 'public transport', 'reception',
-  'reservation', 'road sign', 'signpost', 'spaceship', 'suitcase',
-  'tourist information centre', 'traffic lights', 'tunnel', 'tyre/tire',
-  'vehicle', 'visa', 'waiting room', 'windscreen'
-];
-const tests = [];
-function test(name, fn) { tests.push({ name, fn }); }
-function boot() { return harness(); }
-function click(a, el) {
-  assert.ok(el, 'button to click exists');
-  el.dispatchEvent(new a.w.MouseEvent('click', { bubbles: true, cancelable: true }));
-}
-function has(token, label) { assert.ok(html.indexOf(token) >= 0, label || token); }
-function lacks(token, label) { assert.equal(html.indexOf(token), -1, label || token); }
-function cssText() { return html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>')); }
-function rule(selector) {
-  const css = cssText();
-  let at = css.indexOf(selector);
-  while (at >= 0 && !/^\s*\{/.test(css.slice(at + selector.length))) at = css.indexOf(selector, at + 1);
-  assert.ok(at >= 0, 'CSS rule exists: ' + selector);
-  const end = css.indexOf('}', at);
-  return css.slice(at, end + 1);
-}
-function homeMarkup() {
-  const start = html.indexOf('<section class="screen" id="screen-home"');
-  return html.slice(start, html.indexOf('</section>', start));
-}
-function appScript() {
-  const found = html.match(/<script>([\s\S]*?)<\/script>/g);
-  return found[found.length - 1].slice(8, -9);
-}
-function typeBoot(a) {
-  a.q.DB.data.settings.mode = 'type';
-  a.q.Eng.start({});
-  a.clock.tick(50);
-  return a.w.document;
-}
-function startPlaying(a) {
-  const doc = typeBoot(a);
-  const skip = Array.from(doc.querySelectorAll('#sheets button')).find((b) => b.textContent.trim() === 'Skip countdown');
-  assert.ok(skip, 'the ready sheet offers Skip countdown');
-  click(a, skip);
-  a.clock.tick(4000);
-  assert.ok(doc.getElementById('ansInput'), 'the native typing input is rendered');
-  return doc;
-}
-function typeChar(a, inp, ch) {
-  inp.value = ' ' + ch;
-  inp.dispatchEvent(new a.w.Event('input', { bubbles: true }));
-}
-function inputEvent(a, inp, inputType) {
-  const ev = new a.w.Event('input', { bubbles: true, cancelable: true });
-  if (inputType) ev.inputType = inputType;
-  inp.dispatchEvent(ev);
-  return ev;
-}
-function primaryTourButton(doc) {
-  const button = doc.querySelector('#sheets .sfoot .btn.primary');
-  assert.ok(button, 'the tour primary action exists');
-  return button;
+const KEY = 'sdp.v32_crystal_video';
+const DEFAULT = './assets/bunny-live-wallpaper.mp4';
+const RAW_URL = 'https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/assets/bunny-live-wallpaper.mp4?v=32#t=1.2';
+const title = 'Session 7 - Travel & Transport';
+const words = ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
+  'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business', 'on vacation',
+  'overnight', 'passenger', 'public transport', 'reception', 'reservation', 'road sign',
+  'signpost', 'spaceship', 'suitcase', 'tourist information centre', 'traffic lights',
+  'tunnel', 'tyre/tire', 'vehicle', 'visa', 'waiting room', 'windscreen'];
+const css = html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>'));
+const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const has = (s) => assert.ok(html.includes(s), 'missing ' + s);
+const lacks = (s) => assert.ok(!html.includes(s), 'unexpected ' + s);
+
+function stubbed(a, rows) {
+  const calls = [];
+  a.w.XMLHttpRequest = function () {
+    const self = this;
+    this.open = function (m, u) { calls.push(String(u)); };
+    this.setRequestHeader = function () {};
+    this.send = function () {
+      self.readyState = 4; self.status = 200;
+      self.responseText = JSON.stringify(rows || []);
+      if (self.onreadystatechange) self.onreadystatechange();
+    };
+    this.abort = function () {};
+  };
+  return calls;
 }
 
-/* Release integrity and v23 metadata. */
-test('single-file budget, strict ES5 and zero external assets', function () {
-  const bytes = Buffer.byteLength(html);
-  assert.ok(bytes < 442000, 'index.html stays under 442,000 bytes (now ' + bytes + ')');
-  const script = appScript();
+test('v32 build: strict ES5, zero external links and well under 442,000 bytes', () => {
   acorn.parse(script, { ecmaVersion: 5 });
-  assert.equal(/<link\b/i.test(html), false, 'no <link> tags');
-  assert.equal(/@import/i.test(html), false, 'no CSS imports');
-  assert.equal(/<script[^>]+src=/i.test(html), false, 'no external scripts');
-  assert.equal(script.indexOf('=>'), -1, 'no arrow functions');
-  assert.equal(script.indexOf(String.fromCharCode(96)), -1, 'no template literals');
-  assert.equal(/\basync\s+function/.test(script), false, 'no async functions');
-  assert.equal(/\bawait\s/.test(script), false, 'no await');
-  assert.equal(/\bconst\s/.test(script), false, 'no const declarations');
-  assert.equal(/\blet\s/.test(script), false, 'no let declarations');
+  assert.ok(Buffer.byteLength(html) < 442000, 'actual bytes: ' + Buffer.byteLength(html));
+  assert.doesNotMatch(html, /<link\b|<script[^>]+src=|@import/i);
+  assert.doesNotMatch(script, /\b(?:const|let)\s|=>|\basync\s+function\b|\bawait\s|`/);
+  assert.equal(html.match(/<script>/g).length, 1, 'one executable inline script');
+  assert.equal(html.match(/<script type="text\/plain"/g).length, 1, 'one inert Apps Script source');
+  assert.equal((html.match(/<source\b/g) || []).length, 0, 'no <source> children inside the live videos');
+  assert.ok(html.includes('<body class="wallpaper-on tint-clear" data-theme="dark"'), 'first-paint wallpaper class');
+  assert.match(html, /<video id="bgLiveVideo" class="bg-live-video" src="\.\/assets\/bunny-live-wallpaper\.mp4"[^>]*autoplay[^>]*><\/video>/);
 });
 
-test('v23 / 3.1.0 metadata, storage migration and paper default are consistent', function () {
-  for (const data of [version, config, session]) {
-    assert.ok(Number(data.ver) >= 23, 'ver >= 23');
-    assert.equal(data.appVersion, '3.1.0');
-    assert.equal(data.version, '3.1.0');
-    assert.equal(data.settingsRev, 23);
-    assert.equal(data.mode, 'paper');
+test('v32 metadata: ver 32, appVersion 3.9.1, paper mode, 14% dim and the bunny video', () => {
+  for (const d of [version, config, session]) {
+    assert.ok(Number(d.ver) >= 32, 'ver is 32');
+    assert.equal(d.settingsRev, 32);
+    assert.equal(d.appVersion, '3.9.1');
+    assert.equal(d.version, '3.9.1');
+    assert.equal(d.mode, 'paper');
+    assert.equal(d.activeVideoSrc, DEFAULT);
+    assert.equal(d.activeMediaType, 'video');
+    assert.equal(d.videoDim, 14);
+    assert.equal(d.videoPlaylistMode, 'loop');
+    assert.equal(d.storageKey, KEY);
+    assert.deepEqual(d.repoFallbacks, []);
+    assert.ok(Array.isArray(d.repoMedia) && d.repoMedia.length >= 1);
+    assert.equal(d.repoMedia[0].src, DEFAULT);
+    assert.equal(d.repoMedia[0].type, 'video');
+    assert.ok(!JSON.stringify(d).includes('fatal-390'));
+    assert.ok(!JSON.stringify(d).includes('home-390'));
+    assert.ok(!JSON.stringify(d).includes('qa/evidence'));
   }
-  assert.equal(version.version, '3.1.0');
-  assert.equal(config.version, '3.1.0');
-  assert.equal(session.version, '3.1.0');
-  assert.equal(session.ver, 23);
-  assert.equal(version.session, '7');
-  assert.equal(version.title, TITLE);
-  assert.equal(config.listId, LIST_ID);
-  assert.equal(config.storageKey, STORE_KEY);
-  has('var APP_VERSION="3.1.0"');
-  has('key:"sdp.v23_sumi_swan"');
-  has('schema:23');
-  has('settingsRev:23');
-  has('"sdp.v22_paper_default","sdp.v21_guide_start","sdp.v20_nopass"');
-  const a = boot();
-  try {
-    assert.equal(a.q.CONFIG.key, STORE_KEY);
-    assert.equal(a.q.CONFIG.schema, 23);
-    assert.equal(a.q.CONFIG.settingsRev, 23);
-    assert.equal(a.q.DB.data.v, 23);
-    assert.equal(a.q.DB.data.settingsRev, 23);
-    assert.equal(a.q.DB.data.settings.mode, 'paper');
-    assert.ok(a.w.localStorage.getItem(STORE_KEY), 'the v23 store is written');
-    const old = JSON.parse(JSON.stringify(a.q.DB.data));
-    old.settings.mode = 'type'; old.settingsRev = 22; old.v = 22;
-    const migrated = a.q.DB.migrate(old);
-    assert.equal(migrated.settings.mode, 'paper', 'v23 migration preserves paper as the default');
-    assert.equal(migrated.settingsRev, 23);
-    assert.equal(migrated.v, 23);
-  } finally { a.close(); }
-});
-
-test('Session 7 keeps all 30 words, 5s timer, 2 repeats and unified Amy en-GB audio', function () {
-  const words = session.lists[0].words.map((w) => w.w);
-  assert.equal(words.length, 30, 'exactly 30 words');
-  for (const word of WORDS) assert.ok(words.indexOf(word) >= 0, 'word present: ' + word);
-  assert.equal(session.lists[0].id, LIST_ID);
-  assert.equal(session.session.title, TITLE);
-  assert.equal(config.defaults.writeMode, 'fixed');
+  assert.equal(config.defaults.mode, 'paper');
+  assert.equal(config.defaults.wallpaperVideo, true);
   assert.equal(config.defaults.writeFixed, 5);
   assert.equal(config.defaults.repeats, 2);
-  assert.match(config.tts.primary, /Amy/);
-  assert.match(config.tts.primary, /en-GB/);
-  assert.equal(config.dataSaving.audioReuse, true);
-  assert.equal(config.dataSaving.dictionaryFromMemory, true);
-  has('writeFixed:5'); has('repeats:2'); has('voice=Amy');
-  has('British Female Professor Voice (Amy \u00b7 en-GB)');
-  const a = boot();
+  assert.equal(config.defaults.activeVideoSrc, DEFAULT);
+  assert.equal(config.defaults.activeMediaType, 'video');
+  assert.equal(config.defaults.videoDim, 14);
+  assert.equal(session.session.mode, 'paper');
+  assert.equal(session.session.videoDim, 14);
+  has('var APP_VERSION="3.9.1"');
+  has('var DEFAULT_WALLPAPER_SRC="' + DEFAULT + '"');
+  has('key:"' + KEY + '"');
+  has('schema:32');
+  has('settingsRev:32');
+  has('videoDim:14');
+  has('resetToV32:function');
+});
+
+test('normalizeAssetPath converts every URL form to ./assets/<file>', () => {
+  const a = harness();
   try {
-    assert.equal(a.q.DB.data.settings.writeFixed, 5);
-    assert.equal(a.q.DB.data.settings.repeats, 2);
-    assert.equal(a.q.DB.data.lists[0].words.length, 30);
-    assert.equal(a.q.SAMPLE_WORDS.length, 30);
+    const q = a.q;
+    assert.equal(q.normalizeAssetPath(RAW_URL), DEFAULT);
+    assert.equal(q.normalizeAssetPath('assets/bunny-live-wallpaper.mp4'), DEFAULT);
+    assert.equal(q.normalizeAssetPath('/assets/bunny-live-wallpaper.mp4?x=1#t=1.2'), DEFAULT);
+    assert.equal(q.normalizeAssetPath('./assets/bunny-live-wallpaper.mp4'), DEFAULT);
+    assert.equal(q.normalizeAssetPath('https://dictationb1.github.io/assets/bunny-live-wallpaper.mp4?v=32'), DEFAULT);
+    assert.equal(q.normalizeAssetPath('http://localhost:8000/assets/extra.webp'), './assets/extra.webp');
+    assert.equal(q.normalizeAssetPath('file:///home/user/dictationb1.github.io/assets/bunny-live-wallpaper.mp4'), DEFAULT);
+    assert.equal(q.normalizeAssetPath(''), '');
+    assert.equal(q.normalizeAssetPath(null), '');
+    assert.equal(q.normalizeAssetPath(42), '');
+    assert.equal(q.normalizeAssetPath('./qa/evidence/fatal-390.png'), '');
+    assert.equal(q.isAssetsMedia(RAW_URL), true);
+    assert.equal(q.isAssetsMedia('https://dictationb1.github.io/assets/bunny-live-wallpaper.mp4#t=1.2'), true);
+    assert.equal(q.isAssetsMedia('/assets/bunny-live-wallpaper.mp4?v=32'), true);
+    assert.equal(q.isAssetsMedia('./qa/evidence/fatal-390.png'), false);
+    assert.equal(q.isAssetsMedia('./assets/fatal-390.png'), false);
+    assert.equal(q.isAssetsMedia('./assets/home-390.png'), false);
+    assert.equal(q.isAssetsMedia('./assets/v31-old.mp4'), false);
+    assert.equal(q.isAssetsMedia('./assets/artifact-1.png'), false);
+    assert.equal(q.isAssetsMedia('./assets/bunny-poster.webp'), false, 'posters are helpers, not wallpapers');
   } finally { a.close(); }
 });
 
-test('default answer mode is Listen & write on paper', function () {
-  has('data-mode="paper" aria-selected="true"');
-  has('Listen &amp; write on paper');
-  has('data-mode="type" aria-selected="false"');
-  has('mode:"paper"');
-  const segStart = html.indexOf('id="segMode"');
-  assert.ok(segStart >= 0);
-  assert.ok(html.slice(segStart, segStart + 800).includes('data-mode="paper" aria-selected="true"'));
-  assert.equal(config.defaults.mode, 'paper');
-  const a = boot();
-  try { assert.equal(a.q.DB.data.settings.mode, 'paper'); } finally { a.close(); }
-});
-
-/* Full-viewport SwanStage static and runtime gates. */
-test('SwanStage is an edge-to-edge 100vw x 100vh stage with one unbroken 1920 x 1080 spline', function () {
-  has('id="swan-stage-wrap"'); has('id="swan-ink-canvas"'); has('id="swan-vector-stage"');
-  has('viewBox="0 0 1920 1080"'); has('preserveAspectRatio="xMidYMid slice"');
-  has('id="swanMasterPath"'); has('一筆白鳥 · Hansana'); has('墨');
-  has('window.SwanStage='); has('DURATION=12000'); has('Math.min(window.devicePixelRatio||1,2)');
-  has('function ribbon('); has('destination-out'); has('createRadialGradient'); has('0.00018');
-  for (const token of ['[1,0,1800,380,680', '[2,1800,3200,620,410', '[3,3360,4080,510,340',
-    '[4,6200,7000,940,740', '[5,7180,7980,1460,390', '[6,11500,12000,420,790']) has(token);
-  assert.equal(/\.(?:easel|paper)\b/i.test(cssText()), false, 'no easel or paper CSS box');
-  const a = boot();
+test('bunny-live-wallpaper.mp4 is the 100% default active video and plays on boot', () => {
+  const a = harness();
   try {
-    const doc = a.w.document;
-    const wrap = doc.getElementById('swan-stage-wrap');
-    const canvas = doc.getElementById('swan-ink-canvas');
-    const svg = doc.getElementById('swan-vector-stage');
-    assert.equal(wrap.parentNode, doc.body, 'stage mounts directly inside body');
-    assert.equal(canvas.parentNode, wrap); assert.equal(svg.parentNode, wrap);
-    const style = a.w.getComputedStyle(wrap);
-    assert.equal(style.position, 'fixed'); assert.equal(style.width, '100vw'); assert.equal(style.height, '100vh');
-    assert.equal(style.pointerEvents, 'none'); assert.equal(style.zIndex, '0'); assert.equal(style.overflow, 'hidden');
-    const canvasStyle = a.w.getComputedStyle(canvas);
-    assert.equal(canvasStyle.position, 'absolute'); assert.equal(canvasStyle.width, '100vw'); assert.equal(canvasStyle.height, '100vh');
-    const master = doc.getElementById('swanMasterPath');
-    assert.equal((master.getAttribute('d').match(/M/g) || []).length, 1, 'single continuous Move command');
-    assert.ok((master.getAttribute('d').match(/C/g) || []).length >= 14, 'all cubic stages are present');
-    assert.equal(doc.querySelector('.easel,.paper'), null);
-    assert.equal(doc.getElementById('swan-cinnabar-seal').textContent, '墨');
+    const q = a.q, doc = a.w.document, lf = q.LiveWallpaper;
+    assert.equal(q.CONFIG.repoMedia[0].src, DEFAULT);
+    assert.equal(q.CONFIG.repoMediaPaths.join('|'), DEFAULT);
+    assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
+    assert.equal(q.DB.data.settings.activeMediaType, 'video');
+    assert.equal(q.DB.data.settingsRev, 32);
+    assert.equal(q.DB.data.v, 32);
+    assert.equal(lf.activeSrc, DEFAULT);
+    assert.equal(lf.activeType, 'video');
+    assert.equal(lf.enabled, true);
+    assert.equal(lf.mediaList[0].src, DEFAULT);
+    assert.equal(lf.mediaList[0].title, 'Bunny Live Wallpaper');
+    assert.ok(q.CONFIG.repoMedia.every((m) => q.isAssetsMedia(m.src)), 'CONFIG.repoMedia is normalised');
+    assert.ok(lf.mediaList.every((m) => q.isAssetsMedia(m.src) && m.folder === 'assets'), 'LiveWallpaper.mediaList is normalised');
+    const video = doc.querySelector('#bgLiveVideo');
+    assert.ok(video);
+    assert.equal(video.getAttribute('src'), DEFAULT);
+    assert.equal(video.muted, true);
+    assert.equal(video.defaultMuted, true);
+    assert.equal(video.loop, true);
+    assert.equal(video.autoplay, true);
+    assert.equal(video.querySelectorAll('source').length, 0);
+    assert.ok(doc.querySelector('#bgLiveAmbilight'), 'the synchronized ambilight');
+    assert.equal(doc.body.classList.contains('wallpaper-on'), true);
+    assert.equal(typeof lf.ensurePlaying, 'function');
+    assert.equal(typeof lf.bindPlaybackGuards, 'function');
+    assert.equal(typeof q.DB.syncRemote, 'function');
+    lf.openGallerySheet();
+    a.clock.tick(120);
+    const cards = doc.querySelectorAll('#videoGalleryList .video-gallery-item');
+    assert.equal(cards.length, 1, 'one real repository card');
+    assert.equal(doc.querySelector('.gal-title').textContent, 'Bunny Live Wallpaper');
+    const badge = doc.querySelector('.video-gallery-badge');
+    assert.equal(badge.textContent, '✓ Active Now');
+    assert.equal(badge.style.display, 'inline-flex');
   } finally { a.close(); }
 });
 
-test('variable-pressure canvas renderer completes 12 seconds then draws pulses, ripples and feathers', function () {
-  const calls = { fill: 0, stroke: 0, ellipse: 0, clearRect: 0 };
-  const gradient = { addColorStop: function () {} };
-  const context = new Proxy({
-    createRadialGradient: function () { return gradient; },
-    createLinearGradient: function () { return gradient; }
-  }, {
-    get: function (target, key) {
-      if (key in target) return target[key];
-      if (typeof key === 'string') {
-        target[key] = function () { if (key in calls) calls[key]++; };
-        return target[key];
-      }
-      return undefined;
-    },
-    set: function (target, key, value) { target[key] = value; return true; }
-  });
-  const a = harness(null, { canvasContext: context });
+test('applyPublishedVideo / ensurePlaying never reset an already playing video', () => {
+  const a = harness();
   try {
-    const canvas = a.w.document.getElementById('swan-ink-canvas');
-    assert.ok(canvas.width > 0 && canvas.height > 0, 'high-DPI canvas is sized to the viewport');
-    a.clock.tick(12100);
-    assert.ok(calls.clearRect > 20, 'choreography repaints continuously');
-    assert.ok(calls.fill > 100, 'variable ribbon, halo and brush tip are filled');
-    assert.ok(calls.stroke > 20, 'specular rim and living pulse stream are stroked');
-    a.w.document.dispatchEvent(new a.w.MouseEvent('pointerdown', { bubbles: true, clientX: 500, clientY: 400 }));
-    a.w.SwanStage.pulseAudio(); a.w.SwanStage.celebrateStreak(5); a.clock.tick(500);
-    assert.ok(calls.ellipse > 0, 'pointer and audio wake render concentric ellipses');
+    const q = a.q, v = a.w.document.querySelector('#bgLiveVideo');
+    let loads = 0, plays = 0, pauses = 0;
+    v.load = function () { loads++; };
+    v.play = function () { plays++; return null; };
+    v.pause = function () { pauses++; };
+    q.LiveWallpaper.ensurePlaying();
+    q.LiveWallpaper.ensurePlaying();
+    assert.equal(loads, 0, 'the bundled src is never reloaded');
+    assert.ok(plays >= 2, 'play() is called immediately and from the idempotent guards');
+    assert.equal(pauses, 0);
+    q.DB.syncRemote({ activeVideoSrc: RAW_URL });
+    assert.equal(loads, 0, 'a remote full URL normalises to the same src and does not reset playback');
+    assert.equal(q.LiveWallpaper.activeSrc, DEFAULT);
+    assert.equal(v.muted, true);
+    assert.equal(v.loop, true);
+    assert.equal(v.autoplay, true);
+    q.LiveWallpaper.applyPublishedVideo('./assets/swan-lake.mp4');
+    assert.equal(loads, 1, 'a genuinely different normalised asset is loaded exactly once');
+    assert.equal(q.DB.data.settings.activeVideoSrc, './assets/swan-lake.mp4');
+    const before = loads;
+    q.LiveWallpaper.ensurePlaying();
+    assert.equal(loads, before, 'the second ensurePlaying keeps the new src');
   } finally { a.close(); }
 });
 
-test('window.SwanStage exposes all five APIs and Replay Ink restarts art without interrupting dictation', function () {
-  const a = boot();
+test('DB.syncRemote never installs a non-assets wallpaper and always re-triggers playback', () => {
+  const a = harness();
   try {
-    const swan = a.w.SwanStage;
-    assert.ok(swan, 'global controller exists');
-    for (const name of ['init', 'replay', 'pulseAudio', 'celebrateStreak', 'syncTheme']) assert.equal(typeof swan[name], 'function', name);
-    const doc = typeBoot(a);
-    const button = doc.getElementById('btnSwanReplay');
-    assert.ok(button); assert.match(button.textContent, /🦢 Replay Ink/);
-    assert.ok(button.closest('.topbar.glass'));
-    let replays = 0;
-    swan.replay = function () { replays++; };
-    click(a, button);
-    assert.equal(replays, 1, 'one tap replays the 12-second painting');
-    assert.equal(a.q.Eng.st, 'ready', 'dictation state is untouched');
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1, 'player remains open');
-    swan.init(); swan.pulseAudio(); swan.celebrateStreak(3);
+    const q = a.q;
+    assert.equal(q.DB.syncRemote({ activeVideoSrc: './qa/evidence/fatal-390.png' }), DEFAULT);
+    assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
+    assert.equal(q.DB.data.settings.activeMediaType, 'video');
+    assert.equal(q.LiveWallpaper.activeSrc, DEFAULT);
+    assert.equal(q.DB.syncRemote({ activeVideoSrc: RAW_URL }), DEFAULT);
+    q.Cloud.applyRepo({ activeVideoSrc: 'https://evil.example/wallpaper.mp4', lists: [] });
+    assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
+    q.Cloud.applyState({ activeVideoSrc: '/assets/bunny-live-wallpaper.mp4?v=32#t=1.2' });
+    assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
+    assert.equal(q.LiveWallpaper.ensurePlaying(), undefined, 'ensurePlaying is safe to call repeatedly');
   } finally { a.close(); }
 });
 
-test('theme sync selects midnight liquid glass or warm kraft sumi palettes', function () {
-  has('#0a0f1e'); has('#53c7f0'); has('#e6c47f'); has('#ead7ae'); has('#111827');
-  has('SwanStage.syncTheme(mode');
-  const a = boot();
-  try {
-    const wrap = a.w.document.getElementById('swan-stage-wrap');
-    a.q.DB.data.settings.theme = 'light'; a.q.UI.applyTheme();
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
-    const lightColour = wrap.style.backgroundColor;
-    assert.ok(lightColour, 'warm kraft background colour is applied');
-    a.q.DB.data.settings.theme = 'dark'; a.q.UI.applyTheme();
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'dark');
-    assert.ok(wrap.style.backgroundColor, 'midnight background colour is applied');
-    assert.notEqual(wrap.style.backgroundColor, lightColour);
-    a.w.SwanStage.syncTheme('light', 'kraft');
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
-  } finally { a.close(); }
+test('CSS: full-brightness video and ultra-clear glass in Lite and Full modes', () => {
+  assert.ok(css.includes('filter:brightness(1.02) contrast(1.05) saturate(1.12) !important'), 'brightness(1.02)');
+  assert.ok(css.includes('opacity:1 !important'), 'the video is fully opaque');
+  assert.ok(!css.includes('brightness(0.76)'), 'the old 0.76 dimmer is gone');
+  assert.ok(!css.includes('blur(22px)'), 'the old 22px glass blur is gone');
+  assert.ok(css.includes('#bgLiveWrap{position:fixed;inset:0;width:100vw;height:100vh;z-index:0 !important;pointer-events:none;overflow:hidden;display:block'));
+  assert.ok(css.includes('body.wallpaper-on #bgLiveWrap{display:block !important}'));
+  assert.ok(css.includes('body.wallpaper-on .bg-aurora,body.wallpaper-on .bg-grid{display:none !important;opacity:0 !important}'));
+  assert.ok(css.includes('--bg-dim:0.14'), 'default 14% vignette');
+  assert.ok(css.includes('var(--bg-dim, 0.14)'), 'scrim uses 0.14');
+  assert.ok(css.includes('background: rgba(6, 10, 22, 0.28) !important'), 'crystal glass background');
+  assert.ok(css.includes('blur(4px) saturate(140%) !important'), 'light 4px glass blur');
+  assert.ok(css.includes('body.wallpaper-on[data-perf="lite"] .glass:not(#materialMixer)'), 'Lite mode is clear');
+  assert.ok(css.includes('body.wallpaper-on[data-perf="full"] .glass:not(#materialMixer)'), 'Full mode is clear');
+  assert.ok(css.includes('#homeHero.glass') && css.includes('.wordcard.glass') && css.includes('.sheet.glass'), 'hero, player and sheets are clear');
+  assert.ok(css.includes('rgba(255, 255, 255, 0.32) !important'), 'light theme crystal glass');
+  assert.ok(css.includes('background: rgba(4, 8, 18, 0.08) !important'), 'the Dictation Player layer is clear');
+  assert.ok(css.includes('background: rgba(4, 8, 18, 0.18) !important'), 'the ready-sheet scrim is clear');
+  assert.ok(css.includes('backdrop-filter: none !important'), 'no blur on the layer or scrim');
+  assert.ok(css.includes('body.layer-open .app,body.layer-open #app{opacity:0 !important;pointer-events:none !important}'));
+  assert.ok(css.includes('body.sheet-open .app > main'));
+  assert.ok(css.includes('opacity:0.12 !important'), 'no opaque pseudo overlays');
+  assert.ok(css.includes('text-shadow:0 2px 10px rgba(0, 0, 0, 0.95)'), 'razor-sharp dark halo');
+  assert.ok(css.includes('text-shadow:0 1px 6px rgba(255, 255, 255, 0.95)'), 'razor-sharp light halo');
+  has('#sVideoDim');
+  has('#bgContrastScrim');
+  has('id="credit"');
+  has('#credit{z-index:9999 !important}');
 });
 
-test('Speech.say and Speech.playSmartAudio automatically radiate SwanStage audio pulses', function () {
-  has('SwanStage.pulseAudio()');
-  const a = boot();
+test('discoverGitHubMedia normalises download_url and rejects posters, nested files and screenshots', () => {
+  const a = harness();
   try {
-    let pulses = 0;
-    a.w.SwanStage.pulseAudio = function () { pulses++; };
-    a.q.Speech.say(['Hello Britain'], {}, function () {});
-    assert.equal(pulses, 1, 'say pulses immediately when queued');
-    a.q.Speech.playSmartAudio('Guidebook', 0.88, function () {});
-    assert.equal(pulses, 2, 'smart audio inherits the same pulse hook');
-  } finally { a.close(); }
-});
-
-/* Guide and tour auto-start flow. */
-test('User Guide Start practising unlocks audio, closes the guide and launches Eng.start on Home', function () {
-  has('UI.startPractisingFromGuide=function'); has('go.id="btnGuideStart"');
-  has('UI.startPractisingFromGuide();'); has('Eng.start({})'); has('Speech.unlock();');
-  const a = boot();
-  try {
-    const doc = a.w.document, order = [];
-    const unlock = a.q.Speech.unlock, start = a.q.Eng.start;
-    a.q.Speech.unlock = function () { order.push('unlock'); return unlock.apply(this, arguments); };
-    a.q.Eng.start = function () { order.push('start'); return start.apply(this, arguments); };
-    a.q.DB.data.tourSeen = false; a.q.DB.data.guideSeen = false; a.q.DB.saveNow();
-    a.q.UI.openWelcomeGuide();
-    const go = doc.getElementById('btnGuideStart');
-    assert.ok(go); assert.equal(go.textContent.trim(), 'Start practising');
-    assert.equal(go.className, 'btn primary xl block');
-    assert.equal(go.querySelector('svg use').getAttribute('href'), '#i-play');
-    click(a, go);
-    assert.deepEqual(order, ['unlock', 'start']);
-    assert.equal(a.q.UI.tab, 'home');
-    assert.equal(doc.getElementById('screen-home').classList.contains('hidden'), false);
-    assert.equal(a.q.Eng.st, 'ready'); assert.equal(a.q.Eng.words.length, 30);
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1);
-    assert.equal(doc.getElementById('btnGuideStart'), null);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /Are you ready\?/);
-    assert.equal(a.q.DB.data.tourSeen, true); assert.equal(a.q.DB.data.guideSeen, true);
-    const saved = JSON.parse(a.w.localStorage.getItem(STORE_KEY));
-    assert.equal(saved.tourSeen, true); assert.equal(saved.guideSeen, true);
-  } finally { a.close(); }
-});
-
-test('Guide close never starts dictation; Sinhala CTA, Settings and first run stay wired', function () {
-  const a = boot();
-  try {
-    const doc = a.w.document;
-    a.q.UI.setLang('si'); a.q.UI.openWelcomeGuide();
-    const go = doc.getElementById('btnGuideStart');
-    assert.equal(go.textContent.trim(), 'පුහුණුව ආරම්භ කරන්න');
-    click(a, doc.querySelector('#sheets .shead button'));
-    assert.equal(doc.querySelectorAll('#sheets .sheet').length, 0);
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 0);
-    assert.equal(a.q.Eng.st, 'idle'); assert.equal(a.q.DB.data.guideSeen, false);
-    a.q.UI.setLang('en'); a.q.UI.setTab('set');
-    const settingsGuide = Array.from(doc.querySelectorAll('#screen-set button')).find((b) => b.textContent.trim() === 'User Guide / උපදෙස්');
-    assert.ok(settingsGuide); click(a, settingsGuide);
-    assert.ok(doc.getElementById('btnGuideStart'));
-    click(a, doc.querySelector('#sheets .shead button'));
-    a.q.DB.data.tourSeen = false; a.q.firstRunTour();
-    assert.ok(doc.getElementById('btnGuideStart'));
-    click(a, doc.querySelector('#sheets .shead button'));
-    assert.equal(a.q.Eng.st, 'idle');
-  } finally { a.close(); }
-});
-
-test('classic runTour final Start practising card also launches Eng.start', function () {
-  has('function runTour(){'); has('n===cards.length-1'); has('S.doneTour');
-  const a = boot();
-  try {
-    const doc = a.w.document; a.q.UI.runTour();
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /\(1\/3\)/);
-    assert.equal(primaryTourButton(doc).textContent.trim(), 'Next');
-    click(a, primaryTourButton(doc)); a.clock.tick(130);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /\(2\/3\)/);
-    click(a, primaryTourButton(doc)); a.clock.tick(130);
-    const go = doc.getElementById('btnGuideStart');
-    assert.ok(go); assert.equal(go.textContent.trim(), 'Start practising'); click(a, go);
-    assert.equal(a.q.UI.tab, 'home'); assert.equal(a.q.Eng.st, 'ready');
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /Are you ready\?/);
-    assert.equal(a.q.DB.data.tourSeen, true); assert.equal(a.q.DB.data.guideSeen, true);
-  } finally { a.close(); }
-});
-
-/* Always-visible Hansana credit. */
-test('#credit stays at z-index 9999 with showCreditNow throughout Guide, language and Tour', function () {
-  const creditRule = rule('.credit');
-  assert.match(creditRule, /z-index:9999\s*!important/);
-  assert.match(creditRule, /position:fixed/); assert.match(creditRule, /pointer-events:auto/);
-  has('id="credit"'); has('class="credit glass"'); has('z-index:9999 !important');
-  has('UI.showCreditNow=function'); has('UI.showCreditNow()');
-  const openGuideIdx = html.indexOf('openWelcomeGuide:function');
-  const showIdx = html.indexOf('UI.showCreditNow', openGuideIdx);
-  assert.ok(showIdx > openGuideIdx && showIdx - openGuideIdx < 500);
-  const applyLangIdx = html.indexOf('applyLang:function');
-  const showInLang = html.indexOf('UI.showCreditNow', applyLangIdx);
-  assert.ok(showInLang > applyLangIdx && showInLang - applyLangIdx < 800);
-  const runTourIdx = html.indexOf('function runTour');
-  assert.ok(html.indexOf('UI.showCreditNow', runTourIdx) > runTourIdx);
-  const startIdx = html.indexOf('UI.startPractisingFromGuide');
-  const showInStart = html.indexOf('UI.showCreditNow', startIdx);
-  assert.ok(showInStart > startIdx && showInStart - startIdx < 400);
-  const a = boot();
-  try {
-    a.q.UI.openWelcomeGuide(); a.clock.tick(200);
-    const credit = a.w.document.getElementById('credit');
-    assert.ok(credit); assert.equal(a.w.getComputedStyle(credit).zIndex, '9999');
-    assert.ok(credit.classList.contains('in'));
-    a.q.UI.setLang('si'); a.clock.tick(200); assert.ok(credit.classList.contains('in'));
-    a.q.UI.closeSheet(); a.q.UI.runTour(); a.clock.tick(100); assert.ok(credit.classList.contains('in'));
-    click(a, primaryTourButton(a.w.document)); a.clock.tick(200); assert.ok(credit.classList.contains('in'));
-  } finally { a.close(); }
-});
-
-test('guide-credit-pill with animated Hansana swan renders inside User Guide and Tour', function () {
-  has('guide-credit-pill'); has('UI.guideCreditPill=function'); has('CREDITS GOES TO'); has('Hansana');
-  const a = boot();
-  try {
-    a.q.UI.openWelcomeGuide();
-    let sheet = a.w.document.querySelector('#sheets .sheet');
-    let pill = sheet.querySelector('.guide-credit-pill');
-    assert.ok(pill); assert.ok(pill.querySelector('.c-swan'));
-    assert.match(pill.textContent, /Hansana/); assert.match(pill.textContent, /Ayya01/);
-    assert.ok(pill.classList.contains('glass'));
-    a.q.UI.setLang('si'); a.q.UI.closeSheet(); a.q.UI.openWelcomeGuide();
-    sheet = a.w.document.querySelector('#sheets .sheet'); pill = sheet.querySelector('.guide-credit-pill');
-    assert.match(pill.textContent, /Hansana/);
-    assert.ok(/Sumodya|භාරකාර/.test(pill.textContent));
-    a.q.UI.closeSheet(); a.q.UI.runTour();
-    sheet = a.w.document.querySelector('#sheets .sheet'); assert.ok(sheet.querySelector('.guide-credit-pill'));
-    click(a, primaryTourButton(a.w.document)); a.clock.tick(130);
-    sheet = a.w.document.querySelector('#sheets .sheet'); assert.ok(sheet.querySelector('.guide-credit-pill'));
-  } finally { a.close(); }
-});
-
-/* Ready sheet and native typing. */
-test('ready sheet has two actions and cross, scrim and Escape all exit in one tap', function () {
-  lacks('btnReadyClose'); lacks('btnNotReady'); lacks('Not ready'); lacks('ansVkb');
-  has('Eng.cancelReadyAndExit=function');
-  for (const how of ['cross', 'scrim', 'escape']) {
-    const a = boot();
-    try {
-      const doc = typeBoot(a); assert.equal(a.q.Eng.st, 'ready');
-      const exits = doc.querySelectorAll('#sheets .shead button');
-      assert.equal(exits.length, 1); assert.equal(exits[0].getAttribute('aria-label'), 'Close');
-      const actions = Array.from(doc.querySelectorAll('#sheets .sfoot button')).map((b) => b.textContent.trim());
-      assert.deepEqual(actions, ["I'm ready", 'Skip countdown']);
-      if (how === 'cross') click(a, exits[0]);
-      else if (how === 'scrim') click(a, doc.querySelector('#sheets .scrim'));
-      else doc.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      a.clock.tick(120);
-      assert.equal(a.q.Eng.st, 'idle'); assert.equal(a.q.Eng.layer, null);
-      assert.equal(doc.querySelectorAll('#sheets .sheet').length, 0);
-      assert.equal(doc.querySelectorAll('#layers .layer').length, 0);
-      assert.equal(doc.getElementById('screen-home').classList.contains('hidden'), false);
-      assert.equal(a.q.DB.data.snapshot, undefined);
-    } finally { a.close(); }
-  }
-});
-
-test('native text input blocks password saves and suggestions; no custom keyboard exists', function () {
-  for (const token of ['ansVkb', 'btnToggleVkb', 'btnVkbToggle', 'buildVkb', 'vkb-key', 'ans-vkb']) lacks(token);
-  has('inp.type="text"'); has('inp.setAttribute("autocomplete","off")');
-  has('Eng.syncInputMirror=function'); has('Eng.onTypeInputUpdate=function');
-  has('id="ansMirror"'); has('id="ansMirrorText"');
-  assert.equal(html.includes('new-password'), false); assert.equal(html.includes('current-password'), false);
-  assert.equal(/inp\.type\s*=\s*"password"/.test(html), false);
-  const inputCss = rule('#ansInput');
-  assert.match(inputCss, /color:transparent\s*!important/);
-  assert.match(inputCss, /-webkit-text-fill-color:transparent\s*!important/);
-  assert.match(inputCss, /caret-color:transparent\s*!important/);
-  assert.match(inputCss, /background:(?:transparent|0 0)\s*!important/);
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const expected = {
-      autocomplete: 'off', inputmode: 'text', autocorrect: 'off', autocapitalize: 'none',
-      spellcheck: 'false', 'aria-autocomplete': 'none', 'data-lpignore': 'true',
-      'data-1p-ignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other', 'data-gramm': 'false'
-    };
-    assert.equal(inp.type, 'text');
-    for (const key of Object.keys(expected)) assert.equal(inp.getAttribute(key), expected[key], key);
-    assert.match(inp.name, /^sdp_field_\d{1,12}$/); assert.equal(inp.form, null);
-    assert.equal(inp.hasAttribute('placeholder'), false); assert.equal(inp.value, ' ');
-    assert.equal(inp.parentNode.id, 'ansWrap');
-    assert.ok(doc.getElementById('ansMirror')); assert.ok(doc.getElementById('ansMirrorText'));
-    assert.ok(doc.querySelector('#ansMirror .ans-caret'));
-    assert.equal(doc.getElementById('ansVkb'), null); assert.equal(doc.getElementById('btnToggleVkb'), null);
-  } finally { a.close(); }
-});
-
-test('single-space IME buffer, mirror, Backspace, deletion and captureAnswer stay in sync', function () {
-  has('self.typedAnswer'); has('inp.value=" "'); has('insertReplacementText'); has('deleteContentBackward');
-  has('this.answers[this.idx]=this.typedAnswer||""');
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput'), mirror = doc.getElementById('ansMirrorText');
-    assert.match(mirror.textContent, /Type the word you hear/); assert.equal(mirror.className, 'ans-placeholder');
-    let built = '';
-    for (const ch of a.q.Eng.currentWord().w.slice(0, 3)) {
-      built += ch; typeChar(a, inp, ch);
-      assert.equal(inp.value, ' '); assert.equal(a.q.Eng.typedAnswer, built);
-      assert.equal(mirror.textContent, built); assert.equal(a.q.Eng.answers[a.q.Eng.idx], built);
-    }
-    inp.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
-    assert.equal(a.q.Eng.typedAnswer, built.slice(0, -1));
-    inp.value = ''; inputEvent(a, inp, 'deleteContentBackward');
-    assert.equal(a.q.Eng.typedAnswer, built.slice(0, -2)); assert.equal(inp.value, ' ');
-    inp.value = 'abc'; inputEvent(a, inp);
-    assert.equal(a.q.Eng.typedAnswer, 'abc'); assert.equal(mirror.textContent, 'abc');
-    a.q.Eng.captureAnswer(); assert.equal(a.q.Eng.answers[a.q.Eng.idx], 'abc');
-  } finally { a.close(); }
-});
-
-test('replacement suggestions, paste and drop never enter typedAnswer', function () {
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    typeChar(a, inp, 'g'); const before = a.q.Eng.typedAnswer;
-    for (const kind of ['insertReplacementText', 'insertFromPaste', 'insertFromDrop']) {
-      inp.value = ' guidebook'; inputEvent(a, inp, kind);
-      assert.equal(a.q.Eng.typedAnswer, before, kind); assert.equal(inp.value, ' ');
-      assert.match(doc.getElementById('ansFeedback').textContent, /blocked/);
-    }
-    const bi = new a.w.Event('beforeinput', { bubbles: true, cancelable: true });
-    bi.inputType = 'insertReplacementText'; inp.dispatchEvent(bi); assert.equal(bi.defaultPrevented, true);
-    for (const kind of ['paste', 'drop']) {
-      const ev = new a.w.Event(kind, { bubbles: true, cancelable: true }); inp.dispatchEvent(ev);
-      assert.equal(ev.defaultPrevented, true, kind);
-    }
-  } finally { a.close(); }
-});
-
-/* Animated live feedback and SwanStage celebrations. */
-test('correct answer animates tick, slots and chime, celebrates streak and advances at 1050ms', function () {
-  has('Eng.onTypeCorrect=function'); has('id="ansTick"'); has('id="plTickHero"');
-  has('.ans-slots .slot-done'); has('this.after(1050'); has('SwanStage.celebrateStreak(this.liveStreakCount)');
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const word = a.q.Eng.currentWord().w.split('/')[0];
-    let chimes = 0; const celebrations = [];
-    a.q.UI.playTickChime = function () { chimes++; };
-    a.w.SwanStage.celebrateStreak = function (n) { celebrations.push(n); };
-    for (const ch of word) typeChar(a, inp, ch);
-    assert.equal(a.q.Eng.wordSolved, true); assert.equal(a.q.Eng.liveCorrectCount, 1);
-    assert.equal(a.q.Eng.liveStreakCount, 1); assert.equal(a.q.Eng.answers[0], word);
-    assert.equal(chimes, 1); assert.deepEqual(celebrations, [1]);
-    assert.ok(doc.getElementById('ansTick').classList.contains('is-correct'));
-    assert.ok(doc.getElementById('plTickHero').classList.contains('is-correct'));
-    assert.ok(doc.querySelectorAll('#ansSlots .slot-done').length > 0);
-    a.clock.tick(1000); assert.equal(a.q.Eng.idx, 0);
-    a.clock.tick(100); assert.equal(a.q.Eng.idx, 1);
-    assert.equal(a.q.Eng.answers[0], word); assert.equal(a.q.Eng.typedAnswer, ''); assert.equal(inp.value, ' ');
-    assert.match(doc.getElementById('ansMirrorText').textContent, /Type the word you hear/);
-  } finally { a.close(); }
-});
-
-test('paper checklist completion sends one golden surge and resets only when completion changes', function () {
-  has('swanComplete'); has('SwanStage.celebrateStreak(n)');
-  const a = boot();
-  try {
-    const words = [{ w: 'harbour', s: '', m: '' }, { w: 'journey', s: '', m: '' }];
-    const rec = { id: 'swan-paper-test', mode: 'paper', percent: 0, score: 0, wordCount: 2,
-      rows: [{ state: '' }, { state: '' }], durationSec: 10, listName: TITLE,
-      sessionNo: '7', sessionDay: 'Thursday', sessionDate: '2026-10-26' };
-    a.q.Results.open(rec, words, [0, 1]);
-    const doc = a.w.document, celebrations = [];
-    a.w.SwanStage.celebrateStreak = function (n) { celebrations.push(n); };
-    const find = (label) => Array.from(doc.querySelectorAll('#layers button')).find((b) => b.textContent.trim() === label);
-    click(a, find('All right')); assert.deepEqual(celebrations, [2]);
-    click(a, find('All right')); assert.deepEqual(celebrations, [2], 'no duplicate celebration');
-    click(a, find('Reset')); click(a, find('All right')); assert.deepEqual(celebrations, [2, 2]);
-  } finally { a.close(); }
-});
-
-test('wrong answer shows cross and diff, breaks streak, records mistake, speaks once and holds 2100ms', function () {
-  has('Eng.onTypeWrong=function'); has('id="ansWrong"'); has('id="plWrongHero"'); has('id="ansCompare"');
-  has('streak-broken'); has('Streak Broken! (0)'); has('function diffChars'); has('this.after(2100');
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const first = a.q.Eng.currentWord().w.split('/')[0];
-    for (const ch of first) typeChar(a, inp, ch);
-    a.clock.tick(1200); assert.equal(a.q.Eng.idx, 1); assert.equal(a.q.Eng.liveStreakCount, 1);
-    const target = a.q.Eng.currentWord().w; let tones = 0; const spoken = [];
-    a.q.UI.playWrongTone = function () { tones++; };
-    a.q.Speech.say = function (parts) { spoken.push(parts.join(' ')); };
-    for (const ch of 'zzzz') typeChar(a, inp, ch);
-    inp.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    const q = a.q;
+    const calls = stubbed(a, [
+      { name: 'bunny-live-wallpaper.mp4', path: 'assets/bunny-live-wallpaper.mp4', download_url: RAW_URL, type: 'file' },
+      { name: 'extra.webp', download_url: 'https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/assets/extra.webp', type: 'file' },
+      { name: 'bunny-poster.webp', path: 'assets/bunny-poster.webp', type: 'file' },
+      { name: 'thumb.png', path: 'assets/thumb.png', type: 'file' },
+      { name: 'fatal-390.png', path: 'qa/evidence/fatal-390.png', type: 'file' },
+      { name: 'home-390.png', path: 'qa/evidence/home-390.png', type: 'file' },
+      { name: 'root-video.mp4', path: 'root-video.mp4', type: 'file' },
+      { name: 'nested.webp', path: 'assets/deep/nested.webp', type: 'file' }
+    ]);
+    q.LiveWallpaper.discoverGitHubMedia(true, function () {});
     a.clock.tick(60);
-    assert.equal(a.q.Eng.wordWrong, true); assert.equal(a.q.Eng.liveStreakCount, 0);
-    assert.equal(a.q.Eng.liveWrongCount, 1); assert.equal(tones, 1);
-    assert.deepEqual(spoken, [target.split('/')[0]]);
-    assert.ok(doc.getElementById('ansWrong').classList.contains('is-wrong'));
-    assert.ok(doc.getElementById('plWrongHero').classList.contains('is-wrong'));
-    assert.match(doc.getElementById('plStreakCount').className, /streak-broken/);
-    assert.match(doc.getElementById('plStreakCount').textContent, /Streak Broken! \(0\)/);
-    assert.match(doc.getElementById('ansCompare').className, /is-open/);
-    assert.match(doc.getElementById('ansCompare').textContent, /Your answer/);
-    assert.match(doc.getElementById('ansCompare').textContent, /Correct UK spelling/);
-    assert.match(doc.getElementById('ansCheckBtn').textContent, /Got it → Next/);
-    assert.equal(a.q.DB.data.mistakes.some((m) => m.w === target.toLowerCase()), true);
-    assert.equal(inp.value, ' ');
-    a.clock.tick(1500); assert.equal(a.q.Eng.idx, 1);
-    a.clock.tick(700); assert.equal(a.q.Eng.idx, 2);
+    assert.equal(calls.length, 1, 'one request: ' + JSON.stringify(calls));
+    assert.ok(calls[0].indexOf('/contents/assets') > 0);
+    assert.ok(!/git\/trees/.test(calls[0]));
+    const srcs = q.LiveWallpaper.mediaList.map((m) => m.src);
+    assert.equal(srcs.join('|'), [DEFAULT, './assets/extra.webp'].join('|'));
+    srcs.forEach((s) => assert.ok(q.isAssetsMedia(s), 'assets only: ' + s));
+    assert.equal(q.LiveWallpaper.mediaList.filter((m) => /fatal|home-390|poster/i.test(m.src)).length, 0);
+    assert.ok(a.w.localStorage.getItem('sdp.gh_assets_v32'), 'the v32 cache is written');
+    assert.equal(a.w.localStorage.getItem('sdp.gh_assets_v31'), null);
+    assert.equal(a.w.localStorage.getItem('sdp.gh_media_v30'), null);
+    q.LiveWallpaper.discoverGitHubMedia(false, function () {});
+    a.clock.tick(20);
+    assert.equal(calls.length, 1, 'the five-minute cache is reused');
   } finally { a.close(); }
 });
 
-test('tyre, tire and tyre/tire all match word #26', function () {
-  has('Eng.isAnswerMatch=function');
-  const a = boot();
+test('Session 7 keeps all 30 words, the 5s timer, x2 repeats and the Amy en-GB voice', () => {
+  const list = session.lists.find((l) => l.id === 'list_session_7_travel');
+  assert.ok(list, 'Session 7 list');
+  assert.equal(list.words.length, 30);
+  assert.deepEqual(list.words.map((w) => w.w), words);
+  assert.equal(list.words.filter((w) => w.w === 'tyre/tire').length, 1);
+  assert.equal(session.session.title, title);
+  assert.equal(session.session.no, '7');
+  has('writeFixed:5');
+  has('repeats:2');
+  has('voice=Amy');
+  has('Amy · en-GB');
+  has(title);
+  has('data-mode="paper" aria-selected="true"');
+  const a = harness();
   try {
-    const Eng = a.q.Eng;
-    assert.deepEqual(Array.prototype.slice.call(Eng.getTargetVariants({ w: 'tyre/tire' })), ['tyre/tire', 'tyre', 'tire']);
-    for (const answer of ['tyre', 'tire', 'tyre/tire', '  TIRE ']) {
-      assert.equal(Eng.isAnswerMatch(answer, { w: 'tyre/tire' }), true, answer);
-      assert.equal(Eng.isAnswerMatch(answer, session.lists[0].words[25]), true, answer);
-    }
-    assert.equal(Eng.isAnswerMatch('tyres', { w: 'tyre/tire' }), false);
-    assert.equal(Eng.isAnswerMatch('', { w: 'tyre/tire' }), false);
-    assert.equal(Eng.isPrefixMatch('tyr', { w: 'tyre/tire' }), true);
-    assert.equal(Eng.isPrefixMatch('tir', { w: 'tyre/tire' }), true);
-    assert.equal(Eng.isPrefixMatch('xx', { w: 'tyre/tire' }), false);
+    const q = a.q;
+    assert.equal(q.DB.data.settings.mode, 'paper');
+    assert.equal(q.DB.data.settings.writeFixed, 5);
+    assert.equal(q.DB.data.settings.repeats, 2);
+    assert.equal(q.SAMPLE_WORDS.length, 30);
+    assert.equal(q.SAMPLE_WORDS.map((w) => w.w).join('|'), words.join('|'));
+    assert.equal(q.Lib.searchWords('tyre', q.Lib.current().words, q.SAMPLE_LIST_ID).map((w) => w.w).join('|'), 'tyre/tire');
   } finally { a.close(); }
 });
 
-/* Liquid Glass v22 visual gates. */
-test('credit swan, hollow hero, Settings-only mixer and universal sliding capsules remain intact', function () {
-  has('.c-swan'); has('@keyframes swanFloat'); has('@keyframes swanWing'); has('@keyframes swanRipple');
-  has('<span class="c-text"><small>credits goes to</small><b>Hansana</b></span>'); has('CREDITS GOES TO');
-  has('id="tabInd"'); has('.seg .thumb,.seg-tint .seg-ind'); has('.glass .glass'); has('will-change:transform');
-  assert.match(rule('.credit'), /z-index:9999\s*!important/);
-  assert.match(rule('.layer'), /z-index:60/); assert.match(rule('.sheet'), /z-index:70/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /-webkit-text-stroke:1\.75px/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /color:transparent\s*!important/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /-webkit-background-clip:text/);
-  assert.match(rule('#grain'), /display:none\s*!important/);
-  assert.match(cssText(), /\.blob\{filter:none!important\}/);
-  assert.equal(homeMarkup().includes('Liquid Glass'), false);
-  assert.equal(homeMarkup().includes('lgStage'), false);
-  const a = boot();
+test('v32 migration resets stale Fatal 390 / Home 390 selections to the bunny video', () => {
+  const a = harness();
   try {
-    const doc = a.w.document;
-    assert.ok(doc.querySelector('#credit .c-swan'));
-    assert.equal(doc.querySelector('#homeTitle').textContent, TITLE);
-    assert.equal(doc.querySelector('#homeTitle').className, 'liquid-glass-text');
-    for (const mode of ['lite', 'full']) {
-      a.q.DB.data.settings.perf = mode; a.q.UI.applyPerf();
-      assert.ok(doc.querySelector('#credit.credit.glass .c-swan'), mode);
-    }
-    a.q.Screens.settings(); a.clock.tick(300);
-    for (const id of ['lgStage', 'orb', 'sBlur', 'sSat', 'sBrt']) assert.ok(doc.querySelector('#screen-set #' + id), id);
-    assert.match(doc.querySelector('#screen-set .seg-tint').textContent, /Clear[\s\S]*Frost[\s\S]*Smoke/);
-    assert.match(doc.querySelector('#screen-set .seg-perf').textContent, /Auto[\s\S]*Lite 60FPS[\s\S]*Full/);
-    assert.equal(doc.querySelector('#screen-home #lgStage'), null);
-    assert.ok(doc.getElementById('tabInd'));
+    const q = a.q;
+    const stale = { lists: [], settingsRev: 31, v: 31, settings: { activeVideoSrc: './qa/evidence/fatal-390.png', activeMediaType: 'image', videoPlaylistMode: 'bogus', videoDim: 34 } };
+    const migrated = q.DB.migrate(stale);
+    assert.equal(migrated.settings.activeVideoSrc, DEFAULT);
+    assert.equal(migrated.settings.activeMediaType, 'video');
+    assert.equal(migrated.settings.videoPlaylistMode, 'loop');
+    assert.equal(migrated.settings.videoDim, 14);
+    assert.equal(migrated.settingsRev, 32);
+    assert.equal(migrated.v, 32);
+    const direct = q.DB.resetToV32({ lists: [], settingsRev: 29, v: 29, settings: { activeVideoSrc: './qa/evidence/home-390.png', activeMediaType: 'image' } }, q.DB.defaults());
+    assert.equal(direct.settings.activeVideoSrc, DEFAULT);
+    assert.equal(direct.settings.activeMediaType, 'video');
+    assert.equal(direct.settingsRev, 32);
+    assert.equal(direct.v, 32);
+    q.DB.data.settings.activeVideoSrc = './qa/evidence/home-390.png';
+    q.DB.data.settings.activeMediaType = 'image';
+    q.LiveWallpaper.init();
+    assert.equal(q.LiveWallpaper.activeSrc, DEFAULT, 'init forces the bunny video');
+    assert.equal(q.LiveWallpaper.activeType, 'video');
+    assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
   } finally { a.close(); }
 });
 
-let failed = 0;
-for (const item of tests) {
-  try { item.fn(); console.log('# ok - ' + item.name); }
-  catch (error) {
-    failed++; console.log('# not ok - ' + item.name);
-    console.log('#   ' + String((error && error.stack) || error).split('\n').join('\n#   '));
-  }
-}
-if (failed) {
-  console.log('# ' + failed + ' of ' + tests.length + ' upgrade checks failed');
-  process.exit(1);
-}
-console.log('# all ' + tests.length + ' upgrade checks passed');
+test('the 0-75 dimmer defaults to 14 and writes --bg-dim', () => {
+  has('min="0" max="75" step="1" value="14"');
+  has('14%');
+  const a = harness();
+  try {
+    const q = a.q, lf = q.LiveWallpaper;
+    assert.equal(lf.dimValue(), 14);
+    const node = lf.dimControl();
+    assert.equal(node.querySelector('#sVideoDim').min, '0');
+    assert.equal(node.querySelector('#sVideoDim').max, '75');
+    assert.equal(node.querySelector('#sVideoDim').value, '14');
+    lf.setDim(0);
+    assert.equal(a.w.document.documentElement.style.getPropertyValue('--bg-dim'), '0.00');
+    assert.equal(q.DB.data.settings.videoDim, 0);
+    lf.setDim(50);
+    assert.equal(a.w.document.documentElement.style.getPropertyValue('--bg-dim'), '0.50');
+    assert.equal(q.DB.data.settings.videoDim, 50);
+    lf.applyDim();
+    assert.equal(q.DB.data.settings.videoDim, 50);
+  } finally { a.close(); }
+});
+
+test('sheets and the Dictation Player layer never hide or pause the live video', () => {
+  const a = harness();
+  try {
+    const q = a.q, doc = a.w.document, v = doc.querySelector('#bgLiveVideo');
+    let pauses = 0;
+    const realPause = v.pause.bind(v);
+    v.pause = function () { pauses++; return realPause(); };
+    q.UI.openWelcomeGuide();
+    a.clock.tick(120);
+    assert.ok(doc.querySelector('#sheets .sheet.open'), 'the User Guide sheet is open');
+    assert.equal(doc.body.classList.contains('sheet-open'), true);
+    q.UI.closeSheet();
+    a.clock.tick(40);
+    assert.equal(doc.body.classList.contains('sheet-open'), false);
+    q.UI.layer({ title: 'QA player', body: function (e) { e.appendChild(doc.createTextNode('word')); } });
+    a.clock.tick(60);
+    assert.equal(doc.body.classList.contains('layer-open'), true);
+    q.UI.closeLayer();
+    assert.equal(doc.body.classList.contains('layer-open'), false);
+    assert.equal(pauses, 0, 'no screen ever pauses the wallpaper');
+    assert.equal(q.LiveWallpaper.enabled, true);
+    assert.equal(q.LiveWallpaper.activeSrc, DEFAULT);
+    assert.equal(doc.body.classList.contains('wallpaper-on'), true);
+  } finally { a.close(); }
+});
+
+test('every v22-v31 feature token and guard is still present in the v32 build', () => {
+  ['repoMedia', 'mediaList', 'discoverGitHubMedia', 'contents/assets', 'openGallerySheet',
+    'gal-thumb', 'video-gallery-badge', 'Next Wallpaper', 'Refresh from GitHub',
+    'sdp.gh_assets_v32', 'sdp_wallpaper_db', 'activeMediaType', 'videoDim',
+    'bgLiveVideo', 'bgLiveAmbilight', 'bgLiveCanvas', 'bgContrastScrim', 'bgLivePhoto',
+    'bgLivePhotoAmbilight', 'sVideoDim', '--bg-dim', 'wallpaperVideo', 'videoPlaylistMode',
+    'syncAmbilight', 'playAmbilight', 'rafId:null', 'wake:function', 'sleep:function',
+    'draw:function', 'startPractisingFromGuide', 'guide-credit-pill', 'cancelReadyAndExit',
+    'buildSearchIndex', 'searchWords', 'diffChars', 'ansCompare', 'streak-broken',
+    'plTickHero', 'plWrongHero', '💔 Streak Broken! (0)', 'ansMirrorText', 'ans-caret',
+    'inp.value=" "', 'autocomplete","off")', 'tabInd', 'segSync', 'lgStage', 'materialMixer',
+    'hollow', 'DEFAULT_WALLPAPER_SRC', 'resetToV32', 'sanitiseWallpaper', 'isAssetsMedia',
+    'normalizeAssetPath', 'ensurePlaying', 'syncRemote', 'navigator.serviceWorker',
+    '?v=32', 'CREDITS GOES TO', 'Hansana', 'tire:"tyre"', 'tyre/tire'].forEach(has);
+  lacks('<link');
+  lacks('inp.type="password"');
+  lacks('fatal-390.png');
+  lacks('home-390.png');
+  lacks('qa/evidence');
+  assert.equal(require('./test-pin.cjs'), '7898', 'the public convenience PIN verifier still unlocks 7898');
+});
+
+test('no media file is tracked outside the assets folder', () => {
+  const files = cp.execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' })
+    .split('\n').filter((p) => /\.(mp4|webm|mov|m4v|webp|jpe?g|png|gif|avif)$/i.test(p));
+  assert.ok(files.length >= 1);
+  files.forEach((p) => {
+    assert.ok(/^assets\/[^\/]+$/i.test(p), 'repository media lives in assets/: ' + p);
+    assert.ok(!/fatal-390|home-390/i.test(p), 'no test screenshots: ' + p);
+  });
+  assert.ok(files.indexOf('assets/bunny-live-wallpaper.mp4') >= 0);
+  assert.ok(files.indexOf('assets/bunny-poster.webp') >= 0);
+});

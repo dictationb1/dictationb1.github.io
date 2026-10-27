@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================================
-   Live lab: proves the v2.0.0 real-time class channel end to end, outside the
+   Live lab: exercises the current real-time class channel end to end, outside the
    unit harness. It starts a real HTTP server for the repository, emulates the
    free ntfy.sh API (POST + /json?poll=1&since=all + /sse) on the same origin,
    then boots TWO independent devices:
@@ -23,6 +23,14 @@ function check(name, fn) {
   catch (err) { results.push({ name, ok: false, err: err.message }); console.log('FAIL  ' + name + ' :: ' + err.message); }
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
+async function waitUntil(fn, timeout = 5000) {
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    if (fn()) return true;
+    await wait(25);
+  }
+  return !!fn();
+}
 
 /* ------------------------------------------------ ntfy.sh emulator + host --- */
 const topics = Object.create(null);
@@ -128,19 +136,23 @@ function device(html, base) {
     /* --- boot: the student must sync immediately, with no tap ------------ */
     student.q.Cloud.bootSync();
     lecturer.q.Cloud.bootSync();
-    await wait(250);
-    check('boot sync touches ./data/session.json with a cache-busting timestamp', () =>
-      { if (!requests.some(r => r.startsWith('GET /data/session.json?t='))) throw Error('no boot fetch: ' + requests.join(' | ')); });
+    const stateTopic = student.q.CONFIG.ntfyState;
+    const commTopic = student.q.CONFIG.ntfyComm;
+    const session = JSON.parse(fs.readFileSync(path.join(root, 'data/session.json'), 'utf8')).session;
+    await waitUntil(() => requests.some(r => r.startsWith('GET /data/session.json')) &&
+      requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse') && student.q.Cloud.live.ok);
+    check('boot sync loads repository version and session data', () =>
+      { if (!requests.some(r => r.startsWith('GET /data/version.json')) || !requests.some(r => r.startsWith('GET /data/session.json'))) throw Error('no boot fetch: ' + requests.join(' | ')); });
     check('boot sync opens the live SSE stream on the state and community topics', () =>
-      { if (!requests.some(r => r === 'GET /sdp_dictationb1_state_v6,sdp_dictationb1_comm_v6/sse')) throw Error(requests.join(' | ')); });
+      { if (!requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse')) throw Error(requests.join(' | ')); });
     check('the student picked up the published B1 session from the repository', () => {
       const d = student.q.DB.data;
-      if (String(d.session.no) !== '1') throw Error('session no ' + d.session.no);
+      if (String(d.session.no) !== session.no) throw Error('session no ' + d.session.no);
       if (student.q.Lib.current().words.length !== 30) throw Error('words ' + student.q.Lib.current().words.length);
     });
     check('the status chip reports a real, online live sync', () => {
       const label = student.w.document.getElementById('chipNetText').textContent;
-      if (!/^Online \u00b7 Live B1 Session/.test(label)) throw Error(label);
+      if (!/^Online \u00b7 Live Sync/.test(label)) throw Error(label);
     });
 
     /* --- the lecturer publishes a new list for Session 4 ---------------- */
@@ -149,21 +161,27 @@ function device(html, base) {
     L.DB.data.lists.push(list);
     L.DB.data.outbox = [];
     L.Admin.unlocked = true;
-    const words = L.DB.data.lists.find(l => l.id === 'list_sample_b1').words.map(x => ({ w: x.w, s: x.s, m: x.m, audio: x.audio }));
+    const words = L.Lib.current().words.map(x => ({ w: x.w, s: x.s, m: x.m, audio: x.audio }));
+    // Match the lecturer selecting this list, pinning it, and setting its title.
+    L.Admin.editListId = list.id;
+    L.DB.data.plan.pinned = list.id;
+    L.DB.data.session.title = list.name;
     L.Admin.saveAll(list, words, ['2026-10-21'], null);
     L.Admin.unlocked = false;
-    await wait(120);
+    await waitUntil(() => (topics[stateTopic] || []).length && String(student.q.DB.data.session.no) === '4');
     check('one publish posts the whole session to the ntfy state topic', () =>
-      { if (!(topics.sdp_dictationb1_state_v6 || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
+      { if (!(topics[stateTopic] || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
     check('the lecturer Home header is internally consistent (SESSION 4 + the same title)', () => {
       const kicker = lecturer.w.document.getElementById('homeKicker').textContent;
       const title = lecturer.w.document.getElementById('homeTitle').textContent;
       if (!/^SESSION 4\b/i.test(kicker)) throw Error('kicker: ' + kicker);
       if (!/Session 4 words/.test(title)) throw Error('title: ' + title);
-      if (kicker.toUpperCase().indexOf('21 OCT 2026') < 0) throw Error('kicker has no real session date: ' + kicker);
+      if (kicker.indexOf('21/10/2026') < 0) throw Error('kicker has no real session date: ' + kicker);
     });
     check('the published session is 30 real words with British audio urls', () => {
-      const posted = JSON.parse(topics.sdp_dictationb1_state_v6[topics.sdp_dictationb1_state_v6.length - 1]);
+      const sent = topics[stateTopic] || [];
+      if (!sent.length) throw Error('no state payload');
+      const posted = JSON.parse(sent[sent.length - 1]);
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (posted.session.no !== '4') throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
@@ -171,7 +189,6 @@ function device(html, base) {
     });
 
     /* --- the student phone updates itself, live -------------------------- */
-    await wait(400);
     check('the student phone received Session 4 over the live stream without a reload', () => {
       const S = student.q, d = S.DB.data;
       if (String(d.session.no) !== '4') throw Error('student session no ' + d.session.no);
@@ -185,12 +202,11 @@ function device(html, base) {
     /* --- a student finishes and the lecturer sees it live ---------------- */
     student.q.DB.data.results = [];
     student.q.Cloud.postCompletion({ id: 'lab-res-1', ts: Date.now(), sessionNo: '4', wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: false, mode: 'paper' });
-    await wait(250);
+    await waitUntil(() => (topics[commTopic] || []).length && lecturer.q.DB.data.results.some(r => r.id === 'lab-res-1'));
     check('a finished session is broadcast to the community topic', () =>
-      { if (!(topics.sdp_dictationb1_comm_v6 || []).length) throw Error('no comm post'); });
+      { if (!(topics[commTopic] || []).length) throw Error('no comm post'); });
     check('the second device merges the live completion into real class results', () => {
       const C = lecturer.q;
-      C.Cloud.liveBody(topics.sdp_dictationb1_comm_v6[topics.sdp_dictationb1_comm_v6.length - 1]);
       if (!C.DB.data.results.some(r => r.id === 'lab-res-1')) throw Error('result not merged');
     });
     check('Class stats then shows the real student completion, not the lecturer history', () => {

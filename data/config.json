@@ -11,7 +11,12 @@
     "title": "Session 7 - Travel & Transport",
     "listId": "list_session_7_travel",
     "branch": "CCBE Galle Branch",
-    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH"
+    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH",
+    "mode": "paper",
+    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "activeMediaType": "video",
+    "videoPlaylistMode": "loop",
+    "videoDim": 14
   },
   "listId": "list_session_7_travel",
   "defaults": {
@@ -26,11 +31,16 @@
     "pauseSent": 1.6,
     "theme": "dark",
     "perf": "auto",
-    "glassTint": 0
+    "glassTint": 0,
+    "wallpaperVideo": true,
+    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "videoPlaylistMode": "loop",
+    "activeMediaType": "video",
+    "videoDim": 14
   },
-  "ver": 23,
-  "version": "3.1.0",
-  "buildDate": "2026-10-26",
+  "ver": 32,
+  "version": "3.9.1",
+  "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -48,10 +58,10 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.1.0",
-  "settingsRev": 23,
+  "appVersion": "3.9.1",
+  "settingsRev": 32,
   "performance": {
-    "mode": "auto",
+    "mode": "paper",
     "lite": {
       "gb": "8px",
       "gs": 1.35,
@@ -63,22 +73,23 @@
       "gbr": 1.03
     },
     "probeMs": 1200,
-    "medianBudgetMs": 19
+    "medianBudgetMs": 19,
+    "background": "GPU-isolated fixed video, with canvas RAF only while short-lived ripples/sparks exist"
   },
   "dataSaving": {
-    "preload": "none",
+    "preload": "none (dictation audio only)",
     "audioReuse": true,
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v23_sumi_swan",
+  "storageKey": "sdp.v32_crystal_video",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
     "inputMode": "text",
     "autocomplete": "off",
-    "suggestions": "blocked by the single-space IME sentinel reset after every keystroke",
+    "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
     "mirror": "#ansMirror plain-text overlay (#ansMirrorText), never a form",
     "blockedInputTypes": [
       "insertReplacementText",
@@ -99,11 +110,136 @@
     "action": "close guide, unlock speech, show Home, Eng.start({})"
   },
   "mode": "paper",
-  "swan": {
-    "stage": "100vw x 100vh fixed viewport",
-    "durationMs": 12000,
-    "engine": "window.SwanStage",
-    "pressure": "six-stage variable-radius cubic Bezier ribbon",
-    "storage": "sdp.v23_sumi_swan"
-  }
+  "search": {
+    "engine": "Lib.searchIndex",
+    "sources": [
+      "session",
+      "myWords",
+      "mistakes"
+    ],
+    "tokens": [
+      "word",
+      "slash variants",
+      "US_UK",
+      "phon",
+      "pos",
+      "def",
+      "ex",
+      "sentence",
+      "meaning"
+    ],
+    "updates": "cached and invalidated on data changes"
+  },
+  "wallpaper": {
+    "stage": "#bgLiveWrap",
+    "video": "#bgLiveVideo",
+    "canvas": "#bgLiveCanvas",
+    "defaultVideo": "./assets/bunny-live-wallpaper.mp4",
+    "poster": "./assets/bunny-poster.webp",
+    "preload": "auto",
+    "modes": [
+      "lite",
+      "full"
+    ],
+    "storage": {
+      "database": "sdp_wallpaper_db",
+      "store": "videos",
+      "key": "custom_bg"
+    },
+    "defaultEnabled": true,
+    "framing": "Portrait on wide screens: contain + synchronized ambilight + horizontal edge feathering; portrait on mobile and universal landscape: cover",
+    "backdrop": "#bgLiveAmbilight",
+    "ambilight": {
+      "selector": "#bgLiveAmbilight",
+      "blur": "34px",
+      "saturate": 1.55,
+      "brightness": 0.68,
+      "opacity": 0.78,
+      "transition": "opacity .9s ease"
+    },
+    "featherMask": "linear-gradient(90deg, transparent 0%, rgba(0,0,0,.2) 22%, #000 33%, #000 67%, rgba(0,0,0,.2) 78%, transparent 100%)",
+    "playlist": [
+      "loop",
+      "cycle",
+      "off"
+    ],
+    "gallery": "#btnLiveVideo",
+    "scan": "#btnScanGhVideos",
+    "localPicker": "#btnPickVideoFile",
+    "repoVideos": [
+      {
+        "id": "vid_bunny_live_wallpaper",
+        "title": "Bunny Live Wallpaper",
+        "src": "./assets/bunny-live-wallpaper.mp4",
+        "poster": "./assets/bunny-poster.webp"
+      }
+    ],
+    "repoMedia": [
+      {
+        "id": "media_bunny_live_wallpaper",
+        "title": "Bunny Live Wallpaper",
+        "src": "./assets/bunny-live-wallpaper.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/bunny-poster.webp"
+      }
+    ],
+    "repoFallbacks": [],
+    "defaultMediaType": "video",
+    "videoDim": 14,
+    "scrim": "#bgContrastScrim",
+    "photo": "#bgLivePhoto",
+    "photoAmbilight": "#bgLivePhotoAmbilight",
+    "dimmer": "#sVideoDim (--bg-dim)",
+    "repoMediaPaths": [
+      "./assets/bunny-live-wallpaper.mp4"
+    ],
+    "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
+    "ghMediaCache": "sdp.gh_assets_v32",
+    "ghMediaTtl": 300000,
+    "legacyMediaCaches": [
+      "sdp.gh_assets_v31",
+      "sdp.gh_media_v30",
+      "sdp.gh_videos_cache"
+    ]
+  },
+  "repoVideos": [
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "poster": "./assets/bunny-poster.webp",
+      "type": "video",
+      "folder": "assets"
+    }
+  ],
+  "repoMedia": [
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/bunny-poster.webp"
+    }
+  ],
+  "repoFallbacks": [],
+  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "videoPlaylistMode": "loop",
+  "repoMediaPaths": [
+    "./assets/bunny-live-wallpaper.mp4"
+  ],
+  "repoPosters": {
+    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
+  },
+  "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
+  "ghMediaCache": "sdp.gh_assets_v32",
+  "ghMediaTtl": 300000,
+  "activeMediaType": "video",
+  "videoDim": 14,
+  "legacyMediaCaches": [
+    "sdp.gh_assets_v31",
+    "sdp.gh_media_v30",
+    "sdp.gh_videos_cache"
+  ]
 }

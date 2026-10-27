@@ -129,7 +129,7 @@ The error log is in memory for this page, not permanent. Copy it before reloadin
 - Cambridge is opened on its own site; kept My words/offline cache and added part of speech/example/spelling notes without scraping Cambridge.
 - Kept glass surfaces, themes, S–XL text and the frame/Lite probe; added old-Safari width fallbacks, 44 px controls, input sizing and stronger reduced-motion behaviour.
 
-**File:** the combined final `index.html`; screen-width screenshots are in `qa/evidence/`.
+**File:** the combined final `index.html`; screen-width screenshots are written to the git-ignored `tests/artifacts/` folder, and the repository ships media only from `assets/`.
 
 | Test | PASS / FAIL / NOT VERIFIED | How |
 |---|---|---|
@@ -290,6 +290,5 @@ Tests use the real file or explicitly described in-memory fixtures. “PASS” m
 - `index.html`: deploy/download this one file.
 - `qa/automated-results.json`: machine-readable 85-check results and file fingerprint.
 - `tests/README.md`: exact commands to rerun the tests; dependencies are development-only.
-- `qa/evidence/home-390.png` and `qa/evidence/fatal-390.png`: observed Chromium screenshots, not real-iPhone proof.
+- `tests/artifacts/artifact-home.png` and `tests/artifacts/artifact-fatal.png`: local Chromium screenshots written by `tests/browser.cjs`; they are git-ignored and never part of the `assets/` wallpaper studio.
 
-![Repaired fatal card in a 390px Chromium viewport](qa/evidence/fatal-390.png)
