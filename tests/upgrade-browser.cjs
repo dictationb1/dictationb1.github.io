@@ -130,8 +130,12 @@ function material(page) {
       blobAnimation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
       orb: document.querySelector('#orb') ? getComputedStyle(document.querySelector('#orb')).backgroundImage : 'none',
       heroDisplay: getComputedStyle(document.querySelector('.lg-hero')).display,
-      stripes: getComputedStyle(document.querySelector('.stripes')).backgroundImage,
-      disc: getComputedStyle(document.querySelector('.disc')).backgroundImage
+      layerBg: getComputedStyle(document.querySelector('.layer') || document.querySelector('#homeHero')).backgroundColor,
+      videoSrc: document.querySelector('#bgLiveVideo') ? (document.querySelector('#bgLiveVideo').currentSrc || document.querySelector('#bgLiveVideo').getAttribute('src') || '') : '',
+      videoOpacity: document.querySelector('#bgLiveVideo') ? document.querySelector('#bgLiveVideo').style.opacity : '',
+      stageBg: getComputedStyle(document.querySelector('.anatomy-stage')).backgroundImage,
+      stripes: document.querySelector('.stripes') ? getComputedStyle(document.querySelector('.stripes')).display : 'none',
+      disc: document.querySelector('.disc') ? getComputedStyle(document.querySelector('.disc')).display : 'none'
     };
   });
 }
@@ -166,8 +170,10 @@ function material(page) {
       assert.notEqual(m.chipShadow, 'none');
       assert.equal(m.grain, 'none', 'no feTurbulence layer across the viewport');
       assert.equal(m.blobFilter, 'none', 'no 85px GPU blur on the blobs');
-      assert.match(m.stripes, /repeating-linear-gradient/);
-      assert.match(m.disc, /radial-gradient/);
+      assert.match(m.videoSrc, /assets\/bunny-live-wallpaper\.mp4/, 'bunny wallpaper is the live background');
+      assert.match(m.stageBg, /none|^$/, 'the anatomy stage no longer hides the live video');
+      assert.equal(m.stripes, 'none');
+      assert.equal(m.disc, 'none');
       assert.equal(m.heroDisplay, 'block', 'the hero is one clean full-width column');
       assert.equal(await page.locator('#screen-home #lgStage').count(), 0, 'no mixer on Home');
       await openTab(page, 'tab-set');
@@ -206,7 +212,8 @@ function material(page) {
       assert.notEqual(lite.dockBlur, 'none', 'dock blur kept in lite');
       assert.notEqual(lite.heroShadow, 'none', 'specular rim kept in lite');
       assert.equal(lite.perf, 'lite');
-      assert.match(lite.stripes, /repeating-linear-gradient/, 'stripes kept in lite');
+      assert.match(lite.videoSrc, /assets\/bunny-live-wallpaper\.mp4/, 'bunny wallpaper stays in lite');
+      assert.equal(lite.stripes, 'none', 'no stripes over the live video in lite');
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
       await page.waitForFunction(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));

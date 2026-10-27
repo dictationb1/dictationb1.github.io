@@ -1,11 +1,11 @@
 {
-  "ver": 30,
-  "appVersion": "3.8.0",
-  "version": "3.8.0",
+  "ver": 31,
+  "appVersion": "3.9.0",
+  "version": "3.9.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 30,
+  "settingsRev": 31,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -18,17 +18,17 @@
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
     "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video in Lite and Full modes",
-    "githubVideos": "CONFIG.repoVideos + discoverGitHubMedia merge real GitHub tree/contents blobs; cached 5 minutes in sdp.gh_media_v30 (legacy sdp.gh_videos_cache mirror retained)",
+    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video; it plays behind the Home screen, every tab, the .layer Dictation Player and the Results screen",
+    "githubVideos": "CONFIG.repoMedia lists only ./assets/bunny-live-wallpaper.mp4; runtime discovery is cached for five minutes in sdp.gh_assets_v31 and the legacy sdp.gh_media_v30 / sdp.gh_videos_cache keys are deleted on boot",
     "ambilight": "Dual synchronized video layers plus #bgLivePhotoAmbilight for portrait photos; horizontal edge feathering removes the 9:16 box seam on 16:9 monitors",
     "gallery": "Real 16:9 .gal-thumb video/photo previews, one Apply button per card, Next Wallpaper in the studio header, no fake fallback cards",
     "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "githubMedia": "discoverGitHubMedia scans contents/assets + the recursive git tree for every .mp4/.webm/.mov/.m4v and .jpg/.jpeg/.png/.webp/.gif/.avif file, cached 5 minutes in sdp.gh_media_v30",
+    "githubMedia": "discoverGitHubMedia reads only the GitHub contents API for the assets folder; every path must match ^(\\.\\/)?assets\\/[^\\/]+\\.(mp4|webm|mov|m4v|jpg|jpeg|png|webp|gif|avif)$ and poster/thumb/test/screenshot helpers are rejected",
     "readability": "#bgContrastScrim adaptive radial scrim, --bg-dim live slider (#sVideoDim), darker frosted glass tints and crisp text shadows in dark theme",
     "photoWallpaper": "#bgLivePhoto + #bgLivePhotoAmbilight with 12s auto-cycle for photos and ended-driven cycling for videos"
   },
   "mode": "paper",
-  "storageKey": "sdp.v30_studio",
+  "storageKey": "sdp.v31_assets_only",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -47,41 +47,25 @@
       "type": "video",
       "folder": "assets",
       "poster": "./assets/bunny-poster.webp"
-    },
-    {
-      "id": "media_fatal_390",
-      "title": "Fatal 390",
-      "src": "./qa/evidence/fatal-390.png",
-      "type": "image",
-      "folder": "qa/evidence"
-    },
-    {
-      "id": "media_home_390",
-      "title": "Home 390",
-      "src": "./qa/evidence/home-390.png",
-      "type": "image",
-      "folder": "qa/evidence"
     }
   ],
   "repoFallbacks": [],
-  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
-  "ghVideosCache": "sdp.gh_videos_cache",
-  "ghVideosTtl": 300000,
   "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
-    "./assets/bunny-live-wallpaper.mp4",
-    "./assets/bunny-poster.webp",
-    "./qa/evidence/fatal-390.png",
-    "./qa/evidence/home-390.png"
+    "./assets/bunny-live-wallpaper.mp4"
   ],
   "repoPosters": {
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_media_v30",
+  "ghMediaCache": "sdp.gh_assets_v31",
   "ghMediaTtl": 300000,
   "activeMediaType": "video",
   "videoDim": 34,
-  "repoVideoPoster": "./assets/bunny-poster.webp"
+  "repoVideoPoster": "./assets/bunny-poster.webp",
+  "legacyMediaCaches": [
+    "sdp.gh_media_v30",
+    "sdp.gh_videos_cache"
+  ]
 }
