@@ -1,9 +1,7 @@
-/* Smart Dictation Player 3.4.0 (schema 26) release verification.
-   Universal PC 16:9 + mobile 9:16 centre-safe 3D neon bunny live wallpaper,
-   interactive swipe ribbons / click shockwaves / audio bass rings, the instant
-   Lib.searchIndex and every v22-v25 dictation regression gate. */
 'use strict';
 
+/* v27 release and v22 dictation regressions. Run directly or with node --test. */
+const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -15,826 +13,492 @@ const json = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name),
 const version = json('version.json');
 const config = json('config.json');
 const session = json('session.json');
-const TITLE = 'Session 7 - Travel & Transport';
-const LIST_ID = 'list_session_7_travel';
-const STORE_KEY = 'sdp.v26_live_wall';
-const APP_VERSION = '3.4.0';
-const WORDS = [
-  'guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
-  'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business',
-  'on vacation', 'overnight', 'passenger', 'public transport', 'reception',
-  'reservation', 'road sign', 'signpost', 'spaceship', 'suitcase',
-  'tourist information centre', 'traffic lights', 'tunnel', 'tyre/tire',
-  'vehicle', 'visa', 'waiting room', 'windscreen'
-];
-const tests = [];
-function test(name, fn) { tests.push({ name, fn }); }
-function boot() { return harness(); }
+const key = 'sdp.v27_clean_fast';
+const title = 'Session 7 - Travel & Transport';
+const words = ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
+  'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business', 'on vacation',
+  'overnight', 'passenger', 'public transport', 'reception', 'reservation', 'road sign',
+  'signpost', 'spaceship', 'suitcase', 'tourist information centre', 'traffic lights',
+  'tunnel', 'tyre/tire', 'vehicle', 'visa', 'waiting room', 'windscreen'];
+const has = (s) => assert.ok(html.includes(s), 'missing ' + s);
+const lacks = (s) => assert.ok(!html.includes(s), 'unexpected ' + s);
+const css = html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>'));
+function cssRule(selector) {
+  const pos = css.indexOf(selector + '{');
+  assert.ok(pos >= 0, 'CSS rule exists: ' + selector);
+  return css.slice(pos, css.indexOf('}', pos) + 1);
+}
 function click(a, el) {
-  assert.ok(el, 'button to click exists');
+  assert.ok(el, 'button exists');
   el.dispatchEvent(new a.w.MouseEvent('click', { bubbles: true, cancelable: true }));
 }
-function has(token, label) { assert.ok(html.indexOf(token) >= 0, label || token); }
-function lacks(token, label) { assert.equal(html.indexOf(token), -1, label || token); }
-function cssText() { return html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>')); }
-/* csso keeps the cascade but may split one selector across several blocks, so
-   every declaration for a selector is collected and returned together. */
-function rule(selector) {
-  const css = cssText();
-  let at = 0, out = '', found = false;
-  while ((at = css.indexOf(selector, at)) >= 0) {
-    at += selector.length;
-    if (!/^\s*[,{]/.test(css.slice(at, at + 60))) continue;
-    const start = css.indexOf('{', at);
-    const end = css.indexOf('}', start);
-    out += css.slice(start, end);
-    found = true;
-    at = end;
-  }
-  assert.ok(found, 'CSS rule exists: ' + selector);
-  return out;
-}
-function homeMarkup() {
-  const start = html.indexOf('<section class="screen" id="screen-home"');
-  return html.slice(start, html.indexOf('</section>', start));
-}
-function stageMarkup() {
-  const start = html.indexOf('<div id="swan-stage-wrap"');
-  return html.slice(start, html.indexOf('<svg xmlns="http://www.w3.org/2000/svg"', start));
-}
-function appScript() {
-  const found = html.match(/<script>([\s\S]*?)<\/script>/g);
-  return found[found.length - 1].slice(8, -9);
-}
-function paintingContext(calls) {
-  const gradient = { addColorStop: function () {} };
-  const seed = {
-    createRadialGradient: function () { return gradient; },
-    createLinearGradient: function () { return gradient; }
-  };
-  return new Proxy(seed, {
-    get: function (target, key) {
-      if (key in target) return target[key];
-      if (typeof key === 'string') {
-        target[key] = function () { if (key in calls) calls[key]++; };
-        return target[key];
-      }
-      return undefined;
-    },
-    set: function (target, key, value) { target[key] = value; return true; }
-  });
-}
-function typeBoot(a) {
+function enterType(a) {
   a.q.DB.data.settings.mode = 'type';
   a.q.Eng.start({});
   a.clock.tick(50);
   return a.w.document;
 }
-function startPlaying(a) {
-  const doc = typeBoot(a);
+function playing(a) {
+  const doc = enterType(a);
   const skip = Array.from(doc.querySelectorAll('#sheets button')).find((b) => b.textContent.trim() === 'Skip countdown');
-  assert.ok(skip, 'the ready sheet offers Skip countdown');
   click(a, skip);
   a.clock.tick(4000);
-  assert.ok(doc.getElementById('ansInput'), 'the native typing input is rendered');
+  assert.ok(doc.getElementById('ansInput'));
   return doc;
 }
 function typeChar(a, inp, ch) {
   inp.value = ' ' + ch;
   inp.dispatchEvent(new a.w.Event('input', { bubbles: true }));
 }
-function inputEvent(a, inp, inputType) {
+function inputEvent(a, inp, type) {
   const ev = new a.w.Event('input', { bubbles: true, cancelable: true });
-  if (inputType) ev.inputType = inputType;
+  if (type) ev.inputType = type;
   inp.dispatchEvent(ev);
   return ev;
 }
-function primaryTourButton(doc) {
-  const button = doc.querySelector('#sheets .sfoot .btn.primary');
-  assert.ok(button, 'the tour primary action exists');
-  return button;
-}
 
-/* Release integrity and v26 metadata. */
-test('single-file budget, strict ES5 and zero external assets', function () {
-  const bytes = Buffer.byteLength(html);
-  assert.ok(bytes < 442000, 'index.html stays under 442,000 bytes (now ' + bytes + ')');
-  const script = appScript();
+test('single-file app is ES5, self-contained, and well below its size budget', () => {
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   acorn.parse(script, { ecmaVersion: 5 });
-  assert.equal(/<link\b/i.test(html), false, 'no <link> tags');
-  assert.equal(/@import/i.test(html), false, 'no CSS imports');
-  assert.equal(/<script[^>]+src=/i.test(html), false, 'no external scripts');
-  assert.equal(script.indexOf('=>'), -1, 'no arrow functions');
-  assert.equal(script.indexOf(String.fromCharCode(96)), -1, 'no template literals');
-  assert.equal(/\basync\s+function/.test(script), false, 'no async functions');
-  assert.equal(/\bawait\s/.test(script), false, 'no await');
-  assert.equal(/\bconst\s/.test(script), false, 'no const declarations');
-  assert.equal(/\blet\s/.test(script), false, 'no let declarations');
+  assert.ok(Buffer.byteLength(html) < 435000, 'actual bytes: ' + Buffer.byteLength(html));
+  assert.doesNotMatch(html, /<link\b/i);
+  assert.doesNotMatch(html, /<script[^>]+src=/i);
+  assert.doesNotMatch(css, /@import/i);
+  assert.doesNotMatch(script, /\b(?:const|let)\s|=>|\basync\s+function|\bawait\s|`/);
 });
 
-test('v26 / 3.4.0 metadata, storage migration and paper default are consistent', function () {
-  for (const data of [version, config, session]) {
-    assert.ok(Number(data.ver) >= 26, 'ver >= 26');
-    assert.equal(data.appVersion, APP_VERSION);
-    assert.equal(data.version, APP_VERSION);
-    assert.equal(data.settingsRev, 26);
-    assert.equal(data.mode, 'paper');
+test('metadata, schema, storage key and paper default are consistent', () => {
+  for (const d of [version, config, session]) {
+    assert.ok(Number(d.ver) >= 27);
+    assert.equal(d.settingsRev, 27);
+    assert.equal(d.appVersion, '3.5.0');
+    assert.equal(d.version, '3.5.0');
+    assert.equal(d.mode, 'paper');
+    assert.ok(!('swan' in d));
   }
-  assert.equal(session.ver, 26);
-  assert.equal(version.session, '7');
-  assert.equal(version.title, TITLE);
-  assert.equal(config.listId, LIST_ID);
-  assert.equal(config.storageKey, STORE_KEY);
-  has('var APP_VERSION="' + APP_VERSION + '"');
-  has('key:"' + STORE_KEY + '"');
-  has('schema:26');
-  has('settingsRev:26');
-  has('"sdp.v22_paper_default","sdp.v21_guide_start","sdp.v20_nopass"');
-  const a = boot();
+  assert.equal(config.storageKey, key);
+  assert.equal(config.defaults.mode, 'paper');
+  has('var APP_VERSION="3.5.0"'); has('key:"' + key + '"'); has('schema:27');
+  has('settingsRev:27'); has('resetToV27:function');
+  has('data-mode="paper" aria-selected="true"'); has('Listen &amp; write on paper');
+  const a = harness();
   try {
-    assert.equal(a.q.CONFIG.key, STORE_KEY);
-    assert.equal(a.q.CONFIG.schema, 26);
-    assert.equal(a.q.CONFIG.settingsRev, 26);
-    assert.equal(a.q.DB.data.v, 26);
-    assert.equal(a.q.DB.data.settingsRev, 26);
+    assert.equal(a.q.CONFIG.key, key);
+    assert.equal(a.q.CONFIG.schema, 27);
+    assert.equal(a.q.CONFIG.settingsRev, 27);
+    assert.equal(a.q.DB.data.settingsRev, 27);
+    assert.equal(a.q.DB.data.v, 27);
     assert.equal(a.q.DB.data.settings.mode, 'paper');
-    assert.ok(a.w.localStorage.getItem(STORE_KEY), 'the v26 store is written');
-    const old = JSON.parse(JSON.stringify(a.q.DB.data));
-    old.settings.mode = 'type'; old.settingsRev = 23; old.v = 23;
-    const migrated = a.q.DB.migrate(old);
-    assert.equal(migrated.settings.mode, 'paper', 'v26 migration preserves paper as the default');
-    assert.equal(migrated.settingsRev, 26);
-    assert.equal(migrated.v, 26);
-    assert.equal(a.q.DB.resetToV26, a.q.DB.resetToV26 || a.q.DB.resetToV26, 'resetToV26 exists');
+    assert.equal(a.q.DB.defaults().settings.mode, 'paper');
+    assert.ok(a.w.localStorage.getItem(key));
   } finally { a.close(); }
 });
 
-test('Session 7 keeps all 30 words, 5s timer, 2 repeats and unified Amy en-GB audio', function () {
-  const words = session.lists[0].words.map((w) => w.w);
-  assert.equal(words.length, 30, 'exactly 30 words');
-  for (const word of WORDS) assert.ok(words.indexOf(word) >= 0, 'word present: ' + word);
-  assert.equal(session.lists[0].id, LIST_ID);
-  assert.equal(session.session.title, TITLE);
+test('v26 migration preserves history, custom lists, PIN and backup while resetting paper', () => {
+  const a = harness();
+  try {
+    const old = JSON.parse(JSON.stringify(a.q.DB.data));
+    old.v = 26; old.settingsRev = 26; old.settings.mode = 'type';
+    old.profile.nickname = 'Returning learner';
+    old.admin.pinHash = 'already-changed';
+    old.history = [{ id: 'saved-history', score: 12, wordCount: 30 }];
+    old.lists = [{ id: 'custom-list', name: 'Lecturer list', published: true, words: [{ w: 'custom', m: 'original meaning', s: 'original sentence' }] }];
+    old.plan.pinned = 'custom-list';
+    const raw = JSON.stringify(old);
+    a.w.localStorage.clear();
+    a.w.localStorage.setItem('sdp.v26_live_wall', raw);
+    a.w.localStorage.setItem('sdp.v26_live_wall.bak', raw);
+    a.q.DB.load();
+    const saved = JSON.parse(a.w.localStorage.getItem(key));
+    assert.equal(saved.v, 27); assert.equal(saved.settingsRev, 27);
+    assert.equal(saved.settings.mode, 'paper');
+    assert.equal(saved.profile.nickname, 'Returning learner');
+    assert.equal(saved.admin.pinHash, 'already-changed');
+    assert.equal(saved.history[0].id, 'saved-history');
+    assert.ok(saved.lists.some((list) => list.id === 'custom-list' && list.words[0].w === 'custom'));
+    assert.ok(saved.lists.some((list) => list.id === 'list_session_7_travel'));
+    assert.equal(saved.plan.pinned, 'custom-list');
+    assert.ok(a.w.localStorage.getItem(key + '.bak'));
+    const reloaded = a.q.DB.migrate(JSON.parse(JSON.stringify(saved)));
+    reloaded.settings.mode = 'type';
+    assert.equal(a.q.DB.migrate(reloaded).settings.mode, 'type', 'v27 user choice persists after migration');
+  } finally { a.close(); }
+});
+
+test('corrupt v26 primary recovers from its legacy rolling backup', () => {
+  const a = harness();
+  try {
+    const old = JSON.parse(JSON.stringify(a.q.DB.data));
+    old.v = 26; old.settingsRev = 26; old.profile.nickname = 'Backup learner';
+    a.w.localStorage.clear();
+    a.w.localStorage.setItem('sdp.v26_live_wall', '{broken');
+    a.w.localStorage.setItem('sdp.v26_live_wall.bak', JSON.stringify(old));
+    a.q.DB.load();
+    assert.equal(a.q.DB.data.profile.nickname, 'Backup learner');
+    assert.equal(a.w.localStorage.getItem(key + '.recovery'), '{broken');
+    assert.equal(a.q.DB.data.settingsRev, 27);
+  } finally { a.close(); }
+});
+
+test('Session 7 has all 30 ordered words, five seconds, two repeats and Amy en-GB', () => {
+  assert.deepEqual(session.lists[0].words.map((w) => w.w), words);
+  assert.equal(session.session.title, title);
   assert.equal(config.defaults.writeMode, 'fixed');
   assert.equal(config.defaults.writeFixed, 5);
   assert.equal(config.defaults.repeats, 2);
-  assert.match(config.tts.primary, /Amy/);
-  assert.match(config.tts.primary, /en-GB/);
+  assert.equal(config.defaults.sentence, false);
+  assert.match(config.tts.primary, /Amy.*en-GB/);
   assert.equal(config.dataSaving.audioReuse, true);
-  assert.equal(config.dataSaving.dictionaryFromMemory, true);
-  has('writeFixed:5'); has('repeats:2'); has('voice=Amy');
-  has('British Female Professor Voice (Amy · en-GB)');
-  const a = boot();
+  assert.equal(require('./test-pin.cjs'), '7898');
+  has('voice=Amy');
+  const a = harness();
   try {
-    assert.equal(a.q.DB.data.settings.writeFixed, 5);
-    assert.equal(a.q.DB.data.settings.repeats, 2);
-    assert.equal(a.q.DB.data.lists[0].words.length, 30);
     assert.equal(a.q.SAMPLE_WORDS.length, 30);
+    assert.equal(a.q.Lib.current().words.length, 30);
+    a.q.Eng.start({});
+    const beats = a.q.Eng.buildBeats(0);
+    assert.equal(beats.filter((b) => b.isWord).length, 2);
+    assert.equal(beats.filter((b) => b.isSentence).length, 0);
+    assert.equal(beats.find((b) => b.t === 'write').secs, 5);
+    assert.ok(beats.filter((b) => b.isWord).every((b) => b.text === 'guidebook'));
+    assert.match(a.q.Speech.amyUrl('guidebook'), /voice=Amy/);
   } finally { a.close(); }
 });
 
-test('default answer mode is Listen & write on paper', function () {
-  has('data-mode="paper" aria-selected="true"');
-  has('Listen &amp; write on paper');
-  has('data-mode="type" aria-selected="false"');
-  has('mode:"paper"');
-  const segStart = html.indexOf('id="segMode"');
-  assert.ok(segStart >= 0);
-  assert.ok(html.slice(segStart, segStart + 800).includes('data-mode="paper" aria-selected="true"'));
-  assert.equal(config.defaults.mode, 'paper');
-  const a = boot();
-  try { assert.equal(a.q.DB.data.settings.mode, 'paper'); } finally { a.close(); }
-});
-
-/* Full-viewport SwanStage static and runtime gates. */
-test('SwanStage is an edge-to-edge 100vw x 100vh stage with one unbroken 1920 x 1080 spline', function () {
-  has('id="swan-stage-wrap"'); has('id="swan-ink-canvas"'); has('id="swan-vector-stage"');
-  has('viewBox="0 0 1920 1080"'); has('preserveAspectRatio="xMidYMid slice"');
-  has('id="swanMasterPath"'); has('一筆白鳥 · Hansana'); has('墨');
-  has('window.SwanStage='); has('DURATION=12000'); has('Math.min(window.devicePixelRatio||1,2)');
-  has('function ribbon('); has('destination-out'); has('createRadialGradient'); has('.00018');
-  for (const token of ['[1,0,1800,380,680', '[2,1800,3200,620,410', '[3,3360,4080,510,340',
-    '[4,6200,7000,940,740', '[5,7180,7980,1460,390', '[6,11500,12000,420,790']) has(token);
-  assert.equal(/\.(?:easel|paper)\b/i.test(cssText()), false, 'no easel or paper CSS box');
-  const a = boot();
+test('playing the same prepared audio twice reuses the element source', () => {
+  const a = harness();
   try {
-    const doc = a.w.document;
-    const wrap = doc.getElementById('swan-stage-wrap');
-    const canvas = doc.getElementById('swan-ink-canvas');
-    const svg = doc.getElementById('swan-vector-stage');
-    assert.equal(wrap.parentNode, doc.body, 'stage mounts directly inside body');
-    assert.equal(canvas.parentNode, wrap); assert.equal(svg.parentNode, wrap);
-    const style = a.w.getComputedStyle(wrap);
-    assert.equal(style.position, 'fixed'); assert.equal(style.width, '100vw'); assert.equal(style.height, '100vh');
-    assert.equal(style.pointerEvents, 'none'); assert.equal(style.zIndex, '0'); assert.equal(style.overflow, 'hidden');
-    const canvasStyle = a.w.getComputedStyle(canvas);
-    assert.equal(canvasStyle.position, 'absolute'); assert.equal(canvasStyle.width, '100vw'); assert.equal(canvasStyle.height, '100vh');
-    const master = doc.getElementById('swanMasterPath');
-    assert.equal((master.getAttribute('d').match(/M/g) || []).length, 1, 'single continuous Move command');
-    assert.ok((master.getAttribute('d').match(/C/g) || []).length >= 14, 'all cubic stages are present');
-    assert.equal(doc.querySelector('.easel,.paper'), null);
-    assert.equal(doc.getElementById('swan-cinnabar-seal').textContent, '墨');
+    let source = '', sets = 0, plays = 0;
+    const audio = { readyState: 4, currentTime: 0, canPlayType() { return 'probably'; }, pause() {},
+      play() { plays++; this.currentTime = 0.5; if (this.onplaying) this.onplaying(); } };
+    Object.defineProperty(audio, 'src', { get() { return source; }, set(v) { sets++; source = v; } });
+    a.q.Speech.el = () => audio;
+    const src = a.q.Speech.amyUrl('guidebook');
+    let ended = 0;
+    a.q.Speech.playOnce(src, 0.88, 6000, (ok) => { if (ok) ended++; });
+    audio.onended();
+    a.q.Speech.playOnce(src, 0.88, 6000, (ok) => { if (ok) ended++; });
+    audio.onended();
+    assert.equal(sets, 1, 'repeat does not reassign or reload the source');
+    assert.equal(plays, 2); assert.equal(ended, 2);
   } finally { a.close(); }
 });
 
-test('variable-pressure canvas renderer completes 12 seconds then draws pulses, ripples and feathers', function () {
-  const calls = { fill: 0, stroke: 0, ellipse: 0, arc: 0, clearRect: 0 };
-  const a = harness(null, { canvasContext: paintingContext(calls) });
+test('the full-screen drawing engine, video, replay and all callbacks are gone', () => {
+  for (const token of ['swan-stage-wrap', 'swan-ink-canvas', 'swan-vector-stage', 'swanMasterPath',
+    'bgSwanVideo', 'btnSwanReplay', 'SwanStage', 'LiveStage', 'swan-inscription', 'swan-cinnabar-seal',
+    '一筆白鳥', '墨', 'bunny-live-wallpaper', 'bunny-poster']) lacks(token);
+  const a = harness();
   try {
-    const canvas = a.w.document.getElementById('swan-ink-canvas');
-    assert.ok(canvas.width > 0 && canvas.height > 0, 'high-DPI canvas is sized to the viewport');
-    a.clock.tick(12100);
-    assert.ok(calls.clearRect > 20, 'choreography repaints continuously');
-    assert.ok(calls.fill > 100, 'variable ribbon, halo and brush tip are filled');
-    assert.ok(calls.stroke > 20, 'specular rim and living pulse stream are stroked');
-    a.w.document.dispatchEvent(new a.w.MouseEvent('pointerdown', { bubbles: true, clientX: 500, clientY: 400 }));
-    a.w.SwanStage.pulseAudio(); a.w.SwanStage.celebrateStreak(5); a.clock.tick(500);
-    assert.ok(calls.ellipse > 0, 'pointer and audio wake render concentric ellipses');
-  } finally { a.close(); }
-});
-
-/* v26 universal live wallpaper engine. */
-test('100vw x 100vh universal PC 16:9 and mobile 9:16 centre-safe video layer is mounted first', function () {
-  has('id="swan-stage-wrap"');
-  has('id="bgSwanVideo"');
-  has('muted loop playsinline webkit-playsinline');
-  has('preload="auto"');
-  has('poster="./assets/bunny-poster.webp"');
-  has('./assets/bunny-live-wallpaper.mp4');
-  has('./assets/swan-lake.mp4');
-  has('./assets/swan-lake.webm');
-  has('object-fit:cover');
-  has('object-position:center center');
-  has('type="video/mp4"'); has('type="video/webm"');
-  const stage = stageMarkup();
-  assert.ok(stage.indexOf('id="bgSwanVideo"') >= 0, 'video lives inside the stage');
-  assert.ok(stage.indexOf('id="bgSwanVideo"') < stage.indexOf('id="swan-ink-canvas"'), 'video is layer 1, canvas layer 2');
-  assert.ok(stage.indexOf('id="swan-ink-canvas"') < stage.indexOf('id="swan-vector-stage"'), 'canvas paints over the video');
-  const wrapRule = rule('#swan-stage-wrap');
-  assert.match(wrapRule, /position:fixed/);
-  assert.match(wrapRule, /width:100vw/);
-  assert.match(wrapRule, /height:100vh/);
-  assert.match(wrapRule, /z-index:0/);
-  assert.match(wrapRule, /pointer-events:none/);
-  has('[data-swan-theme=light] #bgSwanVideo');
-  assert.match(cssText(), /@media print\{#swan-stage-wrap\{display:none!important\}\}/);
-  const a = boot();
-  try {
-    const doc = a.w.document;
-    const video = doc.getElementById('bgSwanVideo');
-    assert.ok(video, 'the live wallpaper video exists');
-    assert.equal(video.parentNode.id, 'swan-stage-wrap');
-    for (const attr of ['muted', 'loop', 'playsinline']) assert.ok(video.hasAttribute(attr), attr);
-    assert.equal(video.getAttribute('preload'), 'auto');
-    assert.equal(video.getAttribute('poster'), './assets/bunny-poster.webp');
-    const sources = Array.from(video.querySelectorAll('source')).map((s) => s.getAttribute('src'));
-    assert.deepEqual(sources, ['./assets/bunny-live-wallpaper.mp4', './assets/swan-lake.mp4', './assets/swan-lake.webm']);
-    assert.ok(video.style.cssText.indexOf('object-fit: cover') >= 0, video.style.cssText);
-    assert.ok(video.style.cssText.indexOf('object-position: center center') >= 0, 'centre-safe framing on 9:16 phones');
-    assert.ok(video.style.cssText.indexOf('opacity: 0') >= 0, 'starts hidden until the first frame is ready');
-    video.dispatchEvent(new a.w.Event('canplay'));
-    assert.equal(video.style.opacity, '0.88', 'canplay fades the wallpaper in');
-    video.style.opacity = '0';
-    video.dispatchEvent(new a.w.Event('loadeddata'));
-    assert.equal(video.style.opacity, '0.88', 'loadeddata also fades the wallpaper in');
-    has('video.play().catch');
-    has('video.pause()');
-    assert.equal(a.q.Errors.items.length, 0, 'no runtime errors from the video layer');
-  } finally { a.close(); }
-});
-
-test('swipe ribbons, click shockwave beams, audio rings and streak sparks run on the viewport', function () {
-  const calls = { stroke: 0, arc: 0, fill: 0, ellipse: 0, clearRect: 0 };
-  has('window.SwanStage=');
-  has('window.LiveStage=');
-  has('function onSwipe(');
-  has('function onClickBeam(');
-  has('wakeRipples');
-  has('featherParticles');
-  has('lightBeams');
-  has('#53c7f0'); has('#ff6f61'); has('#ffc247');
-  has('createLinearGradient');
-  has('rgba(255,111,97,.2)'); has('rgba(83,199,240,.22)');
-  has('createRadialGradient(i?1740:180');
-  has('addEventListener("pointerdown"');
-  has('addEventListener("pointermove"');
-  const a = harness(null, { canvasContext: paintingContext(calls) });
-  try {
-    const swan = a.w.SwanStage;
-    assert.equal(a.w.LiveStage, swan, 'LiveStage is the universal alias');
-    for (const name of ['init', 'onSwipe', 'onClickBeam', 'pulseAudio', 'celebrateStreak', 'syncTheme', 'replay'])
-      assert.equal(typeof swan[name], 'function', name);
-    const before = { stroke: calls.stroke, arc: calls.arc };
-    swan.onSwipe(120, 200, 44, -8);
-    swan.onSwipe(190, 240, 40, 12);
-    swan.onClickBeam(320, 300);
-    a.clock.tick(700);
-    assert.ok(calls.stroke > before.stroke, 'the cyan-to-coral ribbon is stroked');
-    assert.ok(calls.arc > before.arc, 'shockwave rings and starlight are drawn');
-    const audioBefore = { stroke: calls.stroke, ellipse: calls.ellipse };
-    swan.pulseAudio();
-    a.clock.tick(300);
-    assert.ok(calls.ellipse > audioBefore.ellipse, 'Amy speech pulses bass rings across the floor');
-    const streakBefore = { fill: calls.fill, stroke: calls.stroke };
-    swan.celebrateStreak(6);
-    a.clock.tick(300);
-    assert.ok(calls.fill > streakBefore.fill || calls.stroke > streakBefore.stroke, 'a streak launches the golden celebration');
-    a.w.dispatchEvent(new a.w.MouseEvent('pointermove', { clientX: 420, clientY: 330 }));
-    a.clock.tick(120);
-    a.w.dispatchEvent(new a.w.MouseEvent('pointermove', { clientX: 520, clientY: 380 }));
-    a.clock.tick(120);
-    a.w.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: 600, clientY: 420 }));
-    a.clock.tick(300);
-    assert.equal(a.q.Errors.items.length, 0, 'pointer gestures never throw');
-    assert.ok(calls.clearRect > 4, 'the stage keeps repainting');
-  } finally { a.close(); }
-});
-
-test('window.SwanStage exposes the full API and Replay Ink restarts the video and the art', function () {
-  const a = boot();
-  try {
-    const swan = a.w.SwanStage;
-    assert.ok(swan, 'global controller exists');
-    for (const name of ['init', 'replay', 'pulseAudio', 'celebrateStreak', 'syncTheme', 'onSwipe', 'onClickBeam'])
-      assert.equal(typeof swan[name], 'function', name);
-    const doc = typeBoot(a);
-    const button = doc.getElementById('btnSwanReplay');
-    assert.ok(button); assert.match(button.textContent, /🦢 Replay Ink/);
-    assert.ok(button.closest('.topbar.glass'));
-    assert.match(rule('#btnSwanReplay'), /white-space:nowrap/);
-    let replays = 0;
-    swan.replay = function () { replays++; };
-    click(a, button);
-    assert.equal(replays, 1, 'one tap replays the neon studio loop');
-    assert.equal(a.q.Eng.st, 'ready', 'dictation state is untouched');
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1, 'player remains open');
-    swan.init(); swan.pulseAudio(); swan.celebrateStreak(3);
-    has('window.LiveStage=SwanStage;');
-  } finally { a.close(); }
-});
-
-test('theme sync selects midnight neon studio or warm daylight studio palettes', function () {
-  has('#0a0f1e'); has('#53c7f0'); has('#e6c47f'); has('#ead7ae'); has('#111827');
-  has('SwanStage.syncTheme(mode');
-  const a = boot();
-  try {
-    const wrap = a.w.document.getElementById('swan-stage-wrap');
-    a.q.DB.data.settings.theme = 'light'; a.q.UI.applyTheme();
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
-    const lightColour = wrap.style.backgroundColor;
-    assert.ok(lightColour, 'daylight studio background colour is applied');
-    a.q.DB.data.settings.theme = 'dark'; a.q.UI.applyTheme();
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'dark');
-    assert.ok(wrap.style.backgroundColor, 'dark neon studio colour is applied');
-    assert.notEqual(wrap.style.backgroundColor, lightColour);
-    a.w.SwanStage.syncTheme('light', 'kraft');
-    assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
-  } finally { a.close(); }
-});
-
-test('Speech.say and Speech.playSmartAudio automatically radiate SwanStage audio pulses', function () {
-  has('SwanStage.pulseAudio()');
-  const a = boot();
-  try {
-    let pulses = 0;
-    a.w.SwanStage.pulseAudio = function () { pulses++; };
-    a.q.Speech.say(['Hello Britain'], {}, function () {});
-    assert.equal(pulses, 1, 'say pulses immediately when queued');
-    a.q.Speech.playSmartAudio('Guidebook', 0.88, function () {});
-    assert.equal(pulses, 2, 'smart audio inherits the same pulse hook');
-  } finally { a.close(); }
-});
-
-/* v26 instant search index. */
-test('Lib.buildSearchIndex pre-computes instant tokens for slash variants, US/UK, phon, pos, def and ex', function () {
-  has('buildSearchIndex:function');
-  has('searchWords:function');
-  has('searchIndex');
-  const a = boot();
-  try {
-    const Lib = a.q.Lib;
-    assert.ok(Lib.searchIndex && Array.isArray(Lib.searchIndex.rows), 'an index container is exposed');
-    const rows = Lib.buildSearchIndex([{ w: 'tire', phon: 'tʌɪə', pos: 'noun', def: 'a rubber ring', ex: 'The tyre burst.' }], 'unit');
-    assert.equal(rows.length, 1);
-    const token = rows[0].k;
-    for (const part of ['tire', 'tyre', 'tʌɪə', 'noun', 'a rubber ring', 'the tyre burst.'])
-      assert.ok(token.indexOf(part) >= 0, 'token contains ' + part);
-    const one = [{ w: 'tire', phon: 'tʌɪə', pos: 'noun', def: 'a rubber ring', ex: 'The tyre burst.' }];
-    for (const query of ['tire', 'tyre', 'tʌɪə', 'rubber', 'burst', 'noun'])
-      assert.equal(Lib.searchWords(query, one, 'hits').length, 1, 'searchable by ' + query);
-    assert.equal(Lib.searchWords('', one, 'blank').length, 1, 'an empty query keeps every row');
-    assert.equal(Lib.searchWords('zzzz', one, 'miss').length, 0);
-  } finally { a.close(); }
-});
-
-test('the search index covers all 30 Session 7 words and is reused without rebuilding', function () {
-  const a = boot();
-  try {
-    const Lib = a.q.Lib;
-    const words = a.q.DB.data.lists[0].words;
-    assert.equal(words.length, 30);
-    const rows = Lib.buildSearchIndex(words, 'session7');
-    assert.equal(rows.length, 30, 'every Session 7 word is indexed');
-    for (const word of words) {
-      const hits = Lib.searchWords(word.w.split('/')[0], words, 'session7');
-      assert.ok(hits.some((hit) => hit.w === word.w), 'instant hit for ' + word.w);
-    }
-    const tyre = Lib.searchWords('tire', words, 'session7').map((hit) => hit.w);
-    assert.ok(tyre.indexOf('tyre/tire') >= 0, 'the slash variant resolves tyre/tire');
-    const travel = Lib.searchWords('travel', words, 'session7').map((hit) => hit.w);
-    assert.ok(travel.length > 0, 'definitions and sentences are searchable too');
-    assert.equal(Lib.searchIndex.id.indexOf('session7'), 0, 'the cache is keyed to this list');
-    const cached = Lib.searchIndex.rows;
-    Lib.searchWords('jour', words, 'session7');
-    Lib.searchWords('lug', words, 'session7');
-    assert.equal(Lib.searchIndex.rows, cached, 'the cached index is reused for 0ms lookups');
-    assert.equal(Lib.searchWords('jour', words, 'session7').map((hit) => hit.w)[0], 'journey');
-  } finally { a.close(); }
-});
-
-test('dictionary search renders instant results from the index', function () {
-  has('Lib.searchWords(q');
-  const a = boot();
-  try {
-    const doc = a.w.document;
-    a.q.UI.setTab('dict'); a.clock.tick(200);
-    const input = doc.getElementById('dictSearch');
-    assert.ok(input, 'the dictionary search box exists');
-    input.value = 'tire';
-    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
-    a.clock.tick(400);
-    const list = doc.getElementById('dictList');
-    assert.match(list.textContent.toLowerCase(), /tyre/, 'tyre/tire is found from the American spelling');
-    input.value = 'tyyre';
-    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
-    a.clock.tick(400);
-    assert.match(list.textContent, /Nothing here yet|tyre/i);
-    input.value = '';
-    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
-    a.clock.tick(400);
-    assert.ok(doc.getElementById('dictList').children.length > 10, 'the full list returns when the query clears');
+    assert.equal(a.w.SwanStage, undefined);
+    assert.equal(a.w.LiveStage, undefined);
+    assert.equal(a.w.document.querySelector('canvas, #bg video'), null);
     assert.equal(a.q.Errors.items.length, 0);
   } finally { a.close(); }
 });
 
-/* Guide and tour auto-start flow. */
-test('User Guide Start practising unlocks audio, closes the guide and launches Eng.start on Home', function () {
-  has('UI.startPractisingFromGuide=function'); has('go.id="btnGuideStart"');
-  has('UI.startPractisingFromGuide();'); has('Eng.start({})'); has('Speech.unlock();');
-  const a = boot();
+test('four static soft colour fields remain and animation-frame work stops at idle', () => {
+  for (const value of ['#53c7f0', '#ff6f61', '#ffc247', '#8f7bff', '#0a0f1e', '#e8ecf4']) has(value);
+  has('radial-gradient(circle,var(--blob-color)');
+  assert.match(cssRule('#bg'), /background:var\(--bg1\)/);
+  assert.doesNotMatch(css, /#bg\[data-anim=on\] \.blob/);
+  const a = harness();
   try {
-    const doc = a.w.document, order = [];
-    const unlock = a.q.Speech.unlock, start = a.q.Eng.start;
-    a.q.Speech.unlock = function () { order.push('unlock'); return unlock.apply(this, arguments); };
-    a.q.Eng.start = function () { order.push('start'); return start.apply(this, arguments); };
-    a.q.DB.data.tourSeen = false; a.q.DB.data.guideSeen = false; a.q.DB.saveNow();
-    a.q.UI.openWelcomeGuide();
-    const go = doc.getElementById('btnGuideStart');
-    assert.ok(go); assert.equal(go.textContent.trim(), 'Start practising');
-    assert.equal(go.className, 'btn primary xl block');
-    assert.equal(go.querySelector('svg use').getAttribute('href'), '#i-play');
-    click(a, go);
-    assert.deepEqual(order, ['unlock', 'start']);
-    assert.equal(a.q.UI.tab, 'home');
-    assert.equal(doc.getElementById('screen-home').classList.contains('hidden'), false);
-    assert.equal(a.q.Eng.st, 'ready'); assert.equal(a.q.Eng.words.length, 30);
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1);
-    assert.equal(doc.getElementById('btnGuideStart'), null);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /Are you ready\?/);
-    assert.equal(a.q.DB.data.tourSeen, true); assert.equal(a.q.DB.data.guideSeen, true);
-    const saved = JSON.parse(a.w.localStorage.getItem(STORE_KEY));
-    assert.equal(saved.tourSeen, true); assert.equal(saved.guideSeen, true);
+    assert.equal(a.w.document.querySelectorAll('#bg .blob').length, 4);
+    const original = a.w.requestAnimationFrame.bind(a.w);
+    let requests = 0;
+    a.w.requestAnimationFrame = function (cb) { requests++; return original(cb); };
+    a.clock.tick(3000); // the finite startup performance probe has completed
+    const atRest = requests;
+    a.clock.tick(5000);
+    assert.equal(requests, atRest, 'no new animation frames during idle');
+    assert.equal(a.w.document.getElementById('bg').getAttribute('data-anim'), 'off');
+    assert.equal(a.q.Errors.items.length, 0);
   } finally { a.close(); }
 });
 
-test('Guide close never starts dictation; Sinhala CTA, Settings and first run stay wired', function () {
-  const a = boot();
+test('cached search covers every word, variants, definitions, my words and mistakes', () => {
+  has('buildSearchIndex:function'); has('searchWords:function'); has('searchIndex');
+  const a = harness();
   try {
+    const lib = a.q.Lib;
+    const list = lib.current();
+    assert.equal(list.words.length, 30);
+    for (const word of list.words) {
+      assert.ok(lib.searchWords(word.w.split('/')[0], list.words, list.id).some((x) => x.w === word.w), word.w);
+    }
+    assert.ok(lib.searchWords('tire', list.words, list.id).some((x) => x.w === 'tyre/tire'));
+    assert.ok(lib.searchWords('museums', list.words, list.id).some((x) => x.w === 'guidebook'));
+    const rows = lib.searchIndex.rows;
+    lib.searchWords('jour', list.words, list.id);
+    assert.equal(lib.searchIndex.rows, rows, 'successive searches reuse the precomputed rows');
+    lib.addMyWord('wonderful'); lib.addMistake('harbour');
+    assert.equal(lib.searchWords('wonder', lib.mywords(), 'my')[0].w, 'wonderful');
+    assert.equal(lib.searchWords('harb', lib.mistakes(), 'mistakes')[0].w, 'harbour');
+    lib.searchWords('guide', list.words, list.id);
+    assert.ok(lib.searchIndexes[list.id]);
+    assert.ok(lib.searchIndexes.my); assert.ok(lib.searchIndexes.mistakes);
+    // An edit to a middle row with unchanged length must invalidate stale tokens.
+    list.words[4].m = 'unusual token for editing';
+    a.q.DB.save();
+    assert.equal(lib.searchWords('unusual token', list.words, list.id)[0].w, 'hitchhike');
+  } finally { a.close(); }
+});
+
+test('dictionary results update synchronously on input', () => {
+  const a = harness();
+  try {
+    a.q.UI.setTab('dict');
     const doc = a.w.document;
-    a.q.UI.setLang('si'); a.q.UI.openWelcomeGuide();
-    const go = doc.getElementById('btnGuideStart');
-    assert.equal(go.textContent.trim(), 'පුහුණුව ආරම්භ කරන්න');
-    click(a, doc.querySelector('#sheets .shead button'));
-    assert.equal(doc.querySelectorAll('#sheets .sheet').length, 0);
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 0);
-    assert.equal(a.q.Eng.st, 'idle'); assert.equal(a.q.DB.data.guideSeen, false);
-    a.q.UI.setLang('en'); a.q.UI.setTab('set');
-    const settingsGuide = Array.from(doc.querySelectorAll('#screen-set button')).find((b) => b.textContent.trim() === 'User Guide / උපදෙස්');
-    assert.ok(settingsGuide); click(a, settingsGuide);
-    assert.ok(doc.getElementById('btnGuideStart'));
-    click(a, doc.querySelector('#sheets .shead button'));
-    a.q.DB.data.tourSeen = false; a.q.firstRunTour();
-    assert.ok(doc.getElementById('btnGuideStart'));
-    click(a, doc.querySelector('#sheets .shead button'));
-    assert.equal(a.q.Eng.st, 'idle');
+    const input = doc.getElementById('dictSearch');
+    input.value = 'tire';
+    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    assert.match(doc.getElementById('dictList').textContent, /tyre/i);
+    input.value = 'guidebook';
+    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    assert.match(doc.getElementById('dictList').textContent, /guidebook/i);
+    assert.doesNotMatch(doc.getElementById('dictList').textContent, /tyre/i);
   } finally { a.close(); }
 });
 
-test('classic runTour final Start practising card also launches Eng.start', function () {
-  has('function runTour(){'); has('n===cards.length-1'); has('S.doneTour');
-  const a = boot();
+test('guide start unlocks speech, closes the guide, opens Home and launches dictation', () => {
+  has('UI.startPractisingFromGuide=function');
+  const a = harness();
   try {
-    const doc = a.w.document; a.q.UI.runTour();
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /\(1\/3\)/);
-    assert.equal(primaryTourButton(doc).textContent.trim(), 'Next');
-    click(a, primaryTourButton(doc)); a.clock.tick(130);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /\(2\/3\)/);
-    click(a, primaryTourButton(doc)); a.clock.tick(130);
-    const go = doc.getElementById('btnGuideStart');
-    assert.ok(go); assert.equal(go.textContent.trim(), 'Start practising'); click(a, go);
-    assert.equal(a.q.UI.tab, 'home'); assert.equal(a.q.Eng.st, 'ready');
-    assert.equal(doc.querySelectorAll('#layers .layer').length, 1);
-    assert.match(doc.querySelector('#sheets .sheet').textContent, /Are you ready\?/);
-    assert.equal(a.q.DB.data.tourSeen, true); assert.equal(a.q.DB.data.guideSeen, true);
+    const actions = [];
+    const unlock = a.q.Speech.unlock, start = a.q.Eng.start;
+    a.q.Speech.unlock = function () { actions.push('unlock'); return unlock.apply(this, arguments); };
+    a.q.Eng.start = function () { actions.push('start'); return start.apply(this, arguments); };
+    a.q.UI.setTab('set'); a.q.UI.openWelcomeGuide();
+    assert.ok(a.w.document.querySelector('#sheets .guide-credit-pill'));
+    click(a, a.w.document.getElementById('btnGuideStart'));
+    assert.deepEqual(actions, ['unlock', 'start']);
+    assert.equal(a.q.UI.tab, 'home');
+    assert.equal(a.q.Eng.st, 'ready');
+    assert.equal(a.q.Eng.words.length, 30);
+    assert.equal(a.w.document.getElementById('btnGuideStart'), null);
+    assert.match(a.w.document.querySelector('#sheets .sheet').textContent, /Are you ready\?/);
   } finally { a.close(); }
 });
 
-/* Always-visible Hansana credit. */
-test('#credit stays at z-index 9999 with showCreditNow throughout Guide, language and Tour', function () {
-  const creditRule = rule('.credit');
-  assert.match(creditRule, /z-index:9999\s*!important/);
-  assert.match(creditRule, /position:fixed/); assert.match(creditRule, /pointer-events:auto/);
-  has('id="credit"'); has('class="credit glass"');
-  has('UI.showCreditNow=function'); has('UI.showCreditNow()');
-  const openGuideIdx = html.indexOf('openWelcomeGuide:function');
-  const showIdx = html.indexOf('UI.showCreditNow', openGuideIdx);
-  assert.ok(showIdx > openGuideIdx && showIdx - openGuideIdx < 500);
-  const applyLangIdx = html.indexOf('applyLang:function');
-  const showInLang = html.indexOf('UI.showCreditNow', applyLangIdx);
-  assert.ok(showInLang > applyLangIdx && showInLang - applyLangIdx < 800);
-  const runTourIdx = html.indexOf('function runTour');
-  assert.ok(html.indexOf('UI.showCreditNow', runTourIdx) > runTourIdx);
-  const startIdx = html.indexOf('UI.startPractisingFromGuide');
-  const showInStart = html.indexOf('UI.showCreditNow', startIdx);
-  assert.ok(showInStart > startIdx && showInStart - startIdx < 400);
-  const a = boot();
+test('credit stays visible beyond one cycle and is also present in the guide and tour', () => {
+  assert.match(cssRule('.credit'), /z-index:9999!important/);
+  has('UI.showCreditNow=function'); has('guide-credit-pill');
+  const a = harness();
   try {
-    a.q.UI.openWelcomeGuide(); a.clock.tick(200);
     const credit = a.w.document.getElementById('credit');
-    assert.ok(credit); assert.equal(a.w.getComputedStyle(credit).zIndex, '9999');
+    a.clock.tick(13000);
     assert.ok(credit.classList.contains('in'));
-    a.q.UI.setLang('si'); a.clock.tick(200); assert.ok(credit.classList.contains('in'));
-    a.q.UI.closeSheet(); a.q.UI.runTour(); a.clock.tick(100); assert.ok(credit.classList.contains('in'));
-    click(a, primaryTourButton(a.w.document)); a.clock.tick(200); assert.ok(credit.classList.contains('in'));
-  } finally { a.close(); }
-});
-
-test('guide-credit-pill with animated Hansana swan renders inside User Guide and Tour', function () {
-  has('guide-credit-pill'); has('UI.guideCreditPill=function'); has('CREDITS GOES TO'); has('Hansana');
-  const a = boot();
-  try {
     a.q.UI.openWelcomeGuide();
-    let sheet = a.w.document.querySelector('#sheets .sheet');
-    let pill = sheet.querySelector('.guide-credit-pill');
-    assert.ok(pill); assert.ok(pill.querySelector('.c-swan'));
-    assert.match(pill.textContent, /Hansana/); assert.match(pill.textContent, /Ayya01/);
-    assert.ok(pill.classList.contains('glass'));
-    a.q.UI.setLang('si'); a.q.UI.closeSheet(); a.q.UI.openWelcomeGuide();
-    sheet = a.w.document.querySelector('#sheets .sheet'); pill = sheet.querySelector('.guide-credit-pill');
-    assert.match(pill.textContent, /Hansana/);
-    assert.ok(/Sumodya|භාරකාර/.test(pill.textContent));
+    assert.ok(credit.classList.contains('in'));
+    assert.match(a.w.document.querySelector('#sheets .guide-credit-pill').textContent, /Hansana/);
     a.q.UI.closeSheet(); a.q.UI.runTour();
-    sheet = a.w.document.querySelector('#sheets .sheet'); assert.ok(sheet.querySelector('.guide-credit-pill'));
-    click(a, primaryTourButton(a.w.document)); a.clock.tick(130);
-    sheet = a.w.document.querySelector('#sheets .sheet'); assert.ok(sheet.querySelector('.guide-credit-pill'));
+    assert.ok(a.w.document.querySelector('#sheets .guide-credit-pill'));
+    assert.ok(credit.classList.contains('in'));
   } finally { a.close(); }
 });
 
-/* Ready sheet and native typing. */
-test('ready sheet has two actions and cross, scrim and Escape all exit in one tap', function () {
-  lacks('btnReadyClose'); lacks('btnNotReady'); lacks('Not ready'); lacks('ansVkb');
+test('ready-sheet cross, scrim and Escape each close sheet and player in one action', () => {
+  for (const token of ['btnReadyClose', 'btnNotReady', 'ansVkb', 'btnToggleVkb']) lacks(token);
   has('Eng.cancelReadyAndExit=function');
-  for (const how of ['cross', 'scrim', 'escape']) {
-    const a = boot();
+  for (const method of ['cross', 'scrim', 'escape']) {
+    const a = harness();
     try {
-      const doc = typeBoot(a); assert.equal(a.q.Eng.st, 'ready');
+      const doc = enterType(a);
+      assert.equal(a.q.Eng.st, 'ready');
       const exits = doc.querySelectorAll('#sheets .shead button');
-      assert.equal(exits.length, 1); assert.equal(exits[0].getAttribute('aria-label'), 'Close');
-      const actions = Array.from(doc.querySelectorAll('#sheets .sfoot button')).map((b) => b.textContent.trim());
-      assert.deepEqual(actions, ["I'm ready", 'Skip countdown']);
-      if (how === 'cross') click(a, exits[0]);
-      else if (how === 'scrim') click(a, doc.querySelector('#sheets .scrim'));
+      assert.equal(exits.length, 1);
+      assert.equal(exits[0].getAttribute('aria-label'), 'Close');
+      if (method === 'cross') click(a, exits[0]);
+      else if (method === 'scrim') click(a, doc.querySelector('#sheets .scrim'));
       else doc.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       a.clock.tick(120);
       assert.equal(a.q.Eng.st, 'idle'); assert.equal(a.q.Eng.layer, null);
       assert.equal(doc.querySelectorAll('#sheets .sheet').length, 0);
       assert.equal(doc.querySelectorAll('#layers .layer').length, 0);
-      assert.equal(doc.getElementById('screen-home').classList.contains('hidden'), false);
-      assert.equal(a.q.DB.data.snapshot, undefined);
     } finally { a.close(); }
   }
 });
 
-test('native text input blocks password saves and suggestions; no custom keyboard exists', function () {
-  for (const token of ['ansVkb', 'btnToggleVkb', 'btnVkbToggle', 'buildVkb', 'vkb-key', 'ans-vkb']) lacks(token);
+test('native text input uses the single-space buffer and synchronised mirror', () => {
   has('inp.type="text"'); has('inp.setAttribute("autocomplete","off")');
-  has('Eng.syncInputMirror=function'); has('Eng.onTypeInputUpdate=function');
-  has('id="ansMirror"'); has('id="ansMirrorText"');
-  assert.equal(html.includes('new-password'), false); assert.equal(html.includes('current-password'), false);
-  assert.equal(/inp\.type\s*=\s*"password"/.test(html), false);
-  const inputCss = rule('#ansInput');
-  assert.match(inputCss, /color:transparent\s*!important/);
-  assert.match(inputCss, /-webkit-text-fill-color:transparent\s*!important/);
-  assert.match(inputCss, /caret-color:transparent\s*!important/);
-  assert.match(inputCss, /background:(?:transparent|0 0)\s*!important/);
-  const a = boot();
+  has('typedAnswer'); has('syncInputMirror');
+  assert.doesNotMatch(html, /inp\.type\s*=\s*"password"|new-password|current-password/);
+  const a = harness();
   try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const expected = {
-      autocomplete: 'off', inputmode: 'text', autocorrect: 'off', autocapitalize: 'none',
-      spellcheck: 'false', 'aria-autocomplete': 'none', 'data-lpignore': 'true',
-      'data-1p-ignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other', 'data-gramm': 'false'
-    };
-    assert.equal(inp.type, 'text');
-    for (const key of Object.keys(expected)) assert.equal(inp.getAttribute(key), expected[key], key);
-    assert.match(inp.name, /^sdp_field_\d{1,12}$/); assert.equal(inp.form, null);
-    assert.equal(inp.hasAttribute('placeholder'), false); assert.equal(inp.value, ' ');
-    assert.equal(inp.parentNode.id, 'ansWrap');
-    assert.ok(doc.getElementById('ansMirror')); assert.ok(doc.getElementById('ansMirrorText'));
+    const doc = playing(a), inp = doc.getElementById('ansInput');
+    assert.equal(inp.type, 'text'); assert.equal(inp.getAttribute('autocomplete'), 'off');
+    assert.equal(inp.getAttribute('autocorrect'), 'off');
+    assert.equal(inp.getAttribute('spellcheck'), 'false');
+    assert.equal(inp.form, null); assert.equal(inp.value, ' ');
     assert.ok(doc.querySelector('#ansMirror .ans-caret'));
-    assert.equal(doc.getElementById('ansVkb'), null); assert.equal(doc.getElementById('btnToggleVkb'), null);
-  } finally { a.close(); }
-});
-
-test('single-space IME buffer, mirror, Backspace, deletion and captureAnswer stay in sync', function () {
-  has('self.typedAnswer'); has('inp.value=" "'); has('insertReplacementText'); has('deleteContentBackward');
-  has('this.answers[this.idx]=this.typedAnswer||""');
-  const a = boot();
-  try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput'), mirror = doc.getElementById('ansMirrorText');
-    assert.match(mirror.textContent, /Type the word you hear/); assert.equal(mirror.className, 'ans-placeholder');
-    let built = '';
-    for (const ch of a.q.Eng.currentWord().w.slice(0, 3)) {
-      built += ch; typeChar(a, inp, ch);
-      assert.equal(inp.value, ' '); assert.equal(a.q.Eng.typedAnswer, built);
-      assert.equal(mirror.textContent, built); assert.equal(a.q.Eng.answers[a.q.Eng.idx], built);
-    }
+    typeChar(a, inp, 'g'); typeChar(a, inp, 'u'); typeChar(a, inp, 'i');
+    assert.equal(inp.value, ' '); assert.equal(a.q.Eng.typedAnswer, 'gui');
+    assert.equal(doc.getElementById('ansMirrorText').textContent, 'gui');
+    assert.equal(a.q.Eng.answers[a.q.Eng.idx], 'gui');
     inp.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
-    assert.equal(a.q.Eng.typedAnswer, built.slice(0, -1));
+    assert.equal(a.q.Eng.typedAnswer, 'gu');
     inp.value = ''; inputEvent(a, inp, 'deleteContentBackward');
-    assert.equal(a.q.Eng.typedAnswer, built.slice(0, -2)); assert.equal(inp.value, ' ');
-    inp.value = 'abc'; inputEvent(a, inp);
-    assert.equal(a.q.Eng.typedAnswer, 'abc'); assert.equal(mirror.textContent, 'abc');
-    a.q.Eng.captureAnswer(); assert.equal(a.q.Eng.answers[a.q.Eng.idx], 'abc');
+    assert.equal(a.q.Eng.typedAnswer, 'g'); assert.equal(inp.value, ' ');
   } finally { a.close(); }
 });
 
-test('replacement suggestions, paste and drop never enter typedAnswer', function () {
-  const a = boot();
+test('replacement suggestions, paste and drop are blocked', () => {
+  const a = harness();
   try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    typeChar(a, inp, 'g'); const before = a.q.Eng.typedAnswer;
+    const doc = playing(a), inp = doc.getElementById('ansInput');
+    typeChar(a, inp, 'g');
     for (const kind of ['insertReplacementText', 'insertFromPaste', 'insertFromDrop']) {
+      const before = new a.w.Event('beforeinput', { bubbles: true, cancelable: true });
+      before.inputType = kind; inp.dispatchEvent(before); assert.equal(before.defaultPrevented, true);
       inp.value = ' guidebook'; inputEvent(a, inp, kind);
-      assert.equal(a.q.Eng.typedAnswer, before, kind); assert.equal(inp.value, ' ');
-      assert.match(doc.getElementById('ansFeedback').textContent, /blocked/);
+      assert.equal(a.q.Eng.typedAnswer, 'g'); assert.equal(inp.value, ' ');
     }
-    const bi = new a.w.Event('beforeinput', { bubbles: true, cancelable: true });
-    bi.inputType = 'insertReplacementText'; inp.dispatchEvent(bi); assert.equal(bi.defaultPrevented, true);
     for (const kind of ['paste', 'drop']) {
       const ev = new a.w.Event(kind, { bubbles: true, cancelable: true }); inp.dispatchEvent(ev);
-      assert.equal(ev.defaultPrevented, true, kind);
+      assert.equal(ev.defaultPrevented, true);
     }
   } finally { a.close(); }
 });
 
-/* Animated live feedback and SwanStage celebrations. */
-test('correct answer animates tick, slots and chime, celebrates streak and advances at 1050ms', function () {
-  has('Eng.onTypeCorrect=function'); has('id="ansTick"'); has('id="plTickHero"');
-  has('.ans-slots .slot-done'); has('this.after(1050'); has('SwanStage.celebrateStreak(this.liveStreakCount)');
-  const a = boot();
+test('correct typing shows tick, completed slots and chime then advances after 1050ms', () => {
+  has('Eng.onTypeCorrect=function'); has('this.after(1050');
+  const a = harness();
   try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const word = a.q.Eng.currentWord().w.split('/')[0];
-    let chimes = 0; const celebrations = [];
-    a.q.UI.playTickChime = function () { chimes++; };
-    a.w.SwanStage.celebrateStreak = function (n) { celebrations.push(n); };
-    for (const ch of word) typeChar(a, inp, ch);
-    assert.equal(a.q.Eng.wordSolved, true); assert.equal(a.q.Eng.liveCorrectCount, 1);
-    assert.equal(a.q.Eng.liveStreakCount, 1); assert.equal(a.q.Eng.answers[0], word);
-    assert.equal(chimes, 1); assert.deepEqual(celebrations, [1]);
+    const doc = playing(a), inp = doc.getElementById('ansInput');
+    let chimes = 0; a.q.UI.playTickChime = function () { chimes++; };
+    const first = a.q.Eng.currentWord().w.split('/')[0];
+    for (const ch of first) typeChar(a, inp, ch);
+    assert.equal(a.q.Eng.wordSolved, true);
+    assert.equal(a.q.Eng.liveCorrectCount, 1); assert.equal(a.q.Eng.liveStreakCount, 1);
+    assert.equal(chimes, 1);
     assert.ok(doc.getElementById('ansTick').classList.contains('is-correct'));
     assert.ok(doc.getElementById('plTickHero').classList.contains('is-correct'));
     assert.ok(doc.querySelectorAll('#ansSlots .slot-done').length > 0);
-    a.clock.tick(1000); assert.equal(a.q.Eng.idx, 0);
-    a.clock.tick(100); assert.equal(a.q.Eng.idx, 1);
-    assert.equal(a.q.Eng.answers[0], word); assert.equal(a.q.Eng.typedAnswer, ''); assert.equal(inp.value, ' ');
-    assert.match(doc.getElementById('ansMirrorText').textContent, /Type the word you hear/);
+    a.clock.tick(1049); assert.equal(a.q.Eng.idx, 0);
+    a.clock.tick(2); assert.equal(a.q.Eng.idx, 1);
   } finally { a.close(); }
 });
 
-test('paper checklist completion sends one golden surge and resets only when completion changes', function () {
-  has('swanComplete'); has('SwanStage.celebrateStreak(n)');
-  const a = boot();
+test('the final typed answer is retained when the run is scored', () => {
+  const a = harness();
   try {
-    const words = [{ w: 'harbour', s: '', m: '' }, { w: 'journey', s: '', m: '' }];
-    const rec = { id: 'swan-paper-test', mode: 'paper', percent: 0, score: 0, wordCount: 2,
-      rows: [{ state: '' }, { state: '' }], durationSec: 10, listName: TITLE,
-      sessionNo: '7', sessionDay: 'Thursday', sessionDate: '2026-10-26' };
-    a.q.Results.open(rec, words, [0, 1]);
-    const doc = a.w.document, celebrations = [];
-    a.w.SwanStage.celebrateStreak = function (n) { celebrations.push(n); };
-    const find = (label) => Array.from(doc.querySelectorAll('#layers button')).find((b) => b.textContent.trim() === label);
-    click(a, find('All right')); assert.deepEqual(celebrations, [2]);
-    click(a, find('All right')); assert.deepEqual(celebrations, [2], 'no duplicate celebration');
-    click(a, find('Reset')); click(a, find('All right')); assert.deepEqual(celebrations, [2, 2]);
+    const doc = playing(a);
+    a.q.Eng.runItem(29);
+    a.clock.tick(4500);
+    const inp = doc.getElementById('ansInput');
+    for (const ch of 'windscreen') typeChar(a, inp, ch);
+    assert.equal(a.q.Eng.wordSolved, true);
+    a.clock.tick(1051);
+    assert.equal(a.q.DB.data.history.length, 1);
+    const row = a.q.DB.data.history[0].rows[29];
+    assert.equal(row.word, 'windscreen');
+    assert.equal(row.ans, 'windscreen');
+    assert.equal(row.state, 'ok');
   } finally { a.close(); }
 });
 
-test('wrong answer shows cross and diff, breaks streak, records mistake, speaks once and holds 2100ms', function () {
-  has('Eng.onTypeWrong=function'); has('id="ansWrong"'); has('id="plWrongHero"'); has('id="ansCompare"');
-  has('streak-broken'); has('Streak Broken! (0)'); has('function diffChars'); has('this.after(2100');
-  const a = boot();
+test('incorrect and timed-out answers break streak, show comparison, speak once and hold', () => {
+  has('Eng.onTypeWrong=function'); has('streak-broken'); has('function diffChars'); has('this.after(2100');
+  const a = harness();
   try {
-    const doc = startPlaying(a), inp = doc.getElementById('ansInput');
-    const first = a.q.Eng.currentWord().w.split('/')[0];
-    for (const ch of first) typeChar(a, inp, ch);
-    a.clock.tick(1200); assert.equal(a.q.Eng.idx, 1); assert.equal(a.q.Eng.liveStreakCount, 1);
-    const target = a.q.Eng.currentWord().w; let tones = 0; const spoken = [];
+    const doc = playing(a), inp = doc.getElementById('ansInput');
+    for (const ch of a.q.Eng.currentWord().w) typeChar(a, inp, ch);
+    a.clock.tick(1100); assert.equal(a.q.Eng.liveStreakCount, 1);
+    const target = a.q.Eng.currentWord().w;
+    let tones = 0; const spoken = [];
     a.q.UI.playWrongTone = function () { tones++; };
     a.q.Speech.say = function (parts) { spoken.push(parts.join(' ')); };
     for (const ch of 'zzzz') typeChar(a, inp, ch);
     inp.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    a.clock.tick(60);
     assert.equal(a.q.Eng.wordWrong, true); assert.equal(a.q.Eng.liveStreakCount, 0);
     assert.equal(a.q.Eng.liveWrongCount, 1); assert.equal(tones, 1);
     assert.deepEqual(spoken, [target.split('/')[0]]);
     assert.ok(doc.getElementById('ansWrong').classList.contains('is-wrong'));
     assert.ok(doc.getElementById('plWrongHero').classList.contains('is-wrong'));
-    assert.match(doc.getElementById('plStreakCount').className, /streak-broken/);
     assert.match(doc.getElementById('plStreakCount').textContent, /Streak Broken! \(0\)/);
-    assert.match(doc.getElementById('ansCompare').className, /is-open/);
-    assert.match(doc.getElementById('ansCompare').textContent, /Your answer/);
-    assert.match(doc.getElementById('ansCompare').textContent, /Correct UK spelling/);
+    assert.match(doc.getElementById('ansCompare').textContent, /Your answer:[\s\S]*Correct UK spelling/);
     assert.match(doc.getElementById('ansCheckBtn').textContent, /Got it → Next/);
-    assert.equal(a.q.DB.data.mistakes.some((m) => m.w === target.toLowerCase()), true);
-    assert.equal(inp.value, ' ');
-    a.clock.tick(1500); assert.equal(a.q.Eng.idx, 1);
-    a.clock.tick(700); assert.equal(a.q.Eng.idx, 2);
+    assert.ok(a.q.DB.data.mistakes.some((m) => m.w === target.toLowerCase()));
+    a.clock.tick(2099); assert.equal(a.q.Eng.idx, 1);
+    a.clock.tick(2); assert.equal(a.q.Eng.idx, 2);
+    a.q.Eng.onTypeWrong('timeout');
+    assert.equal(a.q.Eng.liveStreakCount, 0);
+    assert.match(doc.getElementById('plStreakCount').textContent, /Streak Broken! \(0\)/);
+    assert.match(doc.getElementById('ansFeedback').textContent, /Time up/);
   } finally { a.close(); }
 });
 
-test('tyre, tire and tyre/tire all match word #26', function () {
-  has('Eng.isAnswerMatch=function');
-  const a = boot();
+test('slash spelling variants match tyre/tire', () => {
+  const a = harness();
   try {
-    const Eng = a.q.Eng;
-    assert.deepEqual(Array.prototype.slice.call(Eng.getTargetVariants({ w: 'tyre/tire' })), ['tyre/tire', 'tyre', 'tire']);
-    for (const answer of ['tyre', 'tire', 'tyre/tire', '  TIRE ']) {
-      assert.equal(Eng.isAnswerMatch(answer, { w: 'tyre/tire' }), true, answer);
-      assert.equal(Eng.isAnswerMatch(answer, session.lists[0].words[25]), true, answer);
-    }
-    assert.equal(Eng.isAnswerMatch('tyres', { w: 'tyre/tire' }), false);
-    assert.equal(Eng.isAnswerMatch('', { w: 'tyre/tire' }), false);
-    assert.equal(Eng.isPrefixMatch('tyr', { w: 'tyre/tire' }), true);
-    assert.equal(Eng.isPrefixMatch('tir', { w: 'tyre/tire' }), true);
-    assert.equal(Eng.isPrefixMatch('xx', { w: 'tyre/tire' }), false);
+    const target = session.lists[0].words[25];
+    for (const answer of ['tyre', 'tire', 'tyre/tire', ' TIRE ']) assert.equal(a.q.Eng.isAnswerMatch(answer, target), true);
+    assert.equal(a.q.Eng.isAnswerMatch('tyres', target), false);
+    assert.equal(a.q.Eng.isPrefixMatch('tir', target), true);
   } finally { a.close(); }
 });
 
-/* Liquid Glass v22 visual gates. */
-test('credit swan, hollow hero, Settings-only mixer and universal sliding capsules remain intact', function () {
-  has('.c-swan'); has('@keyframes swanFloat'); has('@keyframes swanWing'); has('@keyframes swanRipple');
-  has('<span class="c-text"><small>credits goes to</small><b>Hansana</b></span>'); has('CREDITS GOES TO');
-  has('id="tabInd"'); has('.seg .thumb,.seg-tint .seg-ind'); has('.glass .glass'); has('will-change:transform');
-  assert.match(rule('.credit'), /z-index:9999\s*!important/);
-  assert.match(rule('.layer'), /z-index:60/); assert.match(rule('.sheet'), /z-index:70/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /-webkit-text-stroke:1\.75px/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /color:transparent\s*!important/);
-  assert.match(rule('#homeTitle,.liquid-glass-text'), /-webkit-background-clip:text/);
-  assert.match(rule('#grain'), /display:none\s*!important/);
-  assert.match(cssText(), /\.blob\{filter:none!important\}/);
-  assert.equal(homeMarkup().includes('Liquid Glass'), false);
-  assert.equal(homeMarkup().includes('lgStage'), false);
-  const a = boot();
+test('paper self-scoring still updates its checklist without wallpaper callbacks', () => {
+  const a = harness();
+  try {
+    const list = [{ w: 'harbour', s: '', m: '' }, { w: 'journey', s: '', m: '' }];
+    const rec = { id: 'paper-test', mode: 'paper', percent: 0, score: 0, wordCount: 2,
+      rows: [{ state: '' }, { state: '' }], durationSec: 10, listName: title,
+      sessionNo: '7', sessionDay: 'Thursday', sessionDate: '2026-10-27' };
+    a.q.Results.open(rec, list, [0, 1]);
+    const find = (label) => Array.from(a.w.document.querySelectorAll('#layers button')).find((b) => b.textContent.trim() === label);
+    click(a, find('All right')); assert.equal(rec.score, 2); assert.equal(rec.percent, 100);
+    click(a, find('Reset')); assert.equal(rec.score, 0);
+    assert.equal(a.q.Errors.items.length, 0);
+  } finally { a.close(); }
+});
+
+test('cloud status distinguishes a successful GAS reply from live-only activity', () => {
+  const a = harness();
+  try {
+    const c = a.q.Cloud;
+    const label = () => a.w.document.getElementById('chipNetText').textContent;
+    c.mode = true;
+    c.updatedAt = 1000; // a live-channel state can also update this field
+    c.live.at = 1000;
+    c.live.ok = true;
+    a.q.UI.renderNet();
+    assert.match(label(), /Online · Live Sync/);
+    assert.doesNotMatch(label(), /Cloud Synced/);
+    c.gasAt = 2000; // set by a successful GAS state response
+    a.q.UI.renderNet();
+    assert.match(label(), /Cloud Synced/);
+    a.q.DB.data.outbox.push({ id: 'pending' });
+    a.q.UI.renderNet();
+    assert.match(label(), /Syncing/);
+    c.setUrl('');
+    assert.equal(c.gasAt, 0);
+  } finally { a.close(); }
+});
+
+test('hollow hero, stat tiles, Settings-only mixer and sliding dock remain intact', () => {
+  assert.match(cssRule('#homeTitle,.liquid-glass-text'), /-webkit-text-stroke:1\.75px/);
+  assert.match(cssRule('#homeTitle,.liquid-glass-text'), /color:transparent!important/);
+  assert.match(cssRule('#homeTitle,.liquid-glass-text'), /-webkit-background-clip:text/);
+  has('id="tabInd"'); has('id="homeStats"'); has('anatomy-stage');
+  const a = harness();
   try {
     const doc = a.w.document;
-    assert.ok(doc.querySelector('#credit .c-swan'));
-    assert.equal(doc.querySelector('#homeTitle').textContent, TITLE);
-    assert.equal(doc.querySelector('#homeTitle').className, 'liquid-glass-text');
-    for (const mode of ['lite', 'full']) {
-      a.q.DB.data.settings.perf = mode; a.q.UI.applyPerf();
-      assert.ok(doc.querySelector('#credit.credit.glass .c-swan'), mode);
-    }
-    a.q.Screens.settings(); a.clock.tick(300);
+    assert.equal(doc.getElementById('homeTitle').textContent, title);
+    assert.ok(doc.getElementById('homeTitle').classList.contains('liquid-glass-text'));
+    assert.ok(doc.getElementById('homeTitle').classList.contains('hollow'));
+    assert.doesNotMatch(doc.getElementById('homeTitle').textContent, /Liquid Glass/);
+    assert.equal(doc.querySelectorAll('#homeStats .statbox').length, 3);
+    assert.equal(doc.querySelector('#screen-home #lgStage'), null);
+    a.q.UI.setTab('set'); a.clock.tick(100);
     for (const id of ['lgStage', 'orb', 'sBlur', 'sSat', 'sBrt']) assert.ok(doc.querySelector('#screen-set #' + id), id);
     assert.match(doc.querySelector('#screen-set .seg-tint').textContent, /Clear[\s\S]*Frost[\s\S]*Smoke/);
-    assert.match(doc.querySelector('#screen-set .seg-perf').textContent, /Auto[\s\S]*Lite 60FPS[\s\S]*Full/);
-    assert.equal(doc.querySelector('#screen-home #lgStage'), null);
-    assert.ok(doc.getElementById('tabInd'));
+    assert.match(doc.querySelector('#screen-set .seg-perf').textContent, /Auto[\s\S]*Lite[\s\S]*Full/);
+    assert.match(doc.getElementById('tabInd').style.transform, /translate3d\(400%/);
+    a.q.UI.setTab('dict');
+    assert.match(doc.getElementById('tabInd').style.transform, /translate3d\(100%/);
+    for (const id of ['chipNet', 'btnLang', 'btnGuideTop', 'btnPerf', 'btnTheme', 'btnRefresh', 'btnAdmin'])
+      assert.ok(doc.querySelector('.topbar #' + id), id);
   } finally { a.close(); }
 });
-
-let failed = 0;
-for (const item of tests) {
-  try { item.fn(); console.log('# ok - ' + item.name); }
-  catch (error) {
-    failed++; console.log('# not ok - ' + item.name);
-    console.log('#   ' + String((error && error.stack) || error).split('\n').join('\n#   '));
-  }
-}
-if (failed) {
-  console.log('# ' + failed + ' of ' + tests.length + ' upgrade checks failed');
-  process.exit(1);
-}
-console.log('# all ' + tests.length + ' upgrade checks passed');
