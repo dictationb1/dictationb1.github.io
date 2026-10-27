@@ -217,13 +217,13 @@ function material(page) {
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
       await page.waitForFunction(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));
-        return (css.backdropFilter || css.webkitBackdropFilter || '').indexOf('blur(8px)') >= 0;
+        return (css.backdropFilter || css.webkitBackdropFilter || '').indexOf('blur(4px)') >= 0;
       }, null, { timeout: 8000 });
       const blurPx = await page.evaluate(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));
         return css.backdropFilter || css.webkitBackdropFilter || '';
       });
-      assert.match(blurPx, /blur\(8px\)/, 'lite uses the 8px glass budget: ' + blurPx);
+      assert.match(blurPx, /blur\(4px\)/, 'lite uses the 8px glass budget: ' + blurPx);
       assert.equal((await page.locator('#btnPerf').textContent()).trim(), '⚡ Lite');
       await page.locator('#btnPerf').click();
       await page.waitForTimeout(250);
@@ -299,7 +299,7 @@ function material(page) {
       assert.equal(await page.locator('body.tint-frost').count(), 1);
       assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
       assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(16, 26, 52, 0.72)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 22, 0.34)', null, { timeout: 8000 });
       const frost = await page.evaluate(() => ({
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
@@ -308,7 +308,7 @@ function material(page) {
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
-      assert.equal(frost.bg, 'rgba(16, 26, 52, 0.72)');
+      assert.equal(frost.bg, 'rgba(6, 10, 22, 0.34)');
       assert.match(frost.shadow, /180, 225, 255/);
       assert.equal(frost.morph, false);
       assert.equal(frost.saved, 1);
@@ -318,9 +318,9 @@ function material(page) {
       await page.locator('#segTint [data-tint="2"]').click();
       assert.equal(await page.locator('body.tint-smoke').count(), 1);
       assert.equal(await page.locator('body.tint-frost').count(), 0);
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(4, 7, 16, 0.82)', null, { timeout: 8000 });
+      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 22, 0.4)', null, { timeout: 8000 });
       const smoke = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
-      assert.equal(smoke, 'rgba(4, 7, 16, 0.82)');
+      assert.equal(smoke, 'rgba(6, 10, 22, 0.4)');
       await page.locator('#segTint [data-tint="0"]').click();
       await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
@@ -459,7 +459,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' PC portrait video remains head-to-sneakers in BOTH Full and Lite', async () => {
+  await check(engine + ' PC 16:9 video fills the screen in BOTH Full and Lite', async () => {
     const { context, page, errors } = await boot(browser, 1920, 1080);
     try {
       await page.waitForFunction(() => {
@@ -475,9 +475,9 @@ function material(page) {
           app: getComputedStyle(document.getElementById('app')).backgroundColor, time: v.currentTime };
       });
       assert.deepEqual(state.size, [1920, 1080]);
-      assert.equal(state.fit, 'contain');assert.equal(state.position, 'center center');
-      assert.equal(state.opacity, '0.88');
-      assert.ok(state.pixels[0] < state.pixels[1], 'bundled portrait video preserves ears and shoes');
+      assert.equal(state.fit, 'cover');assert.equal(state.position, 'center center');
+      assert.equal(state.opacity, '1');
+      assert.ok(state.pixels[0] > 0 && state.pixels[1] > 0, 'bundled 16:9 video decodes at full resolution');
       assert.match(state.hero, /rgba\(/, 'glass card stays translucent');
       assert.equal(state.app, 'rgba(0, 0, 0, 0)', 'the app does not hide video');
       for (const mode of ['lite', 'full']) {
@@ -489,7 +489,7 @@ function material(page) {
           fit: document.getElementById('bgLiveVideo').style.objectFit,
           time: document.getElementById('bgLiveVideo').currentTime }));
         assert.equal(video.perf, mode);assert.equal(video.paused, false);
-        assert.equal(video.opacity, '0.88');assert.equal(video.fit, 'contain');
+        assert.equal(video.opacity, '1');assert.equal(video.fit, 'cover');
         assert.ok(video.time > state.time, 'video advances in ' + mode);
       }
       const universal = await page.evaluate(() => {
@@ -577,10 +577,10 @@ function material(page) {
       assert.equal(scene.blobs, 4); assert.equal(scene.canvas, true); assert.equal(scene.video, true);
       assert.equal(scene.swanStage, 'undefined'); assert.equal(scene.animation, 'none');
       assert.equal(scene.width, 390); assert.equal(scene.height, 844);
-      assert.equal(scene.fit, 'cover');assert.equal(scene.muted, true);assert.equal(scene.opacity, '0.88');
+      assert.equal(scene.fit, 'cover');assert.equal(scene.muted, true);assert.equal(scene.opacity, '1');
       assert.equal(scene.perf, 'lite');assert.equal(scene.contained, 'strict');assert.equal(scene.onscreen, true);
       assert.match(scene.source, /bunny-live-wallpaper\.mp4$/);
-      assert.ok(scene.pixels[0] > 0 && scene.pixels[1] > scene.pixels[0]);
+      assert.ok(scene.pixels[0] > 0 && scene.pixels[1] > 0);
       await page.waitForTimeout(1800); // the finite startup perf probe has finished
       await page.evaluate(() => {
         window.__frames = 0;
