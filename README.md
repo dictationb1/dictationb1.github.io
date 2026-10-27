@@ -4,7 +4,11 @@ A standalone, offline-capable ES5 `index.html` with two bundled wallpaper assets
 
 ## Release status
 
-**3.6.0 (v28, 2026-10-27)** keeps Session 7 — Travel & Transport (30 words, two repeats, a fixed 5-second writing timer and British Amy voice by default), paper and typing modes, the bilingual guide and live class channel. An isolated full-viewport video stage now plays a bundled muted bunny loop in **both Lite and Full**. It displays entire portrait videos against a coral/cyan studio backdrop on a wide PC and fills phones with portrait video; universal landscape video fills either screen. The creator-credit swan *badge* remains, but no full-screen swan drawing returns. The Material Mixer stays in Settings; local dictionary indexes cover the session, saved words and mistakes.
+**3.9.0 (v31, 2026-10-27)** keeps Session 7 — Travel & Transport (30 words, two repeats, a fixed 5-second writing timer and British Amy voice by default), paper and typing modes, the bilingual guide and live class channel.
+
+The live wallpaper studio is now **strictly limited to files saved directly inside `./assets/`**. The old QA screenshots (`Fatal 390`, `Home 390`) are gone from the repository and from the app: `CONFIG.repoMedia` and `LiveWallpaper.discoverGitHubMedia()` accept only `assets/<name>.<mp4|webm|mov|m4v|jpg|jpeg|png|webp|gif|avif>` and reject poster/thumbnail/test/spec/icon helpers, and discovery reads only the GitHub `contents/assets` endpoint (never the recursive tree). Discovered media caches for five minutes in `sdp.gh_assets_v31`; the legacy `sdp.gh_media_v30` and `sdp.gh_videos_cache` keys are deleted on boot.
+
+`./assets/bunny-live-wallpaper.mp4` is the 100% default active video everywhere: `DEFAULT_WALLPAPER_SRC`, `DB.defaults()`, the shipped `data/*.json` files and the `resetToV31` migration all select it with `activeMediaType: "video"` and `videoPlaylistMode: "loop"`, and any stored source outside `./assets/` is reset automatically. The muted bunny loop now shows through the whole interface — the Home hero, every tab, the full-screen Dictation Player and the Results screen — because `.layer` is translucent (`rgba(4, 8, 18, 0.16)`, `backdrop-filter: none`), the `.stripes`/`.disc`/player-orb scenery is removed and the `.anatomy-stage` background is transparent, while `.glass` cards stay high-contrast and readable over the video. The creator-credit swan badge remains always visible, the Material Mixer stays in Settings, and the local dictionary indexes cover the session, saved words and mistakes.
 
 Tap **🎬 in the topbar** (or **Settings → Live Wallpaper Video → Choose Video from Device**) to play an MP4/WebM immediately without uploading it. The chosen video Blob is saved privately on this browser in IndexedDB; **Pause/Play** and **Reset to Default Repo Video** live in Settings. Device videos are not synced, exported in data backups, or uploaded to the repository. The click/swipe/audio neon canvas runs animation frames only while its short-lived rings or sparks are visible, then clears and sleeps; video decoding continues while the wallpaper is on. Auto and Lite constrain visual effects. Actual frame rate, autoplay policies, IndexedDB quota, power consumption and keyboard suggestions vary by device; 60–120 FPS cannot be guaranteed on all hardware. `QA_REPORT.md` and `PHASE1_QA.md` describe an earlier candidate.
 
@@ -18,8 +22,8 @@ Tap **🎬 in the topbar** (or **Settings → Live Wallpaper Video → Choose Vi
 
 ## Saved data and migration
 
-- The current key is `sdp.v28_live_video`; `CONFIG.schema` and `settingsRev` are `28`.
-- The v28 migration imports v27, v26 and supported older storage, preserving results, comments, custom lists and changed PINs while resetting the upgraded default mode to paper. Earlier storage keys remain available.
+- The current key is `sdp.v31_assets_only`; `CONFIG.schema` and `settingsRev` are `31`.
+- The v31 migration imports v30, v29, v28 and supported older storage, preserving results, comments, custom lists and changed PINs while resetting the upgraded default mode to paper and the wallpaper to `./assets/bunny-live-wallpaper.mp4`. Earlier storage keys remain available.
 - Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, paper mode, dark theme and automatic performance selection.
 - Corrupt primary data is retained under the current key's `.recovery` suffix; the rolling `.bak` copy can be used for recovery when available.
 - Export a backup before experimenting. Browser storage can be cleared by the user or operating system; persistence is not guaranteed.
@@ -35,7 +39,7 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
 ### Forgot the local PIN (preserve data)
 
 1. Use **Settings → My data → backup/export** before doing anything else. A locked export intentionally excludes the lecturer's private inbox and authentication material. Do **not** clear all site storage or use Reset if you need existing work.
-2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v28_live_video` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
+2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v31_assets_only` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
 3. In the console for this site, run this convenience-lock recovery only on your own device:
    ```js
    var d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
