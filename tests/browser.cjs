@@ -34,7 +34,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      contacted: publishing and completions wait for a real user action. */
   const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v[0-9]+\/json\?poll=1&since=24h$/;
   const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v[0-9]+,sdp_dictationb1_comm_v[0-9]+\/sse$/;
-  const staticOk=/(^|\/)data\/(session|version)\.json(\?v=32)?$/;const strays=requests.filter(u=>!staticOk.test(u)&&!live.test(u)&&!sse.test(u));
+  const staticOk=/(^|\/)data\/(session|version)\.json(\?v=\d+)?$/;const strays=requests.filter(u=>!staticOk.test(u)&&!live.test(u)&&!sse.test(u));
   const otherHosts=requests.filter(u=>!staticOk.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
   results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
   await closeSheet(page);
