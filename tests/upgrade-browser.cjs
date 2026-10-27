@@ -318,6 +318,7 @@ function material(page) {
       assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
       assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
       await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 22, 0.34)', null, { timeout: 8000 });
+      await page.waitForFunction(() => !document.body.classList.contains('tint-morph'), null, { timeout: 5000 }).catch(() => {});
       const frost = await page.evaluate(() => ({
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
