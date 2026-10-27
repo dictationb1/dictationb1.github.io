@@ -1,11 +1,11 @@
 {
-  "ver": 32,
-  "appVersion": "3.9.1",
-  "version": "3.9.1",
+  "ver": 33,
+  "appVersion": "4.0.0",
+  "version": "4.0.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 32,
+  "settingsRev": 33,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -18,19 +18,19 @@
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
     "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video; it plays at full brightness behind the Home screen, every tab, the .layer Dictation Player, the \"Are you ready?\" sheet and the Results screen",
-    "githubVideos": "CONFIG.repoMedia lists only ./assets/bunny-live-wallpaper.mp4; runtime discovery is cached for five minutes in sdp.gh_assets_v32 and legacy caches are deleted on boot",
-    "ambilight": "Dual synchronized video layers plus #bgLivePhotoAmbilight for portrait photos; horizontal edge feathering removes the 9:16 box seam on 16:9 monitors",
-    "gallery": "Real 16:9 .gal-thumb video/photo previews, one Apply button per card, Next Wallpaper in the studio header, no fake fallback cards",
+    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video on the single #bgLiveVideo hardware overlay (filter:none, translateZ(0), poster frame); it plays behind the Home screen, every tab, the .layer Dictation Player, the Are you ready? sheet and the Results screen",
+    "githubVideos": "CONFIG.repoMedia lists only ./assets/bunny-live-wallpaper.mp4; runtime discovery is cached for fifteen minutes in sdp.gh_assets_v33 and legacy caches are purged on boot",
+    "ambilight": "v33: #bgLiveAmbilight is permanently inert (display:none, no src, never loaded); #bgLivePhotoAmbilight still supports portrait photos",
+    "gallery": "Lazy zero-bandwidth gallery: no gallery DOM on boot, inactive cards use preload=none data-src videos or lazy poster <img>; bytes load only on an explicit Preview tap or Apply",
     "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
     "githubMedia": "discoverGitHubMedia reads only the GitHub contents API for assets/ and normalises download_url, origin prefixes, /assets/, ?v= and #t= suffixes to ./assets/<file>",
     "readability": "#bgContrastScrim adaptive radial scrim, --bg-dim live slider (#sVideoDim) 0-75, 14% default, razor-sharp text shadows in dark and light themes",
     "photoWallpaper": "#bgLivePhoto + #bgLivePhotoAmbilight with 12s auto-cycle for photos and ended-driven cycling for videos",
-    "crystalGlass": "v32: rgba(6, 10, 22, 0.28) glass with blur(4px) in Lite and Full, a light 14% vignette and crisp multi-layer text halos keep the video vivid through every card",
-    "playback": "src attribute on #bgLiveVideo, muted autoplay, idempotent play guards, stale Service Worker removal and ?v=32 JSON cache busters guarantee playback"
+    "crystalGlass": "v33: zero-blur glass - backdrop-filter:none with rgba(6,10,22,0.30) dark / rgba(255,255,255,0.34) light surfaces, 14% vignette and crisp multi-layer text halos",
+    "playback": "src attribute on #bgLiveVideo with the _loadedSrc guard (no redundant load()), muted autoplay, idempotent play guards, 4s stall recovery, stale Service Worker removal and ?v=33 JSON cache busters guarantee playback"
   },
   "mode": "paper",
-  "storageKey": "sdp.v32_crystal_video",
+  "storageKey": "sdp.v33_zero_lag",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -61,12 +61,13 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v32",
-  "ghMediaTtl": 300000,
+  "ghMediaCache": "sdp.gh_assets_v33",
+  "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 14,
   "repoVideoPoster": "./assets/bunny-poster.webp",
   "legacyMediaCaches": [
+    "sdp.gh_assets_v32",
     "sdp.gh_assets_v31",
     "sdp.gh_media_v30",
     "sdp.gh_videos_cache"

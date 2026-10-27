@@ -175,15 +175,15 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v29 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v33 boots dark with zero-blur Liquid Glass over the hardware video', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
       assert.equal(m.rootTheme, 'dark');
       assert.ok(m.perf === 'full' || m.perf === 'lite', 'a concrete perf mode: ' + m.perf);
-      assert.notEqual(m.heroBlur, 'none', 'hero glass blur');
-      assert.notEqual(m.topbarBlur, 'none', 'topbar glass blur');
-      assert.notEqual(m.dockBlur, 'none', 'dock glass blur');
+      assert.equal(m.heroBlur, 'none', 'v33 hero glass has no backdrop blur');
+      assert.equal(m.topbarBlur, 'none', 'v33 topbar glass has no backdrop blur');
+      assert.equal(m.dockBlur, 'none', 'v33 dock glass has no backdrop blur');
       assert.notEqual(m.heroShadow, 'none');
       assert.notEqual(m.chipShadow, 'none');
       assert.equal(m.grain, 'none', 'no feTurbulence layer across the viewport');
@@ -225,9 +225,9 @@ function material(page) {
       const lite = await material(page);
       assert.equal(lite.perf, 'lite');
       assert.equal(lite.rootPerf, 'lite');
-      assert.notEqual(lite.heroBlur, 'none', 'hero blur kept in lite');
-      assert.notEqual(lite.topbarBlur, 'none', 'topbar blur kept in lite');
-      assert.notEqual(lite.dockBlur, 'none', 'dock blur kept in lite');
+      assert.equal(lite.heroBlur, 'none', 'v33 keeps zero backdrop blur in lite');
+      assert.equal(lite.topbarBlur, 'none', 'v33 keeps zero backdrop blur in lite');
+      assert.equal(lite.dockBlur, 'none', 'v33 keeps zero backdrop blur in lite');
       assert.notEqual(lite.heroShadow, 'none', 'specular rim kept in lite');
       assert.equal(lite.perf, 'lite');
       assert.match(lite.videoSrc, /assets\/bunny-live-wallpaper\.mp4/, 'bunny wallpaper stays in lite');
@@ -235,13 +235,13 @@ function material(page) {
       assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
       await page.waitForFunction(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));
-        return (css.backdropFilter || css.webkitBackdropFilter || '').indexOf('blur(4px)') >= 0;
+        return (css.backdropFilter || css.webkitBackdropFilter || 'none') === 'none';
       }, null, { timeout: 8000 });
       const blurPx = await page.evaluate(() => {
         const css = getComputedStyle(document.querySelector('.topbar.glass'));
         return css.backdropFilter || css.webkitBackdropFilter || '';
       });
-      assert.match(blurPx, /blur\(4px\)/, 'lite uses the 8px glass budget: ' + blurPx);
+      assert.equal(blurPx, 'none', 'v33 glass carries no backdrop blur in lite either: ' + blurPx);
       assert.equal((await page.locator('#btnPerf').textContent()).trim(), '⚡ Lite');
       await page.locator('#btnPerf').click();
       await page.waitForTimeout(250);
@@ -323,7 +323,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v33_zero_lag')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -409,7 +409,7 @@ function material(page) {
     try {
       const m = await material(page);
       assert.equal(m.perf, 'lite', 'a phone is downgraded automatically');
-      assert.notEqual(m.heroBlur, 'none', 'phone glass still renders');
+      assert.equal(m.heroBlur, 'none', 'v33 phone glass renders with zero backdrop blur');
       assert.notEqual(m.heroShadow, 'none');
       const layout = await page.evaluate(() => ({
         columns: getComputedStyle(document.querySelector('.lg-hero')).display === 'block' ? 1 : 2,
@@ -561,7 +561,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v33_zero_lag')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -660,13 +660,13 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v33_zero_lag')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).trim() === w).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).trim() === word).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v33_zero_lag')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -676,7 +676,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
+        const d = JSON.parse(localStorage.getItem('sdp.v33_zero_lag'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -691,7 +691,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v29 User Guide Start practising launches the ready player on Home', async () => {
+  await check(engine + ' v33 User Guide Start practising launches the ready player on Home', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       await page.evaluate(() => document.getElementById('btnGuideTop').click());
@@ -706,7 +706,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v33_zero_lag'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -726,7 +726,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v29 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v33 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       /* the ready sheet keeps ONE far-right cross mark and no duplicates */
@@ -795,7 +795,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
+        const d = JSON.parse(localStorage.getItem('sdp.v33_zero_lag'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
