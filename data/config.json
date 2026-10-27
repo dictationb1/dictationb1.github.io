@@ -28,8 +28,8 @@
     "perf": "auto",
     "glassTint": 0
   },
-  "ver": 26,
-  "version": "3.4.0",
+  "ver": 27,
+  "version": "3.5.0",
   "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
@@ -48,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.4.0",
-  "settingsRev": 26,
+  "appVersion": "3.5.0",
+  "settingsRev": 27,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -63,7 +63,8 @@
       "gbr": 1.03
     },
     "probeMs": 1200,
-    "medianBudgetMs": 19
+    "medianBudgetMs": 19,
+    "background": "Static pre-blurred radial gradients; no continuous animation-frame loop"
   },
   "dataSaving": {
     "preload": "none",
@@ -72,13 +73,13 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v26_live_wall",
+  "storageKey": "sdp.v27_clean_fast",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
     "inputMode": "text",
     "autocomplete": "off",
-    "suggestions": "blocked by the single-space IME sentinel reset after every keystroke",
+    "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
     "mirror": "#ansMirror plain-text overlay (#ansMirrorText), never a form",
     "blockedInputTypes": [
       "insertReplacementText",
@@ -99,27 +100,15 @@
     "action": "close guide, unlock speech, show Home, Eng.start({})"
   },
   "mode": "paper",
-  "swan": {
-    "stage": "100vw x 100vh fixed viewport",
-    "durationMs": 12000,
-    "engine": "window.SwanStage / window.LiveStage",
-    "pressure": "six-stage variable-radius cubic Bezier ribbon",
-    "storage": "sdp.v26_live_wall",
-    "video": "assets/bunny-live-wallpaper.mp4 (1920x1080, bunny inside the central 608x1080 9:16 column)",
-    "poster": "assets/bunny-poster.webp",
-    "framing": "object-fit:cover;object-position:center center - full 16:9 stage on PC, uncropped ears-to-sneakers 9:16 frame on mobile",
-    "reactions": [
-      "onSwipe cyan-to-coral light ribbon + featherParticles starlight",
-      "onClickBeam studio beam + coral/cyan/gold shockwave rings",
-      "pulseAudio bass rings",
-      "celebrateStreak golden spark surge",
-      "replay restart"
-    ]
-  },
   "search": {
     "engine": "Lib.searchIndex",
+    "sources": [
+      "session",
+      "myWords",
+      "mistakes"
+    ],
     "tokens": [
-      "w.w",
+      "word",
       "slash variants",
       "US_UK",
       "phon",
@@ -129,6 +118,6 @@
       "sentence",
       "meaning"
     ],
-    "latencyMs": 0
+    "updates": "cached and invalidated on data changes"
   }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5.0 (v27) — 2026-10-27 (Static background and responsive Liquid Glass)
+
+- Removed the full-screen swan/video drawing engine and its unused assets. Four static pre-blurred gradient blobs replace it; the small, persistent creator-credit swan remains.
+- Kept the Session 7 paper/typing workflow and the Settings Material Mixer, improved mobile navigation and preserved existing data through the v27 storage migration.
+- Fixed loss of the final typed answer and made cloud sync status reflect an actual successful cloud reply. Repeat playback reuses the audio player without speculative next-word downloads.
+- Rebuilt the upgrade regression tests and restored execution of previously skipped Phase 1 cases. Chromium layout, end-to-end and two-device live-channel checks were exercised; performance and audio behaviour still depend on the device.
+
 ## 2.6.0 (v18) — 2026-10-24 (Zero-suggestion typing, tick/cross marks, 1-tap exits)
 
 - **No keyboard suggestions, anywhere.** "Type my answers" now renders a compact

@@ -4,23 +4,25 @@ A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency
 
 ## Release status
 
-**2.3.0 (v15, 2026-10-23) is the released upgrade**: Session 7 — Travel & Transport (30 Cambridge B1 words, 5 second writing timer, Thursday 22/10/2026 · CCBE Galle Branch), the unified British **female professor Amy** audio chain, one-tap **EN | සිංහල** switching with the bilingual Welcome Guide, full creator credits, the one-tap **Save & Publish Live Now** editor, and real-time sync through `data/*.json` and the v8 ntfy live channel. The bottom dock, every segmented pill and every button ride a universal **Liquid Glass sliding capsule** (`#tabInd`, `.thumb`, `.seg-ind`, spring `translate3d`) at 60 FPS, and the Liquid Glass Home includes a floating animated **“credits goes to Hansana”** glass badge, spring-loaded **Clear / Frost / Smoke** controls with a 420 ms liquid morph, and live aqua progress tracks on the Material Mixer sliders. The 60 FPS engine uses pre-blurred gradient blobs, a single 1.2-second frame probe and automatic Lite mode on constrained devices; Lite retains glass blur, tint transitions, the orb and all badge animations. The low-data engine answers all 30 dictionary entries from memory, replays the shared audio buffer and downloads `session.json` only when its version is newer. Phases 3–4 (service worker, Worker-based cloud) remain optional follow-up work; `QA_REPORT.md` and `PHASE1_QA.md` describe the earlier 1.5.0-rc.1 candidate.
+**3.5.0 (v27, 2026-10-27)** retains Session 7 — Travel & Transport (30 words, two repeats, a fixed 5-second writing timer and British Amy voice by default), paper and typing modes, the bilingual guide and live class channel. The full-screen drawing/video engine has been removed; four static, pre-blurred colour gradients sit behind the responsive Liquid Glass interface. The small creator-credit badge remains visible, and the Material Mixer is in Settings. Repeat audio reuses the shared player, and local dictionary indexes cover the session, saved words and mistakes.
+
+Auto and Lite modes limit visual work on constrained devices. The initial frame probe is finite and the background has no continuous JavaScript animation loop; actual frame rate, power usage, keyboard suggestions and audio behaviour vary by device. `QA_REPORT.md` and `PHASE1_QA.md` describe an earlier candidate.
 
 ## Add next week's words in three steps (candidate)
 
 1. Unlock **Lecturer mode → Words & planner**. Paste the whole list: commas, semicolons, bullets, or one word per line. Multi-word entries such as “go shopping” stay together. For columns, use `word | sentence | meaning`, tabs, or CSV with a `word,sentence,meaning` header.
 2. Check **“I read this as…”** and the counter. Use the one-tap format switch if necessary. Edit any preview cell, delete a row, or reorder using Drag / Up / Down (Up / Down work on phones). Correct all reported problems. Choose class-date chips (today plus the next four Tuesday/Wednesday dates), or another date/weekday in **Publish for**.
-3. Tap **Publish to students** (or the sticky **Save & Publish Live** button) and check the word count, dates, and session number before confirming. It publishes the current preview, not the previous saved list, and a list called `Session 4 words` sets the session number to 4 by itself so the hero kicker and title always agree. Students need no setup at all: the published session is broadcast over the free ntfy.sh class channel, so every open phone updates within a second, and it is also written to `data/session.json` for the next page load.
+3. Tap **Publish to students** (or the sticky **Save & Publish Live** button) and check the word count, dates, and session number before confirming. It publishes the current preview, not the previous saved list, and a list called `Session 4 words` sets the session number to 4 by itself so the hero kicker and title always agree. Students need no setup at all: the published session is broadcast over the free ntfy.sh class channel, so online students can receive it over the live channel. Updating the repository JSON is a separate publishing step; delivery depends on network availability.
 
 **Replace this list** and **Add to this list** are optional draft actions. Each preserves the existing short-lived Undo. The full requested published version-history/Undo workflow is still outstanding.
 
 ## Saved data and migration
 
-- The current key is `sdp.v15_liquid`; `CONFIG.schema` and `settingsRev` are `15`.
-- The v15 migration imports v14/v13/v12 storage without discarding results or comments, preserves Session 7, and converts older named tint preferences to numeric `0` (Clear), `1` (Frost), or `2` (Smoke).
+- The current key is `sdp.v27_clean_fast`; `CONFIG.schema` and `settingsRev` are `27`.
+- The v27 migration imports v26 and supported older storage, preserving results, comments, custom lists and changed PINs while resetting the upgraded default mode to paper. Earlier storage keys remain available.
 - Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, paper mode, dark theme and automatic performance selection.
-- The original pre-migration JSON is retained as `sdp.v15_liquid.before-v2` when storage is available. Existing recovery/backup keys remain supported.
-- Export a backup before experimenting. Browser storage can be cleared by the user or operating system. This candidate has not added an installable PWA or persistent-storage guarantee.
+- Corrupt primary data is retained under the current key's `.recovery` suffix; the rolling `.bak` copy can be used for recovery when available.
+- Export a backup before experimenting. Browser storage can be cleared by the user or operating system; persistence is not guaranteed.
 
 ## The lecturer PIN is a convenience lock
 
@@ -33,13 +35,13 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
 ### Forgot the local PIN (preserve data)
 
 1. Use **Settings → My data → backup/export** before doing anything else. A locked export intentionally excludes the lecturer's private inbox and authentication material. Do **not** clear all site storage or use Reset if you need existing work.
-2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v15_liquid` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
+2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v27_clean_fast` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
 3. In the console for this site, run this convenience-lock recovery only on your own device:
    ```js
-   var d = JSON.parse(localStorage.getItem('sdp.v15_liquid'));
+   var d = JSON.parse(localStorage.getItem('sdp.v27_clean_fast'));
    if (!d || !Array.isArray(d.lists)) throw new Error('Stop: saved data is not valid');
    d.admin = {};
-   localStorage.setItem('sdp.v15_liquid', JSON.stringify(d));
+   localStorage.setItem('sdp.v27_clean_fast', JSON.stringify(d));
    location.reload();
    ```
    Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
@@ -56,9 +58,9 @@ Three public [ntfy.sh](https://ntfy.sh) topics carry the class in real time. ntf
 | `sdp_dictationb1_comm_v8` | community posts and every student completion (`Completed Session 4 · Score: 27/30 (90%)`) |
 | `sdp_dictationb1_inbox_v8` | a student's private message to the lecturer |
 
-On load the app fetches `./data/version.json` **once** (~60 bytes) and only then `./data/session.json` when it is newer, does one `…/json?poll=1&since=24h` cached read and opens one `EventSource` stream only on a visible tab without Data Saver; whichever payload is newest (`publishedAt`/`ver`) wins. Publishing from Admin mode posts once and every open phone repaints. If a network blocks ntfy, the repository JSON still updates students on their next load, and the status chip says exactly which state the device is in (`Online · Live B1 Session v2.0.0 · Synced …`, `Syncing…`, `Offline · Saved on device`).
+On load the app fetches `./data/version.json` **once** (~60 bytes) and only then `./data/session.json` when it is newer, does one `…/json?poll=1&since=24h` cached read and opens one `EventSource` stream only on a visible tab without Data Saver; whichever payload is newest (`publishedAt`/`ver`) wins. Publishing from Admin mode posts once and every open phone repaints. If a network blocks ntfy, the repository JSON still updates students on their next load, and the status chip says exactly which state the device is in (`Online · Live Sync · Synced …`, `Syncing…`, `Offline · Saved on device`).
 
-**Privacy:** these topics are public, like any free ntfy channel. Only the words, the session header, anonymous nicknames and the score summary travel on them — never the PIN, never a name or a phone number, and never anything typed into a private reply.
+**Privacy:** these topics are public, including the inbox topic. Anyone who knows a topic URL can read messages sent through it. Do not send sensitive or private information through the live channel; use an appropriately secured service for confidential communication. The lecturer PIN is not sent on this channel.
 
 ## Cloud: current adapter versus planned Worker
 

@@ -18,38 +18,20 @@ function historyAvailable() {
   try { cp.execFileSync('git', ['rev-parse', '--verify', '7577968^{commit}'], {cwd: root, stdio: 'ignore'}); return true; }
   catch (err) { return false; }
 }
-if (!historyAvailable()) {
-  console.log('SKIP phase1.cjs: baseline commit 7577968 is not present in this clone.');
-  process.exit(0);
-}
-const original = cp.execFileSync('git', ['show', '7577968:index.html'], {cwd: root, maxBuffer: 1000000}).toString();
+const original = historyAvailable()
+  ? cp.execFileSync('git', ['show', '7577968:index.html'], {cwd: root, maxBuffer: 1000000}).toString()
+  : null;
 const results = [];
 function test(name, fn) {
-  const skips = [
-    "1.2 after: late error and rejection do not show fatal card",
-    "1.3 second confirmation requires BOTH tick and exact RESET",
-    "1.3 result saves and lecturer changes update rolling backup",
-    "1.3 corrupt primary restores automatic copy and retains corrupt text",
-    "1.3 pending save flushed on pagehide",
-    "1.5 no cloud traffic on load; only the static live-session files, even with cloud configured",
-    "1.6 user strings remain literal text, not executable HTML",
-    "2.1 seeded salted PIN unlocks; existing changed PIN survives migration",
-    "2.2 30-word Saturday assignment, draft isolation and eight-week planner",
-    "2.3 session typing/day chips update Home, player and comment metadata",
-    "3.2 student hash connects automatically and is cleared without load requests",
-    "3.3 Unicode link round-trip, explicit preview/Add and split-part assembly",
-    "3.5 outbox auth uses memory-only PIN, skips locked admin items and flushes student items",
-    "3.5 sync time advances only after successful state reply",
-    "4.2 full 30-word fake-timer dictation, instant marking, pause/resume, result saved",
-    "4.2 reload mid-session offers continuation with answers and same word",
-    "4.2 finish saves result before closing speech and queues it while offline",
-    "4.5 ready screen speaks the greeting from the tap and can skip the countdown"
+  const historical = [
+    '1.1 before: original Local-mode boot shows crash card',
+    '1.1 after: one-line hotfix alone removes boot crash',
+    '1.3 before: emergency backup silently fails but deletes storage at 600ms'
   ];
-  if (skips.includes(name)) {
-     results.push({test: name, status: 'PASS'});
-     return;
+  if (!original && historical.includes(name)) {
+    results.push({test: name, status: 'SKIP', detail: 'baseline commit 7577968 is not available'});
+    return;
   }
-
   try { fn(); results.push({test: name, status: 'PASS'}); }
   catch (err) { results.push({test: name, status: 'FAIL', detail: err.stack}); }
 }
@@ -156,7 +138,7 @@ test('1.3 second confirmation requires BOTH tick and exact RESET', () => withApp
  assert(confirm.disabled);typed.value='RESET';typed.dispatchEvent(new a.w.Event('input'));assert(confirm.disabled);
  tick.checked=true;tick.dispatchEvent(new a.w.Event('change'));assert(!confirm.disabled);
  typed.value='reset';typed.dispatchEvent(new a.w.Event('input'));assert(confirm.disabled);
- typed.value='RESET';typed.dispatchEvent(new a.w.Event('input'));confirm.click();assert.equal(a.q.DB.data.session.title,'');
+ typed.value='RESET';typed.dispatchEvent(new a.w.Event('input'));confirm.click();assert.equal(a.q.DB.data.session.title,require('../data/session.json').session.title);
  assert(a.w.localStorage.getItem(STORE_KEY+'.beforeReset').includes('Keep until confirmed'));
  assert(a.w.localStorage.getItem(STORE_KEY+'.bak').includes('Keep until confirmed'));
 }));
@@ -330,8 +312,8 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='hobbies').length>=2);
- assert(!a.spoken.some(s=>s.text.includes('Reading and gardening')));assert.equal(a.q.Errors.items.length,0);
+ assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='windscreen').length>=2);
+ assert(!a.spoken.some(s=>s.text.includes('Clean the car windscreen')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
  let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem(STORE_KEY);});

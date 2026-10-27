@@ -1,11 +1,11 @@
 {
-  "ver": 26,
-  "appVersion": "3.4.0",
-  "version": "3.4.0",
+  "ver": 27,
+  "appVersion": "3.5.0",
+  "version": "3.5.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 26,
+  "settingsRev": 27,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -13,11 +13,11 @@
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
     "ready": "single far-right close cross, no duplicate exit buttons",
     "feedback": "animated tick, streak breakdown and false-answer correction flow",
-    "visual": "swan badge always visible z-index 9999, see-through hero title, Settings mixer, 60 FPS capsules, guide-credit-pill",
+    "visual": "persistent credit pill at z-index 9999, see-through hero title, Settings mixer, responsive capsules and guide-credit-pill",
     "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
     "defaultMode": "paper",
-    "swan": "100vw x 100vh PC 16:9 + mobile 9:16 centre-safe 3D neon bunny live wallpaper (window.SwanStage / window.LiveStage) with coral-left / cyan-right rim aura, floor reflections, click shockwaves, swipe light-trails and audio bass rings",
-    "search": "Lib.searchIndex pre-computes 0ms tokens across all 30 Session 7 words (slash variants, US_UK, phon, pos, def, ex)"
+    "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
+    "ambient": "Static aqua, coral, amber and violet radial gradients; no wallpaper engine or continuous animation-frame loop"
   },
   "mode": "paper"
 }
