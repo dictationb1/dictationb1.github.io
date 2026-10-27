@@ -1,7 +1,9 @@
 'use strict';
 
-/* v29 release gates: GitHub video discovery, seamless PC ambilight, gallery/playlist,
-   plus every v22-v28 dictation, typing, search and 120 FPS regression gate. */
+/* v30 release gates: the bunny video is the 100% default, every repo video and
+   photo is auto-discovered with a real thumbnail, no invented fallback cards
+   exist, words stay readable over any wallpaper, plus every v22-v29 dictation,
+   typing, search, credit, guide and 120 FPS regression gate. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +17,8 @@ const json = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name),
 const version = json('version.json');
 const config = json('config.json');
 const session = json('session.json');
-const key = 'sdp.v29_gh_videos';
+const key = 'sdp.v30_studio';
+const DEFAULT = './assets/bunny-live-wallpaper.mp4';
 const title = 'Session 7 - Travel & Transport';
 const words = ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
   'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business', 'on vacation',
@@ -52,15 +55,16 @@ function typeChar(a, input, char) {
   input.value = ' ' + char;
   input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
 }
-function stubGitHub(a, tree) {
+/* GitHub contents API + recursive tree API, both with realistic response shapes. */
+function stubGitHub(a, tree, contents) {
   const calls = [];
   a.w.XMLHttpRequest = function () {
-    this.open = function (m, u) { calls.push(String(u)); };
+    this.open = function (m, u) { calls.push(String(u)); this._u = String(u); };
     this.setRequestHeader = function () {};
     this.send = function () {
       this.readyState = 4;
       this.status = 200;
-      this.responseText = JSON.stringify({ tree: tree || [] });
+      this.responseText = JSON.stringify(this._u.indexOf('/contents/assets') >= 0 ? (contents || []) : { tree: tree || [] });
       if (this.onreadystatechange) this.onreadystatechange();
     };
     this.abort = function () {};
@@ -71,10 +75,11 @@ function trackedMedia() {
   let out = [];
   try {
     out = cp.execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' })
-      .split('\n').filter((p) => /\.(mp4|webm|mov|m4v|webp|jpe?g|png|gif)$/i.test(p));
+      .split('\n').filter((p) => /\.(mp4|webm|mov|m4v|webp|jpe?g|png|gif|avif)$/i.test(p));
   } catch (e) { out = []; }
   return out;
 }
+
 
 test('single-file app remains strict ES5, self-contained, and under 440KB', () => {
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
@@ -85,43 +90,58 @@ test('single-file app remains strict ES5, self-contained, and under 440KB', () =
   assert.doesNotMatch(css, /\.glass\{[^}]*\bcontain\s*:/);
 });
 
-test('v29 metadata, paper default, resetToV29 migration and old data preservation', () => {
+test('v30 metadata, bunny default, paper mode and resetToV30 migration preserve learner data', () => {
   for (const d of [version, config, session]) {
-    assert.ok(Number(d.ver) >= 29);
-    assert.equal(d.settingsRev, 29);
-    assert.equal(d.appVersion, '3.7.0');
-    assert.equal(d.version, '3.7.0');
+    assert.ok(Number(d.ver) >= 30);
+    assert.equal(d.settingsRev, 30);
+    assert.equal(d.appVersion, '3.8.0');
+    assert.equal(d.version, '3.8.0');
     assert.equal(d.mode, 'paper');
+    assert.equal(d.activeVideoSrc, DEFAULT);
+    assert.equal(d.activeMediaType, 'video');
+    assert.equal(d.videoPlaylistMode, 'loop');
     assert.ok(!('swan' in d));
-    assert.ok(Array.isArray(d.repoVideos) && d.repoVideos.length >= 1);
+    assert.deepEqual(d.repoFallbacks, []);
+    assert.ok(Array.isArray(d.repoMedia) && d.repoMedia.length >= 1);
+    assert.equal(d.repoMedia[0].src, DEFAULT);
+    assert.equal(d.repoMedia[0].type, 'video');
   }
   assert.equal(config.storageKey, key);
   assert.equal(config.defaults.mode, 'paper');
   assert.equal(config.defaults.wallpaperVideo, true);
   assert.equal(config.defaults.writeFixed, 5);
   assert.equal(config.defaults.repeats, 2);
-  assert.equal(config.defaults.activeVideoSrc, './assets/bunny-live-wallpaper.mp4');
+  assert.equal(config.defaults.activeVideoSrc, DEFAULT);
+  assert.equal(config.defaults.activeMediaType, 'video');
   assert.equal(config.defaults.videoPlaylistMode, 'loop');
-  has('var APP_VERSION="3.7.0"');has('key:"' + key + '"');has('schema:29');
-  has('settingsRev:29');has('resetToV29:function');
+  assert.equal(config.defaults.videoDim, 34);
+  has('var APP_VERSION="3.8.0"');
+  has('var DEFAULT_WALLPAPER_SRC="./assets/bunny-live-wallpaper.mp4"');
+  has('key:"' + key + '"');has('schema:30');has('settingsRev:30');has('resetToV30:function');
   has('data-mode="paper" aria-selected="true"');has('Listen &amp; write on paper');
   const a = harness();
   try {
     assert.equal(a.q.CONFIG.key, key);
-    assert.equal(a.q.CONFIG.schema, 29);
-    assert.equal(a.q.CONFIG.settingsRev, 29);
-    assert.equal(a.q.DB.data.settingsRev, 29);
-    assert.equal(a.q.DB.data.v, 29);
+    assert.equal(a.q.CONFIG.schema, 30);
+    assert.equal(a.q.CONFIG.settingsRev, 30);
+    assert.equal(a.q.CONFIG.repoFallbacks.length, 0);
+    assert.equal(a.q.DB.data.settingsRev, 30);
+    assert.equal(a.q.DB.data.v, 30);
     assert.equal(a.q.DB.data.settings.mode, 'paper');
     assert.equal(a.q.DB.defaults().settings.mode, 'paper');
+    assert.equal(a.q.DB.defaults().settings.activeVideoSrc, DEFAULT);
     assert.equal(a.q.DB.data.settings.wallpaperVideo, true);
     assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'loop');
-    assert.ok(a.q.CONFIG.repoVideos.length >= 1);
+    assert.equal(a.q.DB.data.settings.activeMediaType, 'video');
+    assert.equal(a.q.DB.data.settings.videoDim, 34);
+    assert.equal(a.q.CONFIG.repoMedia[0].src, DEFAULT);
+    assert.equal(a.w.LiveWallpaper.mediaList[0].src, DEFAULT);
     assert.ok(a.w.localStorage.getItem(key));
 
-    /* A v27 learner is migrated straight to v29 with the paper default. */
+    /* A v27 learner is migrated straight to v30 with the paper + bunny default. */
     const old = JSON.parse(JSON.stringify(a.q.DB.data));
     old.v = 27;old.settingsRev = 27;old.settings.mode = 'type';
+    old.settings.activeVideoSrc = './a-video-that-does-not-exist.mp4';
     old.profile.nickname = 'Returning learner';old.admin.pinHash = 'already-changed';
     old.history = [{ id: 'saved-history', wordCount: 30 }];
     old.lists.push({ id: 'custom-list', name: 'Lecture', published: true, words: [{ w: 'custom' }] });
@@ -132,11 +152,13 @@ test('v29 metadata, paper default, resetToV29 migration and old data preservatio
     a.w.localStorage.setItem('sdp.v27_clean_fast.bak', raw);
     a.q.DB.load();
     const saved = JSON.parse(a.w.localStorage.getItem(key));
-    assert.equal(saved.v, 29);assert.equal(saved.settingsRev, 29);
+    assert.equal(saved.v, 30);assert.equal(saved.settingsRev, 30);
     assert.equal(saved.settings.mode, 'paper');
     assert.equal(saved.settings.wallpaperVideo, true);
-    assert.equal(saved.settings.activeVideoSrc, './assets/bunny-live-wallpaper.mp4');
+    assert.equal(saved.settings.activeVideoSrc, DEFAULT);
+    assert.equal(saved.settings.activeMediaType, 'video');
     assert.equal(saved.settings.videoPlaylistMode, 'loop');
+    assert.equal(saved.settings.videoDim, 34);
     assert.equal(saved.profile.nickname, 'Returning learner');
     assert.equal(saved.admin.pinHash, 'already-changed');
     assert.equal(saved.history[0].id, 'saved-history');
@@ -145,25 +167,26 @@ test('v29 metadata, paper default, resetToV29 migration and old data preservatio
     assert.equal(saved.plan.pinned, 'custom-list');
     assert.equal(JSON.parse(a.w.localStorage.getItem(key + '.bak')).profile.nickname, 'Returning learner');
 
-    saved.settings.mode = 'type';saved.settings.wallpaperVideo = false;
-    assert.equal(a.q.DB.migrate(saved).settings.mode, 'type', 'v28/v29 user choice persists');
-    assert.equal(a.q.DB.migrate(saved).settings.wallpaperVideo, false, 'wallpaper-off choice persists');
-
-    /* The v28 storage key is a first-class legacy source. */
-    const v28 = JSON.parse(JSON.stringify(a.q.DB.data));
-    v28.v = 28;v28.settingsRev = 28;v28.settings.mode = 'type';
-    v28.profile.nickname = 'V28 learner';
+    /* The v29 storage key is a first-class legacy source; user choices survive. */
+    const v29 = JSON.parse(JSON.stringify(a.q.DB.data));
+    v29.v = 29;v29.settingsRev = 29;v29.settings.mode = 'type';
+    v29.profile.nickname = 'V29 learner';
     a.w.localStorage.clear();
-    a.w.localStorage.setItem('sdp.v28_live_video', JSON.stringify(v28));
+    a.w.localStorage.setItem('sdp.v29_gh_videos', JSON.stringify(v29));
     a.q.DB.load();
-    assert.equal(a.q.DB.data.v, 29);
-    assert.equal(a.q.DB.data.settingsRev, 29);
+    assert.equal(a.q.DB.data.v, 30);
+    assert.equal(a.q.DB.data.settingsRev, 30);
     assert.equal(a.q.DB.data.settings.mode, 'type');
-    assert.equal(a.q.DB.data.profile.nickname, 'V28 learner');
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, DEFAULT);
+    assert.equal(a.q.DB.data.profile.nickname, 'V29 learner');
+
+    saved.settings.mode = 'type';saved.settings.wallpaperVideo = false;
+    assert.equal(a.q.DB.migrate(saved).settings.mode, 'type', 'v30 user choice persists');
+    assert.equal(a.q.DB.migrate(saved).settings.wallpaperVideo, false, 'wallpaper-off choice persists');
   } finally { a.close(); }
 });
 
-test('corrupt v28 primary recovers from the rolling backup', () => {
+test('corrupt v28 primary recovers from the rolling backup and reaches v30', () => {
   const a = harness();
   try {
     const old = JSON.parse(JSON.stringify(a.q.DB.data));
@@ -174,7 +197,8 @@ test('corrupt v28 primary recovers from the rolling backup', () => {
     a.q.DB.load();
     assert.equal(a.q.DB.data.profile.nickname, 'Backup learner');
     assert.equal(a.w.localStorage.getItem(key + '.recovery'), '{broken');
-    assert.equal(a.q.DB.data.settingsRev, 29);
+    assert.equal(a.q.DB.data.settingsRev, 30);
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, DEFAULT);
   } finally { a.close(); }
 });
 
@@ -219,7 +243,7 @@ test('speech repeats reuse the prepared audio element source', () => {
   } finally { a.close(); }
 });
 
-test('dual synchronized video layers, neon canvas and GitHub gallery replace ONLY swan drawing', () => {
+test('v30 stage: bunny video first, photo layers, contrast scrim, canvas and real GitHub media', () => {
   assert.match(cssRule('#bgLiveWrap'), /position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;overflow:hidden/);
   assert.match(cssRule('#bgLiveWrap'), /contain:strict/);
   assert.match(cssRule('#bgLiveAmbilight'), /inset:-48px;width:calc\(100vw \+ 96px\);height:calc\(100vh \+ 96px\)/);
@@ -228,14 +252,26 @@ test('dual synchronized video layers, neon canvas and GitHub gallery replace ONL
   assert.match(cssRule('body.wallpaper-on .glass,body.wallpaper-on[data-perf=lite] .glass'), /background-color:var\(--glass-tint\)/);
   assert.match(cssRule('.credit'), /z-index:9999!important/);
   assert.match(cssRule('#bgLiveCanvas'), /z-index:2/);
-  for (const token of ['swanMasterPath', 'window.SwanStage', '一筆白鳥', '墨', 'bgSwanVideo', 'swan-ink-canvas']) lacks(token);
-  for (const token of ['id="bgLiveWrap"', 'id="bgLiveAmbilight"', 'id="bgLiveVideo"', 'id="bgLiveCanvas"',
-    'id="btnLiveVideo"', 'id="liveVideoInput"', 'id="btnScanGhVideos"', 'id="btnPickVideoFile"',
-    './assets/bunny-live-wallpaper.mp4', './assets/bunny-poster.webp', 'video-gallery-list',
-    'repoVideos', 'discoverGitHubVideos', 'openGallerySheet', 'window.LiveWallpaper',
-    'init:function', 'fitVideo:function', 'wake:function', 'onClick:function', 'onSwipe:function',
-    'pulseAudio:function', 'celebrateStreak:function', 'loadCustomFile:function',
-    'encodeURI(', 'item.path', 'sdp.gh_videos_cache', 'sdp_wallpaper_db']) has(token);
+  assert.match(cssRule('#bgContrastScrim'), /z-index:1/);
+  assert.match(cssRule('#bgContrastScrim'), /var\(--bg-dim, 0\.34\)/);
+  assert.match(cssRule('#bgLiveVideo'), /z-index:0/);
+  assert.match(cssRule('#bgLivePhoto'), /animation:photoBreathe/);
+  assert.match(html, /body\[data-theme="light"\] #bgContrastScrim\{[^}]*rgba\(232, 236, 244/);
+  assert.match(html, /body\[data-theme="dark"\]\{--glass-tint:rgba\(8, 13, 28, \.64\);--inset-hi:rgba\(255, 255, 255, \.48\)\}/);
+  assert.match(html, /body\[data-theme="dark"\] \.card,body\[data-theme="dark"\] \.listrow,body\[data-theme="dark"\] \.wordcard\{text-shadow:/);
+  assert.match(html, /#lgStage \.chip-a\{top:12px;left:12px\}/);
+  assert.match(html, /#lgStage \.chip-b\{bottom:12px;right:12px\}/);
+  for (const token of ['swanMasterPath', 'window.SwanStage', '一筆白鳥', '墨', 'bgSwanVideo', 'swan-ink-canvas', 'Fallback path', '☁ Fallback']) lacks(token);
+  for (const token of ['id="bgLiveWrap"', 'id="bgLiveAmbilight"', 'id="bgLiveVideo"', 'id="bgLivePhoto"',
+    'id="bgLivePhotoAmbilight"', 'id="bgContrastScrim"', 'id="bgLiveCanvas"', 'id="btnLiveVideo"',
+    'id="liveVideoInput"', 'id="btnScanGhVideos"', 'id="btnPickVideoFile"', 'id="sVideoDim"',
+    'id="galMediaTpl"', 'id="dimTpl"', 'class="gal-thumb"', '#t=1.2', 'preload="metadata"',
+    'loading="lazy"', 'var DEFAULT_WALLPAPER_SRC', './assets/bunny-live-wallpaper.mp4',
+    './bunny-live-wallpaper.mp4', './assets/bunny-poster.webp', 'video-gallery-list',
+    'repoMedia', 'mediaList', 'discoverGitHubMedia', 'contents/assets', 'openGallerySheet',
+    'window.LiveWallpaper', 'init:function', 'fitVideo:function', 'wake:function', 'onClick:function',
+    'onSwipe:function', 'pulseAudio:function', 'celebrateStreak:function', 'loadCustomFile:function',
+    'encodeURI(', 'item.path', 'sdp.gh_media_v30', 'sdp_wallpaper_db']) has(token);
   assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')).size > 10000);
   assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-poster.webp')).size > 1000);
   const a = harness();
@@ -245,17 +281,24 @@ test('dual synchronized video layers, neon canvas and GitHub gallery replace ONL
     assert.equal(stage.previousElementSibling.id, 'bg');
     assert.equal(stage.nextElementSibling.id, 'liveVideoInput');
     assert.equal(stage.getAttribute('aria-hidden'), 'true');
-    assert.equal(doc.getElementById('bgLiveCanvas').parentElement, stage);
-    assert.equal(doc.getElementById('bgLiveVideo').parentElement, stage);
-    assert.equal(doc.getElementById('bgLiveAmbilight').parentElement, stage);
+    for (const id of ['bgLiveCanvas', 'bgLiveVideo', 'bgLiveAmbilight', 'bgLivePhoto', 'bgLivePhotoAmbilight', 'bgContrastScrim'])
+      assert.equal(doc.getElementById(id).parentElement, stage, id + ' is inside #bgLiveWrap');
     assert.equal(doc.getElementById('bgLiveAmbilight').getAttribute('aria-hidden'), 'true');
     assert.equal(doc.getElementById('bgLiveAmbilight').getAttribute('preload'), 'metadata');
-    assert.equal(doc.querySelectorAll('#bgLiveVideo source').length, 6);
-    assert.equal(doc.querySelector('#bgLiveVideo source').getAttribute('src'), './assets/bunny-live-wallpaper.mp4');
+    assert.equal(doc.getElementById('bgLivePhoto').getAttribute('aria-hidden'), 'true');
+    assert.equal(doc.getElementById('bgLivePhoto').getAttribute('alt'), '');
+    assert.equal(doc.getElementById('bgContrastScrim').getAttribute('aria-hidden'), 'true');
+    assert.equal(doc.querySelectorAll('#bgLiveVideo source').length, 2, 'only real paths, no invented fallbacks');
+    assert.equal(doc.querySelector('#bgLiveVideo source').getAttribute('src'), DEFAULT);
+    assert.equal(doc.querySelectorAll('#bgLiveVideo source')[1].getAttribute('src'), './bunny-live-wallpaper.mp4');
     assert.equal(doc.getElementById('bgLiveVideo').muted, true);
     assert.equal(doc.getElementById('bgLiveVideo').loop, true);
     assert.equal(doc.getElementById('bgLiveVideo').getAttribute('preload'), 'auto');
-    assert.equal(doc.getElementById('liveVideoInput').getAttribute('accept'), 'video/mp4,video/webm,video/*');
+    assert.match(lw.video.getAttribute('src') || lw.video.src, /bunny-live-wallpaper\.mp4/, 'boot loads the default video');
+    assert.match(lw.ambilight.getAttribute('src') || lw.ambilight.src, /bunny-live-wallpaper\.mp4/);
+    assert.equal(lw.activeSrc, DEFAULT);
+    assert.equal(lw.activeType, 'video');
+    assert.equal(lw.mediaList[0].src, DEFAULT);
     assert.equal(lw.enabled, true);
     assert.equal(a.w.SwanStage, undefined);
     assert.equal(a.q.Errors.items.length, 0);
@@ -407,7 +450,7 @@ test('MP4/WebM object URL plays immediately, persists as Blob in IDB, restores a
       assert.match(lw2.video.src, /^blob:wallpaper-/);
       assert.equal(lw2.name, 'clip.webm');
       lw2.resetDefault();b.clock.tick(1);
-      assert.equal(lw2.source, 'default');assert.equal(lw2.video.getAttribute('src'), null);
+      assert.equal(lw2.source, 'default');assert.match(lw2.video.getAttribute('src') || lw2.video.src, /bunny-live-wallpaper\.mp4/);
       assert.equal(stored, null);assert.equal(keySeen, 'custom_bg');
     } finally { b.close(); }
   } finally { a.close(); }
@@ -637,94 +680,161 @@ test('cloud status distinguishes GAS reply from live-only activity', () => {
   } finally { a.close(); }
 });
 
-test('every saved repository media file is preserved in git and listed in CONFIG.repoVideos', () => {
+test('every saved repository media file is intact, discovered and bunny is first; zero fake fallbacks', () => {
+  lacks('Fallback path');
+  assert.ok(!/☁ Fallback/.test(html));
   const files = trackedMedia();
   assert.ok(files.length >= 3, 'git ls-files sees the saved media');
   const videos = files.filter((p) => /\.(mp4|webm|mov|m4v)$/i.test(p));
   assert.ok(videos.length >= 1);
   const a = harness();
   try {
-    const srcs = a.q.CONFIG.repoVideos.map((v) => v.src);
-    for (const f of videos) {
+    const cfg = a.q.CONFIG, lw = a.w.LiveWallpaper;
+    assert.equal(cfg.repoVideos[0].src, DEFAULT);
+    assert.equal(cfg.repoMedia[0].src, DEFAULT);
+    assert.equal(lw.mediaList[0].src, DEFAULT);
+    assert.equal(lw.fallbackVideos().length, 0);
+    assert.equal(cfg.repoFallbacks.length, 0);
+    const srcs = cfg.repoMedia.map((m) => m.src);
+    for (const f of files) {
       assert.ok(fs.statSync(path.join(root, f)).size > 0, f + ' is intact');
-      assert.ok(srcs.indexOf('./' + encodeURI(f)) >= 0, f + ' is in CONFIG.repoVideos');
+      if (/\.(mp4|webm|mov|m4v)$/i.test(f)) assert.ok(srcs.indexOf('./' + encodeURI(f)) >= 0, f + ' is discovered');
     }
-    for (const f of files) assert.ok(fs.statSync(path.join(root, f)).size > 0, f + ' is intact');
-    assert.ok(a.q.CONFIG.repoMedia.length >= files.length - videos.length);
     for (const d of [version, config, session]) {
-      assert.equal(d.repoVideos.length, a.q.CONFIG.repoVideos.length);
-      assert.equal(d.repoVideos[0].src, './assets/bunny-live-wallpaper.mp4');
+      assert.equal(d.repoMedia[0].src, DEFAULT);
+      assert.deepEqual(d.repoFallbacks, []);
+      assert.equal(d.repoMedia.length, cfg.repoMedia.length);
     }
+    /* Every card is backed by a REAL file on disk, never an invented path. */
+    for (const m of lw.mediaList) {
+      assert.ok(/\.(mp4|webm|mov|m4v|jpe?g|png|webp|gif|avif)$/i.test(m.src), m.src);
+      assert.ok(m.type === 'video' || m.type === 'image', m.src + ' has a type');
+      assert.ok(m.title && m.title.length, m.src + ' has a title');
+      const rel = decodeURIComponent(m.src.replace(/^\.\//, '').split('#')[0]);
+      assert.ok(fs.existsSync(path.join(root, rel)), m.src + ' exists in the repository');
+    }
+    /* A non-media blob never becomes a card. */
+    stubGitHub(a, [{ type: 'blob', path: 'README.md' }, { type: 'tree', path: 'assets' },
+      { type: 'blob', path: 'assets/bunny-live-wallpaper.mp4' }], []);
+    lw.discoverGitHubMedia(true, function () {});
+    assert.ok(!lw.mediaList.some((m) => /README\.md/.test(m.src)));
+    assert.ok(!lw.mediaList.some((m) => /Fallback/i.test(m.title)));
+    assert.ok(lw.mediaList.every((m) => /^(\.\/|blob:)/.test(m.src)));
   } finally { a.close(); }
 });
 
-test('GitHub tree discovery merges encoded video blobs, caches for 10 minutes and refreshes on demand', () => {
-  has('repoTreeUrl');has('ghVideosCache');has('ghVideosTtl');has('encodeURI(');has('item.path');
+test('discoverGitHubMedia scans contents/assets + the git tree, merges videos AND photos, caches 5 minutes and force-refreshes', () => {
+  has('discoverGitHubMedia:function');has('requestMedia:function');has('collectPaths:function');
+  has('repoContentsUrl');has('ghMediaCache');has('sdp.gh_media_v30');has('ghMediaTtl');
+  has('encodeURI(');has('item.path');
   const a = harness();
   try {
     const tree = [
       { type: 'blob', path: 'assets/bunny-live-wallpaper.mp4' },
       { type: 'blob', path: 'assets/bunny-poster.webp' },
-      { type: 'blob', path: 'videos/WhatsApp Video 2026-10-27 at 07.32.25.mp4' },
-      { type: 'blob', path: 'videos/WhatsApp Video 2026-10-27 at 07.32.25.webp' },
+      { type: 'blob', path: 'assets/Beach Sunset.jpg' },
+      { type: 'blob', path: 'videos/My Clip.mp4' },
       { type: 'blob', path: 'media/swan-lake.webm' },
-      { type: 'blob', path: 'README.md' },
-      { type: 'tree', path: 'videos' }
+      { type: 'blob', path: 'assets/notes.txt' },
+      { type: 'tree', path: 'assets' }
     ];
-    const calls = stubGitHub(a, tree);
+    const contents = [
+      { type: 'file', name: 'Lake Boat.gif', path: 'assets/Lake Boat.gif' },
+      { type: 'file', name: 'City Lights.avif', path: 'assets/City Lights.avif' },
+      { type: 'file', name: 'bunny-live-wallpaper.mp4', path: 'assets/bunny-live-wallpaper.mp4' }
+    ];
+    const calls = stubGitHub(a, tree, contents);
     const lw = a.w.LiveWallpaper;
     let list = null;
-    lw.discoverGitHubVideos(function (v) { list = v; }, true);
-    assert.equal(calls.length, 1);
-    assert.match(calls[0], /^https:\/\/api\.github\.com\/repos\/dictationb1\/dictationb1\.github\.io\/git\/trees\/main\?recursive=1$/);
-    const wa = list.filter((v) => v.src.indexOf('WhatsApp') >= 0)[0];
-    assert.ok(wa, 'space-containing GitHub video is discovered');
-    assert.equal(wa.src, './videos/WhatsApp%20Video%202026-10-27%20at%2007.32.25.mp4');
-    assert.equal(wa.poster, './videos/WhatsApp%20Video%202026-10-27%20at%2007.32.25.webp');
-    assert.match(wa.title, /WhatsApp Video/);
-    assert.ok(list.some((v) => v.src === './media/swan-lake.webm'));
-    assert.ok(!list.some((v) => /README\.md/.test(v.src)), 'non-video blobs are filtered');
-    assert.ok(a.w.localStorage.getItem('sdp.gh_videos_cache'));
-    lw.discoverGitHubVideos(function (v2) { assert.ok(v2.length >= list.length); });
-    assert.equal(calls.length, 1, 'fresh cache avoids a second request');
-    a.clock.tick(600001);
-    lw.discoverGitHubVideos(function () {});
-    assert.equal(calls.length, 2, 'cache expires after ten minutes');
-    /* The topbar refresh and the in-sheet scan both force a re-scan. */
+    lw.discoverGitHubMedia(true, function (v) { list = v; });
+    assert.equal(calls.length, 2, 'BOTH GitHub endpoints are queried');
+    assert.ok(calls.some((u) => u === 'https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets'));
+    assert.ok(calls.some((u) => u === 'https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1'));
+    assert.equal(list[0].src, DEFAULT, 'bunny remains index 0');
+    const bySrc = {};list.forEach((m) => { bySrc[m.src] = m; });
+    assert.equal(bySrc['./assets/Beach%20Sunset.jpg'].type, 'image');
+    assert.equal(bySrc['./assets/Lake%20Boat.gif'].type, 'image');
+    assert.equal(bySrc['./assets/City%20Lights.avif'].type, 'image');
+    assert.equal(bySrc['./videos/My%20Clip.mp4'].type, 'video');
+    assert.equal(bySrc['./media/swan-lake.webm'].type, 'video');
+    assert.match(bySrc['./videos/My%20Clip.mp4'].title, /My Clip/);
+    assert.equal(bySrc['./assets/Beach%20Sunset.jpg'].folder, 'assets');
+    assert.ok(!bySrc['./assets/bunny-poster.webp'], 'a poster helper for an existing video is not a fake card');
+    assert.ok(!Object.keys(bySrc).some((s) => /notes\.txt/.test(s)), 'non-media blobs are filtered');
+    assert.equal(list.filter((m) => m.src === DEFAULT).length, 1, 'no duplicates across both endpoints');
+    assert.ok(a.w.localStorage.getItem('sdp.gh_media_v30'), 'five-minute cache is written');
+    let cached = null;
+    lw.discoverGitHubMedia(false, function (v) { cached = v; });
+    assert.equal(calls.length, 2, 'fresh cache avoids new requests');
+    assert.ok(cached.length >= list.length);
+    a.clock.tick(300001);
+    lw.discoverGitHubMedia(false, function () {});
+    assert.equal(calls.length, 4, 'cache expires after five minutes');
+    lw.discoverGitHubMedia(true, function () {});
+    assert.equal(calls.length, 6, 'forceRefresh bypasses the cache immediately');
     a.w.document.getElementById('btnRefresh').click();
-    assert.equal(calls.length, 3);
+    assert.equal(calls.length, 8, 'topbar #btnRefresh forces a fresh scan');
     lw.openGallerySheet();
     const scan = a.w.document.getElementById('btnScanGhVideos');
     assert.ok(scan);
     click(a, scan);
-    assert.equal(calls.length, 4);
+    assert.equal(calls.length, 10, '🔄 Refresh from GitHub forces a fresh scan');
+    assert.equal(a.q.Errors.items.length, 0);
   } finally { a.close(); }
 });
 
-test('gallery sheet lists every video with active badge, Select, Next and the three playlist modes', () => {
+test('studio cards show real 16:9 video/photo thumbnails, one Apply button, one header Next Wallpaper and three playlist modes', () => {
   const a = harness();
   try {
-    stubGitHub(a, [{ type: 'blob', path: 'videos/My Clip.mp4' }]);
+    stubGitHub(a, [{ type: 'blob', path: 'videos/My Clip.mp4' }, { type: 'blob', path: 'assets/Blue Lake.png' }], []);
     const doc = a.w.document, lw = a.w.LiveWallpaper;
     lw.openGallerySheet();
     const list = doc.querySelector('#sheets .video-gallery-list');
     assert.ok(list);
-    assert.ok(doc.querySelectorAll('.video-gallery-item').length >= 2);
+    const cards = Array.from(list.querySelectorAll('.video-gallery-item'));
+    assert.ok(cards.length >= 4, 'every discovered video and photo is listed');
+    for (const card of cards) {
+      const preview = card.querySelector('.gal-preview');
+      assert.ok(preview, 'top 16:9 preview box');
+      const thumb = preview.querySelector('.gal-thumb');
+      assert.ok(thumb, 'real visual thumbnail');
+      if (thumb.tagName === 'VIDEO') {
+        assert.match(thumb.getAttribute('src'), /#t=1\.2$/, 'shows a real video frame at 1.2s');
+        assert.equal(thumb.getAttribute('preload'), 'metadata');
+        assert.equal(thumb.getAttribute('muted'), '');
+        assert.equal(thumb.getAttribute('loop'), '');
+        assert.equal(thumb.getAttribute('playsinline'), '');
+      } else {
+        assert.equal(thumb.tagName, 'IMG');
+        assert.equal(thumb.getAttribute('loading'), 'lazy');
+        assert.ok(thumb.getAttribute('alt'), 'photo has an alt label');
+        assert.ok(thumb.getAttribute('src'));
+      }
+      assert.match(card.querySelector('.gal-kind').textContent, /(🎬 Video|🖼️ Photo) · Saved in repository/);
+      assert.equal(card.querySelectorAll('.video-gallery-actions button').length, 1, 'single clean action button');
+      assert.ok(!Array.from(card.querySelectorAll('button')).some((b) => /Next Video/.test(b.textContent)), 'no duplicate Next Video per card');
+    }
     assert.ok(doc.querySelector('.video-gallery-badge'));
-    assert.equal(doc.querySelector('.video-gallery-badge').textContent, '✓ Active');
-    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '▶ Select'));
-    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '⏭ Next Video'));
+    assert.equal(doc.querySelector('.video-gallery-badge').textContent, '✓ Active Now');
+    assert.equal(doc.querySelectorAll('#sheets button#btnNextWallpaper').length, 1, 'one Next Wallpaper in the header');
+    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '⏭ Next Wallpaper'));
+    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '✓ Active Wallpaper'));
+    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '▶ Apply Wallpaper'));
+    assert.equal(doc.querySelector('#sheets .video-gallery-badge').style.display, 'inline-flex');
     const seg = doc.querySelector('#sheets .seg.gallery-seg');
     assert.ok(seg);
-    const labels = Array.from(seg.querySelectorAll('button')).map((b) => b.textContent);
-    assert.deepEqual(labels, ['🔂 Loop Single Video', '🔁 Auto-Cycle All GitHub Videos', '⏸ Video Off']);
-    const pick = Array.from(doc.querySelectorAll('[data-gallery-select]')).find((b) => b.getAttribute('data-gallery-select').indexOf('My%20Clip') >= 0);
-    assert.ok(pick, 'space-containing GitHub video is selectable');
+    assert.deepEqual(Array.from(seg.querySelectorAll('button')).map((b) => b.textContent),
+      ['🔂 Loop Single Video', '🔁 Auto-Cycle All GitHub Media', '⏸ Video Off']);
+    const pick = Array.from(doc.querySelectorAll('[data-gallery-select]')).find((b) => b.getAttribute('data-gallery-select').indexOf('Blue%20Lake') >= 0);
+    assert.ok(pick, 'GitHub photo is selectable');
     click(a, pick);
-    assert.equal(lw.activeSrc, './videos/My%20Clip.mp4');
-    assert.equal(a.q.DB.data.settings.activeVideoSrc, './videos/My%20Clip.mp4');
-    assert.ok(doc.querySelector('.video-gallery-item.is-active'));
-    const cycle = Array.from(seg.querySelectorAll('button')).find((b) => b.textContent === '🔁 Auto-Cycle All GitHub Videos');
+    assert.equal(lw.activeSrc, './assets/Blue%20Lake.png');
+    assert.equal(lw.activeType, 'image');
+    assert.equal(a.q.DB.data.settings.activeMediaType, 'image');
+    assert.equal(doc.getElementById('bgLivePhoto').getAttribute('src'), './assets/Blue%20Lake.png');
+    assert.equal(doc.getElementById('bgLivePhoto').style.opacity, '0.92');
+    assert.equal(lw.video.style.opacity, '0');
+    const cycle = Array.from(seg.querySelectorAll('button')).find((b) => b.textContent === '🔁 Auto-Cycle All GitHub Media');
     click(a, cycle);
     assert.equal(lw.playlistMode, 'cycle');
     assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'cycle');
@@ -740,28 +850,37 @@ test('gallery sheet lists every video with active badge, Select, Next and the th
   } finally { a.close(); }
 });
 
-test('auto-cycle cross-fades to the next GitHub video when ended fires; loop/off modes persist', () => {
+test('auto-cycle advances videos on ended and photos every 12s; loop/off modes persist', () => {
   const a = harness();
   try {
     const lw = a.w.LiveWallpaper;
-    lw.videos = [
-      { id: 'v1', title: 'One', src: './assets/bunny-live-wallpaper.mp4', poster: '', origin: 'repo' },
-      { id: 'v2', title: 'Two', src: './videos/My%20Clip.mp4', poster: '', origin: 'github' }
+    lw.mediaList = [
+      { id: 'v1', title: 'Bunny', src: DEFAULT, type: 'video', folder: 'assets', poster: '', origin: 'repo' },
+      { id: 'v2', title: 'Sunset', src: './assets/Sunset.jpg', type: 'image', folder: 'assets', poster: '', origin: 'github' },
+      { id: 'v3', title: 'Clip', src: './videos/My%20Clip.mp4', type: 'video', folder: 'videos', poster: '', origin: 'github' }
     ];
-    lw.activeSrc = './assets/bunny-live-wallpaper.mp4';
+    lw.videos = lw.mediaList;
+    lw.activeSrc = DEFAULT;lw.activeType = 'video';
     lw.setPlaylistMode('cycle');
     assert.equal(lw.video.loop, false);
     assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'cycle');
-    lw.onEnded();
-    a.clock.tick(320);
+    lw.onEnded();a.clock.tick(320);
+    assert.equal(lw.activeSrc, './assets/Sunset.jpg');
+    assert.equal(lw.activeType, 'image');
+    assert.equal(a.q.DB.data.settings.activeMediaType, 'image');
+    assert.notEqual(lw.photoTimer, null, 'photo gets a 12-second timer');
+    a.clock.tick(11900);
+    assert.equal(lw.activeSrc, './assets/Sunset.jpg', 'photo stays for twelve seconds');
+    a.clock.tick(400);a.clock.tick(320);
     assert.equal(lw.activeSrc, './videos/My%20Clip.mp4');
-    assert.equal(a.q.DB.data.settings.activeVideoSrc, './videos/My%20Clip.mp4');
-    lw.onEnded();
-    a.clock.tick(320);
-    assert.equal(lw.activeSrc, './assets/bunny-live-wallpaper.mp4', 'playlist wraps around');
+    assert.equal(lw.activeType, 'video');
+    assert.equal(lw.photoTimer, null, 'video has no photo timer');
+    lw.onEnded();a.clock.tick(320);
+    assert.equal(lw.activeSrc, DEFAULT, 'playlist wraps around');
     lw.setPlaylistMode('off');
     assert.equal(lw.enabled, false);
     assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'off');
+    assert.equal(lw.photoTimer, null);
     lw.setPlaylistMode('loop');
     assert.equal(lw.enabled, true);
     assert.equal(lw.video.loop, true);
@@ -788,7 +907,7 @@ test('lecturer publish carries activeVideoSrc to students through repo and live 
   } finally { a.close(); }
 });
 
-test('all v22-v28 feature tokens and guards are still present in the v29 build', () => {
+test('all v22-v29 feature tokens and guards are still present in the v30 build', () => {
   for (const token of [
     'id="credit"', 'z-index:9999!important', 'UI.showCreditNow=function', 'guide-credit-pill',
     'UI.startPractisingFromGuide=function', 'id="btnGuideStart"', 'Eng.cancelReadyAndExit=function',
@@ -799,12 +918,162 @@ test('all v22-v28 feature tokens and guards are still present in the v29 build',
     'id="segMode"', 'id="lgStage"', 'voice=Amy', 'requestAnimationFrame', 'rafId', 'wake:function',
     'sleep:function', 'onClick:function', 'onSwipe:function', 'pulseAudio:function', 'celebrateStreak:function',
     'data-mode="paper" aria-selected="true"', 'Listen &amp; write on paper', 'activeVideoSrc',
-    'videoPlaylistMode', 'applyPublishedVideo'
+    'videoPlaylistMode', 'applyPublishedVideo', 'discoverGitHubVideos', 'treeVideos', 'mergePaths',
+    'btnScanGhVideosSet', 'btnPickVideoFileSet', 'btnToggleVideo', 'btnResetVideo',
+    'DEFAULT_WALLPAPER_SRC', 'discoverGitHubMedia', 'mediaList', 'bgContrastScrim', 'bgLivePhoto',
+    'bgLivePhotoAmbilight', 'sVideoDim', '--bg-dim', 'gal-thumb', 'gal-preview', 'repoMedia',
+    'contents/assets', 'sdp.gh_media_v30', 'activeMediaType', 'videoDim',
+    '🎬 Video', '🖼️ Photo', '✓ Active Now', '⏭ Next Wallpaper', '🔄 Refresh from GitHub'
   ]) has(token);
   for (const token of ['btnReadyClose', 'btnNotReady', 'ansVkb', 'btnToggleVkb', 'swanMasterPath',
-    'window.SwanStage', '一筆白鳥', 'bgSwanVideo', 'new-password']) lacks(token);
+    'window.SwanStage', '一筆白鳥', 'bgSwanVideo', 'new-password', 'Fallback path', '☁ Fallback']) lacks(token);
   assert.doesNotMatch(html, /inp\.type\s*=\s*"password"|new-password|current-password/);
   assert.equal(config.defaults.mode, 'paper');
   assert.equal(session.session.mode, 'paper');
   assert.equal(version.mode, 'paper');
+  for (const d of [version, config, session]) {
+    assert.equal(d.activeVideoSrc, DEFAULT);
+    assert.equal(d.mode, 'paper');
+    assert.ok(d.ver >= 30);
+  }
+});
+
+test('Word Contrast / Video Dimmer slider drives --bg-dim live in both Settings and the studio', () => {
+  assert.match(cssRule('#bgContrastScrim'), /background:radial-gradient\(circle at 50% 40%,rgba\(5, 9, 20, var\(--bg-dim, 0\.34\)\)/);
+  assert.match(cssRule('#setBody .wallpaper-controls'), /display:flex;flex-wrap:wrap;gap:8px/);
+  assert.match(html, /<input type="range" id="sVideoDim" min="10" max="75" step="1" value="34"/);
+  const a = harness();
+  try {
+    const doc = a.w.document, lw = a.w.LiveWallpaper;
+    assert.equal(doc.documentElement.style.getPropertyValue('--bg-dim'), '0.34', 'default 34% dimmer is applied on boot');
+    a.q.UI.setTab('set');
+    const settingsDim = doc.querySelector('#setBody #sVideoDim');
+    assert.ok(settingsDim, 'Settings has the live dimmer');
+    assert.equal(settingsDim.min, '10');assert.equal(settingsDim.max, '75');
+    assert.equal(settingsDim.value, '34');
+    const row = doc.querySelector('#setBody .wallpaper-controls');
+    assert.ok(row);
+    assert.equal(row.children.length, 5, 'five wallpaper buttons never clip');
+    settingsDim.value = '60';
+    settingsDim.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    assert.equal(a.q.DB.data.settings.videoDim, 60);
+    assert.equal(doc.documentElement.style.getPropertyValue('--bg-dim'), '0.60');
+    assert.equal(doc.body.style.getPropertyValue('--bg-dim'), '0.60');
+    assert.equal(doc.querySelector('#setBody .dim-value').textContent, '60%');
+    lw.setDim(10);
+    assert.equal(a.q.DB.data.settings.videoDim, 10, 'clamped at 10%');
+    lw.setDim(75);
+    assert.equal(doc.documentElement.style.getPropertyValue('--bg-dim'), '0.75', 'clamped at 75%');
+    lw.openGallerySheet();
+    const studioDim = doc.querySelector('#sheets #sVideoDim');
+    assert.ok(studioDim, 'the studio shows the same live dimmer');
+    studioDim.value = '48';
+    studioDim.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    assert.equal(a.q.DB.data.settings.videoDim, 48);
+    assert.equal(doc.querySelector('#sheets .dim-value').textContent, '48%');
+    assert.ok(doc.getElementById('bgContrastScrim'), 'scrim sits above any wallpaper');
+    a.q.UI.closeSheet();
+    assert.ok(doc.querySelector('#setBody #sVideoDim'), 'slider returns to Settings when the sheet closes');
+    assert.equal(a.q.Errors.items.length, 0);
+  } finally { a.close(); }
+});
+
+test('photo wallpaper fades in with a synchronized portrait ambilight; video fades back in on selection', () => {
+  const a = harness();
+  try {
+    const w = a.w, doc = w.document, lw = w.LiveWallpaper;
+    const photo = doc.getElementById('bgLivePhoto'), amb = doc.getElementById('bgLivePhotoAmbilight');
+    assert.ok(photo && amb);
+    assert.equal(photo.parentElement, doc.getElementById('bgLiveWrap'));
+    assert.equal(amb.parentElement, doc.getElementById('bgLiveWrap'));
+    Object.defineProperty(photo, 'naturalWidth', { value: 800, configurable: true });
+    Object.defineProperty(photo, 'naturalHeight', { value: 1400, configurable: true });
+    Object.defineProperty(w, 'innerWidth', { value: 1920, configurable: true });
+    Object.defineProperty(w, 'innerHeight', { value: 1080, configurable: true });
+    lw.mediaList = [
+      { id: 'v1', title: 'Bunny', src: DEFAULT, type: 'video', folder: 'assets', poster: '', origin: 'repo' },
+      { id: 'p1', title: 'Portrait', src: './assets/portrait.png', type: 'image', folder: 'assets', poster: '', origin: 'github' }
+    ];
+    lw.videos = lw.mediaList;
+    lw.selectMedia('./assets/portrait.png');
+    assert.equal(lw.activeType, 'image');
+    assert.equal(photo.getAttribute('src'), './assets/portrait.png');
+    assert.equal(amb.getAttribute('src'), './assets/portrait.png');
+    assert.equal(photo.style.opacity, '0.92');
+    assert.equal(lw.video.style.opacity, '0', 'video is hidden for a photo');
+    assert.equal(lw.ambilight.style.opacity, '0');
+    photo.dispatchEvent(new w.Event('load'));
+    assert.equal(photo.style.objectFit, 'contain', 'portrait photo is fully visible on a widescreen PC');
+    assert.match(photo.style.maskImage, /linear-gradient\(90deg, transparent 0%/);
+    assert.equal(amb.style.opacity, '0.78', 'blurred ambilight fills the side bars');
+    assert.ok(/#bgLivePhotoAmbilight\{[^}]*filter:blur\(34px\)/.test(html), 'photo ambilight is blurred');
+    Object.defineProperty(w, 'innerWidth', { value: 390, configurable: true });
+    Object.defineProperty(w, 'innerHeight', { value: 844, configurable: true });
+    w.dispatchEvent(new w.Event('resize'));
+    assert.equal(photo.style.objectFit, 'cover');
+    assert.equal(amb.style.opacity, '0', 'ambilight sleeps on mobile');
+    lw.selectMedia(DEFAULT);
+    assert.equal(lw.activeType, 'video');
+    assert.equal(photo.style.opacity, '0');
+    assert.equal(amb.style.opacity, '0');
+    assert.match(lw.video.getAttribute('src') || lw.video.src, /bunny-live-wallpaper\.mp4/);
+    assert.equal(a.q.DB.data.settings.activeMediaType, 'video');
+    assert.equal(a.q.Errors.items.length, 0);
+  } finally { a.close(); }
+});
+
+test('bunny default loads and plays in Lite and Full with the widescreen ambilight primed', () => {
+  const a = harness();
+  try {
+    const w = a.w, lw = w.LiveWallpaper, video = lw.video;
+    let plays = 0;
+    video.play = function () { plays++; return { catch() {} }; };
+    video.pause = function () {};
+    assert.equal(lw.activeSrc, DEFAULT);
+    assert.match(video.getAttribute('src') || video.src, /bunny-live-wallpaper\.mp4/);
+    assert.match(lw.ambilight.getAttribute('src') || lw.ambilight.src, /bunny-live-wallpaper\.mp4/);
+    a.q.DB.data.settings.perf = 'lite';a.q.UI.applyPerf();
+    const before = plays;
+    video.dispatchEvent(new w.Event('loadeddata'));
+    assert.ok(plays > before, 'Lite mode plays the default video');
+    assert.equal(video.style.opacity, '0.88');
+    assert.equal(w.document.body.dataset.perf, 'lite');
+    a.q.DB.data.settings.perf = 'full';a.q.UI.applyPerf();
+    video.dispatchEvent(new w.Event('canplay'));
+    assert.equal(video.style.opacity, '0.88', 'Full mode plays the default video');
+    assert.equal(w.document.body.dataset.perf, 'full');
+    Object.defineProperty(w, 'innerWidth', { value: 1920, configurable: true });
+    Object.defineProperty(w, 'innerHeight', { value: 1080, configurable: true });
+    Object.defineProperty(video, 'videoWidth', { value: 478, configurable: true });
+    Object.defineProperty(video, 'videoHeight', { value: 850, configurable: true });
+    video.dispatchEvent(new w.Event('loadedmetadata'));
+    assert.equal(video.style.objectFit, 'contain');
+    assert.equal(lw.ambilight.style.opacity, '0.78');
+    assert.match(lw.ambilight.getAttribute('src') || lw.ambilight.src, /bunny-live-wallpaper\.mp4/);
+    assert.equal(a.q.Errors.items.length, 0);
+  } finally { a.close(); }
+});
+
+test('no invented fallback paths in the shipped data or the runtime media list', () => {
+  for (const d of [version, config, session]) {
+    assert.deepEqual(d.repoFallbacks, []);
+    const text = JSON.stringify(d);
+    for (const fake of ['./live-wallpaper.mp4', './media.mp4', './assets/swan-lake.mp4', 'Fallback path'])
+      assert.ok(!text.includes(fake), fake + ' must not ship as a fallback');
+    assert.equal(d.repoContentsUrl, 'https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets');
+    assert.equal(d.ghMediaCache, 'sdp.gh_media_v30');
+    assert.equal(d.ghMediaTtl, 300000);
+  }
+  const a = harness();
+  try {
+    const lw = a.w.LiveWallpaper;
+    assert.equal(lw.fallbackVideos().length, 0);
+    assert.ok(lw.mediaList.every((m) => m.origin === 'repo' || m.origin === 'github'));
+    /* The old v29 helper still works, but never invents a card. */
+    stubGitHub(a, [], []);
+    let list = null;
+    lw.discoverGitHubVideos(function (v) { list = v; }, true);
+    assert.ok(list.length >= 1);
+    assert.ok(!list.some((m) => /Fallback/i.test(m.title)));
+  } finally { a.close(); }
 });

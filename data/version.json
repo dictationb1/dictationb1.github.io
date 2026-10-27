@@ -1,11 +1,11 @@
 {
-  "ver": 29,
-  "appVersion": "3.7.0",
-  "version": "3.7.0",
+  "ver": 30,
+  "appVersion": "3.8.0",
+  "version": "3.8.0",
   "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 29,
+  "settingsRev": 30,
   "updatedAt": "2026-10-27T00:00:00Z",
   "updatedAtMs": 1793059200000,
   "features": {
@@ -18,39 +18,70 @@
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 7, my words and mistakes",
     "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "liveWallpaper": "Portrait/wide framing, local MP4/WebM picker and IndexedDB persistence",
-    "githubVideos": "CONFIG.repoVideos + GitHub tree API auto-discovery, cached 10 minutes under sdp.gh_videos_cache",
-    "ambilight": "Dual synchronized video layers with horizontal edge feathering remove the 9:16 box seam on 16:9 monitors",
-    "gallery": "One-tap GitHub video gallery, loop/cycle/off playlist, local MP4 picker with IndexedDB persistence",
-    "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish"
+    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video in Lite and Full modes",
+    "githubVideos": "CONFIG.repoVideos + discoverGitHubMedia merge real GitHub tree/contents blobs; cached 5 minutes in sdp.gh_media_v30 (legacy sdp.gh_videos_cache mirror retained)",
+    "ambilight": "Dual synchronized video layers plus #bgLivePhotoAmbilight for portrait photos; horizontal edge feathering removes the 9:16 box seam on 16:9 monitors",
+    "gallery": "Real 16:9 .gal-thumb video/photo previews, one Apply button per card, Next Wallpaper in the studio header, no fake fallback cards",
+    "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
+    "githubMedia": "discoverGitHubMedia scans contents/assets + the recursive git tree for every .mp4/.webm/.mov/.m4v and .jpg/.jpeg/.png/.webp/.gif/.avif file, cached 5 minutes in sdp.gh_media_v30",
+    "readability": "#bgContrastScrim adaptive radial scrim, --bg-dim live slider (#sVideoDim), darker frosted glass tints and crisp text shadows in dark theme",
+    "photoWallpaper": "#bgLivePhoto + #bgLivePhotoAmbilight with 12s auto-cycle for photos and ended-driven cycling for videos"
   },
   "mode": "paper",
-  "storageKey": "sdp.v29_gh_videos",
+  "storageKey": "sdp.v30_studio",
   "repoVideos": [
     {
-      "id": "vid_bunny_live_wallpaper",
+      "id": "media_bunny_live_wallpaper",
       "title": "Bunny Live Wallpaper",
       "src": "./assets/bunny-live-wallpaper.mp4",
-      "poster": "./assets/bunny-poster.webp"
+      "poster": "./assets/bunny-poster.webp",
+      "type": "video",
+      "folder": "assets"
     }
   ],
   "repoMedia": [
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_fatal_390",
+      "title": "Fatal 390",
+      "src": "./qa/evidence/fatal-390.png",
+      "type": "image",
+      "folder": "qa/evidence"
+    },
+    {
+      "id": "media_home_390",
+      "title": "Home 390",
+      "src": "./qa/evidence/home-390.png",
+      "type": "image",
+      "folder": "qa/evidence"
+    }
+  ],
+  "repoFallbacks": [],
+  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
+  "ghVideosCache": "sdp.gh_videos_cache",
+  "ghVideosTtl": 300000,
+  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "videoPlaylistMode": "loop",
+  "repoMediaPaths": [
     "./assets/bunny-live-wallpaper.mp4",
     "./assets/bunny-poster.webp",
     "./qa/evidence/fatal-390.png",
     "./qa/evidence/home-390.png"
   ],
-  "repoFallbacks": [
-    "./assets/bunny-live-wallpaper.mp4",
-    "./bunny-live-wallpaper.mp4",
-    "./assets/live-wallpaper.mp4",
-    "./live-wallpaper.mp4",
-    "./media.mp4",
-    "./assets/swan-lake.mp4"
-  ],
-  "repoTreeUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/git/trees/main?recursive=1",
-  "ghVideosCache": "sdp.gh_videos_cache",
-  "ghVideosTtl": 600000,
-  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
-  "videoPlaylistMode": "loop"
+  "repoPosters": {
+    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
+  },
+  "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
+  "ghMediaCache": "sdp.gh_media_v30",
+  "ghMediaTtl": 300000,
+  "activeMediaType": "video",
+  "videoDim": 34,
+  "repoVideoPoster": "./assets/bunny-poster.webp"
 }
