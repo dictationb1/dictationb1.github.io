@@ -1,4 +1,4 @@
-/* Release 3.6.0 (ver 28): real-browser checks for the isolated video wallpaper,
+/* Release 3.7.0 (ver 29): real-browser checks for the isolated video wallpaper,
    responsive Liquid Glass UI, Settings mixer, audio reuse and native text input.
    Keyboard suggestions and performance depend on the actual device.
 
@@ -153,7 +153,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v28 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v29 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -297,7 +297,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -499,8 +499,11 @@ function material(page) {
   await check(engine + ' local MP4 starts immediately, survives reload via IndexedDB, pauses and resets', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
+      /* v29: the topbar opens the GitHub gallery; the Settings card keeps the
+         one-tap native device picker. */
+      await openTab(page, 'tab-set');
       const choose = page.waitForEvent('filechooser');
-      await page.locator('#btnLiveVideo').click();
+      await page.locator('#btnPickVideoFileSet').click();
       const chooser = await choose;
       assert.equal(await chooser.element().getAttribute('id'), 'liveVideoInput');
       await chooser.setFiles({ name: 'WhatsApp Video 2026-10-27 at 07.32.25.mp4', mimeType: 'video/mp4',
@@ -515,7 +518,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -526,7 +529,8 @@ function material(page) {
         document.getElementById('bgLiveVideo').currentSrc.indexOf('blob:') === 0, null, { timeout: 12000 });
       await openTab(page, 'tab-set');
       assert.match(await page.locator('#setBody > :first-child').textContent(), /Live Wallpaper Video/);
-      assert.equal(await page.locator('#btnPickVideoFile').count(), 1);
+      assert.equal(await page.locator('#btnPickVideoFileSet').count(), 1);
+      assert.equal(await page.locator('#btnOpenGallery').count(), 1);
       await page.locator('#btnToggleVideo').click();
       assert.equal(await page.evaluate(() => window.LiveWallpaper.enabled), false);
       assert.equal(await page.locator('#btnToggleVideo').textContent(), 'Play Live Video');
@@ -620,9 +624,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v28_live_video')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -632,7 +636,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
+        const d = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -647,7 +651,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v28 User Guide Start practising launches the ready player on Home', async () => {
+  await check(engine + ' v29 User Guide Start practising launches the ready player on Home', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       await page.evaluate(() => document.getElementById('btnGuideTop').click());
@@ -662,7 +666,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -682,7 +686,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v28 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v29 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       /* the ready sheet keeps ONE far-right cross mark and no duplicates */
@@ -751,7 +755,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
+        const d = JSON.parse(localStorage.getItem('sdp.v29_gh_videos'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

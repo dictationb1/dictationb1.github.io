@@ -1,10 +1,12 @@
 'use strict';
 
-/* v28 release gates plus v22-v27 dictation/UI regressions. Run with node --test or directly. */
+/* v29 release gates: GitHub video discovery, seamless PC ambilight, gallery/playlist,
+   plus every v22-v28 dictation, typing, search and 120 FPS regression gate. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const cp = require('node:child_process');
 const acorn = require('acorn');
 const { harness, html } = require('./app-harness.cjs');
 
@@ -13,7 +15,7 @@ const json = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name),
 const version = json('version.json');
 const config = json('config.json');
 const session = json('session.json');
-const key = 'sdp.v28_live_video';
+const key = 'sdp.v29_gh_videos';
 const title = 'Session 7 - Travel & Transport';
 const words = ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
   'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business', 'on vacation',
@@ -50,8 +52,31 @@ function typeChar(a, input, char) {
   input.value = ' ' + char;
   input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
 }
+function stubGitHub(a, tree) {
+  const calls = [];
+  a.w.XMLHttpRequest = function () {
+    this.open = function (m, u) { calls.push(String(u)); };
+    this.setRequestHeader = function () {};
+    this.send = function () {
+      this.readyState = 4;
+      this.status = 200;
+      this.responseText = JSON.stringify({ tree: tree || [] });
+      if (this.onreadystatechange) this.onreadystatechange();
+    };
+    this.abort = function () {};
+  };
+  return calls;
+}
+function trackedMedia() {
+  let out = [];
+  try {
+    out = cp.execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' })
+      .split('\n').filter((p) => /\.(mp4|webm|mov|m4v|webp|jpe?g|png|gif)$/i.test(p));
+  } catch (e) { out = []; }
+  return out;
+}
 
-test('single-file app remains ES5, self-contained, and under 440KB', () => {
+test('single-file app remains strict ES5, self-contained, and under 440KB', () => {
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   acorn.parse(script, { ecmaVersion: 5 });
   assert.ok(Buffer.byteLength(html) < 440000, 'actual bytes: ' + Buffer.byteLength(html));
@@ -60,32 +85,41 @@ test('single-file app remains ES5, self-contained, and under 440KB', () => {
   assert.doesNotMatch(css, /\.glass\{[^}]*\bcontain\s*:/);
 });
 
-test('v28 metadata, paper default, migration and old data preservation', () => {
+test('v29 metadata, paper default, resetToV29 migration and old data preservation', () => {
   for (const d of [version, config, session]) {
-    assert.ok(Number(d.ver) >= 28);
-    assert.equal(d.settingsRev, 28);
-    assert.equal(d.appVersion, '3.6.0');
-    assert.equal(d.version, '3.6.0');
+    assert.ok(Number(d.ver) >= 29);
+    assert.equal(d.settingsRev, 29);
+    assert.equal(d.appVersion, '3.7.0');
+    assert.equal(d.version, '3.7.0');
     assert.equal(d.mode, 'paper');
     assert.ok(!('swan' in d));
+    assert.ok(Array.isArray(d.repoVideos) && d.repoVideos.length >= 1);
   }
   assert.equal(config.storageKey, key);
   assert.equal(config.defaults.mode, 'paper');
   assert.equal(config.defaults.wallpaperVideo, true);
-  has('var APP_VERSION="3.6.0"');has('key:"' + key + '"');has('schema:28');
-  has('settingsRev:28');has('resetToV28:function');
+  assert.equal(config.defaults.writeFixed, 5);
+  assert.equal(config.defaults.repeats, 2);
+  assert.equal(config.defaults.activeVideoSrc, './assets/bunny-live-wallpaper.mp4');
+  assert.equal(config.defaults.videoPlaylistMode, 'loop');
+  has('var APP_VERSION="3.7.0"');has('key:"' + key + '"');has('schema:29');
+  has('settingsRev:29');has('resetToV29:function');
   has('data-mode="paper" aria-selected="true"');has('Listen &amp; write on paper');
   const a = harness();
   try {
     assert.equal(a.q.CONFIG.key, key);
-    assert.equal(a.q.CONFIG.schema, 28);
-    assert.equal(a.q.CONFIG.settingsRev, 28);
-    assert.equal(a.q.DB.data.settingsRev, 28);
-    assert.equal(a.q.DB.data.v, 28);
+    assert.equal(a.q.CONFIG.schema, 29);
+    assert.equal(a.q.CONFIG.settingsRev, 29);
+    assert.equal(a.q.DB.data.settingsRev, 29);
+    assert.equal(a.q.DB.data.v, 29);
     assert.equal(a.q.DB.data.settings.mode, 'paper');
     assert.equal(a.q.DB.defaults().settings.mode, 'paper');
     assert.equal(a.q.DB.data.settings.wallpaperVideo, true);
+    assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'loop');
+    assert.ok(a.q.CONFIG.repoVideos.length >= 1);
     assert.ok(a.w.localStorage.getItem(key));
+
+    /* A v27 learner is migrated straight to v29 with the paper default. */
     const old = JSON.parse(JSON.stringify(a.q.DB.data));
     old.v = 27;old.settingsRev = 27;old.settings.mode = 'type';
     old.profile.nickname = 'Returning learner';old.admin.pinHash = 'already-changed';
@@ -93,13 +127,16 @@ test('v28 metadata, paper default, migration and old data preservation', () => {
     old.lists.push({ id: 'custom-list', name: 'Lecture', published: true, words: [{ w: 'custom' }] });
     old.plan.pinned = 'custom-list';
     const raw = JSON.stringify(old);
-    a.w.localStorage.clear();a.w.localStorage.setItem('sdp.v27_clean_fast', raw);
+    a.w.localStorage.clear();
+    a.w.localStorage.setItem('sdp.v27_clean_fast', raw);
     a.w.localStorage.setItem('sdp.v27_clean_fast.bak', raw);
     a.q.DB.load();
     const saved = JSON.parse(a.w.localStorage.getItem(key));
-    assert.equal(saved.v, 28);assert.equal(saved.settingsRev, 28);
+    assert.equal(saved.v, 29);assert.equal(saved.settingsRev, 29);
     assert.equal(saved.settings.mode, 'paper');
     assert.equal(saved.settings.wallpaperVideo, true);
+    assert.equal(saved.settings.activeVideoSrc, './assets/bunny-live-wallpaper.mp4');
+    assert.equal(saved.settings.videoPlaylistMode, 'loop');
     assert.equal(saved.profile.nickname, 'Returning learner');
     assert.equal(saved.admin.pinHash, 'already-changed');
     assert.equal(saved.history[0].id, 'saved-history');
@@ -107,24 +144,37 @@ test('v28 metadata, paper default, migration and old data preservation', () => {
     assert.ok(saved.lists.some((list) => list.id === 'list_session_7_travel'));
     assert.equal(saved.plan.pinned, 'custom-list');
     assert.equal(JSON.parse(a.w.localStorage.getItem(key + '.bak')).profile.nickname, 'Returning learner');
+
     saved.settings.mode = 'type';saved.settings.wallpaperVideo = false;
-    assert.equal(a.q.DB.migrate(saved).settings.mode, 'type', 'v28 user choice persists');
+    assert.equal(a.q.DB.migrate(saved).settings.mode, 'type', 'v28/v29 user choice persists');
     assert.equal(a.q.DB.migrate(saved).settings.wallpaperVideo, false, 'wallpaper-off choice persists');
+
+    /* The v28 storage key is a first-class legacy source. */
+    const v28 = JSON.parse(JSON.stringify(a.q.DB.data));
+    v28.v = 28;v28.settingsRev = 28;v28.settings.mode = 'type';
+    v28.profile.nickname = 'V28 learner';
+    a.w.localStorage.clear();
+    a.w.localStorage.setItem('sdp.v28_live_video', JSON.stringify(v28));
+    a.q.DB.load();
+    assert.equal(a.q.DB.data.v, 29);
+    assert.equal(a.q.DB.data.settingsRev, 29);
+    assert.equal(a.q.DB.data.settings.mode, 'type');
+    assert.equal(a.q.DB.data.profile.nickname, 'V28 learner');
   } finally { a.close(); }
 });
 
-test('corrupt v27 primary recovers from the rolling backup', () => {
+test('corrupt v28 primary recovers from the rolling backup', () => {
   const a = harness();
   try {
     const old = JSON.parse(JSON.stringify(a.q.DB.data));
-    old.v = 27;old.settingsRev = 27;old.profile.nickname = 'Backup learner';
+    old.v = 28;old.settingsRev = 28;old.profile.nickname = 'Backup learner';
     a.w.localStorage.clear();
-    a.w.localStorage.setItem('sdp.v27_clean_fast', '{broken');
-    a.w.localStorage.setItem('sdp.v27_clean_fast.bak', JSON.stringify(old));
+    a.w.localStorage.setItem('sdp.v28_live_video', '{broken');
+    a.w.localStorage.setItem('sdp.v28_live_video.bak', JSON.stringify(old));
     a.q.DB.load();
     assert.equal(a.q.DB.data.profile.nickname, 'Backup learner');
     assert.equal(a.w.localStorage.getItem(key + '.recovery'), '{broken');
-    assert.equal(a.q.DB.data.settingsRev, 28);
+    assert.equal(a.q.DB.data.settingsRev, 29);
   } finally { a.close(); }
 });
 
@@ -169,17 +219,23 @@ test('speech repeats reuse the prepared audio element source', () => {
   } finally { a.close(); }
 });
 
-test('isolated full-viewport wallpaper video, neon canvas and controls replace ONLY swan drawing', () => {
+test('dual synchronized video layers, neon canvas and GitHub gallery replace ONLY swan drawing', () => {
   assert.match(cssRule('#bgLiveWrap'), /position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;overflow:hidden/);
   assert.match(cssRule('#bgLiveWrap'), /contain:strict/);
+  assert.match(cssRule('#bgLiveAmbilight'), /inset:-48px;width:calc\(100vw \+ 96px\);height:calc\(100vh \+ 96px\)/);
+  assert.match(cssRule('#bgLiveAmbilight'), /filter:blur\(34px\) saturate\(1\.55\) brightness\(\.68\)|filter:blur\(34px\) saturate\(1\.55\) brightness\(0\.68\)/);
   assert.match(cssRule('#app'), /position:relative;z-index:2;background:transparent!important/);
   assert.match(cssRule('body.wallpaper-on .glass,body.wallpaper-on[data-perf=lite] .glass'), /background-color:var\(--glass-tint\)/);
   assert.match(cssRule('.credit'), /z-index:9999!important/);
+  assert.match(cssRule('#bgLiveCanvas'), /z-index:2/);
   for (const token of ['swanMasterPath', 'window.SwanStage', '一筆白鳥', '墨', 'bgSwanVideo', 'swan-ink-canvas']) lacks(token);
-  for (const token of ['id="bgLiveWrap"', 'id="bgLiveVideo"', 'id="bgLiveCanvas"', 'id="btnLiveVideo"',
-    'id="liveVideoInput"', './assets/bunny-live-wallpaper.mp4', './assets/bunny-poster.webp',
+  for (const token of ['id="bgLiveWrap"', 'id="bgLiveAmbilight"', 'id="bgLiveVideo"', 'id="bgLiveCanvas"',
+    'id="btnLiveVideo"', 'id="liveVideoInput"', 'id="btnScanGhVideos"', 'id="btnPickVideoFile"',
+    './assets/bunny-live-wallpaper.mp4', './assets/bunny-poster.webp', 'video-gallery-list',
+    'repoVideos', 'discoverGitHubVideos', 'openGallerySheet', 'window.LiveWallpaper',
     'init:function', 'fitVideo:function', 'wake:function', 'onClick:function', 'onSwipe:function',
-    'pulseAudio:function', 'celebrateStreak:function', 'loadCustomFile:function']) has(token);
+    'pulseAudio:function', 'celebrateStreak:function', 'loadCustomFile:function',
+    'encodeURI(', 'item.path', 'sdp.gh_videos_cache', 'sdp_wallpaper_db']) has(token);
   assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')).size > 10000);
   assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-poster.webp')).size > 1000);
   const a = harness();
@@ -191,6 +247,9 @@ test('isolated full-viewport wallpaper video, neon canvas and controls replace O
     assert.equal(stage.getAttribute('aria-hidden'), 'true');
     assert.equal(doc.getElementById('bgLiveCanvas').parentElement, stage);
     assert.equal(doc.getElementById('bgLiveVideo').parentElement, stage);
+    assert.equal(doc.getElementById('bgLiveAmbilight').parentElement, stage);
+    assert.equal(doc.getElementById('bgLiveAmbilight').getAttribute('aria-hidden'), 'true');
+    assert.equal(doc.getElementById('bgLiveAmbilight').getAttribute('preload'), 'metadata');
     assert.equal(doc.querySelectorAll('#bgLiveVideo source').length, 6);
     assert.equal(doc.querySelector('#bgLiveVideo source').getAttribute('src'), './assets/bunny-live-wallpaper.mp4');
     assert.equal(doc.getElementById('bgLiveVideo').muted, true);
@@ -203,10 +262,13 @@ test('isolated full-viewport wallpaper video, neon canvas and controls replace O
   } finally { a.close(); }
 });
 
-test('metadata and resize frame portrait on PC/mobile and universal landscape video on both', () => {
+test('portrait 9:16 on a 16:9 PC uses contain, feather mask and glowing ambilight; mobile/landscape use cover', () => {
   const a = harness();
   try {
-    const w = a.w, lw = w.LiveWallpaper, video = lw.video;
+    const w = a.w, lw = w.LiveWallpaper, video = lw.video, amb = lw.ambilight;
+    let ambPauses = 0, ambPlays = 0;
+    amb.pause = function () { ambPauses++; };
+    amb.play = function () { ambPlays++; return { catch() {} }; };
     Object.defineProperty(video, 'videoWidth', { value: 478, configurable: true });
     Object.defineProperty(video, 'videoHeight', { value: 850, configurable: true });
     Object.defineProperty(w, 'innerWidth', { value: 1920, configurable: true });
@@ -214,17 +276,29 @@ test('metadata and resize frame portrait on PC/mobile and universal landscape vi
     video.dispatchEvent(new w.Event('loadedmetadata'));
     assert.equal(video.style.objectFit, 'contain');
     assert.equal(video.style.objectPosition, 'center center');
+    assert.match(video.style.maskImage, /linear-gradient\(90deg, transparent 0%/);
+    assert.match(video.style.webkitMaskImage, /rgba\(0,0,0,.2\) 22%/);
+    assert.equal(amb.style.opacity, '0.78');
+    assert.match(amb.getAttribute('src') || amb.src, /bunny-live-wallpaper\.mp4/);
+    assert.ok(ambPlays > 0, 'ambilight plays in sync');
+
     Object.defineProperty(w, 'innerWidth', { value: 390, configurable: true });
     Object.defineProperty(w, 'innerHeight', { value: 844, configurable: true });
     w.dispatchEvent(new w.Event('resize'));
     assert.equal(video.style.objectFit, 'cover');
+    assert.equal(video.style.maskImage, 'none');
+    assert.equal(video.style.webkitMaskImage, 'none');
+    assert.equal(amb.style.opacity, '0');
+    assert.ok(ambPauses > 0, 'ambilight is paused on mobile to save battery');
+
     Object.defineProperty(video, 'videoWidth', { value: 1920, configurable: true });
     Object.defineProperty(video, 'videoHeight', { value: 1080, configurable: true });
-    lw.fitVideo();assert.equal(video.style.objectFit, 'cover');
     Object.defineProperty(w, 'innerWidth', { value: 1920, configurable: true });
     Object.defineProperty(w, 'innerHeight', { value: 1080, configurable: true });
     video.dispatchEvent(new w.Event('canplay'));
     assert.equal(video.style.objectFit, 'cover');
+    assert.equal(video.style.maskImage, 'none');
+    assert.equal(amb.style.opacity, '0');
   } finally { a.close(); }
 });
 
@@ -257,19 +331,30 @@ test('canplay/autoplay and first-gesture unlock run in Lite AND Full; off is exp
   } finally { a.close(); }
 });
 
-test('topbar and first Settings card open a single native video picker, with pause/reset controls', () => {
+test('topbar opens the GitHub gallery; Settings and gallery keep one native device picker', () => {
   const a = harness();
   try {
+    stubGitHub(a, []);
     const doc = a.w.document, input = doc.getElementById('liveVideoInput');let picks = 0;
     input.click = function () { picks++; };
     click(a, doc.getElementById('btnLiveVideo'));
+    assert.ok(doc.querySelector('#sheets .video-gallery-list'), 'gallery sheet opens from #btnLiveVideo');
+    assert.ok(doc.getElementById('btnScanGhVideos'));
+    assert.ok(doc.getElementById('btnPickVideoFile'));
+    click(a, doc.getElementById('btnPickVideoFile'));
     assert.equal(picks, 1);
+    a.q.UI.closeSheet();
     a.q.UI.setTab('set');
     const settings = doc.getElementById('setBody');
     assert.match(settings.firstElementChild.textContent, /Live Wallpaper Video/);
     assert.ok(doc.querySelector('#screen-set #lgStage'));
     assert.equal(doc.querySelector('#screen-home #lgStage'), null);
-    click(a, doc.getElementById('btnPickVideoFile'));
+    assert.ok(doc.getElementById('btnOpenGallery'));
+    assert.ok(doc.getElementById('btnScanGhVideosSet'));
+    click(a, doc.getElementById('btnOpenGallery'));
+    assert.ok(doc.querySelector('#sheets .video-gallery-list'), 'Settings opens the studio sheet');
+    a.q.UI.closeSheet();
+    click(a, doc.getElementById('btnPickVideoFileSet'));
     assert.equal(picks, 2);
     click(a, doc.getElementById('btnToggleVideo'));
     assert.equal(a.w.LiveWallpaper.enabled, false);
@@ -335,7 +420,7 @@ test('canvas draws three rings/eight sparks for a click, swipe/audio/gold for ev
     let clears = 0, strokes = 0, fills = 0, frames = 0;
     const ctx = {setTransform() {}, clearRect() {clears++;}, beginPath() {}, arc() {}, stroke() {strokes++;}, fill() {fills++;}};
     lw.ctx = ctx;lw.resizeCanvas();
-    a.clock.tick(3000); // allow the finite performance probe to finish
+    a.clock.tick(3000);
     const original = w.requestAnimationFrame.bind(w);
     w.requestAnimationFrame = function (cb) {frames++;return original(cb);};
     const idleFrames = frames;a.clock.tick(2000);
@@ -447,7 +532,7 @@ test('ready sheet has ONE far-right exit by cross, scrim and Escape', () => {
 
 test('plain-text answer input uses one-space IME buffer and no password/autofill/VKB', () => {
   has('inp.type="text"');has('inp.setAttribute("autocomplete","off")');
-  has('typedAnswer');has('syncInputMirror');
+  has('typedAnswer');has('syncInputMirror');has('ansMirrorText');has('ans-caret');
   assert.doesNotMatch(html, /inp\.type\s*=\s*"password"|new-password|current-password/);
   const a = harness();
   try {
@@ -550,4 +635,176 @@ test('cloud status distinguishes GAS reply from live-only activity', () => {
     a.q.DB.data.outbox.push({ id: 'pending' });a.q.UI.renderNet();assert.match(label(), /Syncing/);
     c.setUrl('');assert.equal(c.gasAt, 0);
   } finally { a.close(); }
+});
+
+test('every saved repository media file is preserved in git and listed in CONFIG.repoVideos', () => {
+  const files = trackedMedia();
+  assert.ok(files.length >= 3, 'git ls-files sees the saved media');
+  const videos = files.filter((p) => /\.(mp4|webm|mov|m4v)$/i.test(p));
+  assert.ok(videos.length >= 1);
+  const a = harness();
+  try {
+    const srcs = a.q.CONFIG.repoVideos.map((v) => v.src);
+    for (const f of videos) {
+      assert.ok(fs.statSync(path.join(root, f)).size > 0, f + ' is intact');
+      assert.ok(srcs.indexOf('./' + encodeURI(f)) >= 0, f + ' is in CONFIG.repoVideos');
+    }
+    for (const f of files) assert.ok(fs.statSync(path.join(root, f)).size > 0, f + ' is intact');
+    assert.ok(a.q.CONFIG.repoMedia.length >= files.length - videos.length);
+    for (const d of [version, config, session]) {
+      assert.equal(d.repoVideos.length, a.q.CONFIG.repoVideos.length);
+      assert.equal(d.repoVideos[0].src, './assets/bunny-live-wallpaper.mp4');
+    }
+  } finally { a.close(); }
+});
+
+test('GitHub tree discovery merges encoded video blobs, caches for 10 minutes and refreshes on demand', () => {
+  has('repoTreeUrl');has('ghVideosCache');has('ghVideosTtl');has('encodeURI(');has('item.path');
+  const a = harness();
+  try {
+    const tree = [
+      { type: 'blob', path: 'assets/bunny-live-wallpaper.mp4' },
+      { type: 'blob', path: 'assets/bunny-poster.webp' },
+      { type: 'blob', path: 'videos/WhatsApp Video 2026-10-27 at 07.32.25.mp4' },
+      { type: 'blob', path: 'videos/WhatsApp Video 2026-10-27 at 07.32.25.webp' },
+      { type: 'blob', path: 'media/swan-lake.webm' },
+      { type: 'blob', path: 'README.md' },
+      { type: 'tree', path: 'videos' }
+    ];
+    const calls = stubGitHub(a, tree);
+    const lw = a.w.LiveWallpaper;
+    let list = null;
+    lw.discoverGitHubVideos(function (v) { list = v; }, true);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], /^https:\/\/api\.github\.com\/repos\/dictationb1\/dictationb1\.github\.io\/git\/trees\/main\?recursive=1$/);
+    const wa = list.filter((v) => v.src.indexOf('WhatsApp') >= 0)[0];
+    assert.ok(wa, 'space-containing GitHub video is discovered');
+    assert.equal(wa.src, './videos/WhatsApp%20Video%202026-10-27%20at%2007.32.25.mp4');
+    assert.equal(wa.poster, './videos/WhatsApp%20Video%202026-10-27%20at%2007.32.25.webp');
+    assert.match(wa.title, /WhatsApp Video/);
+    assert.ok(list.some((v) => v.src === './media/swan-lake.webm'));
+    assert.ok(!list.some((v) => /README\.md/.test(v.src)), 'non-video blobs are filtered');
+    assert.ok(a.w.localStorage.getItem('sdp.gh_videos_cache'));
+    lw.discoverGitHubVideos(function (v2) { assert.ok(v2.length >= list.length); });
+    assert.equal(calls.length, 1, 'fresh cache avoids a second request');
+    a.clock.tick(600001);
+    lw.discoverGitHubVideos(function () {});
+    assert.equal(calls.length, 2, 'cache expires after ten minutes');
+    /* The topbar refresh and the in-sheet scan both force a re-scan. */
+    a.w.document.getElementById('btnRefresh').click();
+    assert.equal(calls.length, 3);
+    lw.openGallerySheet();
+    const scan = a.w.document.getElementById('btnScanGhVideos');
+    assert.ok(scan);
+    click(a, scan);
+    assert.equal(calls.length, 4);
+  } finally { a.close(); }
+});
+
+test('gallery sheet lists every video with active badge, Select, Next and the three playlist modes', () => {
+  const a = harness();
+  try {
+    stubGitHub(a, [{ type: 'blob', path: 'videos/My Clip.mp4' }]);
+    const doc = a.w.document, lw = a.w.LiveWallpaper;
+    lw.openGallerySheet();
+    const list = doc.querySelector('#sheets .video-gallery-list');
+    assert.ok(list);
+    assert.ok(doc.querySelectorAll('.video-gallery-item').length >= 2);
+    assert.ok(doc.querySelector('.video-gallery-badge'));
+    assert.equal(doc.querySelector('.video-gallery-badge').textContent, '✓ Active');
+    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '▶ Select'));
+    assert.ok(Array.from(doc.querySelectorAll('#sheets button')).some((b) => b.textContent.trim() === '⏭ Next Video'));
+    const seg = doc.querySelector('#sheets .seg.gallery-seg');
+    assert.ok(seg);
+    const labels = Array.from(seg.querySelectorAll('button')).map((b) => b.textContent);
+    assert.deepEqual(labels, ['🔂 Loop Single Video', '🔁 Auto-Cycle All GitHub Videos', '⏸ Video Off']);
+    const pick = Array.from(doc.querySelectorAll('[data-gallery-select]')).find((b) => b.getAttribute('data-gallery-select').indexOf('My%20Clip') >= 0);
+    assert.ok(pick, 'space-containing GitHub video is selectable');
+    click(a, pick);
+    assert.equal(lw.activeSrc, './videos/My%20Clip.mp4');
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, './videos/My%20Clip.mp4');
+    assert.ok(doc.querySelector('.video-gallery-item.is-active'));
+    const cycle = Array.from(seg.querySelectorAll('button')).find((b) => b.textContent === '🔁 Auto-Cycle All GitHub Videos');
+    click(a, cycle);
+    assert.equal(lw.playlistMode, 'cycle');
+    assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'cycle');
+    assert.equal(lw.video.loop, false);
+    const off = Array.from(seg.querySelectorAll('button')).find((b) => b.textContent === '⏸ Video Off');
+    click(a, off);
+    assert.equal(lw.enabled, false);
+    assert.equal(lw.ambilight.style.opacity, '0');
+    const loop = Array.from(seg.querySelectorAll('button')).find((b) => b.textContent === '🔂 Loop Single Video');
+    click(a, loop);
+    assert.equal(lw.enabled, true);
+    assert.equal(lw.video.loop, true);
+  } finally { a.close(); }
+});
+
+test('auto-cycle cross-fades to the next GitHub video when ended fires; loop/off modes persist', () => {
+  const a = harness();
+  try {
+    const lw = a.w.LiveWallpaper;
+    lw.videos = [
+      { id: 'v1', title: 'One', src: './assets/bunny-live-wallpaper.mp4', poster: '', origin: 'repo' },
+      { id: 'v2', title: 'Two', src: './videos/My%20Clip.mp4', poster: '', origin: 'github' }
+    ];
+    lw.activeSrc = './assets/bunny-live-wallpaper.mp4';
+    lw.setPlaylistMode('cycle');
+    assert.equal(lw.video.loop, false);
+    assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'cycle');
+    lw.onEnded();
+    a.clock.tick(320);
+    assert.equal(lw.activeSrc, './videos/My%20Clip.mp4');
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, './videos/My%20Clip.mp4');
+    lw.onEnded();
+    a.clock.tick(320);
+    assert.equal(lw.activeSrc, './assets/bunny-live-wallpaper.mp4', 'playlist wraps around');
+    lw.setPlaylistMode('off');
+    assert.equal(lw.enabled, false);
+    assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'off');
+    lw.setPlaylistMode('loop');
+    assert.equal(lw.enabled, true);
+    assert.equal(lw.video.loop, true);
+    assert.equal(a.q.DB.data.settings.videoPlaylistMode, 'loop');
+  } finally { a.close(); }
+});
+
+test('lecturer publish carries activeVideoSrc to students through repo and live state', () => {
+  const a = harness();
+  try {
+    a.q.DB.data.settings.activeVideoSrc = './videos/My%20Clip.mp4';
+    a.q.DB.data.settings.videoPlaylistMode = 'cycle';
+    const payload = a.q.Cloud.repoPayload();
+    assert.equal(payload.session.activeVideoSrc, './videos/My%20Clip.mp4');
+    assert.equal(payload.session.videoPlaylistMode, 'cycle');
+    assert.equal(payload.version.activeVideoSrc, './videos/My%20Clip.mp4');
+    assert.ok(Array.isArray(payload.version.repoVideos) && payload.version.repoVideos.length >= 1);
+    a.q.Cloud.applyRepo({ activeVideoSrc: './assets/bunny-live-wallpaper.mp4', videoPlaylistMode: 'loop' });
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, './assets/bunny-live-wallpaper.mp4');
+    assert.equal(a.w.LiveWallpaper.activeSrc, './assets/bunny-live-wallpaper.mp4');
+    a.q.Cloud.applyState({ activeVideoSrc: './videos/My%20Clip.mp4' });
+    assert.equal(a.q.DB.data.settings.activeVideoSrc, './videos/My%20Clip.mp4');
+    assert.equal(a.w.LiveWallpaper.activeSrc, './videos/My%20Clip.mp4');
+  } finally { a.close(); }
+});
+
+test('all v22-v28 feature tokens and guards are still present in the v29 build', () => {
+  for (const token of [
+    'id="credit"', 'z-index:9999!important', 'UI.showCreditNow=function', 'guide-credit-pill',
+    'UI.startPractisingFromGuide=function', 'id="btnGuideStart"', 'Eng.cancelReadyAndExit=function',
+    'inp.type="text"', 'inp.setAttribute("autocomplete","off")', 'typedAnswer', 'syncInputMirror',
+    'ansMirrorText', 'ans-caret', 'ansTick', 'plTickHero', 'ansWrong', 'plWrongHero',
+    'ansCompare', 'streak-broken', 'function diffChars', 'this.after(1050', 'this.after(2100',
+    'buildSearchIndex:function', 'searchWords:function', 'searchIndex', 'id="tabInd"', 'id="homeTitle"',
+    'id="segMode"', 'id="lgStage"', 'voice=Amy', 'requestAnimationFrame', 'rafId', 'wake:function',
+    'sleep:function', 'onClick:function', 'onSwipe:function', 'pulseAudio:function', 'celebrateStreak:function',
+    'data-mode="paper" aria-selected="true"', 'Listen &amp; write on paper', 'activeVideoSrc',
+    'videoPlaylistMode', 'applyPublishedVideo'
+  ]) has(token);
+  for (const token of ['btnReadyClose', 'btnNotReady', 'ansVkb', 'btnToggleVkb', 'swanMasterPath',
+    'window.SwanStage', '一筆白鳥', 'bgSwanVideo', 'new-password']) lacks(token);
+  assert.doesNotMatch(html, /inp\.type\s*=\s*"password"|new-password|current-password/);
+  assert.equal(config.defaults.mode, 'paper');
+  assert.equal(session.session.mode, 'paper');
+  assert.equal(version.mode, 'paper');
 });
