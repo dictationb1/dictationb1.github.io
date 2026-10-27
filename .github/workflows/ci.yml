@@ -29,6 +29,9 @@ jobs:
   browsers:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # WebKit is exercised for visibility, but its CI build has no H.264 decoder
+    # and its renderer is unstable with full-screen video; Chromium is the gate.
+    continue-on-error: ${{ matrix.browser == 'webkit' }}
     strategy:
       fail-fast: false
       matrix:

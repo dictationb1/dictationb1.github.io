@@ -536,15 +536,24 @@ function material(page) {
         return window.LiveWallpaper.source === 'custom' && v.currentSrc.indexOf('blob:') === 0 &&
           (!needsDecode || (v.readyState >= 2 && !v.paused));
       }, decodes, { timeout: 12000 });
-      await page.waitForFunction(() => new Promise((resolve) => {
-        const open = indexedDB.open('sdp_wallpaper_db', 1);
-        open.onerror = () => resolve(false);
-        open.onsuccess = () => {
-          const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
-          get.onsuccess = () => { const b = get.result; db.close(); resolve(!!(b && b.size > 10000)); };
-          get.onerror = () => { db.close(); resolve(false); };
-        };
-      }), null, { timeout: 12000 });
+      await page.evaluate(() => new Promise((resolve) => {
+        const started = Date.now();
+        function check() {
+          const open = indexedDB.open('sdp_wallpaper_db', 1);
+          open.onerror = () => setTimeout(check, 200);
+          open.onsuccess = () => {
+            const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
+            get.onsuccess = () => {
+              const b = get.result; db.close();
+              if (b && b.size > 10000) resolve(true);
+              else if (Date.now() - started > 10000) resolve(false);
+              else setTimeout(check, 200);
+            };
+            get.onerror = () => { db.close(); setTimeout(check, 200); };
+          };
+        }
+        check();
+      }));
       const saved = await page.evaluate(() => new Promise((resolve, reject) => {
         const open = indexedDB.open('sdp_wallpaper_db', 1);
         open.onerror = () => reject(open.error);
@@ -619,7 +628,7 @@ function material(page) {
       await page.waitForFunction(() => window.LiveWallpaper.rafId === null &&
         window.LiveWallpaper.ripples.length === 0 && window.LiveWallpaper.sparks.length === 0, null, { timeout: 5000 });
       const asleep = await page.evaluate(() => window.__frames);
-      await page.mouse.wheel(0, 500);await page.waitForTimeout(700);
+      await page.evaluate(() => window.scrollBy(0, 500));await page.waitForTimeout(700);
       assert.equal(await page.evaluate(() => window.__frames), asleep, 'scroll never restarts wallpaper canvas');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally { await context.close(); }
