@@ -1,13 +1,13 @@
 {
-  "ver": 23,
-  "appVersion": "3.1.0",
-  "version": "3.1.0",
-  "buildDate": "2026-10-26",
+  "ver": 26,
+  "appVersion": "3.4.0",
+  "version": "3.4.0",
+  "buildDate": "2026-10-27",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 23,
-  "updatedAt": "2026-10-26T00:00:00Z",
-  "updatedAtMs": 1792972800000,
+  "settingsRev": 26,
+  "updatedAt": "2026-10-27T00:00:00Z",
+  "updatedAtMs": 1793059200000,
   "features": {
     "passwordPopup": "none - #ansInput is type=text with autocomplete=off, never a password field",
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
@@ -16,7 +16,8 @@
     "visual": "swan badge always visible z-index 9999, see-through hero title, Settings mixer, 60 FPS capsules, guide-credit-pill",
     "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
     "defaultMode": "paper",
-    "swan": "100vw x 100vh continuous six-stage variable-pressure calligraphic swan, living ink, audio ripples and streak feathers"
+    "swan": "100vw x 100vh PC 16:9 + mobile 9:16 centre-safe 3D neon bunny live wallpaper (window.SwanStage / window.LiveStage) with coral-left / cyan-right rim aura, floor reflections, click shockwaves, swipe light-trails and audio bass rings",
+    "search": "Lib.searchIndex pre-computes 0ms tokens across all 30 Session 7 words (slash variants, US_UK, phon, pos, def, ex)"
   },
   "mode": "paper"
 }
