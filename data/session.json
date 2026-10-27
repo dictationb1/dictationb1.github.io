@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 27,
+  "ver": 28,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -218,11 +218,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "3.5.0",
+  "appVersion": "3.6.0",
   "updatedAt": "2026-10-27T00:00:00Z",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "buildDate": "2026-10-27",
-  "settingsRev": 27,
+  "settingsRev": 28,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",

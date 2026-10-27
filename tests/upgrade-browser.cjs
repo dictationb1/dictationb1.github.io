@@ -1,4 +1,4 @@
-/* Release 3.5.0 (ver 27): real-browser checks for the static background,
+/* Release 3.6.0 (ver 28): real-browser checks for the isolated video wallpaper,
    responsive Liquid Glass UI, Settings mixer, audio reuse and native text input.
    Keyboard suggestions and performance depend on the actual device.
 
@@ -153,7 +153,7 @@ function material(page) {
     return;
   }
 
-  await check(engine + ' v27 boots dark with the full Liquid Glass anatomy', async () => {
+  await check(engine + ' v28 boots dark with the full Liquid Glass anatomy', async () => {
     const { context, page, errors } = await boot(browser, 1280, 800);
     try {
       const m = await material(page);
@@ -297,7 +297,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v27_clean_fast')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -452,23 +452,141 @@ function material(page) {
     }
   });
 
-  await check(engine + ' ambient scene has no drawing stage and no ongoing idle animation frames', async () => {
+  await check(engine + ' PC portrait video remains head-to-sneakers in BOTH Full and Lite', async () => {
+    const { context, page, errors } = await boot(browser, 1920, 1080);
+    try {
+      await page.waitForFunction(() => {
+        const v = document.getElementById('bgLiveVideo');
+        return v && v.readyState >= 2 && !v.paused && v.videoWidth > 0;
+      }, null, { timeout: 10000 });
+      const state = await page.evaluate(() => {
+        const v = document.getElementById('bgLiveVideo');
+        const stage = document.getElementById('bgLiveWrap').getBoundingClientRect();
+        return { size: [stage.width, stage.height], fit: v.style.objectFit, position: v.style.objectPosition,
+          opacity: v.style.opacity, pixels: [v.videoWidth, v.videoHeight],
+          hero: getComputedStyle(document.getElementById('homeHero')).backgroundColor,
+          app: getComputedStyle(document.getElementById('app')).backgroundColor, time: v.currentTime };
+      });
+      assert.deepEqual(state.size, [1920, 1080]);
+      assert.equal(state.fit, 'contain');assert.equal(state.position, 'center center');
+      assert.equal(state.opacity, '0.88');
+      assert.ok(state.pixels[0] < state.pixels[1], 'bundled portrait video preserves ears and shoes');
+      assert.match(state.hero, /rgba\(/, 'glass card stays translucent');
+      assert.equal(state.app, 'rgba(0, 0, 0, 0)', 'the app does not hide video');
+      for (const mode of ['lite', 'full']) {
+        if ((await material(page)).perf !== mode) await page.locator('#btnPerf').click();
+        await page.waitForTimeout(350);
+        const video = await page.evaluate(() => ({ perf: document.body.dataset.perf,
+          paused: document.getElementById('bgLiveVideo').paused,
+          opacity: document.getElementById('bgLiveVideo').style.opacity,
+          fit: document.getElementById('bgLiveVideo').style.objectFit,
+          time: document.getElementById('bgLiveVideo').currentTime }));
+        assert.equal(video.perf, mode);assert.equal(video.paused, false);
+        assert.equal(video.opacity, '0.88');assert.equal(video.fit, 'contain');
+        assert.ok(video.time > state.time, 'video advances in ' + mode);
+      }
+      const universal = await page.evaluate(() => {
+        const v = document.getElementById('bgLiveVideo');
+        Object.defineProperty(v, 'videoWidth', { configurable: true, value: 1920 });
+        Object.defineProperty(v, 'videoHeight', { configurable: true, value: 1080 });
+        window.LiveWallpaper.fitVideo();return v.style.objectFit;
+      });
+      assert.equal(universal, 'cover', 'a universal 16:9 video fills the desktop');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally { await context.close(); }
+  });
+
+  await check(engine + ' local MP4 starts immediately, survives reload via IndexedDB, pauses and resets', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
+      const choose = page.waitForEvent('filechooser');
+      await page.locator('#btnLiveVideo').click();
+      const chooser = await choose;
+      assert.equal(await chooser.element().getAttribute('id'), 'liveVideoInput');
+      await chooser.setFiles({ name: 'WhatsApp Video 2026-10-27 at 07.32.25.mp4', mimeType: 'video/mp4',
+        buffer: fs.readFileSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')) });
+      await page.waitForFunction(() => {
+        const v = document.getElementById('bgLiveVideo');
+        return window.LiveWallpaper.source === 'custom' && v.currentSrc.indexOf('blob:') === 0 && v.readyState >= 2 && !v.paused;
+      }, null, { timeout: 12000 });
+      const saved = await page.evaluate(() => new Promise((resolve, reject) => {
+        const open = indexedDB.open('sdp_wallpaper_db', 1);
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
+          get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.wallpaperVideo }); };
+          get.onerror = () => reject(get.error);
+        };
+      }));
+      assert.ok(saved.size > 10000);assert.match(saved.name, /WhatsApp Video/);
+      assert.equal(saved.mode, true);
+      await page.reload();
+      await page.waitForFunction(() => window.LiveWallpaper && window.LiveWallpaper.source === 'custom' &&
+        document.getElementById('bgLiveVideo').currentSrc.indexOf('blob:') === 0, null, { timeout: 12000 });
+      await openTab(page, 'tab-set');
+      assert.match(await page.locator('#setBody > :first-child').textContent(), /Live Wallpaper Video/);
+      assert.equal(await page.locator('#btnPickVideoFile').count(), 1);
+      await page.locator('#btnToggleVideo').click();
+      assert.equal(await page.evaluate(() => window.LiveWallpaper.enabled), false);
+      assert.equal(await page.locator('#btnToggleVideo').textContent(), 'Play Live Video');
+      await page.waitForTimeout(250);await page.reload();
+      await page.waitForFunction(() => window.LiveWallpaper && !window.LiveWallpaper.enabled, null, { timeout: 10000 });
+      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('bgLiveWrap')).display), 'none');
+      await openTab(page, 'tab-set');
+      await page.locator('#btnResetVideo').click();
+      await page.waitForFunction(() => window.LiveWallpaper.source === 'default' &&
+        document.getElementById('bgLiveVideo').currentSrc.indexOf('blob:') === -1, null, { timeout: 12000 });
+      assert.equal(await page.evaluate(() => window.LiveWallpaper.enabled), true);
+      await page.waitForTimeout(250);await page.reload();
+      await page.waitForFunction(() => window.LiveWallpaper && window.LiveWallpaper.source === 'default' &&
+        document.getElementById('bgLiveVideo').currentSrc.endsWith('bunny-live-wallpaper.mp4'), null, { timeout: 12000 });
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally { await context.close(); }
+  });
+
+  await check(engine + ' full-screen video stays active in Lite, while the neon canvas sleeps at idle', async () => {
+    const { context, page, errors } = await boot(browser, 390, 844);
+    try {
+      await page.waitForFunction(() => {
+        const v = document.getElementById('bgLiveVideo');
+        return v && v.readyState >= 2 && !v.paused && v.videoWidth > 0;
+      }, null, { timeout: 10000 });
       const scene = await page.evaluate(() => {
+        const stage = document.getElementById('bgLiveWrap');
+        const v = document.getElementById('bgLiveVideo');
+        const r = stage.getBoundingClientRect();
+        return { blobs: document.querySelectorAll('#bg .blob').length,
+          canvas: !!document.getElementById('bgLiveCanvas'), video: !!v,
+          swanStage: typeof window.SwanStage, animation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
+          width: r.width, height: r.height, fit: v.style.objectFit, muted: v.muted, opacity: v.style.opacity,
+          source: v.currentSrc, pixels: [v.videoWidth, v.videoHeight], perf: document.body.dataset.perf,
+          contained: getComputedStyle(stage).contain, onscreen: getComputedStyle(stage).display !== 'none' };
+      });
+      assert.equal(scene.blobs, 4); assert.equal(scene.canvas, true); assert.equal(scene.video, true);
+      assert.equal(scene.swanStage, 'undefined'); assert.equal(scene.animation, 'none');
+      assert.equal(scene.width, 390); assert.equal(scene.height, 844);
+      assert.equal(scene.fit, 'cover');assert.equal(scene.muted, true);assert.equal(scene.opacity, '0.88');
+      assert.equal(scene.perf, 'lite');assert.equal(scene.contained, 'strict');assert.equal(scene.onscreen, true);
+      assert.match(scene.source, /bunny-live-wallpaper\.mp4$/);
+      assert.ok(scene.pixels[0] > 0 && scene.pixels[1] > scene.pixels[0]);
+      await page.waitForTimeout(1800); // the finite startup perf probe has finished
+      await page.evaluate(() => {
         window.__frames = 0;
         const original = window.requestAnimationFrame;
-        window.requestAnimationFrame = function (cb) { window.__frames++; return original.call(window, cb); };
-        return { blobs: document.querySelectorAll('#bg .blob').length,
-          canvas: !!document.getElementById('swan-ink-canvas'), video: !!document.getElementById('bgSwanVideo'),
-          stage: typeof window.SwanStage, animation: getComputedStyle(document.querySelector('#bg .blob')).animationName };
+        window.requestAnimationFrame = function (cb) {window.__frames++;return original.call(window, cb);};
       });
-      assert.equal(scene.blobs, 4); assert.equal(scene.canvas, false); assert.equal(scene.video, false);
-      assert.equal(scene.stage, 'undefined'); assert.equal(scene.animation, 'none');
-      await page.waitForTimeout(2200);
-      const before = await page.evaluate(() => window.__frames);
-      await page.waitForTimeout(2200);
-      assert.equal(await page.evaluate(() => window.__frames), before, 'no idle requestAnimationFrame loop');
+      await page.waitForTimeout(700);
+      const idle = await page.evaluate(() => window.__frames);
+      await page.waitForTimeout(700);
+      assert.equal(await page.evaluate(() => window.__frames), idle, 'no idle animation-frame loop');
+      await page.mouse.click(7, 240);
+      assert.ok(await page.evaluate(() => window.LiveWallpaper.ripples.length > 0), 'tap starts the coral/cyan rings');
+      await page.waitForFunction(() => window.LiveWallpaper.rafId === null &&
+        window.LiveWallpaper.ripples.length === 0 && window.LiveWallpaper.sparks.length === 0, null, { timeout: 5000 });
+      const asleep = await page.evaluate(() => window.__frames);
+      await page.mouse.wheel(0, 500);await page.waitForTimeout(700);
+      assert.equal(await page.evaluate(() => window.__frames), asleep, 'scroll never restarts wallpaper canvas');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally { await context.close(); }
   });
@@ -502,9 +620,9 @@ function material(page) {
 
       /* strictly two spoken repeats of the word, one British female voice */
       const spoken = await page.evaluate(() => window.__spoken || []);
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v27_clean_fast')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v28_live_video')).lists[0].words[0].w);
       assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v27_clean_fast')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v28_live_video')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -514,7 +632,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v27_clean_fast'));
+        const d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -529,7 +647,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v27 User Guide Start practising launches the ready player on Home', async () => {
+  await check(engine + ' v28 User Guide Start practising launches the ready player on Home', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       await page.evaluate(() => document.getElementById('btnGuideTop').click());
@@ -544,7 +662,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v27_clean_fast'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -564,7 +682,7 @@ function material(page) {
     }
   });
 
-  await check(engine + ' v27 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
+  await check(engine + ' v28 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       /* the ready sheet keeps ONE far-right cross mark and no duplicates */
@@ -633,7 +751,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v27_clean_fast'));
+        const d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

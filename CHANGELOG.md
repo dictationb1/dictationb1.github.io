@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.0 (v28) — 2026-10-27 (Live video wallpaper, local picker and idle-sleeping neon)
+
+- Added a composited `#bgLiveWrap` with a compact bundled, muted H.264 portrait bunny video and WebP poster. `window.LiveWallpaper.fitVideo()` preserves the whole portrait on wide screens and fills phones; video plays in both Lite and Full. The small Hansana swan credit badge remains; the full-screen swan drawing does not.
+- Added a topbar one-click video picker and a Settings card to choose a local MP4/WebM, pause/play or reset to the bundled video. Chosen files play through object URLs immediately and persist locally in IndexedDB (`sdp_wallpaper_db` / `videos` / `custom_bg`); failures to save are surfaced, and Reset deletes the saved Blob. A v27→v28 storage migration retains existing learner data.
+- Neon coral/cyan/gold ripples respond to clicks, horizontal touch swipes, speech and correct answers. The canvas schedules frames only while effects are alive and clears itself on idle; scrolling without interaction does not keep a render loop alive. All earlier dictation, PIN, native text input, feedback, search, guide, credits and Settings mixer behaviour is retained.
+- Refreshed unit and real-browser coverage for Lite/Full playback, PC/mobile framing, persisted custom video, reset and idle rendering. Frame rates and storage/autoplay support still depend on the actual device and browser.
+
 ## 3.5.0 (v27) — 2026-10-27 (Static background and responsive Liquid Glass)
 
 - Removed the full-screen swan/video drawing engine and its unused assets. Four static pre-blurred gradient blobs replace it; the small, persistent creator-credit swan remains.

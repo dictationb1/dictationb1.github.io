@@ -1,12 +1,12 @@
 # Smart Dictation Player
 
-A standalone, offline-capable `index.html`. No build, CDN, or runtime dependency. Open the file directly, or serve it over HTTPS. Development test packages are not used by the app.
+A standalone, offline-capable ES5 `index.html` with two bundled wallpaper assets in `assets/`. No build, CDN, or runtime JavaScript dependency. Open the file directly, or serve it over HTTPS. Development test packages are not used by the app.
 
 ## Release status
 
-**3.5.0 (v27, 2026-10-27)** retains Session 7 — Travel & Transport (30 words, two repeats, a fixed 5-second writing timer and British Amy voice by default), paper and typing modes, the bilingual guide and live class channel. The full-screen drawing/video engine has been removed; four static, pre-blurred colour gradients sit behind the responsive Liquid Glass interface. The small creator-credit badge remains visible, and the Material Mixer is in Settings. Repeat audio reuses the shared player, and local dictionary indexes cover the session, saved words and mistakes.
+**3.6.0 (v28, 2026-10-27)** keeps Session 7 — Travel & Transport (30 words, two repeats, a fixed 5-second writing timer and British Amy voice by default), paper and typing modes, the bilingual guide and live class channel. An isolated full-viewport video stage now plays a bundled muted bunny loop in **both Lite and Full**. It displays entire portrait videos against a coral/cyan studio backdrop on a wide PC and fills phones with portrait video; universal landscape video fills either screen. The creator-credit swan *badge* remains, but no full-screen swan drawing returns. The Material Mixer stays in Settings; local dictionary indexes cover the session, saved words and mistakes.
 
-Auto and Lite modes limit visual work on constrained devices. The initial frame probe is finite and the background has no continuous JavaScript animation loop; actual frame rate, power usage, keyboard suggestions and audio behaviour vary by device. `QA_REPORT.md` and `PHASE1_QA.md` describe an earlier candidate.
+Tap **🎬 in the topbar** (or **Settings → Live Wallpaper Video → Choose Video from Device**) to play an MP4/WebM immediately without uploading it. The chosen video Blob is saved privately on this browser in IndexedDB; **Pause/Play** and **Reset to Default Repo Video** live in Settings. Device videos are not synced, exported in data backups, or uploaded to the repository. The click/swipe/audio neon canvas runs animation frames only while its short-lived rings or sparks are visible, then clears and sleeps; video decoding continues while the wallpaper is on. Auto and Lite constrain visual effects. Actual frame rate, autoplay policies, IndexedDB quota, power consumption and keyboard suggestions vary by device; 60–120 FPS cannot be guaranteed on all hardware. `QA_REPORT.md` and `PHASE1_QA.md` describe an earlier candidate.
 
 ## Add next week's words in three steps (candidate)
 
@@ -18,8 +18,8 @@ Auto and Lite modes limit visual work on constrained devices. The initial frame 
 
 ## Saved data and migration
 
-- The current key is `sdp.v27_clean_fast`; `CONFIG.schema` and `settingsRev` are `27`.
-- The v27 migration imports v26 and supported older storage, preserving results, comments, custom lists and changed PINs while resetting the upgraded default mode to paper. Earlier storage keys remain available.
+- The current key is `sdp.v28_live_video`; `CONFIG.schema` and `settingsRev` are `28`.
+- The v28 migration imports v27, v26 and supported older storage, preserving results, comments, custom lists and changed PINs while resetting the upgraded default mode to paper. Earlier storage keys remain available.
 - Session 7 defaults to example sentences OFF, exactly two word repeats, a fixed 5-second writing timer, paper mode, dark theme and automatic performance selection.
 - Corrupt primary data is retained under the current key's `.recovery` suffix; the rolling `.bak` copy can be used for recovery when available.
 - Export a backup before experimenting. Browser storage can be cleared by the user or operating system; persistence is not guaranteed.
@@ -35,13 +35,13 @@ A PBKDF2 verifier cannot be verified in an old/insecure context lacking Web Cryp
 ### Forgot the local PIN (preserve data)
 
 1. Use **Settings → My data → backup/export** before doing anything else. A locked export intentionally excludes the lecturer's private inbox and authentication material. Do **not** clear all site storage or use Reset if you need existing work.
-2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v27_clean_fast` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
+2. For a complete private recovery copy, on your own trusted computer use browser developer tools → Application/Storage → Local Storage and copy the value of `sdp.v28_live_video` to a private local file. **Never upload that file to GitHub or share it publicly.** It may contain private messages. A helper can instead use a previously saved full backup.
 3. In the console for this site, run this convenience-lock recovery only on your own device:
    ```js
-   var d = JSON.parse(localStorage.getItem('sdp.v27_clean_fast'));
+   var d = JSON.parse(localStorage.getItem('sdp.v28_live_video'));
    if (!d || !Array.isArray(d.lists)) throw new Error('Stop: saved data is not valid');
    d.admin = {};
-   localStorage.setItem('sdp.v27_clean_fast', JSON.stringify(d));
+   localStorage.setItem('sdp.v28_live_video', JSON.stringify(d));
    location.reload();
    ```
    Lists and student work remain; the local default verifier is seeded again. Unlock with the existing default, then **Settings & tools → Change PIN**. If you cannot use developer tools, ask a trusted helper; do not send your full backup to a public issue.
