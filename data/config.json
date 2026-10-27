@@ -28,9 +28,9 @@
     "perf": "auto",
     "glassTint": 0
   },
-  "ver": 23,
-  "version": "3.1.0",
-  "buildDate": "2026-10-26",
+  "ver": 26,
+  "version": "3.4.0",
+  "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -48,8 +48,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.1.0",
-  "settingsRev": 23,
+  "appVersion": "3.4.0",
+  "settingsRev": 26,
   "performance": {
     "mode": "auto",
     "lite": {
@@ -72,7 +72,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v23_sumi_swan",
+  "storageKey": "sdp.v26_live_wall",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -102,8 +102,33 @@
   "swan": {
     "stage": "100vw x 100vh fixed viewport",
     "durationMs": 12000,
-    "engine": "window.SwanStage",
+    "engine": "window.SwanStage / window.LiveStage",
     "pressure": "six-stage variable-radius cubic Bezier ribbon",
-    "storage": "sdp.v23_sumi_swan"
+    "storage": "sdp.v26_live_wall",
+    "video": "assets/bunny-live-wallpaper.mp4 (1920x1080, bunny inside the central 608x1080 9:16 column)",
+    "poster": "assets/bunny-poster.webp",
+    "framing": "object-fit:cover;object-position:center center - full 16:9 stage on PC, uncropped ears-to-sneakers 9:16 frame on mobile",
+    "reactions": [
+      "onSwipe cyan-to-coral light ribbon + featherParticles starlight",
+      "onClickBeam studio beam + coral/cyan/gold shockwave rings",
+      "pulseAudio bass rings",
+      "celebrateStreak golden spark surge",
+      "replay restart"
+    ]
+  },
+  "search": {
+    "engine": "Lib.searchIndex",
+    "tokens": [
+      "w.w",
+      "slash variants",
+      "US_UK",
+      "phon",
+      "pos",
+      "def",
+      "ex",
+      "sentence",
+      "meaning"
+    ],
+    "latencyMs": 0
   }
 }

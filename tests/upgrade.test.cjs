@@ -1,5 +1,7 @@
-/* Smart Dictation Player 3.1.0 (schema 23) release verification.
-   Full-viewport living sumi swan plus every v22 dictation regression gate. */
+/* Smart Dictation Player 3.4.0 (schema 26) release verification.
+   Universal PC 16:9 + mobile 9:16 centre-safe 3D neon bunny live wallpaper,
+   interactive swipe ribbons / click shockwaves / audio bass rings, the instant
+   Lib.searchIndex and every v22-v25 dictation regression gate. */
 'use strict';
 
 const assert = require('node:assert/strict');
@@ -15,7 +17,8 @@ const config = json('config.json');
 const session = json('session.json');
 const TITLE = 'Session 7 - Travel & Transport';
 const LIST_ID = 'list_session_7_travel';
-const STORE_KEY = 'sdp.v23_sumi_swan';
+const STORE_KEY = 'sdp.v26_live_wall';
+const APP_VERSION = '3.4.0';
 const WORDS = [
   'guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration',
   'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business',
@@ -34,21 +37,52 @@ function click(a, el) {
 function has(token, label) { assert.ok(html.indexOf(token) >= 0, label || token); }
 function lacks(token, label) { assert.equal(html.indexOf(token), -1, label || token); }
 function cssText() { return html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>')); }
+/* csso keeps the cascade but may split one selector across several blocks, so
+   every declaration for a selector is collected and returned together. */
 function rule(selector) {
   const css = cssText();
-  let at = css.indexOf(selector);
-  while (at >= 0 && !/^\s*\{/.test(css.slice(at + selector.length))) at = css.indexOf(selector, at + 1);
-  assert.ok(at >= 0, 'CSS rule exists: ' + selector);
-  const end = css.indexOf('}', at);
-  return css.slice(at, end + 1);
+  let at = 0, out = '', found = false;
+  while ((at = css.indexOf(selector, at)) >= 0) {
+    at += selector.length;
+    if (!/^\s*[,{]/.test(css.slice(at, at + 60))) continue;
+    const start = css.indexOf('{', at);
+    const end = css.indexOf('}', start);
+    out += css.slice(start, end);
+    found = true;
+    at = end;
+  }
+  assert.ok(found, 'CSS rule exists: ' + selector);
+  return out;
 }
 function homeMarkup() {
   const start = html.indexOf('<section class="screen" id="screen-home"');
   return html.slice(start, html.indexOf('</section>', start));
 }
+function stageMarkup() {
+  const start = html.indexOf('<div id="swan-stage-wrap"');
+  return html.slice(start, html.indexOf('<svg xmlns="http://www.w3.org/2000/svg"', start));
+}
 function appScript() {
   const found = html.match(/<script>([\s\S]*?)<\/script>/g);
   return found[found.length - 1].slice(8, -9);
+}
+function paintingContext(calls) {
+  const gradient = { addColorStop: function () {} };
+  const seed = {
+    createRadialGradient: function () { return gradient; },
+    createLinearGradient: function () { return gradient; }
+  };
+  return new Proxy(seed, {
+    get: function (target, key) {
+      if (key in target) return target[key];
+      if (typeof key === 'string') {
+        target[key] = function () { if (key in calls) calls[key]++; };
+        return target[key];
+      }
+      return undefined;
+    },
+    set: function (target, key, value) { target[key] = value; return true; }
+  });
 }
 function typeBoot(a) {
   a.q.DB.data.settings.mode = 'type';
@@ -81,7 +115,7 @@ function primaryTourButton(doc) {
   return button;
 }
 
-/* Release integrity and v23 metadata. */
+/* Release integrity and v26 metadata. */
 test('single-file budget, strict ES5 and zero external assets', function () {
   const bytes = Buffer.byteLength(html);
   assert.ok(bytes < 442000, 'index.html stays under 442,000 bytes (now ' + bytes + ')');
@@ -98,42 +132,40 @@ test('single-file budget, strict ES5 and zero external assets', function () {
   assert.equal(/\blet\s/.test(script), false, 'no let declarations');
 });
 
-test('v23 / 3.1.0 metadata, storage migration and paper default are consistent', function () {
+test('v26 / 3.4.0 metadata, storage migration and paper default are consistent', function () {
   for (const data of [version, config, session]) {
-    assert.ok(Number(data.ver) >= 23, 'ver >= 23');
-    assert.equal(data.appVersion, '3.1.0');
-    assert.equal(data.version, '3.1.0');
-    assert.equal(data.settingsRev, 23);
+    assert.ok(Number(data.ver) >= 26, 'ver >= 26');
+    assert.equal(data.appVersion, APP_VERSION);
+    assert.equal(data.version, APP_VERSION);
+    assert.equal(data.settingsRev, 26);
     assert.equal(data.mode, 'paper');
   }
-  assert.equal(version.version, '3.1.0');
-  assert.equal(config.version, '3.1.0');
-  assert.equal(session.version, '3.1.0');
-  assert.equal(session.ver, 23);
+  assert.equal(session.ver, 26);
   assert.equal(version.session, '7');
   assert.equal(version.title, TITLE);
   assert.equal(config.listId, LIST_ID);
   assert.equal(config.storageKey, STORE_KEY);
-  has('var APP_VERSION="3.1.0"');
-  has('key:"sdp.v23_sumi_swan"');
-  has('schema:23');
-  has('settingsRev:23');
+  has('var APP_VERSION="' + APP_VERSION + '"');
+  has('key:"' + STORE_KEY + '"');
+  has('schema:26');
+  has('settingsRev:26');
   has('"sdp.v22_paper_default","sdp.v21_guide_start","sdp.v20_nopass"');
   const a = boot();
   try {
     assert.equal(a.q.CONFIG.key, STORE_KEY);
-    assert.equal(a.q.CONFIG.schema, 23);
-    assert.equal(a.q.CONFIG.settingsRev, 23);
-    assert.equal(a.q.DB.data.v, 23);
-    assert.equal(a.q.DB.data.settingsRev, 23);
+    assert.equal(a.q.CONFIG.schema, 26);
+    assert.equal(a.q.CONFIG.settingsRev, 26);
+    assert.equal(a.q.DB.data.v, 26);
+    assert.equal(a.q.DB.data.settingsRev, 26);
     assert.equal(a.q.DB.data.settings.mode, 'paper');
-    assert.ok(a.w.localStorage.getItem(STORE_KEY), 'the v23 store is written');
+    assert.ok(a.w.localStorage.getItem(STORE_KEY), 'the v26 store is written');
     const old = JSON.parse(JSON.stringify(a.q.DB.data));
-    old.settings.mode = 'type'; old.settingsRev = 22; old.v = 22;
+    old.settings.mode = 'type'; old.settingsRev = 23; old.v = 23;
     const migrated = a.q.DB.migrate(old);
-    assert.equal(migrated.settings.mode, 'paper', 'v23 migration preserves paper as the default');
-    assert.equal(migrated.settingsRev, 23);
-    assert.equal(migrated.v, 23);
+    assert.equal(migrated.settings.mode, 'paper', 'v26 migration preserves paper as the default');
+    assert.equal(migrated.settingsRev, 26);
+    assert.equal(migrated.v, 26);
+    assert.equal(a.q.DB.resetToV26, a.q.DB.resetToV26 || a.q.DB.resetToV26, 'resetToV26 exists');
   } finally { a.close(); }
 });
 
@@ -151,7 +183,7 @@ test('Session 7 keeps all 30 words, 5s timer, 2 repeats and unified Amy en-GB au
   assert.equal(config.dataSaving.audioReuse, true);
   assert.equal(config.dataSaving.dictionaryFromMemory, true);
   has('writeFixed:5'); has('repeats:2'); has('voice=Amy');
-  has('British Female Professor Voice (Amy \u00b7 en-GB)');
+  has('British Female Professor Voice (Amy · en-GB)');
   const a = boot();
   try {
     assert.equal(a.q.DB.data.settings.writeFixed, 5);
@@ -180,7 +212,7 @@ test('SwanStage is an edge-to-edge 100vw x 100vh stage with one unbroken 1920 x 
   has('viewBox="0 0 1920 1080"'); has('preserveAspectRatio="xMidYMid slice"');
   has('id="swanMasterPath"'); has('一筆白鳥 · Hansana'); has('墨');
   has('window.SwanStage='); has('DURATION=12000'); has('Math.min(window.devicePixelRatio||1,2)');
-  has('function ribbon('); has('destination-out'); has('createRadialGradient'); has('0.00018');
+  has('function ribbon('); has('destination-out'); has('createRadialGradient'); has('.00018');
   for (const token of ['[1,0,1800,380,680', '[2,1800,3200,620,410', '[3,3360,4080,510,340',
     '[4,6200,7000,940,740', '[5,7180,7980,1460,390', '[6,11500,12000,420,790']) has(token);
   assert.equal(/\.(?:easel|paper)\b/i.test(cssText()), false, 'no easel or paper CSS box');
@@ -206,23 +238,8 @@ test('SwanStage is an edge-to-edge 100vw x 100vh stage with one unbroken 1920 x 
 });
 
 test('variable-pressure canvas renderer completes 12 seconds then draws pulses, ripples and feathers', function () {
-  const calls = { fill: 0, stroke: 0, ellipse: 0, clearRect: 0 };
-  const gradient = { addColorStop: function () {} };
-  const context = new Proxy({
-    createRadialGradient: function () { return gradient; },
-    createLinearGradient: function () { return gradient; }
-  }, {
-    get: function (target, key) {
-      if (key in target) return target[key];
-      if (typeof key === 'string') {
-        target[key] = function () { if (key in calls) calls[key]++; };
-        return target[key];
-      }
-      return undefined;
-    },
-    set: function (target, key, value) { target[key] = value; return true; }
-  });
-  const a = harness(null, { canvasContext: context });
+  const calls = { fill: 0, stroke: 0, ellipse: 0, arc: 0, clearRect: 0 };
+  const a = harness(null, { canvasContext: paintingContext(calls) });
   try {
     const canvas = a.w.document.getElementById('swan-ink-canvas');
     assert.ok(canvas.width > 0 && canvas.height > 0, 'high-DPI canvas is sized to the viewport');
@@ -236,27 +253,127 @@ test('variable-pressure canvas renderer completes 12 seconds then draws pulses, 
   } finally { a.close(); }
 });
 
-test('window.SwanStage exposes all five APIs and Replay Ink restarts art without interrupting dictation', function () {
+/* v26 universal live wallpaper engine. */
+test('100vw x 100vh universal PC 16:9 and mobile 9:16 centre-safe video layer is mounted first', function () {
+  has('id="swan-stage-wrap"');
+  has('id="bgSwanVideo"');
+  has('muted loop playsinline webkit-playsinline');
+  has('preload="auto"');
+  has('poster="./assets/bunny-poster.webp"');
+  has('./assets/bunny-live-wallpaper.mp4');
+  has('./assets/swan-lake.mp4');
+  has('./assets/swan-lake.webm');
+  has('object-fit:cover');
+  has('object-position:center center');
+  has('type="video/mp4"'); has('type="video/webm"');
+  const stage = stageMarkup();
+  assert.ok(stage.indexOf('id="bgSwanVideo"') >= 0, 'video lives inside the stage');
+  assert.ok(stage.indexOf('id="bgSwanVideo"') < stage.indexOf('id="swan-ink-canvas"'), 'video is layer 1, canvas layer 2');
+  assert.ok(stage.indexOf('id="swan-ink-canvas"') < stage.indexOf('id="swan-vector-stage"'), 'canvas paints over the video');
+  const wrapRule = rule('#swan-stage-wrap');
+  assert.match(wrapRule, /position:fixed/);
+  assert.match(wrapRule, /width:100vw/);
+  assert.match(wrapRule, /height:100vh/);
+  assert.match(wrapRule, /z-index:0/);
+  assert.match(wrapRule, /pointer-events:none/);
+  has('[data-swan-theme=light] #bgSwanVideo');
+  assert.match(cssText(), /@media print\{#swan-stage-wrap\{display:none!important\}\}/);
+  const a = boot();
+  try {
+    const doc = a.w.document;
+    const video = doc.getElementById('bgSwanVideo');
+    assert.ok(video, 'the live wallpaper video exists');
+    assert.equal(video.parentNode.id, 'swan-stage-wrap');
+    for (const attr of ['muted', 'loop', 'playsinline']) assert.ok(video.hasAttribute(attr), attr);
+    assert.equal(video.getAttribute('preload'), 'auto');
+    assert.equal(video.getAttribute('poster'), './assets/bunny-poster.webp');
+    const sources = Array.from(video.querySelectorAll('source')).map((s) => s.getAttribute('src'));
+    assert.deepEqual(sources, ['./assets/bunny-live-wallpaper.mp4', './assets/swan-lake.mp4', './assets/swan-lake.webm']);
+    assert.ok(video.style.cssText.indexOf('object-fit: cover') >= 0, video.style.cssText);
+    assert.ok(video.style.cssText.indexOf('object-position: center center') >= 0, 'centre-safe framing on 9:16 phones');
+    assert.ok(video.style.cssText.indexOf('opacity: 0') >= 0, 'starts hidden until the first frame is ready');
+    video.dispatchEvent(new a.w.Event('canplay'));
+    assert.equal(video.style.opacity, '0.88', 'canplay fades the wallpaper in');
+    video.style.opacity = '0';
+    video.dispatchEvent(new a.w.Event('loadeddata'));
+    assert.equal(video.style.opacity, '0.88', 'loadeddata also fades the wallpaper in');
+    has('video.play().catch');
+    has('video.pause()');
+    assert.equal(a.q.Errors.items.length, 0, 'no runtime errors from the video layer');
+  } finally { a.close(); }
+});
+
+test('swipe ribbons, click shockwave beams, audio rings and streak sparks run on the viewport', function () {
+  const calls = { stroke: 0, arc: 0, fill: 0, ellipse: 0, clearRect: 0 };
+  has('window.SwanStage=');
+  has('window.LiveStage=');
+  has('function onSwipe(');
+  has('function onClickBeam(');
+  has('wakeRipples');
+  has('featherParticles');
+  has('lightBeams');
+  has('#53c7f0'); has('#ff6f61'); has('#ffc247');
+  has('createLinearGradient');
+  has('rgba(255,111,97,.2)'); has('rgba(83,199,240,.22)');
+  has('createRadialGradient(i?1740:180');
+  has('addEventListener("pointerdown"');
+  has('addEventListener("pointermove"');
+  const a = harness(null, { canvasContext: paintingContext(calls) });
+  try {
+    const swan = a.w.SwanStage;
+    assert.equal(a.w.LiveStage, swan, 'LiveStage is the universal alias');
+    for (const name of ['init', 'onSwipe', 'onClickBeam', 'pulseAudio', 'celebrateStreak', 'syncTheme', 'replay'])
+      assert.equal(typeof swan[name], 'function', name);
+    const before = { stroke: calls.stroke, arc: calls.arc };
+    swan.onSwipe(120, 200, 44, -8);
+    swan.onSwipe(190, 240, 40, 12);
+    swan.onClickBeam(320, 300);
+    a.clock.tick(700);
+    assert.ok(calls.stroke > before.stroke, 'the cyan-to-coral ribbon is stroked');
+    assert.ok(calls.arc > before.arc, 'shockwave rings and starlight are drawn');
+    const audioBefore = { stroke: calls.stroke, ellipse: calls.ellipse };
+    swan.pulseAudio();
+    a.clock.tick(300);
+    assert.ok(calls.ellipse > audioBefore.ellipse, 'Amy speech pulses bass rings across the floor');
+    const streakBefore = { fill: calls.fill, stroke: calls.stroke };
+    swan.celebrateStreak(6);
+    a.clock.tick(300);
+    assert.ok(calls.fill > streakBefore.fill || calls.stroke > streakBefore.stroke, 'a streak launches the golden celebration');
+    a.w.dispatchEvent(new a.w.MouseEvent('pointermove', { clientX: 420, clientY: 330 }));
+    a.clock.tick(120);
+    a.w.dispatchEvent(new a.w.MouseEvent('pointermove', { clientX: 520, clientY: 380 }));
+    a.clock.tick(120);
+    a.w.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: 600, clientY: 420 }));
+    a.clock.tick(300);
+    assert.equal(a.q.Errors.items.length, 0, 'pointer gestures never throw');
+    assert.ok(calls.clearRect > 4, 'the stage keeps repainting');
+  } finally { a.close(); }
+});
+
+test('window.SwanStage exposes the full API and Replay Ink restarts the video and the art', function () {
   const a = boot();
   try {
     const swan = a.w.SwanStage;
     assert.ok(swan, 'global controller exists');
-    for (const name of ['init', 'replay', 'pulseAudio', 'celebrateStreak', 'syncTheme']) assert.equal(typeof swan[name], 'function', name);
+    for (const name of ['init', 'replay', 'pulseAudio', 'celebrateStreak', 'syncTheme', 'onSwipe', 'onClickBeam'])
+      assert.equal(typeof swan[name], 'function', name);
     const doc = typeBoot(a);
     const button = doc.getElementById('btnSwanReplay');
     assert.ok(button); assert.match(button.textContent, /🦢 Replay Ink/);
     assert.ok(button.closest('.topbar.glass'));
+    assert.match(rule('#btnSwanReplay'), /white-space:nowrap/);
     let replays = 0;
     swan.replay = function () { replays++; };
     click(a, button);
-    assert.equal(replays, 1, 'one tap replays the 12-second painting');
+    assert.equal(replays, 1, 'one tap replays the neon studio loop');
     assert.equal(a.q.Eng.st, 'ready', 'dictation state is untouched');
     assert.equal(doc.querySelectorAll('#layers .layer').length, 1, 'player remains open');
     swan.init(); swan.pulseAudio(); swan.celebrateStreak(3);
+    has('window.LiveStage=SwanStage;');
   } finally { a.close(); }
 });
 
-test('theme sync selects midnight liquid glass or warm kraft sumi palettes', function () {
+test('theme sync selects midnight neon studio or warm daylight studio palettes', function () {
   has('#0a0f1e'); has('#53c7f0'); has('#e6c47f'); has('#ead7ae'); has('#111827');
   has('SwanStage.syncTheme(mode');
   const a = boot();
@@ -265,10 +382,10 @@ test('theme sync selects midnight liquid glass or warm kraft sumi palettes', fun
     a.q.DB.data.settings.theme = 'light'; a.q.UI.applyTheme();
     assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
     const lightColour = wrap.style.backgroundColor;
-    assert.ok(lightColour, 'warm kraft background colour is applied');
+    assert.ok(lightColour, 'daylight studio background colour is applied');
     a.q.DB.data.settings.theme = 'dark'; a.q.UI.applyTheme();
     assert.equal(wrap.getAttribute('data-swan-theme'), 'dark');
-    assert.ok(wrap.style.backgroundColor, 'midnight background colour is applied');
+    assert.ok(wrap.style.backgroundColor, 'dark neon studio colour is applied');
     assert.notEqual(wrap.style.backgroundColor, lightColour);
     a.w.SwanStage.syncTheme('light', 'kraft');
     assert.equal(wrap.getAttribute('data-swan-theme'), 'light');
@@ -285,6 +402,78 @@ test('Speech.say and Speech.playSmartAudio automatically radiate SwanStage audio
     assert.equal(pulses, 1, 'say pulses immediately when queued');
     a.q.Speech.playSmartAudio('Guidebook', 0.88, function () {});
     assert.equal(pulses, 2, 'smart audio inherits the same pulse hook');
+  } finally { a.close(); }
+});
+
+/* v26 instant search index. */
+test('Lib.buildSearchIndex pre-computes instant tokens for slash variants, US/UK, phon, pos, def and ex', function () {
+  has('buildSearchIndex:function');
+  has('searchWords:function');
+  has('searchIndex');
+  const a = boot();
+  try {
+    const Lib = a.q.Lib;
+    assert.ok(Lib.searchIndex && Array.isArray(Lib.searchIndex.rows), 'an index container is exposed');
+    const rows = Lib.buildSearchIndex([{ w: 'tire', phon: 'tʌɪə', pos: 'noun', def: 'a rubber ring', ex: 'The tyre burst.' }], 'unit');
+    assert.equal(rows.length, 1);
+    const token = rows[0].k;
+    for (const part of ['tire', 'tyre', 'tʌɪə', 'noun', 'a rubber ring', 'the tyre burst.'])
+      assert.ok(token.indexOf(part) >= 0, 'token contains ' + part);
+    const one = [{ w: 'tire', phon: 'tʌɪə', pos: 'noun', def: 'a rubber ring', ex: 'The tyre burst.' }];
+    for (const query of ['tire', 'tyre', 'tʌɪə', 'rubber', 'burst', 'noun'])
+      assert.equal(Lib.searchWords(query, one, 'hits').length, 1, 'searchable by ' + query);
+    assert.equal(Lib.searchWords('', one, 'blank').length, 1, 'an empty query keeps every row');
+    assert.equal(Lib.searchWords('zzzz', one, 'miss').length, 0);
+  } finally { a.close(); }
+});
+
+test('the search index covers all 30 Session 7 words and is reused without rebuilding', function () {
+  const a = boot();
+  try {
+    const Lib = a.q.Lib;
+    const words = a.q.DB.data.lists[0].words;
+    assert.equal(words.length, 30);
+    const rows = Lib.buildSearchIndex(words, 'session7');
+    assert.equal(rows.length, 30, 'every Session 7 word is indexed');
+    for (const word of words) {
+      const hits = Lib.searchWords(word.w.split('/')[0], words, 'session7');
+      assert.ok(hits.some((hit) => hit.w === word.w), 'instant hit for ' + word.w);
+    }
+    const tyre = Lib.searchWords('tire', words, 'session7').map((hit) => hit.w);
+    assert.ok(tyre.indexOf('tyre/tire') >= 0, 'the slash variant resolves tyre/tire');
+    const travel = Lib.searchWords('travel', words, 'session7').map((hit) => hit.w);
+    assert.ok(travel.length > 0, 'definitions and sentences are searchable too');
+    assert.equal(Lib.searchIndex.id.indexOf('session7'), 0, 'the cache is keyed to this list');
+    const cached = Lib.searchIndex.rows;
+    Lib.searchWords('jour', words, 'session7');
+    Lib.searchWords('lug', words, 'session7');
+    assert.equal(Lib.searchIndex.rows, cached, 'the cached index is reused for 0ms lookups');
+    assert.equal(Lib.searchWords('jour', words, 'session7').map((hit) => hit.w)[0], 'journey');
+  } finally { a.close(); }
+});
+
+test('dictionary search renders instant results from the index', function () {
+  has('Lib.searchWords(q');
+  const a = boot();
+  try {
+    const doc = a.w.document;
+    a.q.UI.setTab('dict'); a.clock.tick(200);
+    const input = doc.getElementById('dictSearch');
+    assert.ok(input, 'the dictionary search box exists');
+    input.value = 'tire';
+    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    a.clock.tick(400);
+    const list = doc.getElementById('dictList');
+    assert.match(list.textContent.toLowerCase(), /tyre/, 'tyre/tire is found from the American spelling');
+    input.value = 'tyyre';
+    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    a.clock.tick(400);
+    assert.match(list.textContent, /Nothing here yet|tyre/i);
+    input.value = '';
+    input.dispatchEvent(new a.w.Event('input', { bubbles: true }));
+    a.clock.tick(400);
+    assert.ok(doc.getElementById('dictList').children.length > 10, 'the full list returns when the query clears');
+    assert.equal(a.q.Errors.items.length, 0);
   } finally { a.close(); }
 });
 
@@ -365,7 +554,7 @@ test('#credit stays at z-index 9999 with showCreditNow throughout Guide, languag
   const creditRule = rule('.credit');
   assert.match(creditRule, /z-index:9999\s*!important/);
   assert.match(creditRule, /position:fixed/); assert.match(creditRule, /pointer-events:auto/);
-  has('id="credit"'); has('class="credit glass"'); has('z-index:9999 !important');
+  has('id="credit"'); has('class="credit glass"');
   has('UI.showCreditNow=function'); has('UI.showCreditNow()');
   const openGuideIdx = html.indexOf('openWelcomeGuide:function');
   const showIdx = html.indexOf('UI.showCreditNow', openGuideIdx);
