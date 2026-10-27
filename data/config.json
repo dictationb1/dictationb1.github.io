@@ -38,8 +38,8 @@
     "activeMediaType": "video",
     "videoDim": 14
   },
-  "ver": 32,
-  "version": "3.9.1",
+  "ver": 33,
+  "version": "4.0.0",
   "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
@@ -58,8 +58,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "3.9.1",
-  "settingsRev": 32,
+  "appVersion": "4.0.0",
+  "settingsRev": 33,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -83,7 +83,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v32_crystal_video",
+  "storageKey": "sdp.v33_zero_lag",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -195,9 +195,10 @@
       "./assets/bunny-live-wallpaper.mp4"
     ],
     "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-    "ghMediaCache": "sdp.gh_assets_v32",
-    "ghMediaTtl": 300000,
+    "ghMediaCache": "sdp.gh_assets_v33",
+    "ghMediaTtl": 900000,
     "legacyMediaCaches": [
+      "sdp.gh_assets_v32",
       "sdp.gh_assets_v31",
       "sdp.gh_media_v30",
       "sdp.gh_videos_cache"
@@ -233,11 +234,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v32",
-  "ghMediaTtl": 300000,
+  "ghMediaCache": "sdp.gh_assets_v33",
+  "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 14,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v32",
     "sdp.gh_assets_v31",
     "sdp.gh_media_v30",
     "sdp.gh_videos_cache"
