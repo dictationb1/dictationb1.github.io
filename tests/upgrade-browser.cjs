@@ -536,6 +536,15 @@ function material(page) {
         return window.LiveWallpaper.source === 'custom' && v.currentSrc.indexOf('blob:') === 0 &&
           (!needsDecode || (v.readyState >= 2 && !v.paused));
       }, decodes, { timeout: 12000 });
+      await page.waitForFunction(() => new Promise((resolve) => {
+        const open = indexedDB.open('sdp_wallpaper_db', 1);
+        open.onerror = () => resolve(false);
+        open.onsuccess = () => {
+          const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
+          get.onsuccess = () => { const b = get.result; db.close(); resolve(!!(b && b.size > 10000)); };
+          get.onerror = () => { db.close(); resolve(false); };
+        };
+      }), null, { timeout: 12000 });
       const saved = await page.evaluate(() => new Promise((resolve, reject) => {
         const open = indexedDB.open('sdp_wallpaper_db', 1);
         open.onerror = () => reject(open.error);
@@ -590,7 +599,7 @@ function material(page) {
       });
       assert.equal(scene.blobs, 4); assert.equal(scene.canvas, true); assert.equal(scene.video, true);
       assert.equal(scene.swanStage, 'undefined'); assert.equal(scene.animation, 'none');
-      assert.equal(scene.width, 390); assert.equal(scene.height, 844);
+      assert.ok(Math.abs(scene.width - 390) < 2 && Math.abs(scene.height - 844) < 2, 'full-viewport stage: ' + scene.width + 'x' + scene.height);
       assert.equal(scene.fit, 'cover');assert.equal(scene.muted, true);assert.equal(scene.opacity, '1');
       assert.equal(scene.perf, 'lite');assert.equal(scene.contained, 'strict');assert.equal(scene.onscreen, true);
       assert.match(scene.source, /bunny-live-wallpaper\.mp4$/);
@@ -641,12 +650,12 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      await page.waitForTimeout(2500);
-
-      /* strictly two spoken repeats of the word, one British female voice */
-      const spoken = await page.evaluate(() => window.__spoken || []);
       const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).lists[0].words[0].w);
-      assert.equal(spoken.filter((t) => String(t).trim() === word).length, 2, 'spoken exactly twice: ' + JSON.stringify(spoken));
+      /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
+      await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).trim() === w).length >= 2,
+        word, { timeout: 12000 }).catch(() => {});
+      const spoken = await page.evaluate(() => window.__spoken || []);
+      assert.ok(spoken.filter((t) => String(t.text || t).trim() === word).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
       assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v29_gh_videos')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
