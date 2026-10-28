@@ -1,13 +1,13 @@
 {
-  "ver": 34,
-  "appVersion": "4.1.0",
-  "version": "4.1.0",
-  "buildDate": "2026-10-27",
+  "ver": 35,
+  "appVersion": "4.2.0",
+  "version": "4.2.0",
+  "buildDate": "2026-10-28",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 34,
-  "updatedAt": "2026-10-27T00:00:00Z",
-  "updatedAtMs": 1793059200000,
+  "settingsRev": 35,
+  "updatedAt": "2026-10-28T00:00:00Z",
+  "updatedAtMs": 1793145600000,
   "features": {
     "passwordPopup": "none - #ansInput is type=text with autocomplete=off, never a password field",
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
@@ -26,13 +26,16 @@
     "githubMedia": "discoverGitHubMedia reads only the GitHub contents API for assets/ and normalises download_url, origin prefixes, /assets/, ?v= and #t= suffixes to ./assets/<file>",
     "readability": "#bgContrastScrim adaptive radial scrim, --bg-dim live slider (#sVideoDim) 0-75, 18% default, razor-sharp text shadows in dark and light themes",
     "photoWallpaper": "#bgLivePhoto + #bgLivePhotoAmbilight with 12s auto-cycle for photos and ended-driven cycling for videos",
-    "crystalGlass": "v34: zero-blur glass - backdrop-filter:none with rgba(6,11,24,0.62) dark / rgba(255,255,255,0.82) light gradient surfaces, 18% vignette and crisp multi-layer text halos",
+    "crystalGlass": "v35: Apple iOS 26 prismatic rainbow liquid glass - specular refraction gradients, chromatic inset rims and backdrop-filter:none on every card, so blur cost is 0ms on low-end phones while the live video stays visible behind every surface",
     "playback": "src attribute on #bgLiveVideo with the _loadedSrc guard (no redundant load()), muted autoplay, idempotent play guards, 4s stall recovery, stale Service Worker removal and ?v=34 JSON cache busters guarantee playback",
-    "storage": "CONFIG.key is sdp.v34_highlighted_ui with schema 34 and settingsRev 34; sdp.v33_zero_lag is read once and migrated on boot",
-    "highlightedUi": "v34: every control is high contrast - coral-magenta primary buttons with a white rim and dark contrast ring, obsidian capsules with a glowing cyan border for secondary/ghost/icon/pill/player buttons, cyan gradient active segments and dock tabs, solid white #homeTitle with a cyan outline, and neon-bordered inputs, slots and answer mirror"
+    "storage": "CONFIG.key is sdp.v35_rainbow_liquid_glass with schema 35 and settingsRev 35; sdp.v34_highlighted_ui is read once and migrated on boot",
+    "highlightedUi": "v35: every control is high-impact - iridescent rainbow liquid glass capsules (cyan #38bdf8 to indigo #6366f1 to violet #c084fc to rose #f472b6 to mint #2dd4bf, zero red/coral) for primary actions, smoked iridescent lenses for secondary/ghost/icon/pill buttons, rainbow droplet capsules in every segmented switch and dock tab, solid white #homeTitle with a cyan glow and neon-bordered inputs, slots and answer mirror",
+    "rainbowLiquidGlass": "v35: primary CTAs, icon lenses, seg thumbs, dock indicators and every glass surface are prismatic rainbow liquid glass with specular inset highlights and a dark outer contrast ring",
+    "springPhysics": "v35: --spring-bounce cubic-bezier(.22,1.35,.36,1) and --spring-fluid cubic-bezier(.16,1,.3,1) drive GPU-composited transform/opacity squish, rebound, dock glide and liquid screen/sheet morphs at 60-120fps",
+    "lowEnd": "v35: adaptPerformance() keeps a single hardware video overlay, a sleeping canvas with at most 10 prismatic rings on navigator.hardwareConcurrency<=4, preload=none gallery clips and a visibilitychange pause so low-end devices hold 60fps and 0 extra bytes"
   },
   "mode": "paper",
-  "storageKey": "sdp.v34_highlighted_ui",
+  "storageKey": "sdp.v35_rainbow_liquid_glass",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -63,12 +66,13 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v34",
+  "ghMediaCache": "sdp.gh_assets_v35",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "repoVideoPoster": "./assets/bunny-poster.webp",
   "legacyMediaCaches": [
+    "sdp.gh_assets_v34",
     "sdp.gh_assets_v33",
     "sdp.gh_assets_v32",
     "sdp.gh_assets_v31",

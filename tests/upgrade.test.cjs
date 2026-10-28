@@ -1,7 +1,8 @@
 'use strict';
-/* v34 release gates: strict-ES5 single-file app, ultra-highlighted buttons,
-   controls, cards and typography over the zero-lag live video, the untouched
-   one-stream `/assets/` wallpaper engine and every v22-v33 feature. */
+/* v35 release gates: strict-ES5 single-file app, Apple iOS 26 / visionOS
+   prismatic rainbow liquid glass capsules and icons (zero red/coral), zero GPU
+   blur surfaces, iOS spring-physics motion, the untouched one-stream /assets/
+   wallpaper engine and every v22-v34 feature. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,9 +16,9 @@ const json = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', name),
 const version = json('version.json');
 const config = json('config.json');
 const session = json('session.json');
-const KEY = 'sdp.v34_highlighted_ui';
-const LEGACY_KEY = 'sdp.v33_zero_lag';
-const GH_KEY = 'sdp.gh_assets_v34';
+const KEY = 'sdp.v35_rainbow_liquid_glass';
+const LEGACY_GH_KEY = 'sdp.gh_assets_v34';
+const GH_KEY = 'sdp.gh_assets_v35';
 const DEFAULT = './assets/bunny-live-wallpaper.mp4';
 const POSTER = './assets/bunny-poster.webp';
 const HOODED = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
@@ -38,23 +39,22 @@ const CSS = compact(cssText());
 const hasCss = (snippet) => has(CSS, compact(snippet));
 const hasIn = (haystack, needle) => compact(haystack).indexOf(compact(needle)) >= 0;
 const settingsOf = (d) => d.settings || (d.session && d.session.settings) || d.defaults || d;
-/* v34 rules live at the end of the sheet; the helpers return the LAST match so a
-   legacy base rule with the same selector can never satisfy (or hide) a v34 gate. */
-const lastRule = (pattern) => {
-  const all = cssText().match(new RegExp(pattern.source, 'g'));
-  return all ? all[all.length - 1] : '';
+/* v35 rules live at the end of the sheet: the helper only ever looks at the
+   v35 block, so a legacy rule with a similar selector can never satisfy a gate. */
+const v35Block = () => {
+  const at = cssText().indexOf('/* v35:');
+  return at < 0 ? '' : cssText().slice(at);
+};
+const v35 = (pattern) => {
+  const m = v35Block().match(pattern);
+  return m ? compact(m[0]) : '';
 };
 const exactRule = (selector) => {
   const m = cssText().match(new RegExp('(?:^|[};])\\s*' + selector + '\\{[^}]*\\}'));
   return m ? m[0] : '';
 };
-const v34 = (pattern) => {
-  const body = cssText().slice(cssText().indexOf('/* v34:'));
-  const m = body.match(pattern);
-  return m ? m[0] : '';
-};
 
-test('1. v34 build gate: check.cjs passes, strict ES5, zero external links, well under 442,000 bytes', () => {
+test('1. v35 build gate: check.cjs passes, strict ES5, zero external links, under 442,000 bytes', () => {
   cp.execSync('node tests/check.cjs', { cwd: root, stdio: 'pipe' });
   const size = Buffer.byteLength(html, 'utf8');
   assert.ok(size < 442000, 'index.html must stay below 442,000 bytes (now ' + size + ')');
@@ -76,32 +76,35 @@ test('1. v34 build gate: check.cjs passes, strict ES5, zero external links, well
   assert.ok(has(ambi, 'preload="none"') && lacks(ambi, 'src='), 'ambilight is markup-only and never loads a stream');
   const tpl = html.match(/<template id="galMediaTpl">[\s\S]*?<\/template>/)[0];
   assert.ok(has(tpl, 'preload="none"') && has(tpl, 'data-src=""') && has(tpl, 'loading="lazy"'));
-  assert.equal((html.match(/\.json\?v=34/g) || []).length, 2);
-  assert.ok(lacks(html, '.json?v=33'), 'all static data fetches are on the v34 cache token');
+  assert.equal((html.match(/\.json\?v=35/g) || []).length, 2);
+  assert.ok(lacks(html, '.json?v=33') && lacks(html, '.json?v=34'), 'all static data fetches are on the v35 cache token');
 });
 
-test('2. v34 metadata across version.json, config.json and session.json', () => {
+test('2. v35 metadata across version.json, config.json and session.json', () => {
   [['version', version], ['config', config], ['session', session]].forEach(([name, d]) => {
-    assert.equal(d.ver, 34, name + ' ver');
-    assert.equal(d.appVersion, '4.1.0', name + ' appVersion');
-    assert.equal(d.settingsRev, 34, name + ' settingsRev');
+    assert.equal(d.ver, 35, name + ' ver');
+    assert.equal(d.appVersion, '4.2.0', name + ' appVersion');
+    assert.equal(d.settingsRev, 35, name + ' settingsRev');
     assert.equal(d.storageKey, KEY, name + ' storageKey');
     assert.equal(d.ghMediaCache, GH_KEY, name + ' ghMediaCache');
     assert.equal(d.ghMediaTtl, 900000, name + ' 15-minute GitHub TTL');
-    assert.ok(Array.isArray(d.legacyMediaCaches) && d.legacyMediaCaches.indexOf('sdp.gh_assets_v33') >= 0, name + ' legacy cache list');
+    assert.ok(Array.isArray(d.legacyMediaCaches) && d.legacyMediaCaches.indexOf(LEGACY_GH_KEY) >= 0, name + ' legacy cache list');
     const s = settingsOf(d);
     assert.equal(s.mode, 'paper', name + ' paper mode');
     assert.equal(s.activeVideoSrc, DEFAULT, name + ' bunny default');
     assert.equal(s.activeMediaType, 'video', name + ' video type');
     assert.equal(s.videoDim, 18, name + ' 18% dim');
   });
-  assert.equal(version.version, '4.1.0');
-  assert.equal(config.version, '4.1.0');
-  assert.equal(session.version, '4.1.0');
+  assert.equal(version.version, '4.2.0');
+  assert.equal(config.version, '4.2.0');
+  assert.equal(session.version, '4.2.0');
   assert.equal(config.defaults.wallpaperVideo, true);
   assert.equal(config.defaults.writeFixed, 5);
   assert.equal(config.defaults.repeats, 2);
   assert.equal(config.defaults.videoDim, 18);
+  assert.equal(version.buildDate, '2026-10-28');
+  assert.ok(has(version.features.rainbowLiquidGlass, 'prismatic rainbow liquid glass'), 'v35 rainbow feature documented');
+  assert.ok(has(version.features.springPhysics, '--spring-bounce') && has(version.features.springPhysics, '--spring-fluid'));
   assert.ok(has(html, 'voice=Amy'), 'Amy en-GB online voice retained');
 });
 
@@ -131,16 +134,16 @@ test('3. normalizeAssetPath / isAssetsMedia: every URL form becomes ./assets/<fi
   a.close();
 });
 
-test('4. boot: 4.1.0 constants, bunny as the only default stream and no gallery DOM yet', () => {
+test('4. boot: 4.2.0 constants, bunny as the only default stream and no gallery DOM yet', () => {
   const a = harness();
   const q = a.q, w = a.w, doc = w.document, lf = q.LiveWallpaper;
-  assert.equal(q.APP_VERSION, '4.1.0');
+  assert.equal(q.APP_VERSION, '4.2.0');
   assert.equal(q.DEFAULT_WALLPAPER_SRC, DEFAULT);
   assert.equal(q.CONFIG.key, KEY);
-  assert.equal(q.CONFIG.schema, 34);
-  assert.equal(q.CONFIG.settingsRev, 34);
-  assert.equal(q.DB.data.settingsRev, 34);
-  assert.equal(q.DB.data.v, 34);
+  assert.equal(q.CONFIG.schema, 35);
+  assert.equal(q.CONFIG.settingsRev, 35);
+  assert.equal(q.DB.data.settingsRev, 35);
+  assert.equal(q.DB.data.v, 35);
   assert.equal(q.DB.data.settings.mode, 'paper', 'Listen & write on paper stays the default');
   assert.equal(q.DB.data.settings.videoDim, 18);
   assert.equal(lf.activeSrc, DEFAULT);
@@ -251,7 +254,7 @@ test('7. DB.syncRemote never installs a non-assets wallpaper and always re-trigg
   a.close();
 });
 
-test('8. v34 video engine: one filter-free hardware overlay and a permanently inert ambilight', () => {
+test('8. v35 video engine: one filter-free hardware overlay and a permanently inert ambilight', () => {
   const videoRule = exactRule('#bgLiveVideo');
   assert.ok(hasIn(videoRule, 'filter:none!important'));
   assert.ok(hasIn(videoRule, '-webkit-filter:none!important'));
@@ -270,149 +273,155 @@ test('8. v34 video engine: one filter-free hardware overlay and a permanently in
   assert.ok(hasCss('--bg-dim:.18'), '18% default vignette');
 });
 
-test('9. v34 cards: high-contrast see-through stage with zero backdrop blur (dark and light)', () => {
-  const cardRule = compact(v34(/\.glass:not\(#materialMixer\)[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(cardRule, 'backdrop-filter:none!important'), 'zero GPU blur -> frame time < 1ms');
-  assert.ok(hasIn(cardRule, '-webkit-backdrop-filter:none!important'));
-  assert.ok(hasIn(cardRule, '#homeHero.glass') && hasIn(cardRule, '.wordcard.glass') && hasIn(cardRule, '.card.glass'));
-  assert.ok(hasIn(cardRule, 'background-color:var(--hc2)!important'));
-  assert.ok(hasIn(cardRule, 'background-image:var(--hg)!important'));
-  assert.ok(hasIn(cardRule, 'border:var(--hbd2)!important'));
-  assert.ok(hasIn(cardRule, 'box-shadow:var(--hsh)!important'));
-  assert.ok(hasCss('--hc2:rgba(6,11,24,.62)'), 'dark card base');
-  assert.ok(hasCss('--hg:linear-gradient(180deg,rgba(6,11,24,.62),rgba(8,14,30,.5) 50%,rgba(6,11,24,.68))'));
-  assert.ok(hasCss('--hbd2:1.5px solid rgba(255,255,255,.38)'));
-  assert.ok(hasCss('--hsh:0 0 0 1.5px rgba(4,8,18,.8),0 14px 36px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.3)'));
-  assert.ok(hasCss('--hc2:rgba(255,255,255,.82)'), 'light card base');
-  assert.ok(hasCss('--hg:linear-gradient(180deg,rgba(255,255,255,.82),rgba(245,248,255,.74))'));
-  assert.ok(hasCss('--hbd2:1.5px solid rgba(15,35,75,.35)'));
-  assert.ok(hasCss('--hsh:0 12px 32px rgba(0,0,0,.22)'));
-  assert.ok(lacks(compact(cssText()), 'backdrop-filter:blur'), 'no blur anywhere in the sheet');
+test('9. v35 liquid glass surfaces: specular refraction gradients, chromatic rims and zero blur', () => {
+  const card = v35(/\.glass:not\(#materialMixer\)[^{]*\{[^}]*\}/);
+  ['#homeHero.glass', '.wordcard.glass', '.card.glass', '.sheet', '.modal', '.toast'].forEach((sel) =>
+    assert.ok(hasIn(card, sel), sel + ' is a liquid glass surface'));
+  assert.ok(hasIn(card, '-webkit-backdrop-filter:none!important'), 'zero GPU blur');
+  assert.ok(hasIn(card, 'backdrop-filter:none!important'));
+  assert.ok(hasIn(card, 'background:linear-gradient(165deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.04) 24%,rgba(6,11,26,.60) 62%,rgba(8,14,32,.72) 100%)'), 'dark specular core');
+  assert.ok(hasIn(card, 'radial-gradient(120% 90% at 15% 0%,rgba(56,189,248,.18) 0%,rgba(192,132,252,.14) 45%,rgba(45,212,191,.10) 80%,transparent 100%)!important'), 'prismatic refraction bloom');
+  assert.ok(hasIn(card, 'border-radius:28px!important'));
+  assert.ok(hasIn(card, 'border:1.5px solid rgba(255,255,255,.46)!important'));
+  assert.ok(hasIn(card, 'box-shadow:0 0 0 1.5px rgba(4,8,20,.80),0 18px 42px -8px rgba(0,0,0,.68),inset 0 1.5px 1px rgba(255,255,255,.65),inset 0 -1.5px 3px rgba(56,189,248,.25)!important'));
+  const light = v35(/\[data-theme=light\] \.glass:not\(#materialMixer\)[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(light, 'linear-gradient(165deg,rgba(255,255,255,.88) 0%,rgba(242,247,255,.76) 100%)'), 'light glass core');
+  assert.ok(hasIn(light, 'radial-gradient(120% 90% at 15% 0%,rgba(56,189,248,.16) 0%,rgba(192,132,252,.12) 55%,transparent 100%)!important'));
+  assert.ok(hasIn(light, 'border:1.5px solid rgba(255,255,255,.90)!important'));
+  assert.ok(hasIn(light, 'box-shadow:0 14px 34px rgba(15,23,42,.18),inset 0 1.5px 1px #fff!important'));
+  assert.ok(lacks(CSS, 'backdrop-filter:blur'), 'no blur anywhere in the sheet');
+  assert.ok(lacks(CSS, 'backdrop-filter: blur'), 'no blur anywhere in the sheet');
 });
 
-test('10. v34 primary actions: coral-magenta fill, white rim and a dark outer contrast ring', () => {
-  const pri = compact(v34(/\.btn\.pri[^{]*\{[^}]*\}/));
-  ['#btnStart', '#btnReadyGo', '.btn.primary', '.btn-pri', 'button.pri', '.gal-apply-btn'].forEach((sel) =>
-    assert.ok(hasIn(pri, sel), sel + ' must be highlighted'));
-  assert.ok(hasIn(pri, 'background-color:#ff3d77!important'));
-  assert.ok(hasIn(pri, 'background-image:linear-gradient(135deg,#ff6f61,#ff3d77 55%,#ff8a47)!important'));
+test('10. v35 primary CTAs: prismatic rainbow liquid glass capsules, zero red/coral', () => {
+  const pri = v35(/\.btn\.pri,[^{]*\{[^}]*\}/);
+  ['#btnStart', '#btnReadyGo', '.btn.primary', '.btn-pri', 'button.pri', '.gal-apply-btn', '.btn.pri'].forEach((sel) =>
+    assert.ok(hasIn(pri, sel), sel + ' is a rainbow capsule'));
+  assert.ok(hasIn(pri, 'linear-gradient(180deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.06) 46%,rgba(6,12,28,.42) 100%)'), 'specular glass dome');
+  assert.ok(hasIn(pri, 'linear-gradient(125deg,rgba(56,189,248,.88) 0%,rgba(99,102,241,.86) 28%,rgba(192,132,252,.86) 55%,rgba(244,114,182,.84) 78%,rgba(45,212,191,.88) 100%)!important'), 'Apple rainbow aurora');
+  ['rgba(56,189,248,', 'rgba(99,102,241,', 'rgba(192,132,252,', 'rgba(45,212,191,'].forEach((c) =>
+    assert.ok(hasIn(pri, c), 'rainbow stop ' + c));
   assert.ok(hasIn(pri, 'color:#fff!important'));
   assert.ok(hasIn(pri, 'font-weight:800!important'));
-  assert.ok(hasIn(pri, 'border:1.5px solid rgba(255,255,255,.9)!important'));
-  assert.ok(hasIn(pri, 'box-shadow:0 0 0 2px rgba(4,8,18,.85),0 8px 24px rgba(255,61,119,.65),inset 0 1px 1px rgba(255,255,255,.6)!important'));
-  assert.ok(hasIn(pri, 'text-shadow:0 1px 3px rgba(0,0,0,.9)!important'));
+  assert.ok(hasIn(pri, 'border-radius:999px!important'));
+  assert.ok(hasIn(pri, 'border:var(--rm)!important'));
+  assert.ok(hasCss('--rm:1.5px solid rgba(255,255,255,.85)'), 'white specular rim');
+  assert.ok(hasIn(pri, 'box-shadow:0 0 0 1.5px rgba(4,10,24,.78),0 10px 28px -4px rgba(56,189,248,.52),0 4px 16px rgba(168,85,247,.42),inset 0 1.5px 1px rgba(255,255,255,.90),inset 0 -2px 6px rgba(15,23,42,.45)!important'));
+  assert.ok(hasIn(pri, 'text-shadow:0 1px 4px rgba(0,0,0,.88)!important'));
+  assert.ok(lacks(pri, '#ff6f61') && lacks(pri, '#ff3d77') && lacks(pri, 'coral'), 'no red/coral fill');
+  assert.ok(lacks(html, '#ff3d77'), 'the coral-magenta v34 primary is fully gone');
+  (CSS.match(/[^{}]*\{[^}]*\}/g) || []).filter((rule) => /\.btn/.test(rule.split('{')[0])).forEach((rule) =>
+    assert.ok(lacks(rule, '#ff6f61') && lacks(rule, '#ff3d77'), 'no button rule may carry coral: ' + rule.slice(0, 90)));
 });
 
-test('11. v34 secondary, ghost, icon, pill and player buttons: obsidian capsule + glowing cyan rim', () => {
-  const btn = compact(v34(/\.btn,\.btn-sec[^{]*\{[^}]*\}/));
-  ['.btn-sec', '.btn-ghost', '.ibtn', '.top-pill', '.wall-open-btn', '.gal-preview-btn', '.close-x-btn'].forEach((sel) =>
-    assert.ok(hasIn(btn, sel), sel + ' must be highlighted'));
-  assert.ok(hasIn(btn, 'background-color:var(--hf)!important'));
-  assert.ok(hasIn(btn, 'color:var(--hfg)!important'));
+test('11. v35 secondary, ghost, icon and pill buttons: smoked iridescent liquid glass lenses', () => {
+  const btn = v35(/\.btn:not\(\.pri\),[^{]*\{[^}]*\}/);
+  ['.btn:not(.pri)', '.btn-sec', '.btn-ghost', '.ibtn', '.top-pill', '.wall-open-btn', '.gal-preview-btn', '.close-x-btn'].forEach((sel) =>
+    assert.ok(hasIn(btn, sel), sel + ' is a smoked lens'));
+  assert.ok(hasIn(btn, 'background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.04) 45%,rgba(6,12,28,.82) 100%)'), 'smoked glass core');
+  assert.ok(hasIn(btn, 'linear-gradient(135deg,rgba(56,189,248,.30) 0%,rgba(168,85,247,.28) 50%,rgba(45,212,191,.30) 100%)!important'), 'prismatic refraction rim');
+  assert.ok(hasIn(btn, 'color:#fff!important'));
   assert.ok(hasIn(btn, 'font-weight:700!important'));
-  assert.ok(hasIn(btn, 'border:var(--hbd)!important'));
-  assert.ok(hasIn(btn, 'box-shadow:var(--hs)!important'));
-  assert.ok(hasIn(btn, 'text-shadow:var(--ht)!important'));
-  assert.ok(hasCss('--hf:rgba(8,14,30,.88)'));
-  assert.ok(hasCss('--hfg:#fff'));
-  assert.ok(hasCss('--hbd:1.5px solid rgba(83,199,240,.78)'));
-  assert.ok(hasCss('--hs:0 0 0 1.5px rgba(4,8,18,.85),0 6px 16px rgba(0,0,0,.72),0 0 12px rgba(83,199,240,.28),inset 0 1px 0 rgba(255,255,255,.28)'));
-  assert.ok(hasCss('--ht:0 1px 3px rgba(0,0,0,.95)'));
-  const hover = compact(v34(/\.btn:hover[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(hover, 'background-color:var(--hfb)!important'));
-  assert.ok(hasIn(hover, 'border-color:#53c7f0!important'));
-  assert.ok(hasIn(hover, 'box-shadow:var(--hh)!important'));
-  assert.ok(hasIn(hover, ':focus-visible') && hasIn(hover, ':active'));
-  assert.ok(hasCss('--hfb:rgba(14,25,52,.96)'));
-  assert.ok(hasCss('--hh:0 0 0 2px rgba(4,8,18,.9),0 8px 22px rgba(0,0,0,.85),0 0 18px rgba(83,199,240,.6)'));
-  assert.ok(hasCss('--hf:rgba(255,255,255,.94)'), 'light mode capsule');
-  assert.ok(hasCss('--hfg:#071022'), 'light mode ink');
-  assert.ok(hasCss('--hbd:1.5px solid rgba(15,35,75,.55)'));
-  assert.ok(hasCss('--hs:0 4px 14px rgba(0,0,0,.25)'));
-  assert.ok(hasCss('--ht:none'));
+  assert.ok(hasIn(btn, 'border-radius:999px!important'));
+  assert.ok(hasIn(btn, 'border:1.5px solid rgba(255,255,255,.62)!important'));
+  assert.ok(hasIn(btn, 'box-shadow:0 0 0 1.5px rgba(4,8,20,.82),0 8px 20px rgba(0,0,0,.60),inset 0 1.5px 1px rgba(255,255,255,.72),inset 0 -1.5px 4px rgba(56,189,248,.32)!important'));
+  assert.ok(hasIn(btn, 'text-shadow:0 1px 4px rgba(0,0,0,.95)!important'));
+  const hover = v35(/\.btn:not\(\.pri\):hover,[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(hover, ':focus-visible'), 'keyboard focus gets the same highlight');
+  assert.ok(hasIn(hover, 'border-color:rgba(255,255,255,.92)!important'));
+  assert.ok(hasIn(hover, 'box-shadow:0 0 0 1.5px rgba(4,8,20,.88),0 10px 26px rgba(56,189,248,.45),0 0 18px rgba(192,132,252,.40),inset 0 1.5px 2px rgba(255,255,255,.92)!important'));
 });
 
-test('12. v34 segmented switches, dock and top bar pop out with neon borders and a glowing active tab', () => {
-  const seg = compact(v34(/\.seg,\.seg-tint\{[^}]*\}/));
-  assert.ok(hasIn(seg, 'background-color:rgba(5,10,22,.9)!important'));
-  assert.ok(hasIn(seg, 'border:1.5px solid rgba(255,255,255,.4)!important'));
-  assert.ok(hasIn(seg, 'box-shadow:0 6px 18px rgba(0,0,0,.7),inset 0 2px 6px rgba(0,0,0,.8)!important'));
-  assert.ok(hasCss('.seg button,.seg-tint button,#tabbar button{color:#eef4ff!important;font-weight:700!important;text-shadow:var(--ht)!important}'));
-  const active = compact(v34(/\.seg \.thumb,[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(active, '.seg-ind') && hasIn(active, '.seg .on'));
-  assert.ok(hasIn(active, 'background-color:#3b82f6!important'));
-  assert.ok(hasIn(active, 'background-image:linear-gradient(135deg,#53c7f0,#3b82f6 55%,#6366f1)!important'));
-  assert.ok(hasIn(active, 'color:#fff!important'));
-  assert.ok(hasIn(active, 'font-weight:800!important'));
-  assert.ok(hasIn(active, 'border:1px solid rgba(255,255,255,.88)!important'));
-  assert.ok(hasIn(active, 'box-shadow:0 4px 14px rgba(59,130,246,.7)!important'));
-  const bar = compact(v34(/\.topbar\.glass,#tabbar\.glass\{[^}]*\}/));
-  assert.ok(hasIn(bar, 'background-color:rgba(6,11,24,.86)!important'));
-  assert.ok(hasIn(bar, 'border:1.5px solid rgba(255,255,255,.34)!important'));
-  assert.ok(hasIn(bar, 'box-shadow:0 10px 28px rgba(0,0,0,.75)!important'));
-  const tab = compact(v34(/\.tab\.active,#tabInd,[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(tab, 'border:1.5px solid #53c7f0!important'));
-  assert.ok(hasIn(tab, 'box-shadow:0 0 14px rgba(83,199,240,.45)!important'));
-  assert.ok(hasIn(tab, 'color:#fff!important'));
-  assert.ok(hasIn(tab, 'font-weight:800!important'));
+test('12. v35 liquid glass icons: crisp luminous SVG strokes on circular lenses', () => {
+  const icons = v35(/\.ibtn svg,[^{]*\{[^}]*\}/);
+  [' .ibtn svg', '.btn svg', '.tab svg', '.chip svg'].forEach((sel) =>
+    assert.ok(hasIn(icons, sel), sel + ' keeps a luminous stroke'));
+  assert.ok(hasIn(icons, 'filter:drop-shadow(0 1px 3px rgba(0,0,0,.8))'));
+  assert.ok(hasIn(v35(/\.btn:not\(\.pri\),[^{]*\{[^}]*\}/), 'border-radius:999px!important'), 'icon buttons are round glass lenses');
+  assert.ok(hasCss('#tabbar{'), 'the dock still renders its icons');
 });
 
-test('13. v34 tiles, chips, inputs, answer mirror and letter slots are 100% readable', () => {
-  const tile = compact(v34(/\.tile,\.wrow[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(tile, 'background-color:var(--hif2)!important'));
-  assert.ok(hasIn(tile, 'border:1.5px solid rgba(83,199,240,.42)!important'));
-  assert.ok(hasIn(tile, 'box-shadow:0 6px 18px rgba(0,0,0,.55)!important'));
-  assert.ok(hasIn(tile, 'color:var(--hfg)!important'));
-  assert.ok(hasCss('--hif2:rgba(7,13,28,.78)'));
-  const chip = compact(v34(/\.chip,\.badge[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(chip, 'background-color:var(--hcf)!important'));
-  assert.ok(hasIn(chip, 'border:1px solid rgba(255,255,255,.45)!important'));
-  assert.ok(hasIn(chip, 'color:var(--hfg)!important'));
-  assert.ok(hasIn(chip, 'font-weight:700!important'));
-  assert.ok(hasIn(chip, 'box-shadow:0 2px 8px rgba(0,0,0,.65)!important'));
-  assert.ok(hasCss('--hcf:rgba(8,15,32,.9)'));
-  const input = compact(v34(/#ansMirror[^{]*\{[^}]*\}/));
+test('13. v35 segmented switches and dock: rainbow liquid glass droplet capsules glide', () => {
+  const active = v35(/\.seg \.thumb,[^{]*\{[^}]*\}/);
+  ['.seg .thumb', '.seg-ind', '.seg button.active', '.seg-tint .seg-ind', '.tab.active', '#tabInd'].forEach((sel) =>
+    assert.ok(hasIn(active, sel), sel + ' is a rainbow droplet'));
+  assert.ok(hasIn(active, 'linear-gradient(180deg,rgba(255,255,255,.36) 0%,rgba(255,255,255,.05) 50%,rgba(6,12,28,.35) 100%)'), 'droplet specular dome');
+  assert.ok(hasIn(active, 'linear-gradient(130deg,rgba(56,189,248,.82) 0%,rgba(129,140,248,.82) 35%,rgba(192,132,252,.82) 70%,rgba(45,212,191,.82) 100%)!important'), 'iridescent rainbow fill');
+  assert.ok(hasIn(active, 'border:var(--rm)!important'));
+  assert.ok(hasIn(active, 'box-shadow:var(--rs)!important'));
+  assert.ok(hasIn(active, 'color:#fff!important') && hasIn(active, 'font-weight:800!important'));
+  assert.ok(hasIn(active, 'transition:transform .38s var(--spring-bounce),width .38s var(--spring-bounce)!important'), 'droplets glide on the spring curve');
+  assert.ok(hasCss('--rs:0 6px 18px rgba(56,189,248,.45),inset 0 1.5px 1px rgba(255,255,255,.88)'));
+  assert.ok(hasIn(v35(/\.seg,\.seg-tint\{[^}]*\}/), 'background:rgba(5,10,22,.9)!important'), 'smoked switch trough');
+  assert.ok(hasIn(v35(/\.seg button,[^{]*\{[^}]*\}/), 'color:#eef4ff!important'));
+});
+
+test('14. v35 inner glass tiles, word rows, chips, inputs, answer mirror and slots stay readable', () => {
+  const tile = v35(/\.tile,\.wrow,\.dict-item\{[^}]*\}/);
+  assert.ok(hasIn(tile, 'background:linear-gradient(180deg,rgba(255,255,255,.14) 0%,rgba(7,13,28,.76) 35%,rgba(6,11,24,.84) 100%)!important'));
+  assert.ok(hasIn(tile, 'border:1.25px solid rgba(255,255,255,.38)!important'));
+  assert.ok(hasIn(tile, 'box-shadow:0 6px 18px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.45)!important'));
+  assert.ok(hasIn(tile, 'color:#fff!important'));
+  const chip = v35(/\.chip,\.badge[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(chip, 'background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(6,12,28,.86) 100%)!important'));
+  assert.ok(hasIn(chip, 'border:1.25px solid rgba(255,255,255,.55)!important'));
+  assert.ok(hasIn(chip, 'color:#fff!important') && hasIn(chip, 'font-weight:700!important'));
+  const input = v35(/#ansMirror,[^{]*\{[^}]*\}/);
   assert.ok(hasIn(input, '#dictSearch'));
-  assert.ok(hasIn(input, 'input:not([type=range]):not([type=checkbox]):not([type=radio])'));
-  assert.ok(hasIn(input, 'background-color:var(--hif)!important'));
-  assert.ok(hasIn(input, 'border:2px solid #53c7f0!important'));
-  assert.ok(hasIn(input, 'color:var(--hfg)!important'));
-  assert.ok(hasIn(input, 'font-weight:700!important'));
-  assert.ok(hasIn(input, 'box-shadow:0 0 16px rgba(83,199,240,.35),0 6px 18px rgba(0,0,0,.75)!important'));
-  assert.ok(hasCss('--hif:rgba(5,10,22,.88)'));
+  assert.ok(hasIn(input, 'input:not([type=range]):not([type=checkbox])'));
+  assert.ok(hasIn(input, 'background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(5,10,22,.86) 100%)!important'));
+  assert.ok(hasIn(input, 'border:2px solid rgba(56,189,248,.85)!important'));
+  assert.ok(hasIn(input, 'box-shadow:0 0 18px rgba(56,189,248,.35),inset 0 1px 1px rgba(255,255,255,.55)!important'));
+  assert.ok(hasIn(input, 'color:#fff!important'));
   assert.ok(hasIn(input, '.slot:not(.slot-ok):not(.slot-err):not(.slot-done)'), 'tick/cross slot states keep their own colour');
   ['slot-ok', 'slot-err', 'slot-done'].forEach((cls) =>
-    assert.ok(hasCss('.' + cls), cls + ' styling survives the v34 highlight'));
+    assert.ok(hasCss('.' + cls), cls + ' styling survives the v35 highlight'));
 });
 
-test('14. v34 typography: solid luminous #homeTitle, cyan outline, dark halo and bright muted text', () => {
-  const title = compact(v34(/#homeTitle,#homeTitle\.hollow[^{]*\{[^}]*\}/));
+test('15. v35 typography: solid luminous #homeTitle, prismatic glow and bright muted text', () => {
+  const title = v35(/#homeTitle,#homeTitle\.hollow[^{]*\{[^}]*\}/);
   assert.ok(hasIn(title, '#homeTitle.hollow') && hasIn(title, '.hero-title') && hasIn(title, '.liquid-glass-text'));
+  assert.ok(hasIn(title, 'background:none!important'), 'no hollow gradient that vanishes over video');
   assert.ok(hasIn(title, 'color:#fff!important'));
   assert.ok(hasIn(title, '-webkit-text-fill-color:#fff!important'));
-  assert.ok(hasIn(title, '-webkit-text-stroke:.5px rgba(83,199,240,.7)!important'));
-  assert.ok(hasIn(title, 'text-shadow:0 3px 12px rgba(0,0,0,.98),0 1px 3px rgba(0,0,0,1),0 0 18px rgba(83,199,240,.45)!important'));
+  assert.ok(hasIn(title, 'text-shadow:0 3px 12px rgba(0,0,0,.98),0 1px 3px rgba(0,0,0,1),0 0 18px rgba(56,189,248,.45)!important'));
   assert.ok(hasIn(title, 'font-weight:900!important'));
-  assert.ok(hasIn(title, 'background:none!important'), 'no hollow gradient that vanishes over video');
   assert.ok(lacks(CSS, 'background-clip:text'), 'the transparent text fill is gone');
-  assert.ok(hasCss(':root[data-theme=light] #homeTitle,:root[data-theme=light] .hero-title,:root[data-theme=light] .liquid-glass-text{color:#071022!important;-webkit-text-fill-color:#071022!important'));
-  assert.ok(hasCss('--fg:#fff'));
-  assert.ok(hasCss('--muted:#e4eeff'), 'dark muted text is ice-white');
-  assert.ok(hasCss('--fg:#0e1424'));
-  assert.ok(hasCss('--muted:#1e293b'), 'light muted text is slate');
+  assert.ok(hasCss('[data-theme=light] #homeTitle{color:#071022!important;-webkit-text-fill-color:#071022!important}'));
+  assert.ok(hasCss(':root{--spring-bounce') && hasIn(v35Block(), '--fg:#fff'), 'dark ink is white');
+  assert.ok(hasIn(v35Block(), '--muted:#e6f0ff'), 'dark muted text is ice-white');
+  assert.ok(hasIn(v35(/\[data-theme=light\]\{[^}]*\}/), '--fg:#0e1424'), 'light ink');
+  assert.ok(hasIn(v35(/\[data-theme=light\]\{[^}]*\}/), '--muted:#1e293b'), 'light muted text is slate');
   assert.ok(hasCss('body{color:var(--fg)}'));
   assert.ok(hasCss('.muted,.small,.tiny{color:var(--muted)!important}'));
-  const halo = compact(v34(/\.glass,\.glass \*:not\(#homeTitle\)[^{]*\{[^}]*\}/));
-  assert.ok(hasIn(halo, '.wordcard *') && hasIn(halo, '.layer *') && hasIn(halo, '.sheet *') && hasIn(halo, '.topbar *') && hasIn(halo, '.tile *'));
+  const halo = v35(/\.glass,\.glass \*[^{]*\{[^}]*\}/);
   assert.ok(hasIn(halo, 'text-shadow:var(--hw)!important'));
-  assert.ok(hasCss('--hw:0 2px 6px rgba(0,0,0,.98),0 1px 2px rgba(0,0,0,1)'));
-  assert.ok(hasCss('--hw:0 1px 4px rgba(255,255,255,.95)'), 'light theme keeps a white halo');
+  assert.ok(hasCss('--hw:0 2px 6px rgba(0,0,0,.98),0 1px 2px rgba(0,0,0,1)'), 'deep dark halo over the video');
+  assert.ok(hasIn(v35(/\[data-theme=light\]\{[^}]*\}/), '--hw:0 1px 4px rgba(255,255,255,.95)'), 'light theme keeps a white halo');
 });
 
-test('15. zero-lag budget: no blur filters, sleeping canvas and lazy gallery streams', () => {
-  assert.ok((compact(cssText()).match(/backdrop-filter:none!important/g) || []).length >= 4);
-  assert.ok(lacks(compact(cssText()), 'blur(4px)'));
-  assert.ok(lacks(compact(cssText()), 'brightness(1.02)'));
+test('16. v35 Apple spring physics: transform/opacity-only squish, rebound and liquid morphs', () => {
+  assert.ok(hasCss('--spring-bounce:cubic-bezier(.22,1.35,.36,1)'), 'tactile liquid squish');
+  assert.ok(hasCss('--spring-fluid:cubic-bezier(.16,1,.3,1)'), 'silky iOS sheet glide');
+  const trans = v35(/\.btn,\.ibtn,[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(trans, 'transition:transform .34s var(--spring-bounce),opacity .22s ease,border-color .22s ease!important'));
+  assert.ok(hasIn(trans, 'will-change:transform'));
+  assert.ok(hasIn(trans, '.seg button') && hasIn(trans, '.chip') && hasIn(trans, '.wrow'));
+  const hover = v35(/\.btn:hover,[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(hover, 'transform:translate3d(0,-2px,0) scale(1.02)'));
+  const active = v35(/\.btn:active,[^{]*\{[^}]*\}/);
+  assert.ok(hasIn(active, 'transform:translate3d(0,0,0) scale(.95)'));
+  assert.ok(hasIn(active, 'transition-duration:.09s!important'));
+  assert.ok(hasCss('@keyframes lgLiquidIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.975)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}'));
+  assert.ok(hasCss('.screen.active,.layer{animation:lgLiquidIn .36s var(--spring-fluid) both!important}'), 'screens and the player glide');
+  assert.ok(hasCss('.sheet,.modal{transition:transform .36s var(--spring-fluid),opacity .36s var(--spring-fluid)!important}'), 'sheets morph');
+  assert.ok(lacks(compact(v35Block()).replace(/transform:[^;}]*/g, ''), 'transition:height'), 'no layout-thrashing height animation');
+});
+
+test('17. zero-lag budget: no blur filters, sleeping canvas and lazy gallery streams', () => {
+  assert.ok((CSS.match(/backdrop-filter:none!important/g) || []).length >= 4);
+  assert.ok(lacks(CSS, 'blur(4px)'));
+  assert.ok(lacks(CSS, 'brightness(1.02)'));
   assert.ok(has(html, 'rafId:null'), 'the neon canvas idles with rafId null');
   assert.ok(has(html, 'preload="none"'), 'inactive gallery clips carry preload=none');
   assert.ok(has(html, '_loadedSrc'), 'the same clip is never downloaded twice');
@@ -421,7 +430,7 @@ test('15. zero-lag budget: no blur filters, sleeping canvas and lazy gallery str
   assert.ok(lacks(html, 'bgLiveVideo*{filter:blur'), 'no shader on the wallpaper');
 });
 
-test('16. discoverGitHubMedia: contents/assets only, 15-minute cache under the v34 key, legacy caches purged', () => {
+test('18. discoverGitHubMedia: contents/assets only, 15-minute cache under the v35 key, legacy caches purged', () => {
   const a = harness();
   const q = a.q, w = a.w, lf = q.LiveWallpaper;
   const rows = [
@@ -452,25 +461,25 @@ test('16. discoverGitHubMedia: contents/assets only, 15-minute cache under the v
   assert.equal(srcs.indexOf('./assets/v32-legacy.mp4'), -1);
   assert.equal(srcs.indexOf('./assets/test-fixture.mov'), -1);
   const cached = JSON.parse(w.localStorage.getItem(GH_KEY));
-  assert.ok(cached && cached.at, 'cache written under the v34 key with a timestamp');
+  assert.ok(cached && cached.at, 'cache written under the v35 key with a timestamp');
   lf.discoverGitHubMedia(false, () => {});
   assert.equal(calls.length, 1, 'a warm 15-minute cache means zero new requests');
   a.clock.tick(900001);
   lf.discoverGitHubMedia(false, () => {});
   assert.equal(calls.length, 2, 'after 15 minutes the cache is stale and refetches');
-  w.localStorage.setItem('sdp.gh_assets_v33', 'old');
+  w.localStorage.setItem('sdp.gh_assets_v34', 'old');
   w.localStorage.setItem('sdp.gh_videos_cache', 'older');
   lf.purgeLegacyCaches();
-  assert.equal(w.localStorage.getItem('sdp.gh_assets_v33'), null);
+  assert.equal(w.localStorage.getItem('sdp.gh_assets_v34'), null);
   assert.equal(w.localStorage.getItem('sdp.gh_videos_cache'), null);
-  assert.ok(w.localStorage.getItem(GH_KEY), 'the v34 cache itself is never purged');
+  assert.ok(w.localStorage.getItem(GH_KEY), 'the v35 cache itself is never purged');
   a.close();
 });
 
-test('17. Session 7 keeps all 30 travel words, the 5s timer, x2 repeats and the Amy en-GB voice', () => {
+test('19. Session 7 keeps all 30 travel words, the 5s timer, x2 repeats and the Amy en-GB voice', () => {
   const list = session.lists.filter((l) => l.id === 'list_session_7_travel')[0];
   assert.ok(list, 'Session 7 list present');
-  assert.equal(list.version, '4.1.0');
+  assert.equal(list.version, '4.2.0');
   const words = list.words.map((x) => x.w);
   assert.equal(words.length, 30);
   ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration', 'journey',
@@ -485,11 +494,11 @@ test('17. Session 7 keeps all 30 travel words, the 5s timer, x2 repeats and the 
   assert.ok(has(html, 'tire:"tyre"'), 'the tyre/tire alias still matches');
 });
 
-test('18. v34 migration: settingsRev 34, 18% dim and stale Fatal 390 / Home 390 selections reset', () => {
+test('20. v35 migration: settingsRev 35, 18% dim and stale Fatal 390 / Home 390 selections reset', () => {
   const a = harness();
   const q = a.q;
   const stale = () => ({
-    v: 33, settingsRev: 33,
+    v: 34, settingsRev: 34,
     settings: { mode: 'paper', activeVideoSrc: './qa/evidence/fatal-390.png', activeMediaType: 'photo', videoDim: 60 },
     lists: [], results: {}, comments: [], inbox: []
   });
@@ -497,28 +506,28 @@ test('18. v34 migration: settingsRev 34, 18% dim and stale Fatal 390 / Home 390 
   assert.equal(out.settings.activeVideoSrc, DEFAULT);
   assert.equal(out.settings.activeMediaType, 'video');
   assert.equal(out.settings.videoDim, 18);
-  assert.equal(out.settingsRev, 34);
-  assert.equal(out.v, 34);
+  assert.equal(out.settingsRev, 35);
+  assert.equal(out.v, 35);
   const direct = stale();
-  q.DB.resetToV34(direct, {});
+  q.DB.resetToV35(direct, {});
   assert.equal(direct.settings.activeVideoSrc, DEFAULT);
   assert.equal(direct.settings.activeMediaType, 'video');
   assert.equal(direct.settings.videoDim, 18);
-  assert.equal(direct.settingsRev, 34);
+  assert.equal(direct.settingsRev, 35);
   const good = q.DB.migrate({
-    v: 33, settingsRev: 33,
+    v: 34, settingsRev: 34,
     settings: { mode: 'paper', activeVideoSrc: HOODED, activeMediaType: 'video', videoDim: 14 },
     lists: [], results: {}
   });
-  assert.equal(good.settings.activeVideoSrc, HOODED, 'a valid current-rev assets clip is not touched');
-  assert.equal(good.settings.videoDim, 18, 'the v34 dim default upgrades a v33 profile');
-  assert.equal(typeof q.DB.resetToV33, 'function');
+  assert.equal(good.settings.activeVideoSrc, HOODED, 'a valid assets clip is not touched');
+  assert.equal(good.settings.videoDim, 18, 'the v35 dim default upgrades a v34 profile');
   assert.equal(typeof q.DB.resetToV34, 'function');
-  assert.ok(has(html, '["sdp.v33_zero_lag","sdp.v32_crystal_video"'), 'the v33 key is still read once and migrated');
+  assert.equal(typeof q.DB.resetToV35, 'function');
+  assert.ok(has(html, '["sdp.v34_highlighted_ui","sdp.v33_zero_lag"'), 'the v34 key is read once and migrated');
   a.close();
 });
 
-test('19. the 0-75 dimmer defaults to 18 and writes --bg-dim for the adaptive scrim', () => {
+test('21. the 0-75 dimmer defaults to 18 and writes --bg-dim for the adaptive scrim', () => {
   const a = harness();
   const q = a.q, w = a.w, lf = q.LiveWallpaper;
   const node = lf.dimControl();
@@ -537,7 +546,7 @@ test('19. the 0-75 dimmer defaults to 18 and writes --bg-dim for the adaptive sc
   a.close();
 });
 
-test('20. sheets, the settings screen and the Dictation Player never hide or pause the live video', () => {
+test('22. sheets, the settings screen and the Dictation Player never hide or pause the live video', () => {
   const a = harness();
   const q = a.q, lf = q.LiveWallpaper;
   const v = a.w.document.querySelector('#bgLiveVideo');
@@ -558,7 +567,7 @@ test('20. sheets, the settings screen and the Dictation Player never hide or pau
   a.close();
 });
 
-test('21. every v22-v33 feature token and guard is still present in the v34 build', () => {
+test('23. every v22-v34 feature token and v35 guard is still present', () => {
   [
     '#bgLiveWrap', '#bgLiveAmbilight', '#bgLiveVideo', '#bgLiveCanvas', '#bgContrastScrim',
     '#bgLivePhoto', '#liveVideoInput', 'video-gallery-badge',
@@ -572,18 +581,20 @@ test('21. every v22-v33 feature token and guard is still present in the v34 buil
     'inp.value=" "', 'autocomplete","off")', 'tabInd', 'segSync', 'lgStage', 'hollow',
     'sanitiseWallpaper', 'syncRemote', 'buildSearchIndex', 'searchWords', 'ansCompare',
     'Next Wallpaper', 'Refresh from GitHub', 'resetToV33:function', 'resetToV34:function',
-    'sdp.v34_highlighted_ui', 'sdp.gh_assets_v34', '_loadedSrc', 'adaptPerformance:function',
+    'resetToV35:function', 'sdp.v34_highlighted_ui', 'sdp.v35_rainbow_liquid_glass',
+    'sdp.gh_assets_v35', '_loadedSrc', 'adaptPerformance:function',
     'gal-preview-btn', 'bindStreamStatus:function', 'recoverVideo:function',
-    'liteFx:function', 'markPlaying:function', '?v=34', 'sdp.v33_zero_lag'
+    'liteFx:function', 'markPlaying:function', '?v=35', '--spring-bounce', '--spring-fluid',
+    'lgLiquidIn', 'lgLiquidIn .36s'
   ].forEach((token) => assert.ok(has(html, token), 'missing token: ' + token));
   [
     'backdrop-filter: blur(4px)', 'backdrop-filter:blur(4px)', 'brightness(1.02)',
-    'blur(4px) saturate(140%)'
+    'blur(4px) saturate(140%)', '#ff3d77'
   ].forEach((token) => assert.ok(lacks(html, token), 'legacy token must be gone: ' + token));
   assert.ok(lacks(html, 'background-clip:text'), 'the hollow hero title never comes back');
 });
 
-test('22. performance adaptation: low-end detection, lite ripple caps, passive listeners and visibility pause', () => {
+test('24. low-end performance: spring-tuned adaptation, 10-ring rainbow ripples and visibility pause', () => {
   const a = harness();
   const q = a.q, lf = q.LiveWallpaper;
   assert.equal(typeof lf.adaptPerformance, 'function');
@@ -594,17 +605,22 @@ test('22. performance adaptation: low-end detection, lite ripple caps, passive l
   q.UI.perfMode = 'lite';
   assert.equal(lf.liteFx(), true);
   q.UI.perfMode = prev;
-  assert.ok(has(html, 'var cap=this.liteFx()?12:20'), 'lite ripple cap is 12 particles');
+  assert.ok(has(html, 'var cap=this.liteFx()?10:20'), 'low-end ripple cap is 10 rings');
   assert.ok(has(html, 'addSpark:function(e,t,n,i,a){if(this.liteFx())return;'), 'sparks are disabled in lite');
   assert.ok(has(html, 'for(s=0;s<(lite?1:3);s++)'), 'lite clicks emit a single ring');
   assert.ok(has(html, 'OPTS={passive:!0}'));
   assert.ok(has(html, '"touchstart"!==t&&"touchmove"!==t&&"scroll"!==t||(a.passive=!0)'), 'touch/scroll listeners are passive by default');
   assert.ok(has(html, 'U.on(document,"visibilitychange"'), 'visibilitychange is bound');
   assert.ok(has(html, 'hardwareConcurrency') && has(html, 'deviceMemory') && has(html, 'saveData'));
+  assert.ok(has(html, 'var i=n||"#f472b6",a=n||"#38bdf8"'), 'prismatic ripple palette');
+  assert.ok(has(html, 'this.ripples.length%2?"#a855f7":"#2dd4bf"'), 'violet/mint swipe ripples');
+  assert.ok(lacks(html, 'var i=n||"#ff6f61"'), 'the coral ripple default is gone');
+  assert.ok(lacks(html, 'this.ripples.length%2?"#ff6f61"'), 'the coral swipe ripple is gone');
+  ['#38bdf8', '#a855f7', '#2dd4bf', '#f472b6'].forEach((hex) => assert.ok(has(html, hex), hex + ' is in the palette'));
   a.close();
 });
 
-test('23. admin PIN gate still returns 7898 and the media assets stay inside their byte budgets', () => {
+test('25. admin PIN gate still returns 7898 and the media assets stay inside their byte budgets', () => {
   const pin = require('./test-pin.cjs');
   assert.equal(pin, '7898');
   const mp4 = fs.statSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')).size;
@@ -613,7 +629,7 @@ test('23. admin PIN gate still returns 7898 and the media assets stay inside the
   assert.ok(poster > 0 && poster < 30000, 'poster must stay under 30 KB (' + poster + ' bytes)');
 });
 
-test('24. no media file is tracked outside the assets folder', () => {
+test('26. no media file is tracked outside the assets folder', () => {
   const exts = /\.(mp4|webm|mov|m4v|jpe?g|png|webp|gif|avif)$/i;
   const skip = new Set(['.git', 'node_modules']);
   const offenders = [];
