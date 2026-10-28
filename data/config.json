@@ -16,7 +16,7 @@
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "activeMediaType": "video",
     "videoPlaylistMode": "loop",
-    "videoDim": 14
+    "videoDim": 18
   },
   "listId": "list_session_7_travel",
   "defaults": {
@@ -36,10 +36,10 @@
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "videoPlaylistMode": "loop",
     "activeMediaType": "video",
-    "videoDim": 14
+    "videoDim": 18
   },
-  "ver": 33,
-  "version": "4.0.0",
+  "ver": 34,
+  "version": "4.1.0",
   "buildDate": "2026-10-27",
   "credits": {
     "createdBy": "Hansana",
@@ -58,8 +58,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.0.0",
-  "settingsRev": 33,
+  "appVersion": "4.1.0",
+  "settingsRev": 34,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -83,7 +83,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v33_zero_lag",
+  "storageKey": "sdp.v34_highlighted_ui",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -186,7 +186,7 @@
     ],
     "repoFallbacks": [],
     "defaultMediaType": "video",
-    "videoDim": 14,
+    "videoDim": 18,
     "scrim": "#bgContrastScrim",
     "photo": "#bgLivePhoto",
     "photoAmbilight": "#bgLivePhotoAmbilight",
@@ -195,9 +195,10 @@
       "./assets/bunny-live-wallpaper.mp4"
     ],
     "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-    "ghMediaCache": "sdp.gh_assets_v33",
+    "ghMediaCache": "sdp.gh_assets_v34",
     "ghMediaTtl": 900000,
     "legacyMediaCaches": [
+      "sdp.gh_assets_v33",
       "sdp.gh_assets_v32",
       "sdp.gh_assets_v31",
       "sdp.gh_media_v30",
@@ -234,11 +235,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v33",
+  "ghMediaCache": "sdp.gh_assets_v34",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
-  "videoDim": 14,
+  "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v33",
     "sdp.gh_assets_v32",
     "sdp.gh_assets_v31",
     "sdp.gh_media_v30",
