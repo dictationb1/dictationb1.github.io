@@ -68,7 +68,8 @@ async function boot(browser, width, height) {
   await page.waitForFunction(() => !document.querySelector('#sheets .scrim'), null, { timeout: 6000 });
   await page.waitForFunction(() => {
     const credit = document.getElementById('credit');
-    return credit && getComputedStyle(credit).opacity === '1';
+    const s = credit && getComputedStyle(credit);
+    return !!(s && parseFloat(s.opacity) > 0.05 && s.visibility !== 'hidden' && s.display !== 'none');
   }, null, { timeout: 8000 });
   return { context, page, errors };
 }
@@ -258,12 +259,14 @@ function material(page) {
       await page.waitForTimeout(6500);
       const full = await page.evaluate(() => {
         const credit = document.getElementById('credit');
-        return { inView: credit.classList.contains('in'), opacity: getComputedStyle(credit).opacity,
+        return { inView: credit.classList.contains('in'), opacity: parseFloat(getComputedStyle(credit).opacity),
+          anim: getComputedStyle(credit).animationName,
           sheen: getComputedStyle(credit, '::after').animationName,
           z: getComputedStyle(credit).zIndex };
       });
       assert.equal(full.inView, true, 'badge is not hidden by a repeating timer');
-      assert.equal(full.opacity, '1');
+      assert.ok(full.opacity >= 0.08, 'the badge never disappears completely: ' + full.opacity);
+      assert.equal(full.anim, 'hansanaRevealCycle', 'the disappearing / re-appearing cycle runs');
       assert.equal(full.sheen, 'none', 'no perpetual decorative repaint');
       assert.equal(full.z, '9999');
       await page.locator('#credit').click();
@@ -323,7 +326,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -443,7 +446,7 @@ function material(page) {
             return { width: window.innerWidth, pageWidth: document.documentElement.scrollWidth,
               topLeft: topRect.left, topRight: topRect.right, dockLeft: dockRect.left, dockRight: dockRect.right,
               topWrap: getComputedStyle(top).flexWrap, creditTop: creditRect.top, creditBottom: creditRect.bottom,
-              dockTop: dockRect.top, creditVisible: getComputedStyle(credit).opacity === '1',
+              dockTop: dockRect.top, creditVisible: parseFloat(getComputedStyle(credit).opacity) >= 0.08,
               icons: Array.from(top.querySelectorAll('.btn.icon'), (b) => [b.offsetWidth, b.offsetHeight]),
               labels: Array.from(dock.querySelectorAll('button > span[data-i18n]'), (el) => {
                 const box = el.getBoundingClientRect();
@@ -561,7 +564,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -625,7 +628,7 @@ function material(page) {
       await page.waitForTimeout(700);
       assert.equal(await page.evaluate(() => window.__frames), idle, 'no idle animation-frame loop');
       await page.mouse.click(7, 240);
-      assert.ok(await page.evaluate(() => window.LiveWallpaper.ripples.length > 0), 'tap starts the prismatic rainbow rings');
+      assert.ok(await page.evaluate(() => window.LiveWallpaper.ripples.length > 0), 'tap starts the soft ripple rings');
       await page.waitForFunction(() => window.LiveWallpaper.rafId === null &&
         window.LiveWallpaper.ripples.length === 0 && window.LiveWallpaper.sparks.length === 0, null, { timeout: 5000 });
       const asleep = await page.evaluate(() => window.__frames);
@@ -660,13 +663,13 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).trim() === w).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).trim() === word).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -676,7 +679,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -706,7 +709,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -795,7 +798,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

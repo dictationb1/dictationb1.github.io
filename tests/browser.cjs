@@ -46,7 +46,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v36_human_editorial') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -62,7 +62,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v35_rainbow_liquid_glass') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v36_human_editorial') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -73,7 +73,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v35_rainbow_liquid_glass','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v36_human_editorial','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -121,11 +121,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
     state.filter==='none'&&state.opacity==='1'&&
     state.src==='./assets/bunny-live-wallpaper.mp4'&&state.wrap!=='none'&&
-    /linear-gradient/.test(state.heroImg)&&/radial-gradient/.test(state.heroImg)&&
-    state.heroImg.indexOf('56, 189, 248')>=0&&state.heroBlur==='none'&&
+    /linear-gradient/.test(state.heroImg)&&state.heroImg.indexOf('15, 23, 42')>=0&&
+    state.heroBlur==='none'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v35 live bunny video decodes, autoplays and shines through the prismatic zero-blur glass',status:ok?'PASS':'FAIL',detail:state,errors});
+  results.push({test:'Chromium v36 live bunny video decodes, autoplays and shines through the smoked crystal glass',status:ok?'PASS':'FAIL',detail:state,errors});
   await context.close();
  }
  {
@@ -158,23 +158,24 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      video:cs(document.getElementById('bgLiveVideo'))};
    });
    const hasWhiteText=(m)=>m&&m.fg==='rgb(255, 255, 255)';
-   const rainbow=(m)=>m&&/56, 189, 248/.test(m)&&/192, 132, 252/.test(m)&&
-     /45, 212, 191/.test(m)&&!/255, 111, 97/.test(m)&&!/255, 61, 119/.test(m);
-   ok=!!(v34.primary&&rainbow(v34.primary.img)&&/99, 102, 241/.test(v34.primary.img)&&
-     hasWhiteText(v34.primary)&&v34.primary.weight==='800'&&v34.primary.shadow!=='none'&&
-     /255, 255, 255/.test(v34.primary.border)&&v34.primary.blur==='none')&&
-    !!(v34.ghost&&/56, 189, 248/.test(v34.ghost.img)&&/168, 85, 247/.test(v34.ghost.img)&&
-     hasWhiteText(v34.ghost)&&/255, 255, 255/.test(v34.ghost.border)&&v34.ghost.shadow!=='none'&&v34.ghost.blur==='none')&&
-    !!(v34.seg&&v34.seg.bg==='rgba(5, 10, 22, 0.9)'&&/255, 255, 255/.test(v34.seg.border))&&
-    !!(v34.thumb&&rainbow(v34.thumb.img)&&hasWhiteText(v34.thumb)&&v34.thumb.weight==='800'&&
-     /255, 255, 255/.test(v34.thumb.border)&&v34.thumb.shadow!=='none')&&
-    !!(v34.title&&hasWhiteText(v34.title)&&v34.title.weight==='900'&&v34.title.img==='none'&&
-     /56, 189, 248/.test(v34.title.textShadow))&&
+   const crafted=(m)=>m&&/37, 99, 235/.test(m)&&/79, 70, 229/.test(m)&&/8, 145, 178/.test(m)&&
+     !/56, 189, 248/.test(m)&&!/192, 132, 252/.test(m)&&!/255, 111, 97/.test(m);
+   const obsidian=(m)=>m&&/30, 41, 59/.test(m)&&/15, 23, 42/.test(m)&&!/192, 132, 252/.test(m);
+   ok=!!(v34.primary&&crafted(v34.primary.img)&&hasWhiteText(v34.primary)&&v34.primary.weight==='700'&&
+     v34.primary.shadow.indexOf('37, 99, 235')>=0&&/255, 255, 255/.test(v34.primary.border)&&v34.primary.blur==='none')&&
+    !!(v34.ghost&&obsidian(v34.ghost.img)&&v34.ghost.fg==='rgb(248, 250, 252)'&&v34.ghost.weight==='600'&&
+     /255, 255, 255/.test(v34.ghost.border)&&v34.ghost.shadow!=='none'&&v34.ghost.blur==='none')&&
+    !!(v34.seg&&/rgba\(9, 14, 28, 0\.8/.test(v34.seg.bg)&&/255, 255, 255/.test(v34.seg.border))&&
+    !!(v34.thumb&&/59, 130, 242/.test(v34.thumb.img)&&/79, 70, 229/.test(v34.thumb.img)&&hasWhiteText(v34.thumb)&&
+     v34.thumb.weight==='600'&&/255, 255, 255/.test(v34.thumb.border)&&v34.thumb.shadow!=='none')&&
+    !!(v34.title&&hasWhiteText(v34.title)&&v34.title.weight==='800'&&v34.title.img==='none'&&
+     /rgba\(0, 0, 0, 0\.92\)/.test(v34.title.textShadow))&&
     !!(v34.hero&&v34.hero.blur==='none'&&/linear-gradient/.test(v34.hero.img)&&
-     /radial-gradient/.test(v34.hero.img)&&/56, 189, 248/.test(v34.hero.img))&&
+     /15, 23, 42/.test(v34.hero.img)&&!/radial-gradient/.test(v34.hero.img))&&
+    v34.hero.shadow.indexOf('16px 36px')>=0&&
     !!(v34.video&&v34.video.blur==='none')&&errors.length===0;
   } catch(e){v34.error=String(e);}
-  results.push({test:'Chromium v35 rainbow capsules, smoked lenses, dock droplet, title and card pop out over the live video',status:ok?'PASS':'FAIL',detail:v34,errors});
+  results.push({test:'Chromium v36 human-crafted sapphire CTAs, obsidian lenses, dock pill, title and smoked crystal card pop out over the live video',status:ok?'PASS':'FAIL',detail:v34,errors});
   await context.close();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
