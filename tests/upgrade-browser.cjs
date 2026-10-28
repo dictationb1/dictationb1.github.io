@@ -198,12 +198,12 @@ function material(page) {
       await openTab(page, 'tab-set');
       const stage = await page.evaluate(() => ({
         found: !!document.querySelector('#screen-set #lgStage'),
-        orb: getComputedStyle(document.querySelector('#screen-set #orb')).backgroundImage,
+        orb: getComputedStyle(document.querySelector('#screen-set #orb')).display,
         mixer: !!document.querySelector('#screen-set #materialMixer')
       }));
       assert.equal(stage.found, true, 'the Material Mixer lives in Settings');
       assert.equal(stage.mixer, true);
-      assert.match(stage.orb, /radial-gradient/);
+      assert.equal(stage.orb, 'none', 'the synthetic orb is retired in v37');
       await openTab(page, 'tab-home');
       assert.equal(await page.locator('#tabbar button').count(), 5, 'five dock sections');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
@@ -326,7 +326,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -347,35 +347,14 @@ function material(page) {
       await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
 
-      const orb = page.locator('#orb');
-      /* tint clicks auto-scrolled the page (content below the fold on some font
-         metrics); the orb must be in view before hit-testing the press point */
-      await page.evaluate(() => window.scrollTo(0, 0));
-      /* the glass panel (z-index 2) deliberately sits over the orb (z-index 1);
-         only the sliver above the panel is hittable, so probe the press point */
-      const press = await page.evaluate(() => {
+      /* v37: the synthetic orb is retired - the real mixer controls stay */
+      const orbState = await page.evaluate(() => {
         const o = document.getElementById('orb');
-        const p = document.getElementById('materialMixer').getBoundingClientRect();
-        const r = o.getBoundingClientRect();
-        const y = Math.min(r.top + 40, (r.top + Math.min(r.bottom, p.top)) / 2);
-        const x = r.left + r.width / 2;
-        const hit = document.elementFromPoint(x, y);
-        return {
-          x: x, y: y, styleTop: o.style.top, orbTop: r.top, panelTop: p.top,
-          hit: hit ? (hit.id || String(hit.className) || hit.tagName) : 'none',
-          ok: !!hit && (hit === o || o.contains(hit))
-        };
+        return o ? getComputedStyle(o).display : 'absent';
       });
-      assert.ok(press.ok, 'press point hit-tests to the orb: ' + JSON.stringify(press));
-      const before = await orb.boundingBox();
-      assert.ok(before, 'the orb is laid out');
-      await page.mouse.move(press.x, press.y);
-      await page.mouse.down();
-      await page.mouse.move(press.x + 60, press.y + 40, { steps: 6 });
-      await page.mouse.up();
-      const after = await orb.boundingBox();
-      assert.ok(after && Math.abs(after.x - before.x) > 30,
-        'the orb drags: ' + JSON.stringify({ press: press, before: before, after: after }));
+      assert.equal(orbState, 'none', 'the decorative orb is hidden in v37');
+      assert.equal(await page.locator('#lgStage').count(), 1, 'the Material Mixer stage survives');
+      assert.ok(await page.locator('#segTint [data-tint]').count() >= 3, 'the tint controls survive');
 
       /* dock magnification is a Full-glass, fine-pointer nicety */
       if ((await material(page)).perf !== 'full') {
@@ -564,7 +543,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -663,13 +642,13 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v37_human_british')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).trim() === w).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).trim() === word).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v36_human_editorial')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -679,7 +658,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
+        const d = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -709,7 +688,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -798,7 +777,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v36_human_editorial'));
+        const d = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

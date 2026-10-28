@@ -16,13 +16,16 @@
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "activeMediaType": "video",
     "videoPlaylistMode": "loop",
-    "videoDim": 18
+    "videoDim": 18,
+    "lang": "en",
+    "guideLang": "en",
+    "voice": "Amy"
   },
   "listId": "list_session_7_travel",
   "defaults": {
     "sentence": false,
     "repeats": 2,
-    "rate": 0.88,
+    "rate": 0.96,
     "numbers": true,
     "mode": "paper",
     "writeMode": "fixed",
@@ -36,10 +39,13 @@
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "videoPlaylistMode": "loop",
     "activeMediaType": "video",
-    "videoDim": 18
+    "videoDim": 18,
+    "lang": "en",
+    "guideLang": "en",
+    "voice": "Amy"
   },
-  "ver": 36,
-  "version": "4.3.0",
+  "ver": 37,
+  "version": "4.4.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -49,17 +55,19 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "primary": "AWS Polly Amy (en-GB) via Streamelements",
-    "failover": "Google Translate TTS (en-GB female)",
-    "backup": "Device en-GB female voice (offline fallback only)"
+    "tier1": "Real human Oxford / Cambridge British English female studio recordings (en-GB RP, lexicographer, 28-32) served from ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
+    "tier2": "Natural en-GB British professional woman neural voice - Microsoft Sonia / Libby Online, Google UK English Female, Serena, Kate, Stephanie, Martha or Amy",
+    "tier3": "Device en-GB British female voice via speechSynthesis (utterance.lang en-GB, rate 0.96 then 0.92, pitch 1.02)",
+    "excluded": "All male voices (Daniel, Arthur, Oliver, Ryan, George, Thomas, James, David, Mark, Richard) and every US voice are rejected while an en-GB female exists",
+    "lockedVoice": "Amy"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.3.0",
-  "settingsRev": 36,
+  "appVersion": "4.4.0",
+  "settingsRev": 37,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -83,7 +91,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v36_human_editorial",
+  "storageKey": "sdp.v37_human_british",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -236,11 +244,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v36",
+  "ghMediaCache": "sdp.gh_assets_v37",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v36",
     "sdp.gh_assets_v35",
     "sdp.gh_assets_v34",
     "sdp.gh_assets_v33",
@@ -248,5 +257,59 @@
     "sdp.gh_assets_v31",
     "sdp.gh_media_v30",
     "sdp.gh_videos_cache"
-  ]
+  ],
+  "lang": "en",
+  "guideLang": "en",
+  "voice": "Amy",
+  "lockedVoice": "Amy",
+  "humanAudio": {
+    "host": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
+    "suffix": "--_gb_1.mp3",
+    "normalise": {
+      "tyre/tire": "tyre",
+      "tire": "tyre"
+    },
+    "cache": "TTS.humanAudioMap + in-memory Audio preload",
+    "enrichment": "https://api.dictionaryapi.dev/api/v2/entries/en/<word> cached when a -uk.mp3 human recording is listed",
+    "fallbackDeadlineMs": 450
+  },
+  "voiceProfile": {
+    "gender": "woman",
+    "age": "25-34",
+    "accent": "British English (en-GB, RP)",
+    "style": "professional studio diction, BBC / Cambridge examiner pace",
+    "rate": [
+      0.96,
+      0.92
+    ],
+    "pitch": 1.02,
+    "breathPauseMs": 850
+  },
+  "typography": {
+    "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",
+    "sinhala": "\"Noto Sans Sinhala\", \"Sinhala Sangam MN\", \"Nirmala UI\", \"Inter\", sans-serif",
+    "sinhalaLineHeight": 1.72
+  },
+  "ui": {
+    "radius": {
+      "buttons": "10px",
+      "iconButtons": "10px",
+      "segmented": "11px",
+      "segmentThumb": "8px",
+      "tabbar": "16px",
+      "tab": "11px",
+      "cards": "16px",
+      "tiles": "12px",
+      "inputs": "10px"
+    },
+    "primary": "royal cobalt 180deg #3b82f6 -> #2563eb with a 1px specular hairline",
+    "secondary": "graphite rgba(17,24,39,0.88) studio surface",
+    "glass": "smoked slate rgba(11,15,25,0.72), zero backdrop-filter",
+    "motion": {
+      "press": "0.04s",
+      "release": "0.16s cubic-bezier(0.22, 1, 0.36, 1)",
+      "screen": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+      "credit": "0.45s"
+    }
+  }
 }

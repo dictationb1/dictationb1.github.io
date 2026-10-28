@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 36,
+  "ver": 37,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -13,7 +13,10 @@
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "activeMediaType": "video",
     "videoPlaylistMode": "loop",
-    "videoDim": 18
+    "videoDim": 18,
+    "lang": "en",
+    "guideLang": "en",
+    "voice": "Amy"
   },
   "lists": [
     {
@@ -223,11 +226,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "4.3.0",
+  "appVersion": "4.4.0",
   "updatedAt": "2026-10-28T00:00:00Z",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "buildDate": "2026-10-28",
-  "settingsRev": 36,
+  "settingsRev": 37,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -235,7 +238,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v36_human_editorial",
+  "storageKey": "sdp.v37_human_british",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -266,11 +269,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v36",
+  "ghMediaCache": "sdp.gh_assets_v37",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v36",
     "sdp.gh_assets_v35",
     "sdp.gh_assets_v34",
     "sdp.gh_assets_v33",
@@ -278,5 +282,9 @@
     "sdp.gh_assets_v31",
     "sdp.gh_media_v30",
     "sdp.gh_videos_cache"
-  ]
+  ],
+  "lang": "en",
+  "guideLang": "en",
+  "voice": "Amy",
+  "lockedVoice": "Amy"
 }
