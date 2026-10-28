@@ -47,8 +47,8 @@
     "humanReactions": true,
     "elevenLabsKey": ""
   },
-  "ver": 38,
-  "version": "4.5.0",
+  "ver": 39,
+  "version": "4.6.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -58,19 +58,25 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "singleWord": "Oxford / Google dictionary en-GB sound URL when the recording exists: https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
-    "phrases": "No-CORS audio-only phrase stream: https://dict.youdao.com/dictvoice?type=1&audio=<encoded text>",
-    "fallback": "Google Translate audio stream tl=en-GB, ttsspeed=0.92; provider voice is generated and not guaranteed to be a human recording",
-    "liveFallback": "Audio-only on live online browsers; OS SpeechSynthesis is reserved for offline/headless fallback paths",
-    "lockedVoice": "Amy"
+    "engine": "one single unified British English woman studio voice",
+    "unifiedHost": "https://dict.youdao.com/dictvoice?type=1&audio=<encoded text>",
+    "covers": "single words (bicycle), compound phrases (bus stop), prompts (Are you ready?), Repeat 2 (Once more, bicycle.) and human reactions (Brilliant, well done!)",
+    "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin",
+    "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo() and UI.startPractisingFromGuide()",
+    "fallback": "one pinned en-GB female speechSynthesis voice (Microsoft Sonia Online (Natural) - English (United Kingdom), Microsoft Libby Online, Google UK English Female, Serena, Amy), locked lang en-GB, rate 0.96, pitch 1.02, volume 1.0",
+    "headlessStartMs": 60,
+    "liveStartMs": 1200,
+    "wordWatchdogMs": 2500,
+    "repeatWatchdogMs": 2800,
+    "breathPauseMs": 650
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.5.0",
-  "settingsRev": 38,
+  "appVersion": "4.6.0",
+  "settingsRev": 39,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -94,7 +100,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v38_human_reactions_voice",
+  "storageKey": "sdp.v39_single_unified_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -247,11 +253,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v38",
+  "ghMediaCache": "sdp.gh_assets_v39",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v38",
     "sdp.gh_assets_v37",
     "sdp.gh_assets_v36",
     "sdp.gh_assets_v35",
@@ -267,25 +274,23 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "oxfordHost": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
-    "phraseHost": "https://dict.youdao.com/dictvoice?type=1&audio=",
-    "fallbackHost": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0.92&q=",
+    "unifiedHost": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
     "preload": "auto",
-    "headlessStartMs": 60,
-    "liveStartMs": 1800,
-    "cache": "TTS.audioCache"
+    "cache": "TTS.preloadQueue and TTS.audioCache",
+    "mixing": "never - Oxford gstatic, translate_tts and device voices are not used for online playback"
   },
   "voiceProfile": {
-    "delivery": "British English learning prompt and teacher-style reactions",
+    "delivery": "one single British English woman voice for every word, phrase, prompt, repeat and reaction",
     "accentRequest": "en-GB",
     "rate": [
       0.96,
       0.92
     ],
-    "breathPauseMs": 850,
-    "providerCaveat": "The app requests provider URLs; provider voices and availability are not guaranteed to be a specific age, gender, or human performer."
+    "breathPauseMs": 650,
+    "fallbackVoice": "one pinned en-GB female device voice",
+    "voice": "Amy"
   },
   "typography": {
     "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",
