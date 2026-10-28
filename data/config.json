@@ -44,8 +44,8 @@
     "guideLang": "en",
     "voice": "Amy"
   },
-  "ver": 41,
-  "version": "4.8.0",
+  "ver": 42,
+  "version": "4.9.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -55,25 +55,28 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "one locked British English woman studio voice (en-GB, Youdao dictvoice type=1)",
-    "singleVoiceUrl": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0.95&q=<encoded text>",
-    "covers": "clean single words (bicycle), clean compound phrases (bus stop) and the spoken number prefix (Number 7.) only - no greetings, no repeats cues, no reactions, no filler phrases",
+    "engine": "one locked British English woman neural voice (en-GB, Youdao dictvoice type=1, unified for every clip)",
+    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
+    "covers": "clean single words (bicycle), compound phrases (bus stop), the spoken number prefix (Number 7, bicycle .), the countdown (Three, two, one .), the session instructions, the pause/resume lines and the completion summary - all through the same model because every request ends with ' .'",
     "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin, referrerpolicy=no-referrer",
     "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo(), UI.startPractisingFromGuide() and every dictionary speaker tap",
     "repeatReplay": "repetition 2 calls ttsMasterAudio.currentTime = 0 and play() on the exact same buffer - never a new request and never a different voice",
-    "preload": "TTS.preloadSessionWords(words) pre-buffers the session in the background; TTS.audioCache records every buffered studio URL",
+    "preload": "TTS.preloadCoreAudio() buffers the instructions, the countdown, the sound check and the first 4 session words",
     "bufferTimeoutMs": 3500,
-    "silenceBetweenRepeatsMs": 700,
+    "silenceBetweenRepeatsMs": 650,
     "deviceVoice": "window.speechSynthesis is cancelled and never spoken on a live online browser; it is used only by HeadlessChrome/jsdom test runs or a fully offline browser",
-    "lockedVoice": "Amy"
+    "lockedVoice": "Amy",
+    "clipFormat": "every clip is formatted as '<text> .' (space + period) so the legacy single-word clip table is never used",
+    "fallback": "1500ms start watchdog on the master <audio>; onerror or a slow start falls back to TTS.speakPinnedSynth() (one locked en-GB female device voice) instead of hanging in silence",
+    "retired": "the retired Google translate_tts endpoint (client=tw-ob) answered unauthenticated requests with 403/404, so it is gone"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.8.0",
-  "settingsRev": 41,
+  "appVersion": "4.9.0",
+  "settingsRev": 42,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -97,7 +100,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v41_unified_voice_lifecycle",
+  "storageKey": "sdp.v42_bugfree_single_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -250,11 +253,13 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v41",
+  "ghMediaCache": "sdp.gh_assets_v42",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v40",
+    "sdp.gh_assets_v41",
     "sdp.gh_assets_v39",
     "sdp.gh_assets_v38",
     "sdp.gh_assets_v37",
@@ -272,23 +277,27 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "singleVoiceUrl": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0.95&q=",
+    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "referrerPolicy": "no-referrer",
-    "crossOrigin": false,
+    "crossOrigin": "none",
     "preload": "auto",
     "cache": "TTS.preloadQueue and TTS.audioCache",
-    "mixing": "never - the retired dictionary hosts, machine translation voices and the device voice are all unused for online playback"
+    "mixing": "never - the retired dictionary hosts, machine translation voices and the device voice are all unused for online playback",
+    "voice": "Amy",
+    "lang": "en-GB"
   },
   "voiceProfile": {
-    "delivery": "one single locked British English woman studio voice for every word and every repeat",
+    "delivery": "one single locked British English (en-GB) female neural voice for every word and every repeat",
     "accentRequest": "en-GB",
     "rate": [
       0.96,
       0.96
     ],
-    "silenceBetweenRepeatsMs": 750,
+    "silenceBetweenRepeatsMs": 650,
     "studioVoice": "Amy",
-    "voice": "Amy"
+    "voice": "Amy",
+    "clipFormat": "<text> . - one space and one period, always",
+    "fallback": "TTS.speakPinnedSynth() - one locked en-GB female device voice - after a 1500ms audio watchdog"
   },
   "typography": {
     "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",

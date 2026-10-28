@@ -3,7 +3,10 @@ const {JSDOM,VirtualConsole}=require('jsdom');
 const FakeTimers=require('@sinonjs/fake-timers');
 const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8');
 function harness(seed,opts={}){
- const dom=new JSDOM(html,{url:'https://example.test/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:new VirtualConsole()});
+ const consoleErrors=[];
+ const vc=new VirtualConsole();
+ vc.on('jsdomError',function(e){consoleErrors.push(e&&e.message?e.message:String(e));});
+ const dom=new JSDOM(html,{url:'https://example.test/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
  const w=dom.window;
  const clock=FakeTimers.withGlobal(w).install({now:Date.UTC(2026,9,14,12),toFake:['Date','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
  w.scrollTo=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){}});w.HTMLCanvasElement.prototype.getContext=()=>opts.canvasContext||null;
@@ -15,6 +18,6 @@ function harness(seed,opts={}){
  const injection='window.__qa = {LiveWallpaper:LiveWallpaper,isAssetsMedia:isAssetsMedia,normalizeAssetPath:normalizeAssetPath,DEFAULT_WALLPAPER_SRC:DEFAULT_WALLPAPER_SRC,APP_VERSION:APP_VERSION,ASSET_MEDIA_RE:ASSET_MEDIA_RE,Errors:typeof Errors==="undefined"?null:Errors,Admin:Admin,DB:DB,Speech:Speech,UI:UI,Eng:Eng,Lib:Lib,NoVoice:NoVoice,defaultData:defaultData,Results:Results,Cloud:Cloud,Dict:Dict,DictAPI:Dict,Store:Store,CONFIG:CONFIG,ukMp3:ukMp3,SAMPLE_WORDS:SAMPLE_WORDS,IPA:typeof IPA==="undefined"?null:IPA,SAMPLE_LIST_ID:typeof SAMPLE_LIST_ID==="undefined"?null:SAMPLE_LIST_ID,U:U,Screens:Screens,WORD_BANK:WORD_BANK,publishCompletion:publishCompletion,wordRow:wordRow,T:T,STRINGS_EN:STRINGS_EN,STRINGS_SI:STRINGS_SI,GUIDE:GUIDE,welcomeGuide:welcomeGuide,firstRunTour:firstRunTour}; window.SDP = {';
  const script=rawScript.replace(marker,injection);
  vm.runInContext(script,dom.getInternalVMContext());w.document.dispatchEvent(new w.Event('DOMContentLoaded'));clock.tick(100);w.__qa.DB.data.tourSeen=true;
- return {w,q:w.__qa,clock,close(){clock.uninstall();dom.window.close();}};
+ return {w,q:w.__qa,clock,consoleErrors,close(){clock.uninstall();dom.window.close();}};
 }
 module.exports={harness,html};
