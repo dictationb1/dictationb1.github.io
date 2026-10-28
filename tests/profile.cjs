@@ -1,9 +1,10 @@
 /* Repeatable lab measurement; not a real-device or 4G performance claim. */
 const fs=require('node:fs'), path=require('node:path');
 const {chromium}=require('playwright-core');
+require('./chromium-env.cjs').ensureChromiumLibs();
 const packaged=require('@sparticuz/chromium');
 (async()=>{
- const browser=await chromium.launch({executablePath:await packaged.executablePath(),args:packaged.args});
+ const browser=await chromium.launch({executablePath:await packaged.executablePath(),args:packaged.args.filter(a=>!['--single-process','--disable-web-security','--allow-running-insecure-content','--disable-site-isolation-trials'].includes(a))});
  const context=await browser.newContext({viewport:{width:360,height:640}});
  const page=await context.newPage(), cdp=await context.newCDPSession(page);
  await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});
@@ -13,12 +14,15 @@ const packaged=require('@sparticuz/chromium');
  });
  await cdp.send('Tracing.start',{categories:'devtools.timeline,blink.user_timing',transferMode:'ReturnAsStream'});
  await page.goto(require('node:url').pathToFileURL(path.resolve(__dirname,'../index.html')).href);
- await page.locator('#homeTitle').waitFor();
+ await page.locator('#homeTitle').waitFor({state:'attached'});
  const homeVisibleMs=await page.evaluate(()=>performance.now());
  await page.waitForTimeout(2500);
- /* v2.0.0: only close the first-run tour if it is open, and press Unlock only while the
-    pad is still showing - a four-digit PIN auto-submits and closes the sheet itself. */
- if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();
+ /* The guide has separate Stop Audio and Close controls. Wait for the actual
+    delayed first-run guide, then dismiss it before using the app underneath. */
+ const closeGuide=page.locator('#guideSheet .shead button[aria-label="Close"]');
+ await closeGuide.waitFor({state:'visible',timeout:12000});
+ await closeGuide.evaluate(button=>button.click());
+ await page.locator('#homeTitle').waitFor({state:'visible'});
  await page.locator('#btnAdmin').click();
  for(const n of require('./test-pin.cjs').split(''))await page.locator('#pinPad [data-k="'+n+'"]').click();
  const go=page.locator('#pinSubmit');

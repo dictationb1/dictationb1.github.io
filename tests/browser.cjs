@@ -14,7 +14,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
  /* v2.0.0: the PIN pad submits itself on the fourth digit, so #pinSubmit is only
     pressed when the pad is still open (a 5-8 digit PIN). Closing the sheet that is
     already gone used to hang this suite. */
- async function closeSheet(page){if(await page.locator('#sheets .shead button').count())await page.locator('#sheets .shead button').click();}
+ async function closeSheet(page){if(await page.locator('#sheets .shead button[aria-label="Close"]').count())await page.locator('#sheets .shead button[aria-label="Close"]').click();}
  async function unlockPin(page){
   await page.locator('#btnAdmin').click();
   for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();
@@ -47,7 +47,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -63,7 +63,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -74,7 +74,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v43_bundled_studio_voice','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v44_apple_liquid_complete','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -122,11 +122,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
     state.filter==='none'&&state.opacity==='1'&&
     state.src==='./assets/bunny-live-wallpaper.mp4'&&state.wrap!=='none'&&
-    state.heroImg==='none'&&/rgba\(11, 15, 25, 0\.72\)/.test(state.heroBg)&&
+    /linear-gradient/.test(state.heroImg)&&/8, 14, 28/.test(state.heroImg)&&
     state.heroBlur==='none'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v38 live bunny video decodes and autoplays behind the flat architectural glass',status:ok?'PASS':'FAIL',detail:state,errors});
+  results.push({test:'Chromium v44 live bunny video decodes and autoplays behind optical glass',status:ok?'PASS':'FAIL',detail:state,errors});
   await context.close();
  }
  {
@@ -153,22 +153,21 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      hero:cs(document.getElementById('homeHero')),title:cs(document.getElementById('homeTitle')),
      credit:cs(document.getElementById('credit')),video:cs(document.getElementById('bgLiveVideo'))};
    });
-   const cobalt=(m)=>!!m&&/59, 130, 246/.test(m.img)&&/37, 99, 235/.test(m.img)&&!/192, 132, 252/.test(m.img);
-   ok=!!(v37.primary&&cobalt(v37.primary)&&v37.primary.fg==='rgb(255, 255, 255)'&&v37.primary.radius==='10px'&&
-      v37.primary.weight==='600'&&/255, 255, 255/.test(v37.primary.border)&&v37.primary.blur==='none'&&v37.primary.stroke==='0px')&&
-    !!(v37.ghost&&/rgba\(17, 24, 39, 0\.88\)/.test(v37.ghost.bg)&&v37.ghost.fg==='rgb(248, 250, 252)'&&
-      v37.ghost.radius==='10px'&&v37.ghost.blur==='none')&&
-    !!(v37.seg&&v37.seg.radius==='11px'&&v37.seg.blur==='none')&&
-    !!(v37.tab&&v37.tab.radius==='11px')&&
-    !!(v37.thumb&&v37.thumb.radius==='11px'&&cobalt(v37.thumb))&&
-    !!(v37.segThumb&&v37.segThumb.radius==='8px'&&cobalt(v37.segThumb))&&
-    !!(v37.tabbar&&v37.tabbar.radius==='16px'&&/rgba\(11, 15, 25, 0\.72\)/.test(v37.tabbar.bg)&&v37.tabbar.blur==='none')&&
-    !!(v37.hero&&v37.hero.radius==='16px'&&/rgba\(11, 15, 25, 0\.72\)/.test(v37.hero.bg)&&v37.hero.blur==='none')&&
+   const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
+   ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
+      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='none')&&
+    !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
+    !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
+    !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
+    !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
+    !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
+    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&v37.tabbar.blur==='none')&&
+    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='none')&&
     !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
-    !!(v37.credit&&v37.credit.radius==='10px'&&v37.credit.z==='9999'&&/251, 191, 36/.test(v37.credit.border))&&
+    !!(gradient(v37.credit)&&v37.credit.radius==='18px'&&v37.credit.z==='9999'&&/255, 221, 139/.test(v37.credit.border))&&
     !!(v37.video&&v37.video.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
-  results.push({test:'Chromium v38 architectural UI: 10px cobalt CTAs, graphite controls, 11px segments and tabs, 16px cards and dock, 8px segment thumb, amber credit badge, zero blur or neon',status:ok?'PASS':'FAIL',detail:v37,errors});
+  results.push({test:'Chromium v44 optical glass: gradients, specular shadows, rounded controls, readable text and no backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.

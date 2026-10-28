@@ -49,8 +49,8 @@ function harness(html = current, opts = {}) {
     send() { w.setTimeout(() => {this.status = 0; this.readyState = 4; if(this.onreadystatechange) this.onreadystatechange();}, 10); }
   };
   w.fetch = url => { requests.push({method: 'fetch', url: String(url)}); return Promise.reject(Error('offline')); };
-  if(opts.raw !== undefined) { w.localStorage.setItem(STORE_KEY, opts.raw); w.localStorage.setItem(STORE_KEY, opts.raw); }
-  if(opts.backup) { w.localStorage.setItem(STORE_KEY+'.bak', opts.backup); w.localStorage.setItem(STORE_KEY+'.bak', opts.backup); }
+  if(opts.raw !== undefined) { w.localStorage.setItem(STORE_KEY, opts.raw); w.localStorage.setItem('sdp.v43_bundled_studio_voice', opts.raw); }
+  if(opts.backup) { w.localStorage.setItem(STORE_KEY+'.bak', opts.backup); w.localStorage.setItem('sdp.v43_bundled_studio_voice.bak', opts.backup); }
   if(opts.cloud) w.localStorage.setItem('sdp.cloudurl', 'https://script.google.com/macros/s/unreachable/exec');
   if(opts.blocked) Object.defineProperty(w, 'localStorage', {get() {throw Error('Storage blocked');}});
   if(opts.offline) Object.defineProperty(w.navigator, 'onLine', {value: false});
@@ -185,7 +185,7 @@ function enterPin(a, pin) {
   const clear = pad.querySelector('[data-k="clear"]');
   if (clear) clear.click();
   for(const digit of pin) { const key = a.w.document.querySelector('#pinPad [data-k="'+digit+'"]'); if (key) key.click(); }
-  if (pin.length === 4) return;                                     /* v2.0.0 auto-submits at four digits */
+  if (pin.length === 8 && !a.w.document.querySelector('#pinPad')) return; /* eight-digit PIN may auto-submit */
   const submit = a.w.document.querySelector('#pinSubmit');
   if (submit && !submit.disabled) submit.click();
 }
@@ -233,7 +233,7 @@ test('2.2 cloud list update stays queued throughout active session', () => withA
 test('2.3 session typing/day chips update Home, player and comment metadata', () => withApp({voice:'en-GB'}, a => {
  enterPin(a,DEFAULT_PIN);a.q.Admin.tab='session';a.q.Admin.renderTab();const no=a.w.document.querySelector('[aria-label="Session number"]');no.value='42';no.dispatchEvent(new a.w.Event('input'));
  clickText(a,'Sun');assert.equal(a.q.DB.data.session.day,'Sunday');assert(a.w.document.querySelector('#homeKicker').textContent.includes('42'));assert(a.q.Comm.meta().includes('Sunday'));
- a.q.Eng.start({});assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
+ a.q.Eng.start({});assert.equal(a.q.Eng.layer,null);clickText(a,"I'm ready");assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
 }));
 test('2.4 private message is absent from public comments, visible only in unlocked inbox', () => withApp({}, a => {
  a.q.Comm.message();a.w.document.querySelector('#sheets textarea').value='Private QA message';clickText(a,'Send to lecturer');assert.equal(a.q.DB.data.inbox.length,1);assert.equal(a.q.DB.data.comments.length,0);assert(!a.w.document.querySelector('#commList').textContent.includes('Private QA message'));
@@ -313,7 +313,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.spoken.some(s=>s.text==='Final word, number 30, windscreen .'),'v42: the last word is announced with its dictation number');assert(a.spoken.filter(s=>s.text==='windscreen .').length>=1,'v42: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+, /.test(s.text)),'v42: every word announces its dictation number');
+ assert(a.spoken.some(s=>s.text==='Final word, number 30, windscreen .'),'v42: the last word is announced with its dictation number');assert(a.spoken.filter(s=>/^windscreen\s*\.?$/.test(s.text)).length>=1,'v44: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+, /.test(s.text)),'v42: every word announces its dictation number');
  assert(!a.spoken.some(s=>s.text.includes('Clean the car windscreen')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
@@ -419,20 +419,21 @@ test('1.9 every Home widget is wrapped and screens stay isolated', () => {
   assert(new RegExp('U\\.widget\\("'+name+'",\\s*function\\s*\\(').test(current), name);
  }
 });
-test('4.5 ready screen speaks the greeting from the tap and can skip the countdown', () => withApp({voice:'en-GB'}, a => {
+test('4.5 ready screen speaks the greeting, then proceeds through the countdown', () => withApp({voice:'en-GB'}, a => {
  a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list', sessionNo:'9', sessionDay:'Monday'});
- clickText(a,'Skip countdown');
+ clickText(a,"I'm ready");
  for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
  assert.equal(a.q.Eng.st,'waiting'); assert(!a.crash()); assert.equal(a.q.Errors.items.length,0);
 }));
-test('4.5 greeting text and skippable countdown exist in the ready sheet', () => withApp({voice:'en-GB'}, a => {
+test('4.5 greeting matches the ready button and no skip is offered', () => withApp({voice:'en-GB'}, a => {
  a.q.Eng.start({words:[{w:'apple',s:'I eat an apple every day.',m:'a round fruit'}], listName:'QA list'});
  const sheet=a.w.document.querySelector('#sheets').textContent;
- assert(sheet.includes("Get your pen and paper. Tap I'm ready when you are."));
- assert(Array.from(a.w.document.querySelectorAll('#sheets button')).some(b=>b.textContent.trim()==='Skip countdown'));
+ assert(sheet.includes("Click I'm ready to begin."));
+ assert(!Array.from(a.w.document.querySelectorAll('#sheets button')).some(b=>b.textContent.trim()==='Skip countdown'));
+ assert.equal(a.q.Eng.layer,null);
 }));
 test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a => {
- a.q.Eng.start({words:[{w:'apple',s:'I eat an apple.',m:'a fruit'}], listName:'QA'}); clickText(a,'Skip countdown');
+ a.q.Eng.start({words:[{w:'apple',s:'I eat an apple.',m:'a fruit'}], listName:'QA'}); clickText(a,"I'm ready");
  for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
  const btn=Array.from(a.w.document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Test sound');
  assert(btn, 'Test sound button');

@@ -42,10 +42,11 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy"
+    "voice": "Amy",
+    "adminPin": "78987898"
   },
-  "ver": 43,
-  "version": "5.0.0",
+  "ver": 44,
+  "version": "5.1.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -55,31 +56,26 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "one bundled British English woman neural voice (single speaker, pre-rendered ./audio/*.mp3, same origin)",
-    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
-    "covers": "welcome instruction, sound check, Three/Two/One lockstep countdown, Number N, each vocabulary word (twice), Session paused, Welcome back. Continuing dictation number N, Dictation complete",
-    "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin, referrerpolicy=no-referrer",
-    "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo(), UI.startPractisingFromGuide() and every dictionary speaker tap",
-    "repeatReplay": "repetition 2 calls ttsMasterAudio.currentTime = 0 and play() on the exact same buffer - never a new request and never a different voice",
-    "preload": "TTS.preloadCoreAudio() buffers the instructions, the countdown, the sound check and the first 4 session words",
-    "bufferTimeoutMs": 3500,
-    "silenceBetweenRepeatsMs": 650,
-    "deviceVoice": "window.speechSynthesis is cancelled and never spoken on a live online browser; it is used only by HeadlessChrome/jsdom test runs or a fully offline browser",
+    "engine": "Microsoft Edge neural TTS, committed same-origin MP3 pack",
+    "englishVoice": "en-GB-SoniaNeural",
+    "sinhalaGuideVoice": "si-LK-ThiliniNeural",
     "lockedVoice": "Amy",
-    "clipFormat": "every clip is formatted as '<text> .' (space + period) so the legacy single-word clip table is never used",
-    "fallback": "custom user words that are not in the bundled pack use the documented remote fallback; the device speechSynthesis voice is never used on a live browser",
-    "retired": "the retired Google translate_tts endpoint (client=tw-ob) answered unauthenticated requests with 403/404, so it is gone",
     "localBase": "./audio/",
-    "pack": "v43 bundled studio pack of ./audio/*.mp3 files: v43 bundled studio pack: welcome-*, sound-check, count-1..3, countdown-321, num-1..30, resume-1..30, word-<slug>, pass1-<n>-<slug>, paused, finish-*",
-    "voiceStyle": "en-GB female British studio voice"
+    "element": "#ttsMasterAudio",
+    "silenceBetweenRepeatsMs": 650,
+    "writeFixedSeconds": 5,
+    "repeats": 2,
+    "slowPlaybackRate": 0.72,
+    "clips": "welcome, guide-en/si, sound-check, countdown, number, word, sentence, spelling, pause, resume and finish",
+    "fallback": "Custom content uses the existing remote speech fallback; bundled clips work offline."
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.0.0",
-  "settingsRev": 43,
+  "appVersion": "5.1.0",
+  "settingsRev": 44,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -103,7 +99,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v43_bundled_studio_voice",
+  "storageKey": "sdp.v44_apple_liquid_complete",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -215,9 +211,18 @@
       "./assets/bunny-live-wallpaper.mp4"
     ],
     "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-    "ghMediaCache": "sdp.gh_assets_v35",
+    "ghMediaCache": "sdp.gh_assets_v44",
     "ghMediaTtl": 900000,
     "legacyMediaCaches": [
+      "sdp.gh_assets_v43",
+      "sdp.gh_assets_v42",
+      "sdp.gh_assets_v40",
+      "sdp.gh_assets_v41",
+      "sdp.gh_assets_v39",
+      "sdp.gh_assets_v38",
+      "sdp.gh_assets_v37",
+      "sdp.gh_assets_v36",
+      "sdp.gh_assets_v35",
       "sdp.gh_assets_v34",
       "sdp.gh_assets_v33",
       "sdp.gh_assets_v32",
@@ -256,11 +261,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v43",
+  "ghMediaCache": "sdp.gh_assets_v44",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v43",
     "sdp.gh_assets_v42",
     "sdp.gh_assets_v40",
     "sdp.gh_assets_v41",
@@ -281,30 +287,20 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
-    "referrerPolicy": "no-referrer",
-    "crossOrigin": "none",
-    "preload": "auto",
-    "cache": "TTS.preloadQueue and TTS.audioCache",
-    "mixing": "never - no dictionary host, no machine translation voice and no device voice on live browsers",
-    "voice": "Amy",
+    "voice": "en-GB-SoniaNeural",
+    "guideSinhala": "si-LK-ThiliniNeural",
     "lang": "en-GB",
     "localBase": "./audio/",
-    "bundle": "v43: every spoken clip is a committed same-origin ./audio/*.mp3 file rendered by one single neural voice"
+    "referrerPolicy": "no-referrer",
+    "bundle": "v44 same-origin neural recordings"
   },
   "voiceProfile": {
-    "delivery": "one single locked British English (en-GB) female neural voice for every word and every repeat",
-    "accentRequest": "en-GB",
-    "rate": [
-      0.96,
-      0.96
-    ],
-    "silenceBetweenRepeatsMs": 650,
-    "studioVoice": "Amy",
+    "name": "Sonia neural studio voice",
     "voice": "Amy",
-    "clipFormat": "<text> . - one space and one period, always",
-    "fallback": "TTS.speakPinnedSynth() - one locked en-GB female device voice - after a 1500ms audio watchdog",
-    "name": "Bundled Studio Woman (v43)"
+    "studioVoice": "en-GB-SoniaNeural",
+    "accentRequest": "en-GB",
+    "silenceBetweenRepeatsMs": 650,
+    "slowPlaybackRate": 0.72
   },
   "typography": {
     "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",
@@ -312,27 +308,19 @@
     "sinhalaLineHeight": 1.72
   },
   "ui": {
+    "glass": "Layered optical glass with specular highlights and no backdrop blur",
     "radius": {
-      "buttons": "10px",
-      "iconButtons": "10px",
-      "segmented": "11px",
-      "segmentThumb": "8px",
-      "tabbar": "16px",
-      "tab": "11px",
-      "cards": "16px",
-      "tiles": "12px",
-      "inputs": "10px"
+      "buttons": "12px",
+      "cards": "18px"
     },
-    "primary": "royal cobalt 180deg #3b82f6 -> #2563eb with a 1px specular hairline",
-    "secondary": "graphite rgba(17,24,39,0.88) studio surface",
-    "glass": "smoked slate rgba(11,15,25,0.72), zero backdrop-filter",
     "motion": {
       "press": "0.04s",
-      "release": "0.16s cubic-bezier(0.22, 1, 0.36, 1)",
-      "screen": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
-      "credit": "0.45s"
+      "release": "0.20s spring",
+      "credit": "8s disappearing/reappearing cycle"
     }
   },
   "updatedAt": "2026-10-28T00:00:00Z",
-  "updatedAtMs": 1793145600000
+  "updatedAtMs": 1793145600000,
+  "adminPin": "78987898",
+  "schema": 44
 }
