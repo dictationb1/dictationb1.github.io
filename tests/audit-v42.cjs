@@ -1,23 +1,9 @@
 'use strict';
-/* v43 real-Chromium troubleshooting audit (release 5.0.0).
-   ----------------------------------------------------------------------------
-   Drives index.html in a REAL Chromium build (not jsdom) and verifies the v43
-   contract end to end:
-     * the whole voice is the committed, same-origin ./audio/*.mp3 pack
-       rendered by ONE single neural female voice - no dictionary host, no
-       machine-translation voice and never the device speechSynthesis voice
-     * welcome, sound check, the lockstep 3 -> 2 -> 1 countdown, "Number N",
-       the word (twice), "Session paused", "Welcome back. Continuing dictation
-       number N" and the completion summary all come from their own clip
-     * the visual counter and the spoken "Three / Two / One" are in lockstep
-       (0ms / 950ms / 1900ms) and Word 1 starts at 2850ms
-     * the "Dictation #N of 30" badge and the #plSub step line are always live
-     * the 5 second writing countdown runs
-     * TTS.testSound() marks the voice as verified
-     * a same-origin clip gets a 4000ms watchdog and one retry - the old 1500ms
-       jump to the robotic device voice is gone
-     * zero console errors and zero uncaught page errors
-   Run:  node tests/audit-v42.cjs                                      */
+/* v44 real-Chromium audio audit (the historical filename is retained).
+   Verifies same-origin neural clips, dynamic number/word mapping, the
+   sequenced 3-2-1 countdown, the five-second timer, pause/resume/finish,
+   progress dots and error-free handling of failed playback. Custom content
+   retains its documented remote fallback. Run: node tests/audit-v42.cjs */
 const path = require('node:path');
 const fs = require('node:fs');
 const { chromium } = require('playwright-core');
@@ -108,9 +94,14 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
       return r.abort();
     });
     await page.goto(url);
-    await page.waitForSelector('#homeTitle', { state: 'visible' });
+    await page.waitForSelector('#homeTitle', { state: 'attached' });
     await page.waitForFunction(() => !!(window.SDP && window.SDP.version), null, { timeout: 20000 });
-    await page.waitForTimeout(500);
+    /* The first-run guide is delayed. Close it before starting this audit so
+       it cannot race the ready sheet on a heavily loaded runner. */
+    const closeGuide = page.locator('#guideSheet .shead button[aria-label="Close"]');
+    await closeGuide.waitFor({ state:'visible', timeout:12000 });
+    await closeGuide.evaluate((b) => b.click());
+    await page.waitForSelector('#homeTitle', { state:'visible' });
     return { context, page, consoleErrors, pageErrors };
   }
   const clipsOf = (page) => page.evaluate(() => (window.__clips || []).slice());
@@ -129,7 +120,9 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     sub: (document.getElementById('plSub') || {}).textContent || '',
     cd: (document.getElementById('cdNum') || {}).textContent || '',
     badgeLog: (window.__badgeLog || []).slice(),
-    subLog: (window.__subLog || []).slice()
+    subLog: (window.__subLog || []).slice(),
+    statusLog: (window.__statusLog || []).slice(),
+    dots: document.querySelectorAll('#plProgressDots .progress-dot').length
   }));
 
   /* ======================================================== part 1: the pack */
@@ -150,11 +143,11 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     });
     eq('the voice base is the same-origin ./audio pack', voice.local, LOCAL);
     eq('a bundled word resolves to its own clip', voice.word, LOCAL + 'word-bicycle.mp3');
-    eq('pass 1 resolves to the atomic Number + word clip', voice.pass1, LOCAL + 'pass1-1-guidebook.mp3');
+    eq('pass 1 starts with the numbered clip', voice.pass1, LOCAL + 'num-1.mp3');
     eq('a resume line resolves to its own clip', voice.resume, LOCAL + 'resume-7.mp3');
     ok('a custom word falls back to the documented remote endpoint only', voice.unknown.indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0, voice.unknown);
-    eq('the running build is 5.0.0', voice.version, '5.0.0');
-    ok('the clip watchdog is 4000ms and no longer 1500ms', /4000/.test(voice.watchdog) && !/\},1500\)/.test(voice.watchdog));
+    eq('the running build is 5.1.0', voice.version, '5.1.0');
+    ok('the clip watchdog is 4000ms and no longer 1500ms', /(?:4000|4e3)/.test(voice.watchdog) && !/\},1500\)/.test(voice.watchdog));
 
     await page.evaluate(() => { const b = document.getElementById('btnStart'); if (b) b.click(); });
     await page.waitForTimeout(900);
@@ -166,7 +159,7 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     files = await filesOf(page);
     ok('Test sound plays ./audio/sound-check.mp3', files.indexOf('sound-check.mp3') >= 0, files);
     const pill = await page.evaluate(() => { const p = document.getElementById('voiceTestPill'); return p ? p.textContent : ''; });
-    eq('the voice pill reports the verified studio voice', pill, '✓ Dictation Voice Verified');
+    eq('the debug voice pill is removed', pill, '');
 
     await page.waitForTimeout(600);
     const startIndex = (await clipsOf(page)).length;
@@ -180,31 +173,33 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     eq('Three is the first spoken count', name(0), 'count-3.mp3');
     eq('Two follows', name(1), 'count-2.mp3');
     eq('One follows', name(2), 'count-1.mp3');
-    ok('Word 1 starts straight after One', /^pass1-1-/.test(name(3) || ''), marks.map((m) => fileOf(m.url)));
+    eq('Word 1 begins with its number after One', name(3), 'num-1.mp3');
+    eq('the numbered cue is followed by the actual first word', name(4), 'word-guidebook.mp3');
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1;
     const gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
     const gap3 = marks[3] ? marks[3].t - marks[0].t : -1;
-    ok('the spoken countdown is 950ms per step', gap1 >= 850 && gap1 <= 1100 && gap2 >= 850 && gap2 <= 1100, { gap1, gap2 });
+    ok('the spoken countdown holds each number for at least 500ms', gap1 >= 480 && gap1 <= 1200 && gap2 >= 480 && gap2 <= 1200, { gap1, gap2 });
     eq('the countdown holds exactly three spoken numbers', marks.slice(0, 3).map((m) => fileOf(m.url)).join(','), 'count-3.mp3,count-2.mp3,count-1.mp3');
-    ok('Word 1 launches at ~2850ms', gap3 >= 2700 && gap3 <= 3000, gap3);
+    ok('Word 1 launches only after all three numbers', gap3 >= 1450 && gap3 <= 3600, gap3);
 
     let now = await state(page);
-    eq('the dictation badge shows Dictation #1 of 30', now.badge, 'Dictation #1 of 30');
+    eq('the duplicate dictation badge is removed', now.badge, '');
+    eq('progress dots cover all 30 words', now.dots, 30);
     eq('the progress label shows Dictation #1 of 30', now.prog, 'Dictation #1 of 30');
-    ok('the step sub-line shows the first reading', /1st reading/.test(now.subLog.join(' | ')), now.subLog.slice(-4));
+    ok('the primary status announces the first reading', /first reading/.test(now.statusLog.join(' | ')), now.statusLog.slice(-4));
 
     await page.waitForTimeout(1500);
     files = await filesOf(page);
     ok('Pass 2 replays the flat word file of the same word', files.some((f) => /^word-/.test(f) && f.indexOf('bicycle') < 0), files);
     now = await state(page);
-    ok('the writing phase starts after the repeat', now.subLog.some((t) => /Write the word now \(\d+s\)/.test(t)) || /Write the word now/.test(now.sub), now.subLog.slice(-5));
+    ok('the writing phase starts after the repeat', now.statusLog.some((t) => /Write the word now|Your turn/.test(t)), now.statusLog.slice(-5));
     ok('the writing countdown runs from five seconds', Number(now.cd) >= 0 && Number(now.cd) <= 5, now.cd);
 
     await page.click('#plPlay');
     await page.waitForTimeout(900);
     files = await filesOf(page);
     ok('Pause plays ./audio/paused.mp3', files.indexOf('paused.mp3') >= 0, files.slice(-3));
-    ok('the paused badge keeps the dictation number', /Dictation #\d+ of 30/.test((await state(page)).badge), (await state(page)).badge);
+    ok('the progress label keeps the dictation number while paused', /Dictation #\d+ of 30/.test((await state(page)).prog), (await state(page)).prog);
 
     await page.click('#plPlay');
     await page.waitForTimeout(2200);
@@ -227,9 +222,9 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     const all = await clipsOf(page);
     const bad = all.map((c) => String(c.url)).filter((u) => u.indexOf(LOCAL) !== 0 && u.indexOf('data:audio') !== 0);
     ok('every clip the session played is a same-origin ./audio file', bad.length === 0, bad.slice(0, 3));
-    const known = new Set(manifest.clips.map((c) => c.file).concat(manifest.pass1.map((p) => p.file)));
+    const known = new Set(manifest.clips.map((c) => c.file));
     const unknown = (await filesOf(page)).filter((f) => !known.has(f));
-    ok('every requested clip exists in the committed pack', unknown.length <= 1, unknown.slice(0, 3));
+    ok('every requested clip exists in the committed pack', unknown.length === 0, unknown.slice(0, 3));
 
     eq('the robotic device voice never speaks', (await page.evaluate(() => (window.__synth || []).length)), 0);
     eq('zero console errors during the whole session', noise(consoleErrors).length, 0);
@@ -260,12 +255,12 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
 
   await browser.close();
   const failed = results.filter((r) => r.status === 'FAIL');
-  console.log('\n' + (results.length - failures) + '/' + results.length + ' v43 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
+  console.log('\n' + (results.length - failures) + '/' + results.length + ' v44 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
   if (failures) {
     failed.slice(0, 5).forEach((r) => console.log('  FAIL ' + r.name + ' :: ' + JSON.stringify(r.detail)));
     process.exitCode = 1;
   }
 })().catch((err) => {
   console.error('audit crashed: ' + (err && err.stack || err));
-  process.exitCode = 1;
+  process.exit(1);
 });

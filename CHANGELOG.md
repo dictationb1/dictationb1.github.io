@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.1.0 (v44) — 2026-10-28
+
+- Bundled 174 Microsoft neural recordings: Sonia for English dictation and the English guide, and Thilini for the Sinhala guide. Guide narration starts on open or language change, with replay and stop controls. Custom content retains its existing remote fallback.
+- Rebuilt the ready flow, dynamic number/word lookup and two-reading cycle. Each reading uses the current word, with a 650 ms gap and a five-second writing timer; countdown steps wait for their audio. Repeat, slower (0.72×), masked examples, spelling, navigation, restart, finish confirmation and keyboard shortcuts are available.
+- Added progress dots and category hints, refreshed the liquid-glass surfaces and moved the animated Hansana credit clear of the player header. Preserved the material mixer, native keyboard, live class and wallpaper features.
+- Updated storage and metadata to schema/settings revision 44, version 5.1.0 and the v44 asset cache. The new local default PIN is eight digits; existing custom PINs and saved work are retained. A static-page PIN is a convenience lock, not access control.
+- Rebuilt the ES5/size, audio, migration and interaction tests; the audio build workflow is now manual and publishes an artifact without writing to a branch.
+
 ## 5.0.0 (v43) — 2026-10-28 (The whole voice is bundled: 134 committed ./audio/*.mp3 clips from ONE neural woman, lockstep 3-2-1, zero device-voice fallback)
 
 - **The third-party host is gone from the dictation path.** v42 streamed every clip from `dict.youdao.com`, which normalises trailing punctuation before it hits its database and therefore answered single words with one recorded actress and phrases with a different synthesizer, and which made a slow cross-border download trip the 1500 ms watchdog straight into the robotic OS `speechSynthesis` voice. v43 ships the voice **inside the repository**: `./audio/*.mp3`, committed, same-origin, cached by the browser, **2.3 MB in total**. `node scripts/build-audio.cjs` renders the whole pack from one single neural voice (`en-GB-SoniaNeural` through `edge-tts` when the build machine is online, or the offline Supertonic-3 CPU engine through `scripts/tts_offline.py`); the pack in this commit was produced by the offline engine, speaker **F1**, and every single file - welcome, sound check, Three/Two/One, Number 1-30, each vocabulary word, pause, resume, finish - comes from that one speaker.

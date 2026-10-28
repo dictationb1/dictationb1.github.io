@@ -57,16 +57,17 @@ async function boot(browser, width, height) {
   /* the app must work with every external host blocked */
   await page.route('https://**/*', (route) => route.abort());
   await page.goto(fileURL);
-  await page.locator('#homeTitle').waitFor();
+  await page.locator('#homeTitle').waitFor({ state: 'attached' });
   /* Each fresh context gets a Welcome Guide after boot. Wait for it explicitly:
      on a loaded CI runner its timer can fire later than a fixed sleep. */
-  const close = page.locator('#sheets .shead button').first();
+  const close = page.locator('#sheets .shead button[aria-label="Close"]').first();
   await close.waitFor({ state: 'visible', timeout: 12000 });
   // Dismiss setup via the actual handler without waiting for headless WebKit's
   // first animated sheet to become geometrically stable. Pointer interactions
   // are exercised separately in the guide, ready-screen and player tests.
   await close.evaluate((button) => button.click());
   await page.waitForFunction(() => !document.querySelector('#sheets .scrim'), null, { timeout: 6000 });
+  await page.locator('#homeTitle').waitFor({ state: 'visible' });
   await page.waitForFunction(() => {
     const credit = document.getElementById('credit');
     const s = credit && getComputedStyle(credit);
@@ -266,8 +267,8 @@ function material(page) {
           z: getComputedStyle(credit).zIndex };
       });
       assert.equal(full.inView, true, 'badge is not hidden by a repeating timer');
-      assert.ok(full.opacity >= 0.08, 'the badge never disappears completely: ' + full.opacity);
-      assert.equal(full.anim, 'hansanaRevealCycle', 'the disappearing / re-appearing cycle runs');
+      assert.ok(full.opacity >= 0.05, 'the cinematic badge remains faintly visible: ' + full.opacity);
+      assert.equal(full.anim, 'hansanaCinemaCycle', 'the cinematic disappearing / re-appearing cycle runs');
       assert.equal(full.sheen, 'none', 'no perpetual decorative repaint');
       assert.equal(full.z, '9999');
       await page.locator('#credit').click();
@@ -327,7 +328,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -425,8 +426,8 @@ function material(page) {
             const creditRect = credit.getBoundingClientRect();
             return { width: window.innerWidth, pageWidth: document.documentElement.scrollWidth,
               topLeft: topRect.left, topRight: topRect.right, dockLeft: dockRect.left, dockRight: dockRect.right,
-              topWrap: getComputedStyle(top).flexWrap, creditTop: creditRect.top, creditBottom: creditRect.bottom,
-              dockTop: dockRect.top, creditVisible: parseFloat(getComputedStyle(credit).opacity) >= 0.08,
+              topWrap: getComputedStyle(top).flexWrap, topTop: topRect.top, creditTop: creditRect.top, creditBottom: creditRect.bottom,
+              dockTop: dockRect.top, creditVisible: parseFloat(getComputedStyle(credit).opacity) >= 0.05,
               icons: Array.from(top.querySelectorAll('.btn.icon'), (b) => [b.offsetWidth, b.offsetHeight]),
               labels: Array.from(dock.querySelectorAll('button > span[data-i18n]'), (el) => {
                 const box = el.getBoundingClientRect();
@@ -438,6 +439,7 @@ function material(page) {
           assert.ok(geometry.dockLeft >= -0.5 && geometry.dockRight <= width + 0.5, width + 'px dock fits');
           assert.equal(geometry.topWrap, 'nowrap');
           assert.equal(geometry.creditVisible, true);
+          assert.ok(geometry.creditBottom <= geometry.topTop + 1, width + 'px credit stays above the topbar: ' + JSON.stringify(geometry));
           if (width <= 720) {
             assert.ok(geometry.creditBottom <= geometry.dockTop + 1, width + 'px credit stays above the dock');
             assert.ok(geometry.icons.every((size) => size[0] >= 44 && size[1] >= 44), width + 'px icon targets: ' + JSON.stringify(geometry.icons));
@@ -544,7 +546,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -623,7 +625,6 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      await clickText(page, 'Skip countdown');
       /* the countdown screen repaints itself, so wait for the player beat */
       await page.waitForFunction(() => /Your turn|Next word|Listening|Paused/.test((document.getElementById('plStatus') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
       const unlocked = await page.evaluate(() => {
@@ -642,15 +643,14 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       /* v40 speaks repetition 2 as the exact same clean word from the same buffer */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).toLowerCase().indexOf(String(w).toLowerCase()) >= 0).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).toLowerCase().indexOf(String(word).toLowerCase()) >= 0).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -660,7 +660,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
+        const d = JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -687,10 +687,10 @@ function material(page) {
       await start.click();
       await page.waitForFunction(() => {
         const sheet = document.querySelector('#sheets .sheet');
-        return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
+        return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -701,7 +701,7 @@ function material(page) {
       });
       assert.equal(launched.home, true, 'the guide redirects to Home');
       assert.equal(launched.ready, true, 'Eng.start opens the Are you ready sheet');
-      assert.equal(launched.layers, 1, 'the dictation player is launched');
+      assert.equal(launched.layers, 0, 'the player waits behind the ready sheet');
       assert.equal(launched.tourSeen, true);
       assert.equal(launched.guideSeen, true);
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
@@ -719,11 +719,11 @@ function material(page) {
       });
       await page.waitForTimeout(200);
       await page.locator('#btnStart').click();
-      await page.waitForFunction(() => !!document.querySelector('#sheets .shead button'), null, { timeout: 8000 });
+      await page.waitForFunction(() => !!document.querySelector('#sheets .shead button[aria-label="Close"]'), null, { timeout: 8000 });
       assert.equal(await page.locator('#btnReadyClose').count(), 0, 'no duplicate header cross');
       assert.equal(await page.locator('#btnNotReady').count(), 0, 'no duplicate footer exit');
-      assert.equal(await page.locator('#sheets .shead button').count(), 1, 'one far-right cross only');
-      await page.locator('#sheets .shead button').click();
+      assert.equal(await page.locator('#sheets .shead button[aria-label="Close"]').count(), 1, 'one far-right cross only');
+      await page.locator('#sheets .shead button[aria-label="Close"]').click();
       await page.waitForTimeout(400);
       const closed = await page.evaluate(() => ({
         sheets: document.querySelectorAll('#sheets .sheet').length,
@@ -738,7 +738,6 @@ function material(page) {
       /* start again and audit the typing deck */
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      await clickText(page, 'Skip countdown');
       await page.waitForFunction(() => !!document.getElementById('ansInput'), null, { timeout: 15000 });
       const deck = await page.evaluate(() => {
         const i = document.getElementById('ansInput');
@@ -779,7 +778,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
+        const d = JSON.parse(localStorage.getItem('sdp.v44_apple_liquid_complete'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
