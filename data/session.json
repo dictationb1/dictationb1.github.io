@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 34,
+  "ver": 35,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -19,7 +19,7 @@
     {
       "id": "list_session_7_travel",
       "name": "Session 7 - Travel & Transport",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "published": true,
       "words": [
         {
@@ -223,11 +223,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "4.1.0",
-  "updatedAt": "2026-10-27T00:00:00Z",
-  "version": "4.1.0",
-  "buildDate": "2026-10-27",
-  "settingsRev": 34,
+  "appVersion": "4.2.0",
+  "updatedAt": "2026-10-28T00:00:00Z",
+  "version": "4.2.0",
+  "buildDate": "2026-10-28",
+  "settingsRev": 35,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -235,7 +235,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v34_highlighted_ui",
+  "storageKey": "sdp.v35_rainbow_liquid_glass",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -266,11 +266,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v34",
+  "ghMediaCache": "sdp.gh_assets_v35",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v34",
     "sdp.gh_assets_v33",
     "sdp.gh_assets_v32",
     "sdp.gh_assets_v31",
