@@ -326,7 +326,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -543,7 +543,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -642,13 +642,13 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v37_human_british')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).trim() === w).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).trim() === word).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v37_human_british')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -658,7 +658,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
+        const d = JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -688,7 +688,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -777,7 +777,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v37_human_british'));
+        const d = JSON.parse(localStorage.getItem('sdp.v38_human_reactions_voice'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

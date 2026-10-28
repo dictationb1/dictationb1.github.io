@@ -62,8 +62,9 @@ function harness(html = current, opts = {}) {
   }
   w.addEventListener('error', ev => errors.push(ev.message));
   let script = Array.from(w.document.scripts).find(n => !n.type && n.textContent.includes('var APP_VERSION')).textContent;
-  script = script.replace('window.SDP = {', 'window.__qa = {U: U, UI: UI, DB: DB, Store: Store, Errors: typeof Errors === "undefined" ? null : Errors, DataTools: DataTools, Screens: Screens, Eng: Eng, Speech: Speech, Cloud: Cloud, Admin: Admin, Diag: Diag, Results: Results, Lib: Lib, Comm: Comm, Dict: Dict, Links: typeof Links === "undefined" ? null : Links, Sha: Sha, fatalCard: fatalCard};\nwindow.SDP = {');
-  if(opts.bootFailure) script = script.replace(/function boot\(\)\{\s*Store\.test\(\);\s*DB\.load\(\);/, 'function boot(){ throw new Error("Injected boot failure");');
+  const marker = script.indexOf('window.SDP = {') >= 0 ? 'window.SDP = {' : 'window.SDP={';
+  script = script.replace(marker, 'window.__qa = {U: U, UI: UI, DB: DB, Store: Store, Errors: typeof Errors === "undefined" ? null : Errors, DataTools: DataTools, Screens: Screens, Eng: Eng, Speech: Speech, Cloud: Cloud, Admin: Admin, Diag: Diag, Results: Results, Lib: Lib, Comm: Comm, Dict: Dict, Links: typeof Links === "undefined" ? null : Links, Sha: Sha, fatalCard: fatalCard};\nwindow.SDP = {');
+  if(opts.bootFailure) script = script.replace(/function boot\(\)[{][\s\S]*?Store\.test\(\)[,;]/, 'function boot(){ throw new Error("Injected boot failure");');
   if(opts.renderFailure) script = script.replace(/home:function\(\)\{/, 'home:function(){ throw new Error("Injected render failure");');
   vm.runInContext(script, dom.getInternalVMContext());
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
@@ -285,7 +286,7 @@ test('4.1 a missing UK voice never blocks: any English voice speaks and no sheet
  assert(!a.w.document.querySelector('#sheets').textContent.includes('No UK English voice found on this device'),'the blocking modal is gone');
  clickText(a,"I'm ready");a.clock.tick(10000);
  assert(a.spoken.length>1);assert(a.q.Eng.st==='waiting'||a.q.Eng.st==='speaking');
- assert(/var NoVoice\s*=\s*\{/.test(current) && current.includes('No UK English voice found on this device'),'the guidance card still exists for Diagnostics');
+ assert(/NoVoice\s*=\s*\{/.test(current) && current.includes('No UK English voice found on this device'),'the guidance card still exists for Diagnostics');
 }));
 test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused', () => withApp({voice:'en-GB'}, a => {
  a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.spoken.length);assert(a.spoken.every(s=>s.lang==='en-GB'&&s.voice==='en-GB'));
@@ -389,16 +390,16 @@ test('1.7 dynamically built class names are filtered by U.cx and U.el', () => wi
  const blank=a.q.U.el('div', '   ', null); assert.equal(blank.className,'');
 }));
 test('1.8 build stamp is exposed, shown in Settings and on the fatal card', () => withApp({}, a => {
- const expectedVersion=current.match(/var APP_VERSION="([^"]+)"/)[1];
- const expectedBuild=current.match(/var BUILD_DATE="([^"]+)"/)[1];
+ const expectedVersion=current.match(/APP_VERSION="([^"]+)"/)[1];
+ const expectedBuild=current.match(/BUILD_DATE="([^"]+)"/)[1];
  const expectedStamp='v'+expectedVersion+' ('+expectedBuild+')';
  assert.equal(a.w.SDP.version,expectedVersion); assert.equal(a.w.SDP.build,expectedBuild); assert.equal(a.w.SDP.stamp(),expectedStamp);
  a.q.UI.setTab('set'); const txt=a.w.document.querySelector('#screen-set').textContent;
  assert(txt.includes(expectedStamp)); assert(txt.includes('My data'));
 }));
 test('1.8 fatal card names the running build', () => withApp({bootFailure:true}, a => {
- const expectedVersion=current.match(/var APP_VERSION="([^"]+)"/)[1];
- const expectedBuild=current.match(/var BUILD_DATE="([^"]+)"/)[1];
+ const expectedVersion=current.match(/APP_VERSION="([^"]+)"/)[1];
+ const expectedBuild=current.match(/BUILD_DATE="([^"]+)"/)[1];
  assert(a.crash());
  assert(a.w.document.querySelector('#fatal').textContent.includes('Build v'+expectedVersion+' ('+expectedBuild+')'));
 }));

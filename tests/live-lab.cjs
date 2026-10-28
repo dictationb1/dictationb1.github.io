@@ -118,8 +118,9 @@ function device(html, base) {
   w.HTMLCanvasElement.prototype.getContext = () => null;
   w.fetch = (url, opts) => fetch(String(url).replace(/^https?:\/\/ntfy\.sh/, base).replace(/^\.\//, base + '/'), opts);
   w.EventSource = makeEventSource(w, base);
-  const script = Array.from(w.document.scripts).find(s => !s.type && s.textContent.includes('var APP_VERSION')).textContent
-    .replace('window.SDP = {', 'window.__lab = {Admin:Admin,DB:DB,Cloud:Cloud,UI:UI,Eng:Eng,Speech:Speech,Lib:Lib,CONFIG:CONFIG,defaultData:defaultData}; window.SDP = {');
+  const rawScript = Array.from(w.document.scripts).find(s => !s.type && s.textContent.includes('var APP_VERSION')).textContent;
+  const marker = rawScript.indexOf('window.SDP = {') >= 0 ? 'window.SDP = {' : 'window.SDP={';
+  const script = rawScript.replace(marker, 'window.__lab = {Admin:Admin,DB:DB,Cloud:Cloud,UI:UI,Eng:Eng,Speech:Speech,Lib:Lib,CONFIG:CONFIG,defaultData:defaultData}; window.SDP = {');
   vm.runInContext(script, dom.getInternalVMContext());
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
   return { w, q: w.__lab, close() { w.close(); } };
