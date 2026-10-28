@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 40,
+  "ver": 41,
   "session": {
     "no": "7",
     "day": "Thursday",
@@ -196,11 +196,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "4.7.0",
+  "appVersion": "4.8.0",
   "updatedAt": "2026-10-28T00:00:00Z",
-  "version": "4.6.0",
+  "version": "4.8.0",
   "buildDate": "2026-10-28",
-  "settingsRev": 40,
+  "settingsRev": 41,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -208,7 +208,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v40_one_studio_voice",
+  "storageKey": "sdp.v41_unified_voice_lifecycle",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -239,7 +239,7 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v40",
+  "ghMediaCache": "sdp.gh_assets_v41",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
