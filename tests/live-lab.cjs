@@ -186,7 +186,9 @@ function device(html, base) {
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (posted.session.no !== '4') throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      if (!posted.lists[0].words.every(x => x.m && x.s && /--_gb_1\.mp3$/.test(x.audio))) throw Error('a word has no B1 meaning/sentence/UK audio');
+      /* v42: every word now carries the one unified en-GB neural voice URL
+         ("<text> ." -> %20.), the retired Oxford --_gb_1.mp3 clips are gone */
+      if (!posted.lists[0].words.every(x => x.m && x.s && /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=.*%20\.$/.test(x.audio))) throw Error('a word has no B1 meaning/sentence/UK audio');
     });
 
     /* --- the student phone updates itself, live -------------------------- */
