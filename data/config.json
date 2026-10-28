@@ -19,7 +19,8 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy"
+    "voice": "Amy",
+    "humanReactions": true
   },
   "listId": "list_session_7_travel",
   "defaults": {
@@ -42,10 +43,12 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy"
+    "voice": "Amy",
+    "humanReactions": true,
+    "elevenLabsKey": ""
   },
-  "ver": 37,
-  "version": "4.4.0",
+  "ver": 38,
+  "version": "4.5.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -55,10 +58,10 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "tier1": "Real human Oxford / Cambridge British English female studio recordings (en-GB RP, lexicographer, 28-32) served from ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
-    "tier2": "Natural en-GB British professional woman neural voice - Microsoft Sonia / Libby Online, Google UK English Female, Serena, Kate, Stephanie, Martha or Amy",
-    "tier3": "Device en-GB British female voice via speechSynthesis (utterance.lang en-GB, rate 0.96 then 0.92, pitch 1.02)",
-    "excluded": "All male voices (Daniel, Arthur, Oliver, Ryan, George, Thomas, James, David, Mark, Richard) and every US voice are rejected while an en-GB female exists",
+    "singleWord": "Oxford / Google dictionary en-GB sound URL when the recording exists: https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
+    "phrases": "No-CORS audio-only phrase stream: https://dict.youdao.com/dictvoice?type=1&audio=<encoded text>",
+    "fallback": "Google Translate audio stream tl=en-GB, ttsspeed=0.92; provider voice is generated and not guaranteed to be a human recording",
+    "liveFallback": "Audio-only on live online browsers; OS SpeechSynthesis is reserved for offline/headless fallback paths",
     "lockedVoice": "Amy"
   },
   "live": {
@@ -66,8 +69,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.4.0",
-  "settingsRev": 37,
+  "appVersion": "4.5.0",
+  "settingsRev": 38,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -91,7 +94,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v37_human_british",
+  "storageKey": "sdp.v38_human_reactions_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -106,9 +109,9 @@
     ]
   },
   "feedback": {
-    "tick": "animated liquid glass check mark",
-    "cross": "animated liquid glass cross mark",
-    "streakBreak": "1.4s coral flash with streak reset",
+    "tick": "animated check mark",
+    "cross": "animated cross mark",
+    "streakBreak": "1.4s streak flash with streak reset",
     "correctionHoldMs": 2100,
     "exit": "single far-right close cross on the ready sheet and in the player topbar"
   },
@@ -244,11 +247,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v37",
+  "ghMediaCache": "sdp.gh_assets_v38",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v37",
     "sdp.gh_assets_v36",
     "sdp.gh_assets_v35",
     "sdp.gh_assets_v34",
@@ -263,27 +267,25 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "host": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
-    "suffix": "--_gb_1.mp3",
-    "normalise": {
-      "tyre/tire": "tyre",
-      "tire": "tyre"
-    },
-    "cache": "TTS.humanAudioMap + in-memory Audio preload",
-    "enrichment": "https://api.dictionaryapi.dev/api/v2/entries/en/<word> cached when a -uk.mp3 human recording is listed",
-    "fallbackDeadlineMs": 450
+    "oxfordHost": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
+    "phraseHost": "https://dict.youdao.com/dictvoice?type=1&audio=",
+    "fallbackHost": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0.92&q=",
+    "referrerPolicy": "no-referrer",
+    "crossOrigin": false,
+    "preload": "auto",
+    "headlessStartMs": 60,
+    "liveStartMs": 1800,
+    "cache": "TTS.audioCache"
   },
   "voiceProfile": {
-    "gender": "woman",
-    "age": "25-34",
-    "accent": "British English (en-GB, RP)",
-    "style": "professional studio diction, BBC / Cambridge examiner pace",
+    "delivery": "British English learning prompt and teacher-style reactions",
+    "accentRequest": "en-GB",
     "rate": [
       0.96,
       0.92
     ],
-    "pitch": 1.02,
-    "breathPauseMs": 850
+    "breathPauseMs": 850,
+    "providerCaveat": "The app requests provider URLs; provider voices and availability are not guaranteed to be a specific age, gender, or human performer."
   },
   "typography": {
     "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",
@@ -311,5 +313,6 @@
       "screen": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
       "credit": "0.45s"
     }
-  }
+  },
+  "humanReactions": true
 }
