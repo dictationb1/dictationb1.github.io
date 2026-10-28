@@ -1,11 +1,11 @@
 {
-  "ver": 42,
-  "appVersion": "4.9.0",
-  "version": "4.9.0",
+  "ver": 43,
+  "appVersion": "5.0.0",
+  "version": "5.0.0",
   "buildDate": "2026-10-28",
   "session": "7",
   "title": "Session 7 - Travel & Transport",
-  "settingsRev": 42,
+  "settingsRev": 43,
   "updatedAt": "2026-10-28T00:00:00Z",
   "updatedAtMs": 1793145600000,
   "features": {
@@ -50,10 +50,13 @@
     "tts": "v42: the singleVoiceUrl entries are the one en-GB neural endpoint (Youdao dictvoice type=1); silenceBetweenRepeatsMs is 650",
     "voice": "v42: exactly one voice engine - https://dict.youdao.com/dictvoice?type=1&audio= - every clip is formatted with a trailing ' .' so single words, phrases, numbers, countdowns and instructions are all synthesised by the same unified British English (en-GB) female neural model; there is never a second legacy clip voice",
     "fallback": "v42: if the master <audio> errors or does not start within 1500ms the engine falls back at once to TTS.speakPinnedSynth() - one locked en-GB female device voice - so the app never hangs in silence",
-    "dictationNumber": "v42: the Dictation Player always shows a high-contrast 'Dictation #N of 30' badge (#plProgText, #plStep, #plStepBadge) and 'Paused - Dictation #N of 30' while the session is paused"
+    "dictationNumber": "v42: the Dictation Player always shows a high-contrast 'Dictation #N of 30' badge (#plProgText, #plStep, #plStepBadge) and 'Paused - Dictation #N of 30' while the session is paused",
+    "bundledAudio": "v43: 100% of the app voice is a committed ./audio/*.mp3 pack rendered by ONE en-GB woman neural voice (welcome, sound check, 3-2-1 lockstep countdown, Number 1..30, every word twice, pause, resume, finish)",
+    "countdown": "v43: the visual 3 -> 2 -> 1 and the spoken Three/Two/One are in lockstep (0ms / 950ms / 1900ms, Word 1 at 2850ms)",
+    "voiceFallback": "v43: no device speechSynthesis fallback on live browsers; a same-origin clip gets a 4000ms timeout and one load()+play() retry first"
   },
   "mode": "paper",
-  "storageKey": "sdp.v42_bugfree_single_voice",
+  "storageKey": "sdp.v43_bundled_studio_voice",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -84,12 +87,13 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v42",
+  "ghMediaCache": "sdp.gh_assets_v43",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "repoVideoPoster": "./assets/bunny-poster.webp",
   "legacyMediaCaches": [
+    "sdp.gh_assets_v42",
     "sdp.gh_assets_v41",
     "sdp.gh_assets_v40",
     "sdp.gh_assets_v39",

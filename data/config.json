@@ -44,8 +44,8 @@
     "guideLang": "en",
     "voice": "Amy"
   },
-  "ver": 42,
-  "version": "4.9.0",
+  "ver": 43,
+  "version": "5.0.0",
   "buildDate": "2026-10-28",
   "credits": {
     "createdBy": "Hansana",
@@ -55,9 +55,9 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "one locked British English woman neural voice (en-GB, Youdao dictvoice type=1, unified for every clip)",
+    "engine": "one bundled British English woman neural voice (single speaker, pre-rendered ./audio/*.mp3, same origin)",
     "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
-    "covers": "clean single words (bicycle), compound phrases (bus stop), the spoken number prefix (Number 7, bicycle .), the countdown (Three, two, one .), the session instructions, the pause/resume lines and the completion summary - all through the same model because every request ends with ' .'",
+    "covers": "welcome instruction, sound check, Three/Two/One lockstep countdown, Number N, each vocabulary word (twice), Session paused, Welcome back. Continuing dictation number N, Dictation complete",
     "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin, referrerpolicy=no-referrer",
     "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo(), UI.startPractisingFromGuide() and every dictionary speaker tap",
     "repeatReplay": "repetition 2 calls ttsMasterAudio.currentTime = 0 and play() on the exact same buffer - never a new request and never a different voice",
@@ -67,16 +67,19 @@
     "deviceVoice": "window.speechSynthesis is cancelled and never spoken on a live online browser; it is used only by HeadlessChrome/jsdom test runs or a fully offline browser",
     "lockedVoice": "Amy",
     "clipFormat": "every clip is formatted as '<text> .' (space + period) so the legacy single-word clip table is never used",
-    "fallback": "1500ms start watchdog on the master <audio>; onerror or a slow start falls back to TTS.speakPinnedSynth() (one locked en-GB female device voice) instead of hanging in silence",
-    "retired": "the retired Google translate_tts endpoint (client=tw-ob) answered unauthenticated requests with 403/404, so it is gone"
+    "fallback": "custom user words that are not in the bundled pack use the documented remote fallback; the device speechSynthesis voice is never used on a live browser",
+    "retired": "the retired Google translate_tts endpoint (client=tw-ob) answered unauthenticated requests with 403/404, so it is gone",
+    "localBase": "./audio/",
+    "pack": "v43 bundled studio pack of ./audio/*.mp3 files: v43 bundled studio pack: welcome-*, sound-check, count-1..3, countdown-321, num-1..30, resume-1..30, word-<slug>, pass1-<n>-<slug>, paused, finish-*",
+    "voiceStyle": "en-GB female British studio voice"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.9.0",
-  "settingsRev": 42,
+  "appVersion": "5.0.0",
+  "settingsRev": 43,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -100,7 +103,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v42_bugfree_single_voice",
+  "storageKey": "sdp.v43_bundled_studio_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -253,11 +256,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v42",
+  "ghMediaCache": "sdp.gh_assets_v43",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v42",
     "sdp.gh_assets_v40",
     "sdp.gh_assets_v41",
     "sdp.gh_assets_v39",
@@ -282,9 +286,11 @@
     "crossOrigin": "none",
     "preload": "auto",
     "cache": "TTS.preloadQueue and TTS.audioCache",
-    "mixing": "never - the retired dictionary hosts, machine translation voices and the device voice are all unused for online playback",
+    "mixing": "never - no dictionary host, no machine translation voice and no device voice on live browsers",
     "voice": "Amy",
-    "lang": "en-GB"
+    "lang": "en-GB",
+    "localBase": "./audio/",
+    "bundle": "v43: every spoken clip is a committed same-origin ./audio/*.mp3 file rendered by one single neural voice"
   },
   "voiceProfile": {
     "delivery": "one single locked British English (en-GB) female neural voice for every word and every repeat",
@@ -297,7 +303,8 @@
     "studioVoice": "Amy",
     "voice": "Amy",
     "clipFormat": "<text> . - one space and one period, always",
-    "fallback": "TTS.speakPinnedSynth() - one locked en-GB female device voice - after a 1500ms audio watchdog"
+    "fallback": "TTS.speakPinnedSynth() - one locked en-GB female device voice - after a 1500ms audio watchdog",
+    "name": "Bundled Studio Woman (v43)"
   },
   "typography": {
     "english": "\"Inter\", -apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", system-ui, sans-serif",
@@ -325,5 +332,7 @@
       "screen": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
       "credit": "0.45s"
     }
-  }
+  },
+  "updatedAt": "2026-10-28T00:00:00Z",
+  "updatedAtMs": 1793145600000
 }

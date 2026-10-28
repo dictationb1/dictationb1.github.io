@@ -1,0 +1,940 @@
+{
+  "ver": 43,
+  "engine": "single neural voice",
+  "speaker": "F1",
+  "generatedAt": "2026-10-28T09:17:51.363Z",
+  "clips": [
+    {
+      "file": "welcome-paper.mp3",
+      "text": "Welcome. Prepare your pen and paper. Each word is read twice. Press Yes, I'm ready to begin.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "welcome-type.mp3",
+      "text": "Welcome. Each word is read twice. Type your answer and press Enter. Press Yes, I'm ready to begin.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "sound-check.mp3",
+      "text": "Sound check. Number 1, bicycle.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "count-3.mp3",
+      "text": "Three.",
+      "kind": "count",
+      "speed": 0.98
+    },
+    {
+      "file": "count-2.mp3",
+      "text": "Two.",
+      "kind": "count",
+      "speed": 0.98
+    },
+    {
+      "file": "count-1.mp3",
+      "text": "One.",
+      "kind": "count",
+      "speed": 0.98
+    },
+    {
+      "file": "countdown-321.mp3",
+      "text": "Three, two, one.",
+      "kind": "count",
+      "speed": 0.98
+    },
+    {
+      "file": "paused.mp3",
+      "text": "Session paused.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "finish-paper.mp3",
+      "text": "Dictation complete. Well done. Review all thirty words below.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "finish-type.mp3",
+      "text": "Dictation complete. Well done.",
+      "kind": "system",
+      "speed": 0.98
+    },
+    {
+      "file": "num-1.mp3",
+      "text": "Number 1.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-1.mp3",
+      "text": "Welcome back. Continuing dictation number 1.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-2.mp3",
+      "text": "Number 2.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-2.mp3",
+      "text": "Welcome back. Continuing dictation number 2.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-3.mp3",
+      "text": "Number 3.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-3.mp3",
+      "text": "Welcome back. Continuing dictation number 3.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-4.mp3",
+      "text": "Number 4.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-4.mp3",
+      "text": "Welcome back. Continuing dictation number 4.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-5.mp3",
+      "text": "Number 5.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-5.mp3",
+      "text": "Welcome back. Continuing dictation number 5.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-6.mp3",
+      "text": "Number 6.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-6.mp3",
+      "text": "Welcome back. Continuing dictation number 6.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-7.mp3",
+      "text": "Number 7.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-7.mp3",
+      "text": "Welcome back. Continuing dictation number 7.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-8.mp3",
+      "text": "Number 8.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-8.mp3",
+      "text": "Welcome back. Continuing dictation number 8.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-9.mp3",
+      "text": "Number 9.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-9.mp3",
+      "text": "Welcome back. Continuing dictation number 9.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-10.mp3",
+      "text": "Number 10.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-10.mp3",
+      "text": "Welcome back. Continuing dictation number 10.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-11.mp3",
+      "text": "Number 11.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-11.mp3",
+      "text": "Welcome back. Continuing dictation number 11.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-12.mp3",
+      "text": "Number 12.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-12.mp3",
+      "text": "Welcome back. Continuing dictation number 12.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-13.mp3",
+      "text": "Number 13.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-13.mp3",
+      "text": "Welcome back. Continuing dictation number 13.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-14.mp3",
+      "text": "Number 14.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-14.mp3",
+      "text": "Welcome back. Continuing dictation number 14.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-15.mp3",
+      "text": "Number 15.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-15.mp3",
+      "text": "Welcome back. Continuing dictation number 15.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-16.mp3",
+      "text": "Number 16.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-16.mp3",
+      "text": "Welcome back. Continuing dictation number 16.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-17.mp3",
+      "text": "Number 17.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-17.mp3",
+      "text": "Welcome back. Continuing dictation number 17.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-18.mp3",
+      "text": "Number 18.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-18.mp3",
+      "text": "Welcome back. Continuing dictation number 18.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-19.mp3",
+      "text": "Number 19.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-19.mp3",
+      "text": "Welcome back. Continuing dictation number 19.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-20.mp3",
+      "text": "Number 20.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-20.mp3",
+      "text": "Welcome back. Continuing dictation number 20.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-21.mp3",
+      "text": "Number 21.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-21.mp3",
+      "text": "Welcome back. Continuing dictation number 21.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-22.mp3",
+      "text": "Number 22.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-22.mp3",
+      "text": "Welcome back. Continuing dictation number 22.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-23.mp3",
+      "text": "Number 23.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-23.mp3",
+      "text": "Welcome back. Continuing dictation number 23.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-24.mp3",
+      "text": "Number 24.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-24.mp3",
+      "text": "Welcome back. Continuing dictation number 24.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-25.mp3",
+      "text": "Number 25.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-25.mp3",
+      "text": "Welcome back. Continuing dictation number 25.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-26.mp3",
+      "text": "Number 26.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-26.mp3",
+      "text": "Welcome back. Continuing dictation number 26.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-27.mp3",
+      "text": "Number 27.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-27.mp3",
+      "text": "Welcome back. Continuing dictation number 27.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-28.mp3",
+      "text": "Number 28.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-28.mp3",
+      "text": "Welcome back. Continuing dictation number 28.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-29.mp3",
+      "text": "Number 29.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-29.mp3",
+      "text": "Welcome back. Continuing dictation number 29.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "num-30.mp3",
+      "text": "Final word, number 30.",
+      "kind": "number",
+      "speed": 0.96
+    },
+    {
+      "file": "resume-30.mp3",
+      "text": "Welcome back. Continuing dictation number 30.",
+      "kind": "resume",
+      "speed": 0.96
+    },
+    {
+      "file": "word-guidebook.mp3",
+      "text": "guidebook",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-handlebars.mp3",
+      "text": "handlebars",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-harbour.mp3",
+      "text": "harbour",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-helicopter.mp3",
+      "text": "helicopter",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-hitchhike.mp3",
+      "text": "hitchhike",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-immigration.mp3",
+      "text": "immigration",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-journey.mp3",
+      "text": "journey",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-luggage.mp3",
+      "text": "luggage",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-machine.mp3",
+      "text": "machine",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-mechanic.mp3",
+      "text": "mechanic",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-nationality.mp3",
+      "text": "nationality",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-on-business.mp3",
+      "text": "on business",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-on-vacation.mp3",
+      "text": "on vacation",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-overnight.mp3",
+      "text": "overnight",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-passenger.mp3",
+      "text": "passenger",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-public-transport.mp3",
+      "text": "public transport",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-reception.mp3",
+      "text": "reception",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-reservation.mp3",
+      "text": "reservation",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-road-sign.mp3",
+      "text": "road sign",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-signpost.mp3",
+      "text": "signpost",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-spaceship.mp3",
+      "text": "spaceship",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-suitcase.mp3",
+      "text": "suitcase",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-tourist-information-centre.mp3",
+      "text": "tourist information centre",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-traffic-lights.mp3",
+      "text": "traffic lights",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-tunnel.mp3",
+      "text": "tunnel",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-tyre.mp3",
+      "text": "tyre",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-vehicle.mp3",
+      "text": "vehicle",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-visa.mp3",
+      "text": "visa",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-waiting-room.mp3",
+      "text": "waiting room",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-windscreen.mp3",
+      "text": "windscreen",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-bicycle.mp3",
+      "text": "bicycle",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-motorbike.mp3",
+      "text": "motorbike",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-bus-stop.mp3",
+      "text": "bus stop",
+      "kind": "word",
+      "speed": 0.94
+    },
+    {
+      "file": "word-train-station.mp3",
+      "text": "train station",
+      "kind": "word",
+      "speed": 0.94
+    }
+  ],
+  "pass1": [
+    {
+      "file": "pass1-1-guidebook.mp3",
+      "from": [
+        "num-1.mp3",
+        "word-guidebook.mp3"
+      ],
+      "index": 1,
+      "word": "guidebook"
+    },
+    {
+      "file": "pass1-2-handlebars.mp3",
+      "from": [
+        "num-2.mp3",
+        "word-handlebars.mp3"
+      ],
+      "index": 2,
+      "word": "handlebars"
+    },
+    {
+      "file": "pass1-3-harbour.mp3",
+      "from": [
+        "num-3.mp3",
+        "word-harbour.mp3"
+      ],
+      "index": 3,
+      "word": "harbour"
+    },
+    {
+      "file": "pass1-4-helicopter.mp3",
+      "from": [
+        "num-4.mp3",
+        "word-helicopter.mp3"
+      ],
+      "index": 4,
+      "word": "helicopter"
+    },
+    {
+      "file": "pass1-5-hitchhike.mp3",
+      "from": [
+        "num-5.mp3",
+        "word-hitchhike.mp3"
+      ],
+      "index": 5,
+      "word": "hitchhike"
+    },
+    {
+      "file": "pass1-6-immigration.mp3",
+      "from": [
+        "num-6.mp3",
+        "word-immigration.mp3"
+      ],
+      "index": 6,
+      "word": "immigration"
+    },
+    {
+      "file": "pass1-7-journey.mp3",
+      "from": [
+        "num-7.mp3",
+        "word-journey.mp3"
+      ],
+      "index": 7,
+      "word": "journey"
+    },
+    {
+      "file": "pass1-8-luggage.mp3",
+      "from": [
+        "num-8.mp3",
+        "word-luggage.mp3"
+      ],
+      "index": 8,
+      "word": "luggage"
+    },
+    {
+      "file": "pass1-9-machine.mp3",
+      "from": [
+        "num-9.mp3",
+        "word-machine.mp3"
+      ],
+      "index": 9,
+      "word": "machine"
+    },
+    {
+      "file": "pass1-10-mechanic.mp3",
+      "from": [
+        "num-10.mp3",
+        "word-mechanic.mp3"
+      ],
+      "index": 10,
+      "word": "mechanic"
+    },
+    {
+      "file": "pass1-11-nationality.mp3",
+      "from": [
+        "num-11.mp3",
+        "word-nationality.mp3"
+      ],
+      "index": 11,
+      "word": "nationality"
+    },
+    {
+      "file": "pass1-12-on-business.mp3",
+      "from": [
+        "num-12.mp3",
+        "word-on-business.mp3"
+      ],
+      "index": 12,
+      "word": "on business"
+    },
+    {
+      "file": "pass1-13-on-vacation.mp3",
+      "from": [
+        "num-13.mp3",
+        "word-on-vacation.mp3"
+      ],
+      "index": 13,
+      "word": "on vacation"
+    },
+    {
+      "file": "pass1-14-overnight.mp3",
+      "from": [
+        "num-14.mp3",
+        "word-overnight.mp3"
+      ],
+      "index": 14,
+      "word": "overnight"
+    },
+    {
+      "file": "pass1-15-passenger.mp3",
+      "from": [
+        "num-15.mp3",
+        "word-passenger.mp3"
+      ],
+      "index": 15,
+      "word": "passenger"
+    },
+    {
+      "file": "pass1-16-public-transport.mp3",
+      "from": [
+        "num-16.mp3",
+        "word-public-transport.mp3"
+      ],
+      "index": 16,
+      "word": "public transport"
+    },
+    {
+      "file": "pass1-17-reception.mp3",
+      "from": [
+        "num-17.mp3",
+        "word-reception.mp3"
+      ],
+      "index": 17,
+      "word": "reception"
+    },
+    {
+      "file": "pass1-18-reservation.mp3",
+      "from": [
+        "num-18.mp3",
+        "word-reservation.mp3"
+      ],
+      "index": 18,
+      "word": "reservation"
+    },
+    {
+      "file": "pass1-19-road-sign.mp3",
+      "from": [
+        "num-19.mp3",
+        "word-road-sign.mp3"
+      ],
+      "index": 19,
+      "word": "road sign"
+    },
+    {
+      "file": "pass1-20-signpost.mp3",
+      "from": [
+        "num-20.mp3",
+        "word-signpost.mp3"
+      ],
+      "index": 20,
+      "word": "signpost"
+    },
+    {
+      "file": "pass1-21-spaceship.mp3",
+      "from": [
+        "num-21.mp3",
+        "word-spaceship.mp3"
+      ],
+      "index": 21,
+      "word": "spaceship"
+    },
+    {
+      "file": "pass1-22-suitcase.mp3",
+      "from": [
+        "num-22.mp3",
+        "word-suitcase.mp3"
+      ],
+      "index": 22,
+      "word": "suitcase"
+    },
+    {
+      "file": "pass1-23-tourist-information-centre.mp3",
+      "from": [
+        "num-23.mp3",
+        "word-tourist-information-centre.mp3"
+      ],
+      "index": 23,
+      "word": "tourist information centre"
+    },
+    {
+      "file": "pass1-24-traffic-lights.mp3",
+      "from": [
+        "num-24.mp3",
+        "word-traffic-lights.mp3"
+      ],
+      "index": 24,
+      "word": "traffic lights"
+    },
+    {
+      "file": "pass1-25-tunnel.mp3",
+      "from": [
+        "num-25.mp3",
+        "word-tunnel.mp3"
+      ],
+      "index": 25,
+      "word": "tunnel"
+    },
+    {
+      "file": "pass1-26-tyre.mp3",
+      "from": [
+        "num-26.mp3",
+        "word-tyre.mp3"
+      ],
+      "index": 26,
+      "word": "tyre/tire"
+    },
+    {
+      "file": "pass1-27-vehicle.mp3",
+      "from": [
+        "num-27.mp3",
+        "word-vehicle.mp3"
+      ],
+      "index": 27,
+      "word": "vehicle"
+    },
+    {
+      "file": "pass1-28-visa.mp3",
+      "from": [
+        "num-28.mp3",
+        "word-visa.mp3"
+      ],
+      "index": 28,
+      "word": "visa"
+    },
+    {
+      "file": "pass1-29-waiting-room.mp3",
+      "from": [
+        "num-29.mp3",
+        "word-waiting-room.mp3"
+      ],
+      "index": 29,
+      "word": "waiting room"
+    },
+    {
+      "file": "pass1-30-windscreen.mp3",
+      "from": [
+        "num-30.mp3",
+        "word-windscreen.mp3"
+      ],
+      "index": 30,
+      "word": "windscreen"
+    }
+  ],
+  "words": [
+    "guidebook",
+    "handlebars",
+    "harbour",
+    "helicopter",
+    "hitchhike",
+    "immigration",
+    "journey",
+    "luggage",
+    "machine",
+    "mechanic",
+    "nationality",
+    "on business",
+    "on vacation",
+    "overnight",
+    "passenger",
+    "public transport",
+    "reception",
+    "reservation",
+    "road sign",
+    "signpost",
+    "spaceship",
+    "suitcase",
+    "tourist information centre",
+    "traffic lights",
+    "tunnel",
+    "tyre",
+    "vehicle",
+    "visa",
+    "waiting room",
+    "windscreen",
+    "bicycle",
+    "motorbike",
+    "bus stop",
+    "train station"
+  ]
+}

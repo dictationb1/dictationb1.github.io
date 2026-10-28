@@ -186,9 +186,10 @@ function device(html, base) {
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (posted.session.no !== '4') throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      /* v42: every word now carries the one unified en-GB neural voice URL
-         ("<text> ." -> %20.), the retired Oxford --_gb_1.mp3 clips are gone */
-      if (!posted.lists[0].words.every(x => x.m && x.s && /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=.*%20\.$/.test(x.audio))) throw Error('a word has no B1 meaning/sentence/UK audio');
+      /* v43: the shipped session words resolve to the committed same-origin
+         ./audio/word-<slug>.mp3 pack; a custom word keeps the documented
+         remote fallback. A retired Oxford --_gb_1.mp3 clip is never used. */
+      if (!posted.lists[0].words.every(x => x.m && x.s && (/^\.\/audio\/word-[a-z0-9-]+\.mp3$/.test(x.audio) || /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=.*%20\.$/.test(x.audio)))) throw Error('a word has no B1 meaning/sentence/UK audio');
     });
 
     /* --- the student phone updates itself, live -------------------------- */

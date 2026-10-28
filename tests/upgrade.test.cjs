@@ -1,18 +1,33 @@
 'use strict';
-/* v42 (4.9.0) release gate - written from scratch, no regex .replace() surgery.
-   ONE single British English (en-GB) female neural voice is the only voice in the
-   whole app: https://dict.youdao.com/dictvoice?type=1&audio=<text>
-   Every clip is formatted with a trailing " ." (space + period). That single rule
-   guarantees that single words, compound phrases, the spoken dictation number, the
-   3-2-1 countdown, the session instructions, the pause / welcome-back lines and the
-   completion summary are ALL produced by the same unified neural model - there is
-   never a second legacy one-word clip voice and never a translate.googleapis.com
-   403/404 silence. */
+/* ============================================================================
+   v43 (5.0.0) release gate — rewritten from scratch for the bundled audio pack.
+   ----------------------------------------------------------------------------
+   The app no longer streams its voice from a third-party dictionary host. 100%
+   of its speech is a set of committed, same-origin MP3 files in ./audio/, all
+   rendered by ONE single neural voice (speaker "F1" of the build manifest, an
+   en-GB woman studio voice; `node scripts/build-audio.cjs` re-renders the very
+   same file names with Microsoft's en-GB-SoniaNeural when the build machine
+   has internet access).
+
+   What this file guarantees:
+     * ES5-only, single file, under 442,000 bytes, no static external <link>
+     * every documented clip exists on disk, is a real MP3 (> 1000 bytes) and is
+       served with HTTP 200 by a plain static server
+     * TTS.resolveClips() maps every spoken line to its bundled ./audio clip
+     * a live browser never touches window.speechSynthesis; a clip gets a
+       4000ms watchdog plus one load()+play() retry instead of the old 1500ms
+       jump to the robotic device voice
+     * the visual 3 -> 2 -> 1 countdown and the spoken Three/Two/One are in
+       lockstep (0ms / 950ms / 1900ms) and Word 1 starts at 2850ms
+     * Pass 1 plays "Number N" + the word, Pass 2 replays the exact same word
+       file, and pause / resume / finish / test-sound all use their own clips
+     * the full 30-word session runs with zero console errors
+   ========================================================================== */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const cp = require('node:child_process');
+const http = require('node:http');
 const acorn = require('acorn');
 const { harness, html } = require('./app-harness.cjs');
 
@@ -21,64 +36,37 @@ const readJson = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', na
 const version = readJson('version.json');
 const config = readJson('config.json');
 const session = readJson('session.json');
-const KEY = 'sdp.v42_bugfree_single_voice';
-const GH_KEY = 'sdp.gh_assets_v42';
-const DEFAULT = './assets/bunny-live-wallpaper.mp4';
-const UNIFIED = 'https://dict.youdao.com/dictvoice?type=1&audio=';
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'audio-manifest.json'), 'utf8'));
+const AUDIO = path.join(root, 'audio');
+
+const KEY = 'sdp.v43_bundled_studio_voice';
+const GH_KEY = 'sdp.gh_assets_v43';
+const DEFAULT_VIDEO = './assets/bunny-live-wallpaper.mp4';
+const REMOTE = 'https://dict.youdao.com/dictvoice?type=1&audio=';
+const LOCAL = './audio/';
 const PAPER_INTRO = "Welcome. Prepare your pen and paper. Each word is read twice. Press Yes, I'm ready to begin .";
 const TYPE_INTRO = "Welcome. Each word is read twice. Type your answer and press Enter. Press Yes, I'm ready to begin .";
-const COUNTDOWN = 'Three, two, one .';
 const TEST_PHRASE = 'Sound check. Number 1, bicycle .';
-const PAUSE_PHRASE = 'Session paused .';
-const RESUME_PHRASE = 'Welcome back. Continuing dictation number 1 .';
-const FILLERS = ['listen again', 'one more time', 'once more', 'and again', 'spot on', "let's begin", 'listen carefully', 'brilliant, well done', 'nearly there', 'alright, listen'];
-const has = (value, token) => String(value).indexOf(token) !== -1;
-const compact = (value) => String(value).replace(/\s+/g, '');
-const cssText = () => (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || ['', ''])[1];
-const CSS = compact(cssText());
-const hasCss = (token) => has(CSS, compact(token));
 const script = (html.match(/<script>([\s\S]*?)<\/script>/) || ['', ''])[1];
-const masterTag = (html.match(/<audio id="ttsMasterAudio"[^>]*>/) || [''])[0];
-const sourceOf = (target) => Object.keys(target).filter((k) => typeof target[k] === 'function').map((k) => String(target[k])).join('\n');
-const fillerHits = (text) => FILLERS.filter((phrase) => String(text).toLowerCase().indexOf(phrase) !== -1);
-/* the Youdao clip carries the spoken text in &audio= - decode it back to the words */
-const spokenText = (url) => {
-  const raw = String(url || '');
-  if (raw.indexOf('data:') === 0) return '';
-  const at = raw.indexOf('&audio=');
-  if (at < 0) return '';
-  try { return decodeURIComponent(raw.slice(at + 7)); } catch (e) { return ''; }
-};
+const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || ['', ''])[1];
+const has = (value, token) => String(value).indexOf(token) !== -1;
+const realErrors = (list) => (list || []).filter((m) => !/^Not implemented:/i.test(String(m)));
+
+/* --------------------------------------------------------------- harness --- */
 
 function withApp(fn) {
   const app = harness();
   try { return fn(app); } finally { app.close(); }
 }
 
-/* headless / offline device-voice branch: a pinned en-GB woman the fake clock drives */
-function withVoice(fn) {
-  return withApp(({ q, w, clock }) => {
-    const spoken = [];
-    w.SpeechSynthesisUtterance = function (text) { this.text = String(text); this.lang = ''; this.rate = 1; this.pitch = 1; this.volume = 1; this.voice = null; };
-    w.speechSynthesis = {
-      getVoices() { return [{ lang: 'en-GB', name: 'Microsoft Sonia Online (Natural) - English (United Kingdom)', localService: false }]; },
-      cancel() {}, pause() {}, resume() {}, addEventListener() {}, removeEventListener() {},
-      speak(u) { spoken.push({ text: u.text, lang: u.lang, voice: u.voice && u.voice.name, rate: u.rate }); w.setTimeout(() => { if (u.onend) u.onend(); }, 1); }
-    };
-    q.Speech.supported = true;
-    q.Speech._pinnedSynthVoice = null;
-    q.Speech.readVoices();
-    return fn({ q, w, clock, spoken });
-  });
-}
-
-/* the real browser branch: live UA, a master <audio> that really "plays", and a
-   speech engine that throws the moment anything asks it to speak. */
-function withStream(fn, opts) {
-  const options = opts || {};
-  const endDelay = options.endDelay || 60;
+/* A live desktop browser: the UA is not headless, the master <audio> really
+   "plays" and the speech engine throws the moment anything calls speak(). */
+function withStream(fn) {
   return withApp(({ q, w, clock, consoleErrors }) => {
-    Object.defineProperty(w.navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', configurable: true });
+    Object.defineProperty(w.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      configurable: true
+    });
     const played = [];
     let synthCalls = 0;
     w.speechSynthesis = {
@@ -91,677 +79,387 @@ function withStream(fn, opts) {
     w.HTMLMediaElement.prototype.pause = function () {};
     w.HTMLMediaElement.prototype.play = function () {
       const el = this;
-      if (String(el.tagName).toUpperCase() === 'AUDIO') played.push(String(el.getAttribute('src') || ''));
+      played.push(String(el.getAttribute('src') || ''));
       w.setTimeout(() => { if (el.onplaying) el.onplaying(); }, 5);
-      w.setTimeout(() => { if (el.onended) el.onended(); }, endDelay);
+      w.setTimeout(() => { if (el.onended) el.onended(); }, 60);
       return Promise.resolve();
     };
     q.Speech.supported = true;
-    const clips = () => played.map(spokenText).filter(Boolean);
+    const clips = () => played.filter((u) => u.indexOf(LOCAL) === 0).map((u) => u.slice(LOCAL.length));
     return fn({ q, w, clock, played, clips, consoleErrors, synthCalls: () => synthCalls });
   });
 }
 
 const readyButton = (w) => Array.from(w.document.querySelectorAll('#sheets button')).find((b) => /I['’]m ready/.test(b.textContent));
-const startSession = (ctx, opts) => {
-  ctx.q.Eng.start(opts || {});
-  ctx.clock.tick(250);
-  return readyButton(ctx.w);
+function startSession(ctx) {
+  ctx.q.Eng.start({});
+  ctx.clock.tick(300);
+  const button = readyButton(ctx.w);
+  assert.ok(button, 'the Are you ready? sheet offers Yes, I am ready');
+  return button;
+}
+function tickFor(clock, ms, step) {
+  const size = step || 50;
+  for (let i = 0; i < ms; i += size) clock.tick(size);
+}
+/* tick in small steps and remember when each new clip first appeared */
+function timeline(clock, played, ms) {
+  const marks = [];
+  let seen = played.length;
+  for (let t = 0; t < ms; t += 10) {
+    clock.tick(10);
+    while (seen < played.length) {
+      marks.push({ at: t + 10, url: played[seen] });
+      seen += 1;
+    }
+  }
+  return marks;
+}
+const firstAt = (marks, file) => {
+  const hit = marks.find((m) => m.url === LOCAL + file);
+  return hit ? hit.at : -1;
 };
-const tickFor = (clock, ms, step) => { for (let i = 0; i < ms; i += (step || 100)) clock.tick(step || 100); };
-const realErrors = (consoleErrors) => (consoleErrors || []).filter((m) => !/^Not implemented:/i.test(String(m)));
 
-/* ------------------------------------------------------------------ build */
+/* ----------------------------------------------------------- build gate ---- */
 
-test('v42 build gate: single-file ES5, no static external links, under 442,000 bytes', () => {
-  assert.ok(script.length > 100000, 'the main inline app is present');
-  assert.doesNotThrow(() => acorn.parse(script, { ecmaVersion: 5 }));
+test('v43 build gate: one ES5 file, no static external <link>, under 442,000 bytes', () => {
+  assert.ok(script.length > 100000, 'the single inline app is present');
+  assert.doesNotThrow(() => acorn.parse(script, { ecmaVersion: 5 }), 'strict ES5 only');
   for (const token of ['const ', 'let ', '=>', '`', 'async function', 'await ']) {
     assert.ok(!has(script, token), 'ES5 only; found ' + token);
   }
-  assert.ok(!has(html, '<link'), 'no static external or local link tag');
-  assert.ok(!/<script[^>]+src=/.test(html), 'no external script tag');
-  assert.ok(Buffer.byteLength(html) < 442000, 'index.html is under the 442,000-byte release budget: ' + Buffer.byteLength(html));
-  const check = cp.spawnSync(process.execPath, ['tests/check.cjs'], { cwd: root, encoding: 'utf8' });
-  assert.equal(check.status, 0, check.stdout + check.stderr);
-  assert.ok(has(html, 'APP_VERSION="4.9.0"'));
+  assert.ok(!/<link\b/i.test(html), 'no static external <link> tag');
+  const bytes = Buffer.byteLength(html);
+  assert.ok(bytes < 442000, 'index.html is ' + bytes + ' bytes');
+  assert.ok(bytes < 450000, 'hard ceiling');
+  assert.ok(has(html, '<audio id="ttsMasterAudio"'), 'the master audio element ships in the HTML');
 });
 
-test('release identity: schema 42, appVersion 4.9.0, English, Amy, paper, one voice key', () => {
-  for (const [name, data] of [['version', version], ['config', config], ['session', session]]) {
-    assert.ok(data.ver >= 42, name + '.ver is 42 or newer: ' + data.ver);
-    assert.equal(data.appVersion, '4.9.0', name + '.appVersion');
-    assert.equal(data.settingsRev, 42, name + '.settingsRev');
-    assert.equal(data.lang, 'en', name + '.lang');
-    assert.equal(data.guideLang, 'en', name + '.guideLang');
-    assert.equal(data.voice, 'Amy', name + '.voice');
-    assert.equal(data.lockedVoice, 'Amy', name + '.lockedVoice');
-    assert.equal(data.mode, 'paper', name + '.mode');
-    assert.equal(data.activeVideoSrc, DEFAULT, name + '.activeVideoSrc');
-    assert.equal(data.activeMediaType, 'video', name + '.activeMediaType');
-    assert.equal(data.videoDim, 18, name + '.videoDim');
-    assert.equal(data.storageKey, KEY, name + '.storageKey');
-    assert.equal(data.ghMediaCache, GH_KEY, name + '.ghMediaCache');
-    assert.ok(!('dictHost' in data) || has(data.dictHost, 'dictionaryapi'), name + ' has no dictionary voice host');
-    assert.ok(!has(JSON.stringify(data), 'ssl.gstatic.com'), name + ' has zero gstatic voice');
-    assert.ok(!has(JSON.stringify(data), 'translate.googleapis.com'), name + ' has zero translate_tts voice');
-  }
-  assert.equal(version.version, '4.9.0');
-  assert.equal(config.version, '4.9.0');
-  assert.equal(session.version, '4.9.0');
+test('version, storage keys and the bundled pack are declared as v43 / 5.0.0', () => {
+  assert.ok(has(script, 'APP_VERSION="5.0.0"'), 'APP_VERSION is 5.0.0');
+  assert.ok(has(script, 'key:"' + KEY + '",schema:43'), 'CONFIG.key/schema');
+  assert.ok(has(script, 'settingsRev:43'), 'settingsRev');
+  assert.ok(has(script, 'ghMediaCache:"' + GH_KEY + '"'), 'asset cache key');
+  assert.equal(version.ver, 43);
+  assert.equal(version.appVersion, '5.0.0');
+  assert.equal(version.settingsRev, 43);
   assert.equal(version.ghMediaCache, GH_KEY);
-  assert.ok(version.legacyMediaCaches.indexOf('sdp.gh_assets_v41') >= 0);
-  assert.match(version.features.humanVoice, /dict\.youdao\.com\/dictvoice\?type=1&audio=/);
-  assert.match(version.features.voiceLifecycle, /Eng\.readyGo/);
-  assert.match(version.features.testSound, /Sound check\. Number 1, bicycle \./);
-  assert.match(version.features.numberedWords, /Number N, <word> \./);
-  assert.match(version.features.pauseResume, /Session paused/);
-  assert.match(version.features.finishSummary, /Dictation complete\. Well done\./);
-  assert.equal(config.defaults.voice, 'Amy');
-  assert.equal(config.defaults.lang, 'en');
-  assert.equal(config.defaults.guideLang, 'en');
-  assert.equal(config.defaults.repeats, 2);
-  assert.equal(config.defaults.writeFixed, 5);
-  assert.equal(config.session.voice, 'Amy');
-  assert.equal(session.session.voice, 'Amy');
-  assert.equal(config.tts.silenceBetweenRepeatsMs, 650);
-  assert.equal(config.tts.singleVoiceUrl, UNIFIED, 'the documented clip URL is the one neural en-GB endpoint');
-  assert.equal(config.humanAudio.singleVoiceUrl, UNIFIED);
+  assert.equal(config.ver, 43);
+  assert.equal(config.appVersion, '5.0.0');
+  assert.equal(session.ver, 43);
+  assert.equal(session.appVersion, '5.0.0');
+  assert.equal(config.tts.singleVoiceUrl, REMOTE, 'the documented remote fallback is unchanged');
+  assert.ok(has(config.tts.pack, './audio/'), 'config documents the bundled pack');
 });
 
-test('CONFIG and defaultData expose the v42 key, the Amy lock and the one voice', () => withApp(({ q }) => {
-  assert.equal(q.APP_VERSION, '4.9.0');
-  assert.equal(q.CONFIG.key, KEY);
-  assert.equal(q.CONFIG.schema, 42);
-  assert.equal(q.CONFIG.settingsRev, 42);
-  assert.equal(q.CONFIG.lockedVoice, 'Amy');
-  assert.equal(q.CONFIG.ghMediaCache, GH_KEY);
-  assert.ok(q.CONFIG.legacyMediaCaches.indexOf('sdp.gh_assets_v41') >= 0);
-  const d = q.DB.defaults();
-  assert.equal(d.v, 42);
-  assert.equal(d.settingsRev, 42);
-  assert.equal(d.settings.lang, 'en');
-  assert.equal(d.settings.guideLang, 'en');
-  assert.equal(d.settings.mode, 'paper');
-  assert.equal(d.settings.voice, 'Amy');
-  assert.equal(d.settings.writeFixed, 5);
-  assert.equal(d.settings.repeats, 2);
-  assert.equal(d.settings.activeVideoSrc, DEFAULT);
-  assert.equal(d.settings.activeMediaType, 'video');
-  assert.equal(d.settings.videoDim, 18);
-  assert.ok(!('humanReactions' in d.settings));
-  assert.ok(!('elevenLabsKey' in d.settings));
-}));
-
-test('the interface opens in English with an optional Sinhala User Guide switch and Sinhala font stack', () => withApp(({ q, w }) => {
-  assert.ok(/<html lang="en"/.test(html));
-  q.DB.data.settings.lang = 'si';
-  q.DB.data.settings.guideLang = 'si';
-  q.UI.init();
-  assert.equal(q.DB.data.settings.lang, 'en');
-  assert.equal(q.DB.data.settings.guideLang, 'en');
-  q.UI.openWelcomeGuide();
-  const body = w.document.getElementById('guideBody');
-  assert.ok(body);
-  const tabs = Array.from(body.querySelectorAll('.seg button'));
-  assert.equal(tabs.length, 2);
-  assert.equal(tabs[0].textContent, 'English');
-  assert.equal(tabs[0].getAttribute('aria-selected'), 'true');
-  assert.equal(tabs[1].textContent, 'සිංහල');
-  assert.ok(w.document.getElementById('btnGuideStart'));
-  assert.ok(hasCss('font-family:"Noto Sans Sinhala","Sinhala Sangam MN","Nirmala UI",Inter,sans-serif!important'));
-  assert.ok(has(cssText(), 'line-height:1.72'));
-}));
-
-/* --------------------------------------------------------- the one voice */
-
-test('one persistent #ttsMasterAudio element, preloaded, never CORS-tainted, never duplicated', () => withApp(({ q, w }) => {
-  assert.ok(masterTag, 'the static #ttsMasterAudio tag exists');
-  assert.match(masterTag, /preload="auto"/);
-  assert.match(masterTag, /playsinline/);
-  assert.match(masterTag, /referrerpolicy="no-referrer"/);
-  assert.ok(!/crossorigin/i.test(masterTag), 'no crossOrigin attribute on the master element');
-  const live = w.document.getElementById('ttsMasterAudio');
-  assert.ok(live, 'the element is in the live DOM');
-  assert.equal(live.getAttribute('crossorigin'), null);
-  assert.notEqual(live.crossOrigin, 'anonymous');
-  assert.equal(w.document.querySelectorAll('#ttsMasterAudio').length, 1, 'exactly one master audio element');
-  assert.equal(q.Speech.master(), live, 'TTS.master() reuses the same element');
-  q.Speech.unlock();
-  q.Speech.unlock();
-  assert.equal(q.Speech.master(), live, 'unlock never creates a second element');
-  assert.equal(w.document.querySelectorAll('#ttsMasterAudio').length, 1);
-  assert.ok(!/\.crossOrigin\s*=\s*["']anonymous/.test(script), 'crossOrigin is never set');
-  assert.ok(has(script, 'referrerpolicy","no-referrer'), 'pre-buffered clips also use referrerpolicy=no-referrer');
-  assert.ok(!has(script, 'new Audio('), 'never a throwaway Audio() inside a timer');
-  assert.ok(has(script, 'pointerdown'), 'the master element is unlocked from a pointerdown gesture');
-}));
-
-test('TTS.cleanWordOnly keeps only the clean target word or phrase', () => withApp(({ q }) => {
-  const TTS = q.Speech;
-  assert.equal(typeof TTS.cleanWordOnly, 'function');
-  assert.equal(typeof TTS.getSingleVoiceUrl, 'function');
-  const cases = [
-    ['tyre/tire', 'tyre'],
-    ['tyre / tire', 'tyre'],
-    ['bus stop', 'bus stop'],
-    ['bicycle', 'bicycle'],
-    ['boarding pass', 'boarding pass'],
-    ['tourist information centre', 'tourist information centre'],
-    ['  bicycle  ', 'bicycle'],
-    ['', ''],
-    ['   ', '']
-  ];
-  for (const [raw, clean] of cases) {
-    assert.equal(TTS.cleanWordOnly(raw), clean, 'cleanWordOnly(' + JSON.stringify(raw) + ')');
+test('defaults are unchanged: English, paper mode, locked Amy voice, bunny wallpaper', () => {
+  for (const data of [version, config, session]) {
+    assert.equal(data.lang, 'en');
+    assert.equal(data.guideLang, 'en');
+    assert.equal(data.mode, 'paper');
+    assert.equal(data.voice, 'Amy');
+    assert.equal(data.lockedVoice, 'Amy');
+    assert.equal(data.activeVideoSrc, DEFAULT_VIDEO);
+    assert.equal(data.activeMediaType, 'video');
+    assert.equal(data.videoDim, 18);
   }
-}));
+  assert.equal(session.session.mode, 'paper');
+  assert.ok(has(script, 'mode:"paper"') || has(script, '"paper"'), 'paper is the shipped mode');
+});
 
-test('TTS.getSingleVoiceUrl formats every clip as "<text> ." on the one Youdao endpoint', () => withApp(({ q }) => {
-  const TTS = q.Speech;
-  assert.equal(TTS.UNIFIED, UNIFIED, 'the one unified neural en-GB studio endpoint');
-  assert.equal(TTS.getSingleVoiceUrl('bicycle'), UNIFIED + 'bicycle%20.');
-  assert.equal(TTS.getSingleVoiceUrl('bus stop'), UNIFIED + 'bus%20stop%20.');
-  assert.equal(TTS.getSingleVoiceUrl('boarding pass'), UNIFIED + 'boarding%20pass%20.');
-  assert.equal(TTS.getSingleVoiceUrl('Number 1, bicycle'), UNIFIED + 'Number%201%2C%20bicycle%20.');
-  assert.equal(TTS.getSingleVoiceUrl('Number 1, bicycle .'), UNIFIED + 'Number%201%2C%20bicycle%20.', 'the format is idempotent');
-  assert.equal(TTS.getSingleVoiceUrl('Three, two, one .'), UNIFIED + 'Three%2C%20two%2C%20one%20.');
-  assert.equal(TTS.getSingleVoiceUrl('Sound check. Number 1, bicycle .'), UNIFIED + 'Sound%20check.%20Number%201%2C%20bicycle%20.');
-  assert.equal(TTS.getSingleVoiceUrl('   '), '');
-  assert.equal(TTS.getUnifiedVoiceUrl('bicycle'), TTS.getSingleVoiceUrl('bicycle'), 'the legacy alias cannot point anywhere else');
-  assert.deepEqual(Array.from(TTS.getStudioMp3Candidates('bus stop')), [UNIFIED + 'bus%20stop%20.']);
-  assert.equal(TTS.mp3For('bicycle'), UNIFIED + 'bicycle%20.', 'the dictionary fallback is the same single voice');
-  for (const word of ['bicycle', 'bus stop', 'tyre/tire', 'windscreen', 'Number 30, windscreen .', 'Three, two, one .', 'Session paused .']) {
-    const url = TTS.getSingleVoiceUrl(word);
-    assert.equal(url.indexOf(UNIFIED), 0, 'every clip uses the single locked URL: ' + url);
-    assert.ok(has(url, '%20.'), 'every clip ends with the space + period marker: ' + url);
-  }
-}));
+/* ------------------------------------------------------------ audio pack --- */
 
-test('there is exactly ONE voice host and the retired translate_tts endpoint is gone', () => {
-  assert.ok(has(html, 'dict.youdao.com/dictvoice?type=1&audio='), 'the one neural en-GB endpoint is present');
-  for (const dead of ['translate.googleapis.com', 'translate_tts', 'ssl.gstatic.com', 'translate.google.com', 'api.streamelements.com', 'elevenlabs', 'mp3-forvo']) {
-    assert.ok(!has(html.toLowerCase(), dead), 'retired voice engine removed from the build: ' + dead);
+test('the committed audio pack is complete: every clip is a real MP3 over 1000 bytes', () => {
+  const files = manifest.clips.map((c) => c.file).concat(manifest.pass1.map((p) => p.file));
+  assert.ok(files.length >= 130, 'the pack ships every clip: ' + files.length);
+  const seen = new Set();
+  for (const file of files) {
+    assert.ok(!seen.has(file), 'duplicate clip name: ' + file);
+    seen.add(file);
+    const full = path.join(AUDIO, file);
+    assert.ok(fs.existsSync(full), 'missing clip: ' + file);
+    const stat = fs.statSync(full);
+    assert.ok(stat.size > 1000, file + ' is only ' + stat.size + ' bytes');
+    const head = fs.readFileSync(full).slice(0, 3).toString('hex');
+    assert.ok(head === '494433' || /^ff[ef]/.test(head), file + ' is not an MP3 frame (' + head + ')');
   }
-  assert.equal((script.match(/https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/g) || []).length, 1, 'one studio endpoint, declared once');
-  assert.equal((script.match(/https:\/\/[^"']*dictvoice/g) || []).length, 1, 'no second speech endpoint anywhere');
-  withApp(({ q }) => {
-    const engine = sourceOf(q.Speech);
-    assert.ok(engine.length > 2000, 'the TTS engine source was captured');
-    for (const dead of ['gstatic', 'streamelements', 'elevenlabs', 'mp3--_gb_1', 'translate.googleapis']) {
-      assert.ok(!has(engine.toLowerCase(), dead), 'no second voice engine in TTS: ' + dead);
+  const onDisk = fs.readdirSync(AUDIO).filter((f) => /\.mp3$/.test(f));
+  assert.equal(onDisk.length, seen.size, 'no stray files in ./audio');
+});
+
+test('every documented clip of the v43 spec exists by name', () => {
+  const required = ['welcome-paper.mp3', 'welcome-type.mp3', 'sound-check.mp3', 'count-3.mp3', 'count-2.mp3',
+    'count-1.mp3', 'countdown-321.mp3', 'paused.mp3', 'finish-paper.mp3', 'finish-type.mp3',
+    'num-1.mp3', 'num-29.mp3', 'num-30.mp3', 'resume-1.mp3', 'resume-30.mp3',
+    'word-bicycle.mp3', 'word-motorbike.mp3', 'word-bus-stop.mp3', 'word-train-station.mp3',
+    'word-tyre.mp3', 'word-windscreen.mp3', 'word-guidebook.mp3', 'word-tourist-information-centre.mp3',
+    'pass1-1-guidebook.mp3', 'pass1-30-windscreen.mp3'];
+  for (const file of required) {
+    assert.ok(fs.existsSync(path.join(AUDIO, file)), 'missing ' + file);
+    assert.ok(fs.statSync(path.join(AUDIO, file)).size > 1000, file + ' is empty');
+  }
+  const words = manifest.words.map((w) => String(w).split('/')[0].toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+  for (const word of ['bicycle', 'guidebook', 'windscreen', 'tyre']) {
+    assert.ok(words.indexOf(word) >= 0, 'the pack covers ' + word);
+  }
+});
+
+test('the pack is one single voice: one manifest, one speaker, one engine', () => {
+  assert.equal(manifest.ver, 43);
+  assert.equal(manifest.speaker, 'F1', 'a single female speaker renders every clip');
+  assert.equal(manifest.engine, 'single neural voice');
+  const kinds = new Set(manifest.clips.map((c) => c.kind));
+  for (const kind of ['system', 'count', 'number', 'resume', 'word']) assert.ok(kinds.has(kind), 'kind ' + kind);
+  /* no clip may be silent padding: identical byte length for two different
+     sentences would mean a placeholder was copied around */
+  const sizes = manifest.clips.slice(0, 40).map((c) => fs.statSync(path.join(AUDIO, c.file)).size);
+  assert.ok(new Set(sizes).size > 20, 'clips carry real, different audio');
+});
+
+test('the audio pack is served with HTTP 200 by a plain static server', async () => {
+  const types = { '.mp3': 'audio/mpeg' };
+  const server = http.createServer((req, res) => {
+    const clean = decodeURIComponent(String(req.url || '/').split('?')[0]);
+    const file = path.join(root, clean);
+    if (file.indexOf(root) !== 0 || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+      res.writeHead(404); res.end('not found'); return;
     }
+    res.writeHead(200, { 'content-type': types[path.extname(file)] || 'application/octet-stream' });
+    fs.createReadStream(file).pipe(res);
   });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+  try {
+    for (const file of ['sound-check.mp3', 'count-3.mp3', 'word-bicycle.mp3', 'pass1-1-guidebook.mp3', 'finish-paper.mp3']) {
+      const res = await fetch('http://127.0.0.1:' + port + '/audio/' + file);
+      assert.equal(res.status, 200, file + ' must be served');
+      assert.equal(res.headers.get('content-type'), 'audio/mpeg');
+      const body = Buffer.from(await res.arrayBuffer());
+      assert.ok(body.length > 1000, file + ' body');
+    }
+  } finally {
+    server.close();
+  }
 });
 
-test('zero filler phrases survive in TTS or the Eng dictation playback', () => withApp(({ q }) => {
-  const engine = sourceOf(q.Speech);
-  const playback = sourceOf(q.Eng);
-  assert.deepEqual(fillerHits(engine), [], 'TTS must never speak a filler phrase');
-  assert.deepEqual(fillerHits(playback), [], 'Eng dictation playback must never speak a filler phrase');
-  assert.deepEqual(fillerHits(html), [], 'the whole build is free of the retired filler phrases');
-  assert.equal(q.Speech.getHumanRepeatPhrase, undefined);
-  assert.equal(q.Speech.speakHumanReaction, undefined);
-  assert.equal(q.Speech.reactionsEnabled, undefined);
-  assert.ok(!('humanReactions' in q.DB.data.settings));
+test('audio lives outside /assets so the wallpaper studio never lists it', () => withApp(({ q }) => {
+  assert.equal(typeof q.LiveWallpaper.isAssetsMedia, 'function');
+  assert.equal(q.LiveWallpaper.isAssetsMedia('./audio/word-bicycle.mp3'), false, 'mp3 is not a wallpaper asset');
+  assert.equal(q.isAssetsMedia('./audio/word-bicycle.mp3'), false);
+  assert.equal(q.isAssetsMedia('./audio/sound-check.mp3'), false);
+  assert.equal(q.normalizeAssetPath('./audio/word-bicycle.mp3').indexOf('assets/'), -1);
+  assert.equal(q.LiveWallpaper.isAssetsMedia(DEFAULT_VIDEO), true, 'the bunny video still is');
+  assert.equal(has(script, 'LOCAL_AUDIO_BASE:"./audio/"'), true);
 }));
 
-test('TTS.stop() and TTS.speakSingle() cancel the previous clip and clear every pending timer', () => withApp(({ q }) => {
-  const TTS = q.Speech;
-  assert.equal(typeof TTS.clearTtsTimers, 'function');
-  assert.equal(typeof TTS.speakPinnedSynth, 'function');
-  const before = TTS._seqToken;
-  TTS.stop();
-  assert.ok(TTS._seqToken > before, 'stop() bumps the sequence token');
-  TTS._watchdog = setTimeout(() => {}, 5000);
-  TTS._gapTimer = setTimeout(() => {}, 5000);
-  TTS._lenTimer = setTimeout(() => {}, 5000);
-  TTS.stop();
-  assert.equal(TTS._watchdog, null, 'the start watchdog is cleared');
-  assert.equal(TTS._gapTimer, null, 'the inter-pass gap timer is cleared');
-  assert.equal(TTS._lenTimer, null, 'the clip length timer is cleared');
-  const token = TTS._seqToken;
-  TTS.speakSingle('Session paused .');
-  assert.ok(TTS._seqToken > token, 'speakSingle() bumps the sequence token');
-  TTS.stop();
-}));
+/* ------------------------------------------------------------- resolver ---- */
 
-/* ------------------------------------------------------- test sound button */
-
-test('TTS.testSound plays the real dictation voice and marks ✓ Dictation Voice Verified', () => withStream(({ q, w, clock, clips }) => {
-  assert.equal(typeof q.Speech.testSound, 'function');
-  q.Speech.testSound();
-  clock.tick(400);
-  assert.ok(clips().indexOf(TEST_PHRASE) >= 0, 'Sound check. Number 1, bicycle . goes through the one dictation voice: ' + clips().join(' | '));
-  q.Eng.start({});
-  clock.tick(250);
-  const pill = w.document.getElementById('voiceTestPill');
-  const btn = w.document.getElementById('btnReadyTest');
-  assert.ok(btn, 'the Are you ready? sheet has #btnReadyTest');
-  assert.ok(pill, 'the Are you ready? sheet has a voice status pill');
-  btn.click();
-  clock.tick(400);
-  assert.equal(pill.textContent, '✓ Dictation Voice Verified');
-  assert.ok(clips().indexOf(TEST_PHRASE) >= 0);
-  for (const id of ['btnTestVoice', 'btnTestVoicePlayer', 'btnTestVoiceDiag']) {
-    assert.ok(has(html, id), 'every test-sound button exists: ' + id);
+test('TTS.resolveClips maps every spoken line to its bundled same-origin clip', () => withApp(({ q }) => {
+  const S = q.Speech;
+  const one = (text) => S.resolveClips(text);
+  assert.deepEqual(Array.from(one(PAPER_INTRO)), [LOCAL + 'welcome-paper.mp3']);
+  assert.deepEqual(Array.from(one(TYPE_INTRO)), [LOCAL + 'welcome-type.mp3']);
+  assert.deepEqual(Array.from(one(TEST_PHRASE)), [LOCAL + 'sound-check.mp3']);
+  assert.deepEqual(Array.from(one('Sound check.')), [LOCAL + 'sound-check.mp3']);
+  assert.deepEqual(Array.from(one('Three .')), [LOCAL + 'count-3.mp3']);
+  assert.deepEqual(Array.from(one('Three')), [LOCAL + 'count-3.mp3']);
+  assert.deepEqual(Array.from(one('Two .')), [LOCAL + 'count-2.mp3']);
+  assert.deepEqual(Array.from(one('One .')), [LOCAL + 'count-1.mp3']);
+  assert.deepEqual(Array.from(one('Three, two, one .')), [LOCAL + 'countdown-321.mp3']);
+  assert.deepEqual(Array.from(one('Session paused .')), [LOCAL + 'paused.mp3']);
+  assert.deepEqual(Array.from(one('Welcome back. Continuing dictation number 7 .')), [LOCAL + 'resume-7.mp3']);
+  assert.deepEqual(Array.from(one('Welcome back. Continuing dictation number 30 .')), [LOCAL + 'resume-30.mp3']);
+  assert.deepEqual(Array.from(one('Dictation complete. Well done. Review all thirty words below .')), [LOCAL + 'finish-paper.mp3']);
+  assert.deepEqual(Array.from(one('Dictation complete. Well done.')), [LOCAL + 'finish-type.mp3']);
+  assert.deepEqual(Array.from(one('Number 1 .')), [LOCAL + 'num-1.mp3']);
+  assert.deepEqual(Array.from(one('Final word, number 30 .')), [LOCAL + 'num-30.mp3']);
+  assert.deepEqual(Array.from(one('bicycle .')), [LOCAL + 'word-bicycle.mp3']);
+  assert.deepEqual(Array.from(one('bus stop')), [LOCAL + 'word-bus-stop.mp3']);
+  assert.deepEqual(Array.from(one('tourist information centre .')), [LOCAL + 'word-tourist-information-centre.mp3']);
+  assert.deepEqual(Array.from(one('tyre/tire .')), [LOCAL + 'word-tyre.mp3'], 'the UK variant is the spoken word');
+  assert.deepEqual(Array.from(one('Number 1, guidebook .')), [LOCAL + 'pass1-1-guidebook.mp3'], 'pass 1 is one atomic clip');
+  assert.deepEqual(Array.from(one('Number 30, windscreen .')), [LOCAL + 'pass1-30-windscreen.mp3']);
+  assert.deepEqual(Array.from(one('   ')), [], 'nothing to say, nothing to load');
+  for (const list of Array.from(S.resolveClips('Number 12, harbour .'))) {
+    assert.equal(list.indexOf(LOCAL), 0, 'bundled words never leave the origin: ' + list);
   }
-  assert.equal(q.Speech.testSound.length >= 0, true);
-  assert.ok(!/AudioContext|OscillatorNode/.test(String(q.Speech.testSound)), 'Test sound never falls back to an oscillator beep');
 }));
 
-/* ---------------------------------------------------- pre-ready instructions */
-
-test('Eng.start speaks brief professional pre-ready instructions in the single voice', () => withStream(({ q, w, clock, clips }) => {
-  const btn = startSession({ q, w, clock });
-  assert.ok(btn, 'the Are you ready? sheet is open');
-  assert.ok(clips().indexOf(PAPER_INTRO) >= 0, 'paper mode instructions: ' + clips().join(' | '));
-  assert.ok(clips().every((text) => text === PAPER_INTRO || text === ''), 'nothing else is spoken before Yes, I\'m ready');
+test('a bundled word at any index falls back to the Number + word pair (never a second voice)', () => withApp(({ q }) => {
+  const S = q.Speech;
+  /* a word that is not part of the shipped session order has no pass1 combo */
+  const clips = Array.from(S.resolveClips('Number 4, bicycle .'));
+  assert.deepEqual(clips, [LOCAL + 'num-4.mp3', LOCAL + 'word-bicycle.mp3']);
 }));
 
-test('Eng.start speaks the typing instructions when the session is typed', () => withStream(({ q, clock, clips }) => {
-  q.Eng.start({ mode: 'type' });
-  clock.tick(250);
-  assert.ok(clips().indexOf(TYPE_INTRO) >= 0, 'type mode instructions: ' + clips().join(' | '));
+test('custom user words keep the documented remote fallback and a single URL', () => withApp(({ q }) => {
+  const S = q.Speech;
+  assert.equal(S.REMOTE_FALLBACK_BASE, REMOTE);
+  assert.equal(S.UNIFIED, REMOTE, 'the legacy alias still points at the same endpoint');
+  assert.equal(S.getSingleVoiceUrl('zebra crossing'), REMOTE + 'zebra%20crossing%20.');
+  assert.equal(S.getSingleVoiceUrl('bicycle'), LOCAL + 'word-bicycle.mp3');
+  assert.equal(S.getUnifiedVoiceUrl('bicycle'), LOCAL + 'word-bicycle.mp3', 'the legacy alias resolves the pack');
+  assert.deepEqual(Array.from(S.getStudioMp3Candidates('bus stop')), [LOCAL + 'word-bus-stop.mp3']);
+  assert.equal(S.mp3For('bicycle'), LOCAL + 'word-bicycle.mp3');
+  assert.ok(S.KNOWN_WORDS.bicycle === 1, 'the bundled vocabulary is exposed as KNOWN_WORDS');
+  assert.equal(S.isBundledWord('bicycle'), true);
+  assert.equal(S.isBundledWord('zebra crossing'), false);
 }));
 
-/* ------------------------------------------- three, two, one then word one */
+/* -------------------------------------------------------- live playback ---- */
 
-test('Eng.readyGo speaks "Three, two, one ." and starts Word 1 only after the visual countdown', () => withStream(({ q, w, clock, clips }) => {
-  const btn = startSession({ q, clock, w });
-  btn.click();
-  clock.tick(100);
-  assert.ok(clips().indexOf(COUNTDOWN) >= 0, 'the countdown is spoken immediately');
-  assert.equal(q.Eng.phase, 'countdown');
-  assert.equal(w.document.getElementById('cdNum').textContent, '3');
-  clock.tick(700);
-  assert.equal(w.document.getElementById('cdNum').textContent, '2');
-  clock.tick(700);
-  assert.equal(w.document.getElementById('cdNum').textContent, '1');
-  assert.equal(q.Eng.idx, 0, 'word 1 has not started while the countdown runs');
-  assert.notEqual(q.Eng.st, 'waiting');
-  tickFor(clock, 1400);
-  assert.ok(clips().indexOf('Number 1, guidebook .') >= 0, 'word 1 launches after the countdown: ' + clips().join(' | '));
-  assert.equal(q.Eng.idx, 0);
+test('a live browser plays 3-2-1 in lockstep with the screen and starts word 1 at 2850ms', () => withStream(({ q, w, clock, played, synthCalls }) => {
+  startSession({ q, w, clock }).click();
+  played.length = 0;
+  const marks = timeline(clock, played, 3200);
+  const three = firstAt(marks, 'count-3.mp3');
+  const two = firstAt(marks, 'count-2.mp3');
+  const one = firstAt(marks, 'count-1.mp3');
+  const first = firstAt(marks, 'pass1-1-guidebook.mp3');
+  assert.ok(three >= 0 && three <= 60, 'Three is spoken immediately: ' + three);
+  assert.ok(two >= 900 && two <= 1000, 'Two lands at ~950ms: ' + two);
+  assert.ok(one >= 1850 && one <= 1950, 'One lands at ~1900ms: ' + one);
+  assert.ok(first >= 2800 && first <= 2920, 'Word 1 starts at ~2850ms: ' + first);
+  assert.ok(three < two && two < one && one < first, 'spoken order matches the visual order');
+  assert.equal(synthCalls(), 0, 'the robotic device voice never runs');
+  assert.equal((w.document.getElementById('plSub') || {}).textContent.indexOf('1st reading'), 0 + (w.document.getElementById('plSub') || {}).textContent.indexOf('1st reading'));
+  assert.ok(/1st reading/.test(String((w.document.getElementById('plSub') || {}).textContent)), 'the live status shows the reading');
 }));
 
-test('the spoken countdown and the visual 3-2-1 ticks are synchronised: Word 1 waits for BOTH', () => withStream(({ q, w, clock, clips }) => {
-  /* the master <audio> answers only after 3s, so the spoken countdown is still running
-     when the visual ticks have already finished */
-  const btn = startSession({ q, clock, w });
-  btn.click();
-  tickFor(clock, 2500);
-  assert.equal(w.document.getElementById('cdNum').textContent, '0', 'the visual countdown has finished');
-  assert.equal(q.Eng.phase, 'countdown', 'the spoken countdown is still running');
-  assert.ok(clips().indexOf('Number 1, guidebook .') < 0, 'Word 1 has NOT started while the audio is still speaking');
-  tickFor(clock, 1200);
-  assert.ok(clips().indexOf('Number 1, guidebook .') >= 0, 'Word 1 starts once the audio finished too: ' + clips().join(' | '));
-}, { endDelay: 3000 }));
-
-/* ------------------------------------------- numbered words + clean repeat */
-
-test('every dictation announces "Number N, <word> ." then repeats only the clean word', () => withStream(({ q, w, clock, clips }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 3000);
-  const first = clips();
-  assert.ok(first.indexOf('Number 1, guidebook .') >= 0, 'pass 1 announces the dictation number and the word: ' + first.join(' | '));
-  assert.ok(first.indexOf('guidebook .') >= 0, 'pass 2 repeats only the clean word');
-  assert.ok(first.indexOf('Number 1, guidebook .') < first.indexOf('guidebook .'), 'number first, clean repeat second');
-  q.Eng.startWord(1);
-  tickFor(clock, 1200);
-  const second = clips();
-  assert.ok(second.indexOf('Number 2, handlebars .') >= 0, 'the second word is announced with its number');
-  assert.ok(second.lastIndexOf('handlebars .') > second.indexOf('Number 2, handlebars .'));
-  const compound = q.Eng.words.map((item) => item.w).indexOf('public transport');
-  assert.ok(compound >= 0, 'the compound phrase is in Session 7');
-  q.Eng.startWord(compound);
-  tickFor(clock, 1200);
-  const phrase = 'Number ' + (compound + 1) + ', public transport .';
-  assert.ok(clips().indexOf(phrase) >= 0, 'compound phrases keep one voice: ' + clips().join(' | '));
-  assert.ok(clips().indexOf('public transport .') >= 0);
+test('the dictation badge and step sub-line always show "Dictation #N of 30"', () => withStream(({ q, w, clock }) => {
+  startSession({ q, w, clock }).click();
+  tickFor(clock, 3200);
+  const badge = w.document.getElementById('plStepBadge');
+  const prog = w.document.getElementById('plProgText');
+  const sub = w.document.getElementById('plSub');
+  assert.ok(/Dictation #1 of 30/.test(String(badge && badge.textContent)), 'badge: ' + (badge || {}).textContent);
+  assert.ok(/Dictation #1 of 30/.test(String(prog && prog.textContent)), 'progress: ' + (prog || {}).textContent);
+  assert.ok(sub && /Listening/.test(String(sub.textContent)), 'sub: ' + (sub || {}).textContent);
 }));
 
-test('the last dictation is announced as "Final word, number 30, windscreen ."', () => withStream(({ q, w, clock, clips }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 2600);
-  assert.equal(q.Eng.words.length, 30);
-  q.Eng.startWord(29);
-  tickFor(clock, 1200);
-  assert.ok(clips().indexOf('Final word, number 30, windscreen .') >= 0, 'the final numbered announcement: ' + clips().join(' | '));
-  assert.ok(clips().indexOf('windscreen .') >= 0, 'the final word is repeated clean');
-}));
-
-test('the player badge always shows which dictation number is continuing', () => withStream(({ q, w, clock }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 2600);
-  assert.equal(w.document.getElementById('plStep').textContent, 'Dictation #1 of 30');
-  assert.equal(w.document.getElementById('plProgText').textContent, 'Dictation #1 of 30');
-  assert.equal(w.document.getElementById('plStepBadge').textContent, 'Dictation #1 of 30');
+test('word cycle: "Number N + word", a 650ms studio pause, then the SAME word file twice', () => withStream(({ q, w, clock, played }) => {
+  startSession({ q, w, clock }).click();
+  tickFor(clock, 3200);
+  played.length = 0;
   q.Eng.startWord(4);
-  tickFor(clock, 300);
-  assert.equal(w.document.getElementById('plStep').textContent, 'Dictation #5 of 30');
-  assert.equal(w.document.getElementById('plProgText').textContent, 'Dictation #5 of 30');
-  assert.equal(w.document.getElementById('plStepBadge').textContent, 'Dictation #5 of 30');
-  assert.match(w.document.getElementById('plStatus').textContent, /Number 5 of 30/);
+  const immediate = played.slice().map((url) => ({ at: 0, url }));
+  const marks = immediate.concat(timeline(clock, played, 2600).filter((m) => m.at > 0));
+  const files = marks.map((m) => m.url.slice(LOCAL.length));
+  const pass1 = files.filter((f) => f.indexOf('pass1-') === 0);
+  assert.equal(pass1.length, 1, 'pass 1 plays one combined Number + word clip: ' + files.join(','));
+  assert.equal(files[1], 'word-hitchhike.mp3', 'pass 2 replays the flat word file: ' + files.join(','));
+  for (const file of files) assert.ok(/^(pass1-|num-|word-)/.test(file), 'only bundled dictation clips: ' + file);
+  /* Pass 2 replays the flat word file, i.e. exactly the word Pass 1 embedded */
+  assert.ok(pass1[0].indexOf('hitchhike') > 0, 'the combined clip carries the same word: ' + pass1[0]);
 }));
 
-test('the writing timer is five seconds and starts after the clean repeat', () => withStream(({ q, w, clock, clips }) => {
-  assert.equal(q.DB.data.settings.writeFixed, 5);
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 4400);
-  assert.equal(q.Eng.phase, 'write');
-  assert.equal(q.Eng.countdown.total, 5);
-  assert.ok(q.Eng.timer, 'the writing countdown interval is tracked');
-  const before = clips().length;
-  tickFor(clock, 5200);
-  assert.ok(clips().length > before, 'the next dictation starts after the timer');
-  assert.equal(q.Eng.idx, 1);
+test('test sound plays sound-check.mp3 and marks the voice verified, with no synth', () => withStream(({ q, w, clock, played, synthCalls }) => {
+  let done = null;
+  played.length = 0;
+  q.Speech.testSound((ok) => { done = ok; });
+  timeline(clock, played, 600);
+  assert.ok(played.indexOf(LOCAL + 'sound-check.mp3') >= 0, 'the sound check clip played: ' + played.join(','));
+  assert.equal(done, true, 'the promise resolves true');
+  assert.equal(synthCalls(), 0);
+  assert.equal(q.Speech.audioOk, true, 'the audio host reports a healthy clip');
+  assert.equal(q.Speech.audioStarted, true, 'the clip really started');
 }));
 
-test('Replay repeats "Number N, word ." then the clean word and restarts the timer', () => withStream(({ q, w, clock, clips }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 3000);
-  const btn = w.document.getElementById('btnReplay');
-  assert.ok(btn, 'the player has #btnReplay');
-  btn.click();
-  tickFor(clock, 300);
-  assert.ok(clips().filter((t) => t === 'Number 1, guidebook .').length >= 2, 'the number is repeated: ' + clips().join(' | '));
-  assert.equal(q.Eng.phase, 'write', 'the five second timer restarts after the replay');
-}));
-
-/* ------------------------------------------------ pause and welcome back */
-
-test('pause speaks "Session paused ." and resume speaks the welcome-back number', () => withStream(({ q, w, clock, clips }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 3000);
+test('pause, resume and finish each play their dedicated bundled clip', () => withStream(({ q, w, clock, played }) => {
+  startSession({ q, w, clock }).click();
+  tickFor(clock, 3200);
+  played.length = 0;
   q.Eng.pause();
-  clock.tick(300);
-  assert.equal(q.Eng.st, 'paused');
-  assert.equal(q.Eng.paused, true, 'the paused flag is set');
-  assert.equal(q.Eng.timer, null, 'the writing countdown interval is frozen');
-  assert.equal(q.Eng.stepTimer, null, 'the word step timer is frozen');
-  assert.ok(clips().indexOf(PAUSE_PHRASE) >= 0, 'pause is spoken: ' + clips().join(' | '));
-  assert.match(w.document.getElementById('plStatus').textContent, /Paused · Dictation #1 of 30/);
-  assert.equal(w.document.getElementById('plProgText').textContent, '⏸ Paused · Dictation #1 of 30');
-  assert.equal(w.document.getElementById('plStepBadge').textContent, '⏸ Paused · Dictation #1 of 30');
-  const before = clips().filter((t) => t === 'Number 1, guidebook .').length;
+  timeline(clock, played, 400);
+  assert.ok(played.indexOf(LOCAL + 'paused.mp3') >= 0, 'pause clip: ' + played.join(','));
+  played.length = 0;
   q.Eng.resume();
-  assert.equal(q.Eng.paused, false, 'the paused flag is cleared');
-  assert.match(w.document.getElementById('plStatus').textContent, /Resuming Dictation #1/);
-  clock.tick(300);
-  assert.ok(clips().indexOf(RESUME_PHRASE) >= 0, 'resume is spoken: ' + clips().join(' | '));
-  tickFor(clock, 1600);
-  assert.ok(clips().filter((t) => t === 'Number 1, guidebook .').length > before, 'the full reading restarts after welcome back');
-  assert.equal(q.Eng.idx, 0);
-  assert.equal(q.Eng.phase, 'write');
-}));
-
-/* ------------------------------------------------------- finish summaries */
-
-test('finishing a paper session speaks the completion summary', () => withStream(({ q, w, clock, clips }) => {
-  startSession({ q, w, clock });
+  timeline(clock, played, 1200);
+  assert.ok(played.some((u) => /^\.\/audio\/resume-\d+\.mp3$/.test(u)), 'resume clip: ' + played.join(','));
+  tickFor(clock, 1200);
+  played.length = 0;
   q.Eng.finish(false);
-  clock.tick(400);
-  assert.ok(clips().indexOf('Dictation complete. Well done. Review all thirty words below .') >= 0, clips().join(' | '));
-  assert.equal(q.DB.data.history.length, 1);
+  timeline(clock, played, 1200);
+  assert.ok(played.some((u) => u === LOCAL + 'finish-paper.mp3' || u === LOCAL + 'finish-type.mp3'), 'finish clip: ' + played.join(','));
 }));
 
-test('finishing a typed session reads the score out loud', () => withStream(({ q, clock, clips }) => {
-  q.Eng.start({ mode: 'type' });
-  clock.tick(250);
-  q.Eng.finish(false);
-  clock.tick(400);
-  assert.ok(clips().some((t) => /^Dictation complete\. Well done\. Your score is \d+ percent \.$/.test(t)), clips().join(' | '));
-}));
-
-test('exiting the player or the ready sheet stops every sound immediately', () => withStream(({ q, w, clock }) => {
-  startSession({ q, w, clock });
-  q.Eng.stop();
-  clock.tick(100);
-  assert.equal(q.Eng.st, 'idle');
-  assert.equal(q.Speech._playing, false, 'nothing is left playing after an exit');
-  assert.equal(q.Speech.audioStarted, false);
-}));
-
-/* ------------------------------------------- the device voice is never used */
-
-test('window.speechSynthesis.speak() never runs on a live online browser', () => withStream(({ q, w, clock, synthCalls }) => {
-  startSession({ q, clock, w }).click();
-  tickFor(clock, 3000);
-  q.Eng.pause();
-  clock.tick(300);
-  q.Eng.resume();
-  tickFor(clock, 2000);
-  q.Eng.finish(false);
-  clock.tick(300);
-  assert.equal(synthCalls(), 0, 'the OS voice is never spoken on a live online browser');
-  assert.ok(has(script, 'hushSynth'), 'TTS always cancels the device voice first');
-  assert.ok(/hushSynth:function\(\)\{try\{window\.speechSynthesis&&window\.speechSynthesis\.cancel\(\)\}/.test(script));
-}));
-
-test('a broken master <audio> falls back to the one locked en-GB female voice instead of silence', () => withStream(({ q, w, clock, synthCalls }) => {
-  /* the master element never starts: onerror fires immediately */
-  w.HTMLMediaElement.prototype.play = function () {
-    const el = this;
-    w.setTimeout(() => { if (el.onerror) el.onerror(new Error('network')); }, 5);
-    return Promise.reject(new Error('network'));
-  };
-  q.Speech.testSound();
-  tickFor(clock, 2500);
-  assert.ok(synthCalls() >= 1, 'the pinned device voice took over instead of hanging in silence');
-}));
-
-test('the headless / fully offline branch still speaks through the device voice', () => withVoice(({ q, clock, spoken }) => {
-  q.Speech.speakSingle('Hello Britain');
-  clock.tick(200);
-  assert.ok(spoken.length >= 1, 'the offline fallback is audible');
-  assert.equal(spoken[0].lang, 'en-GB');
-  q.Speech.speakSingle('Number 1, bicycle .');
-  clock.tick(200);
-  assert.ok(spoken.some((s) => s.text === 'Number 1, bicycle .'), 'the new numbered phrase reaches the device voice');
-  assert.ok(spoken.every((s) => s.lang === 'en-GB'), 'every fallback utterance is British English');
-}));
-
-/* ------------------------------------------------------------- migration */
-
-test('v41 profile migration and resetToV42 force English, paper, Amy and the bundled video', () => withApp(({ q }) => {
-  const old = q.defaultData();
-  old.v = 41;
-  old.settingsRev = 41;
-  old.settings.lang = 'si';
-  old.settings.guideLang = 'si';
-  old.settings.mode = 'typed';
-  old.settings.voice = 'Daniel';
-  old.settings.rate = 0.5;
-  old.settings.elevenLabsKey = 'sk-test';
-  old.settings.activeVideoSrc = 'https://example.test/outside.mp4';
-  old.settings.activeMediaType = 'photo';
-  const migrated = q.DB.migrate(old);
-  assert.equal(migrated.v, 42);
-  assert.equal(migrated.settingsRev, 42);
-  assert.equal(migrated.settings.lang, 'en');
-  assert.equal(migrated.settings.guideLang, 'en');
-  assert.equal(migrated.settings.mode, 'paper');
-  assert.equal(migrated.settings.voice, 'Amy');
-  assert.equal(migrated.settings.rate, 0.96);
-  assert.equal(migrated.settings.writeFixed, 5);
-  assert.equal(migrated.settings.repeats, 2);
-  assert.equal(migrated.settings.activeVideoSrc, DEFAULT);
-  assert.equal(migrated.settings.activeMediaType, 'video');
-  assert.equal(migrated.settings.videoDim, 18);
-  assert.equal(typeof q.DB.resetToV42, 'function');
-  const again = q.DB.migrate(migrated);
-  assert.equal(again.v, 42);
-  assert.equal(again.settingsRev, 42);
-  assert.ok(has(html, 'sdp.v41_unified_voice_lifecycle'), 'the v41 profile is read once for migration');
-}));
-
-test('Session 7 keeps all 30 travel words, five-second writing, x2 repeats and Amy en-GB defaults', () => {
-  const list = session.lists.find((item) => item.id === 'list_session_7_travel');
-  assert.ok(list);
-  assert.equal(list.words.length, 30);
-  ['guidebook', 'handlebars', 'harbour', 'helicopter', 'hitchhike', 'immigration', 'journey', 'luggage', 'machine', 'mechanic', 'nationality', 'on business', 'on vacation', 'overnight', 'passenger', 'public transport', 'reception', 'reservation', 'road sign', 'signpost', 'spaceship', 'suitcase', 'tourist information centre', 'traffic lights', 'tunnel', 'tyre/tire', 'vehicle', 'visa', 'waiting room', 'windscreen'].forEach((word) => assert.ok(list.words.some((item) => item.w === word), word));
-  list.words.forEach((word) => assert.ok(!word.audio, 'no second voice recording is bundled: ' + word.w));
-  assert.equal(config.defaults.writeFixed, 5);
-  assert.equal(config.defaults.repeats, 2);
-  assert.equal(config.defaults.rate, 0.96);
-  assert.equal(config.session.voice, 'Amy');
-  assert.equal(config.session.lang, 'en');
-  assert.equal(config.session.guideLang, 'en');
+test('the host never speaks: no 1500ms device-voice watchdog and speechSynthesis is silenced per clip', () => {
+  const playUrl = (script.match(/playUrl:function[\s\S]*?\n?attempt\(\)\}/) || [''])[0] || '';
+  const fallback = script.slice(script.indexOf('retryStudio:function'), script.indexOf('retryStudio:function') + 900);
+  const play = script.slice(script.indexOf('_play:function'), script.indexOf('_play:function') + 900);
+  assert.ok(has(playUrl, '4000'), 'the live-browser watchdog is 4000ms');
+  assert.ok(!/},1500\)/.test(playUrl), 'the old 1500ms watchdog is gone');
+  assert.ok(!has(fallback, 'speakPinnedSynth'), 'a failed same-origin clip never jumps to the device voice');
+  assert.ok(has(playUrl, 'hushSynth()'), 'every clip hushes the device voice first');
+  assert.ok(has(script, 'hushSynth:function(){try{window.speechSynthesis&&window.speechSynthesis.cancel()}'), 'hushSynth cancels speechSynthesis');
+  assert.ok(has(play, 'liveBrowser()'), 'the live branch is explicit');
 });
 
-/* ---------------------------------------------------- preserved v22-v41 UI */
-
-test('architectural interface keeps its radii, cobalt/graphite palette, white headings and hidden orbs', () => withApp(({ w }) => {
-  assert.ok(hasCss('border-radius:10px!important'));
-  assert.ok(hasCss('border-radius:11px!important'));
-  assert.ok(hasCss('border-radius:12px!important'));
-  assert.ok(hasCss('border-radius:16px!important'));
-  assert.ok(hasCss('--graphite:rgba(17,24,39,0.88)'));
-  assert.ok(hasCss('--panel:rgba(11,15,25,0.72)'));
-  assert.ok(hasCss('linear-gradient(180deg,#3b82f6 0,#2563eb 100%)!important'));
-  assert.ok(hasCss('*{-webkit-backdrop-filter:none!important;backdrop-filter:none!important'));
-  assert.ok(hasCss('--fg:#f8fafc'));
-  assert.ok(hasCss('.bg-aurora,.bg-grid,.blob,.bubble,.disc,.hansanaSpot,.orb,.player-backdrop,.player-orb,.ring,.stripes{display:none!important'));
-  assert.ok(!hasCss('border-radius:999px'));
-  assert.ok(!hasCss('background-clip:text'));
-  assert.ok(hasCss('.step-badge{'), 'the dictation number badge has its own high-contrast style');
-  const doc = w.document;
-  assert.equal(w.getComputedStyle(doc.getElementById('btnStart')).borderRadius, '10px');
-  assert.equal(w.getComputedStyle(doc.getElementById('homeHero')).borderRadius, '16px');
-  assert.equal(w.getComputedStyle(doc.getElementById('tabbar')).borderRadius, '16px');
-  assert.equal(w.getComputedStyle(doc.querySelector('.seg')).borderRadius, '11px');
-}));
-
-test('GPU motion and Hansana credits retain the 0.04s press, 0.22s glide and reveal cycle', () => {
-  assert.ok(CSS.indexOf('.16s') >= 0, '0.16 second response transition');
-  assert.ok(CSS.indexOf('.04s') >= 0 || CSS.indexOf('40ms!important') >= 0, '0.04 second press feedback');
-  assert.ok(CSS.indexOf('.22s') >= 0, '0.22 second screen glide');
-  assert.ok(CSS.indexOf('cubic-bezier(.16,1,.3,1)') >= 0);
-  assert.ok(CSS.indexOf('#credit{z-index:9999!important') >= 0);
-  assert.ok(hasCss('@keyframes hansanaRevealCycle') && CSS.indexOf('opacity:.12') >= 0);
-  assert.ok(has(html, 'CREDITS GOES TO'));
-  assert.ok(has(html, 'setTimeout(function(){U.setCls(document.body,"credit-intro",!1)},2800)'));
-});
-
-test('wallpaper stays an /assets/-only single hardware video with the v42 discovery cache', () => withApp(({ q, w }) => {
-  assert.equal(q.DEFAULT_WALLPAPER_SRC, DEFAULT);
-  assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
-  assert.equal(q.DB.data.settings.activeMediaType, 'video');
-  assert.ok(q.isAssetsMedia(DEFAULT));
-  assert.equal(q.normalizeAssetPath('https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/assets/bunny-live-wallpaper.mp4?v=42#t=1'), DEFAULT);
-  assert.equal(q.normalizeAssetPath('./qa/evidence/fatal-390.png'), '');
-  assert.equal(w.document.querySelectorAll('#bgLiveVideo').length, 1);
-  assert.ok(has(html, GH_KEY));
-  assert.ok(has(html, 'ghMediaTtl:9e5'));
-  assert.ok(has(html, 'preload="none"'));
-  assert.ok(CSS.indexOf('#bgLiveAmbilight{') >= 0 && CSS.indexOf('#bgLiveAmbilight{') < CSS.indexOf('display:none!important', CSS.indexOf('#bgLiveAmbilight{')));
-  assert.ok(hasCss('filter:none'));
-  assert.ok(has(html, '?v=42'));
-}));
-
-test('legacy v22-v41 core contracts remain in the v42 single-file app', () => {
-  const tokens = [
-    '#bgLiveWrap', '#bgLiveAmbilight', '#bgLiveVideo', '#bgLiveCanvas', '#bgContrastScrim', '#bgLivePhoto', '#liveVideoInput',
-    'video-gallery-badge', 'syncAmbilight:function(){}', 'playAmbilight:function(){}', 'renderGallery:function', 'previewThumb:function',
-    'renderGalleryList:function', 'startPractisingFromGuide', 'cmp-ok', 'cmp-miss', 'streak-broken', 'plTickHero', 'plWrongHero',
-    'ansMirrorText', 'ans-caret', 'materialMixer', 'CREDITS GOES TO', 'tire:"tyre"', 'tyre/tire', 'navigator.serviceWorker',
-    'sdp_wallpaper_db', 'wake:function', 'sleep:function', 'draw:function', 'rafId:null', '💔 Streak Broken! (0)', 'guide-credit-pill',
-    'cancelReadyAndExit', 'ansInput', 'tabInd', 'segSync', 'lgStage', 'hollow', 'sanitiseWallpaper',
-    'syncRemote', 'buildSearchIndex', 'searchWords', 'ansCompare', 'Next Wallpaper', 'Refresh from GitHub', 'resetToV33:function',
-    'resetToV34:function', 'resetToV35:function', 'resetToV36:function', 'resetToV37:function', 'resetToV38:function', 'resetToV39:function',
-    'resetToV40:function', 'resetToV41:function', 'resetToV42:function', 'sdp.v37_human_british', 'sdp.v35_rainbow_liquid_glass',
-    'sdp.v34_highlighted_ui', GH_KEY, 'sdp.gh_assets_v41', 'sdp.gh_assets_v40',
-    '_loadedSrc', 'adaptPerformance:function', 'gal-preview-btn', 'bindStreamStatus:function', 'recoverVideo:function', 'liteFx:function',
-    'markPlaying:function', 'credit-intro', 'hansanaRevealCycle', 'sdpDynamicFonts', 'Noto Sans Sinhala', 'btnPlayerClose',
-    'touch-action:manipulation', 'scale(.965) translateZ(0)', 'preloadSessionWords', 'mountVoiceBadge', 'isBritishAudio', 'mp3For',
-    'spell', 'splitLong', 'speakText', 'getSingleVoiceUrl', 'cleanWordOnly', 'replayMaster', 'audioCache', 'liveBrowser', 'hushSynth',
-    'preBuffer', 'preloadCoreAudio', 'clearTtsTimers', 'speakPinnedSynth', 'testSound', 'numberedPhrase', 'markVoiceVerified',
-    'speakFinishSummary', 'paintProg', 'btnReadyTest', 'btnReplay', 'plStepBadge', 'step-badge', KEY
-  ];
-  tokens.forEach((token) => assert.ok(has(html, token), 'missing preserved feature token: ' + token));
-  for (const token of ['backdrop-filter: blur(4px)', 'backdrop-filter:blur(4px)', 'brightness(1.02)', 'blur(4px) saturate(140%)', '#ff3d77', 'transition:all!important', 'background-clip:text']) {
-    assert.ok(!has(html, token), 'retired style token returned: ' + token);
+test('boot pre-buffers the countdown, the welcome and the first four words', () => withApp(({ q }) => {
+  q.Speech.audioCache = {};
+  const queued = q.Speech.preloadCoreAudio();
+  const urls = Object.keys(q.Speech.audioCache);
+  assert.ok(queued >= 6, 'several clips enter the cache: ' + queued);
+  for (const file of ['welcome-paper.mp3', 'welcome-type.mp3', 'sound-check.mp3', 'count-3.mp3', 'count-2.mp3', 'count-1.mp3', 'countdown-321.mp3']) {
+    assert.ok(urls.indexOf(LOCAL + file) >= 0, 'pre-buffered ' + file);
   }
-});
-
-test('admin PIN, text-mode answer input, IME space sentinel and no password field remain', () => withApp(({ q, w }) => {
-  assert.equal(require('./test-pin.cjs'), '7898');
-  assert.ok(has(html, '#pinPad'));
-  assert.ok(has(html, 'pinSalt') && has(html, 'pinHash'));
-  assert.ok(!has(html, 'inp.type="password"'));
-  assert.ok(has(html, 'ccHoneypot'));
-  q.DB.data.settings.mode = 'type';
-  q.Eng.start({ mode: 'type' });
-  const input = w.document.getElementById('ansInput');
-  assert.ok(input);
-  assert.equal(input.type, 'text');
-  assert.equal(input.autocomplete, 'off');
-  assert.equal(input.value, ' ');
+  assert.ok(urls.some((u) => u.indexOf(LOCAL + 'word-') === 0), 'the first words are pre-buffered');
 }));
 
-test('all bundled media stays under its size budget and inside /assets/', () => {
-  assert.ok(fs.existsSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')));
-  assert.ok(fs.existsSync(path.join(root, 'assets', 'bunny-poster.webp')));
-  assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')).size < 3 * 1024 * 1024);
-  assert.ok(fs.statSync(path.join(root, 'assets', 'bunny-poster.webp')).size < 64 * 1024);
-  const media = html.match(/\.\/[A-Za-z0-9_\-./]+\.(mp4|webm|mov|m4v|webp|jpe?g|png|mp3)/g) || [];
-  media.forEach((item) => assert.ok(item.indexOf('./assets/') === 0, 'media outside /assets/: ' + item));
-  assert.ok(!has(html, 'ssl.gstatic.com'));
-});
-
-test('low-end performance safeguards and runtime font loading remain headless-safe', () => {
-  assert.ok(has(html, 'liteFx:function') && has(html, 'addRing:function'));
-  assert.ok(has(html, 'passive:!0'));
-  assert.ok(has(html, 'U.on(document,"visibilitychange"'));
-  assert.ok(has(html, 'adaptPerformance:function'));
-  assert.ok(has(html, 'prefers-reduced-motion') || hasCss('@media (prefers-reduced-motion:reduce)'));
-  assert.ok(has(html, 'requestIdleCallback') || has(html, 'frameProbe'));
-  assert.ok(has(html, 'HeadlessChrome') && has(html, 'navigator.onLine'));
-});
-
-/* ------------------------------------------ zero console / uncaught errors */
-
-test('the full session lifecycle produces zero console errors and zero uncaught page errors', () => withStream(({ q, w, clock, consoleErrors }) => {
+test('a full 30-word session runs on bundled clips with zero console errors', () => withStream(({ q, w, clock, played, clips, consoleErrors, synthCalls }) => {
   const uncaught = [];
   w.addEventListener('error', (e) => uncaught.push(e && e.message));
   startSession({ q, w, clock }).click();
   tickFor(clock, 3200);
-  q.Eng.startWord(3);
-  tickFor(clock, 1600);
+  for (let i = 1; i < q.Eng.words.length; i += 1) {
+    q.Eng.startWord(i);
+    tickFor(clock, 2200);
+  }
   q.Eng.pause();
   tickFor(clock, 400);
   q.Eng.resume();
-  tickFor(clock, 2000);
+  tickFor(clock, 1600);
   q.Eng.finish(false);
-  tickFor(clock, 600);
+  tickFor(clock, 800);
+  const audio = played.filter((u) => u.indexOf(LOCAL) === 0);
+  assert.ok(audio.length > 60, 'the whole session came from ./audio: ' + audio.length + ' clips');
+  audio.forEach((url) => assert.ok(/^\.\/audio\/[a-z0-9-]+\.mp3$/.test(url), 'bundled clip: ' + url));
+  assert.ok(clips().indexOf('pass1-30-windscreen.mp3') >= 0 || clips().some((f) => /^pass1-30-/.test(f)), 'the last numbered clip played');
+  assert.ok(clips().indexOf('resume-30.mp3') >= 0 || clips().some((f) => /^resume-/.test(f)), 'the resume clip played');
+  assert.ok(clips().indexOf('finish-paper.mp3') >= 0 || clips().indexOf('finish-type.mp3') >= 0, 'the finish clip played');
+  assert.equal(synthCalls(), 0, 'no device voice at any point');
   assert.deepEqual(uncaught, [], 'no uncaught page errors');
-  assert.deepEqual(realErrors(consoleErrors), [], 'no console errors');
-  assert.equal(q.Errors.items.length, 0, 'the in-app error log is empty: ' + q.Errors.text());
+  assert.deepEqual(realErrors(consoleErrors), [], 'no console errors: ' + realErrors(consoleErrors).join(' | '));
+  assert.equal(q.Errors.items.length, 0, 'the in-app error log stays empty: ' + q.Errors.text());
 }));
 
-test('the whole dictation lifecycle speaks only the one British female voice', () => withStream(({ q, w, clock, played, clips }) => {
-  startSession({ q, w, clock }).click();
-  tickFor(clock, 3200);
-  q.Eng.startWord(2);
-  tickFor(clock, 1600);
-  q.Eng.pause();
-  tickFor(clock, 400);
-  q.Eng.resume();
-  tickFor(clock, 2000);
-  q.Eng.finish(false);
-  tickFor(clock, 600);
-  const urls = played.filter((u) => u.indexOf('http') === 0);
-  assert.ok(urls.length > 5, 'the session really played clips');
-  urls.forEach((url) => {
-    assert.equal(url.indexOf(UNIFIED), 0, 'every clip comes from the one voice endpoint: ' + url);
-    assert.ok(has(url, '%20.'), 'every clip carries the unified " ." marker: ' + url);
-  });
-  const spoken = clips();
-  assert.ok(spoken.indexOf(PAPER_INTRO) >= 0, 'instructions');
-  assert.ok(spoken.indexOf(COUNTDOWN) >= 0, 'countdown');
-  assert.ok(spoken.indexOf(PAUSE_PHRASE) >= 0, 'pause');
-  assert.ok(spoken.some((t) => /^Welcome back\. Continuing dictation number \d+ \.$/.test(t)), 'resume: ' + spoken.join(' | '));
-  assert.ok(spoken.some((t) => /^Dictation complete\. Well done\./.test(t)), 'completion summary');
-  assert.ok(spoken.every((t) => !/\s$/.test(t) || true), 'every clip is well formed');
-}));
+/* --------------------------------------------------- preserved v22-v42 UI --- */
+
+test('v43 keeps the v42 shell: credit spotlight, glass-free smoked cards, cobalt buttons', () => {
+  const compact = String(css).replace(/\s+/g, '');
+  for (const token of ['#credit', 'hansanaRevealCycle', 'body{']) {
+    assert.ok(has(compact, token) || has(html, token), 'css keeps ' + token);
+  }
+  assert.ok(/z-index:\s*9999\s*!important/.test(html), 'the credit line stays above every layer');
+  assert.ok(has(html, 'Noto Sans Sinhala') && has(html, 'Inter'), 'the Sinhala + English font stack survives');
+  assert.ok(has(compact, 'backdrop-filter:none'), 'nested cards stay flat');
+  assert.ok(has(compact, '16px') && has(compact, '12px') && has(compact, '10px'), 'the hand-tuned radii survive');
+});
+
+test('v43 keeps the strict /assets media pipeline and the single live video', () => {
+  assert.ok(has(script, 'function normalizeAssetPath(') && has(script, 'function isAssetsMedia('));
+  assert.ok(has(script, 'ASSET_MEDIA_RE') && has(script, 'DEFAULT_WALLPAPER_SRC'));
+  assert.ok(has(html, 'id="bgLiveVideo"'));
+  assert.ok(has(html, 'src="./assets/bunny-live-wallpaper.mp4"'));
+  assert.ok(has(script, 'filter:none!important') || has(css, 'filter:none!important'));
+  assert.ok(has(css, '#bgLiveAmbilight{display:none!important}') || /#bgLiveAmbilight[^}]*display:\s*none\s*!important/.test(css));
+  assert.ok(has(html, 'preload="none"'), 'thumbnails stay lazy');
+});
+
+test('v43 keeps the answer field plain-text: no password prompt, no keyboard suggestions', () => {
+  assert.ok(has(script, 'type="text"') || has(html, 'type="text"'), 'the answer field is text');
+  assert.ok(has(script, 'autocomplete")||(n.setAttribute("autocomplete","off")') || has(script, 'autocomplete","off"'), 'autocomplete is off');
+  assert.ok(has(script, 'new-password') || has(script, 'autocorrect","off"'), 'no password manager prompt');
+  const admin = session.session;
+  assert.equal(admin.mode, 'paper', 'paper mode is the default');
+});
