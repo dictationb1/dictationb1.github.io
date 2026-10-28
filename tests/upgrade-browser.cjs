@@ -8,6 +8,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+require('./chromium-env.cjs').ensureChromiumLibs();
 const fs = require('node:fs');
 const path = require('node:path');
 const pw = require('playwright-core');
@@ -326,7 +327,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -543,7 +544,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -642,14 +643,14 @@ function material(page) {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
       await clickText(page, 'Skip countdown');
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).lists[0].words[0].w);
       /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
       /* v40 speaks repetition 2 as the exact same clean word from the same buffer */
       await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).toLowerCase().indexOf(String(w).toLowerCase()) >= 0).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
       const spoken = await page.evaluate(() => window.__spoken || []);
       assert.ok(spoken.filter((t) => String(t.text || t).toLowerCase().indexOf(String(word).toLowerCase()) >= 0).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -659,7 +660,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice'));
+        const d = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -689,7 +690,7 @@ function material(page) {
         return !!document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -778,7 +779,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v42_bugfree_single_voice'));
+        const d = JSON.parse(localStorage.getItem('sdp.v43_bundled_studio_voice'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });

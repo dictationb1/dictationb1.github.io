@@ -1,4 +1,4 @@
-> Historical report for v1.3.0. The current release is **v4.6.0 (v39, 2026-10-28)** — one single unified British woman voice, a spoken `"Are you ready?"` session start and a persistent unlocked `#ttsMasterAudio` engine; see `CHANGELOG.md` and `PHASE1_QA.md` for the current candidate and its test results. The default PIN example was removed from this document; it is not a server secret.
+> Historical report for v1.3.0. The current release is **v5.0.0 (v43, 2026-10-28)** — a 134-clip, single-voice British woman MP3 pack in `./audio/`, an atomic `pass1-N-<word>.mp3` first reading and a lockstep 3-2-1 session start; see `CHANGELOG.md` and `PHASE1_QA.md` for the current test results. The default PIN example was removed from this document; it is not a server secret.
 
 # Smart Dictation Player — repair and QA report
 

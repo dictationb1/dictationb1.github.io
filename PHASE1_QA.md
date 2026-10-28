@@ -1,6 +1,6 @@
 # Phase 1 candidate: QA and release report
 
-> **Current release (v4.6.0 / v39, 2026-10-28):** verified in this sandbox with `node tests/check.cjs` PASS (strict ES5, zero external links, 430,840 / 450,000 bytes), `node --test tests/upgrade.test.cjs` **29 PASS / 0 FAIL**, `node tests/phase1.cjs` **65 PASS / 0 FAIL / 3 SKIP** (the skips need the historical baseline commit `7577968`) and `node tests/server.cjs` **7 PASS / 0 FAIL**. `node tests/browser.cjs`, `tests/e2e.cjs` and `tests/upgrade-browser.cjs` were updated to the v39 storage key and the `#ttsMasterAudio` element but could not run in this sandbox: the bundled Chromium exits 127 because `libnspr4.so` is missing and the Debian package host is unreachable, so those three suites are inspection-only here. The report below documents the older 1.5.0-rc.1 candidate and is kept for history.
+> **Current release (v5.0.0 / v43, 2026-10-28):** verified in this sandbox with `node tests/check.cjs` PASS (strict ES5, zero external links, 441,018 / 450,000 bytes), `node --test tests/upgrade.test.cjs` **22 PASS / 0 FAIL** (the v43 gate set), `node tests/phase1.cjs` **65 PASS / 0 FAIL**, `node tests/server.cjs` **7 PASS / 0 FAIL**, `node tests/live-lab.cjs` **13/13**, `node tests/browser.cjs` **21 PASS / 0 FAIL**, `node tests/upgrade-browser.cjs` **13 PASS / 0 FAIL**, `node tests/e2e.cjs` **58 PASS / 0 FAIL** and `node tests/audit-v42.cjs` **36/36**. Chromium runs here through `tests/chromium-env.cjs`, which unpacks the AL2023 shared libraries into the OS temp directory and prepends `LD_LIBRARY_PATH`, so no suite is inspection-only any more. v43 ships 134 same-origin MP3s in `./audio/` (1.93 MB of audio, 2.3 MB on disk) built by `scripts/build-audio.cjs` from one neural voice; the app plays them through a single `#ttsMasterAudio` element and never falls back to the robotic device voice on a live browser. See the v43 evidence section at the end of this file.
 
 **Status: incomplete, not merged, not deployed.** Chromium ran successfully here. WebKit did not run locally because its executable is absent. Real WebKit subsequently passed on GitHub CI (see below). A real iPhone, Android phone and Windows PC were not available. The live Pages host could not be reached from this sandbox. Later phases have not started.
 
@@ -166,3 +166,15 @@ Use synthetic class data. Back up first; do not clear actual student work. Test 
 4. Review sample results/Community, moderation/private inbox isolation and worksheet/print preview. Export/import a synthetic backup and check lists/results survive. Record failures for the remaining admin audit.
 
 The five-minute lockout/long idle timers and multiple physical iPhone sizes may require follow-up beyond these fifteen minutes. Do not speed up the device clock on a lecturer's production profile.
+
+## v43 — bundled single-voice audio pack (2026-10-28)
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| One identical neural voice for 100% of speech | PASS | All 134 MP3s in `./audio/` are rendered by one engine (`en-GB-SoniaNeural` via `edge-tts`, or the bundled Supertonic model through `scripts/tts_offline.py`); no device `speechSynthesis` clip is part of the pack. |
+| Every required clip exists and is playable | PASS | `welcome-paper`, `welcome-type`, `sound-check`, `count-3/2/1`, `countdown-321`, `paused`, `finish-paper`, `finish-type`, `num-1..30`, `resume-1..30` and `word-<slug>` for all 30 session words — 134 files, each > 1000 bytes, served from the same origin. |
+| Pack stays out of the media cache | PASS | `LiveWallpaper.isAssetsMedia("./audio/word-bicycle.mp3") === false`; `./audio/` is never treated as a `./assets/` media file, so `sdp.gh_assets_v43` keeps only the bunny video. |
+| Pass 1 is one atomic clip per word | PASS | `TTS.resolveClips` maps "Number 1, guidebook" to `./audio/pass1-1-guidebook.mp3`; custom user words still fall back to `REMOTE_FALLBACK_BASE` (Youdao). |
+| Lockstep 3-2-1 hands over to word 1 | PASS | `count-3` at 0 ms, `count-2` at ~950 ms, `count-1` at ~1900 ms and `pass1-1-*` at ~2850 ms measured in the Chromium audit. |
+| No robotic fallback, no console errors | PASS | 4000 ms watchdog with `load()`/`play()` retry; the audit records 0 `speechSynthesis` utterances, 0 console errors and 0 page errors, and a missing clip resolves `false` cleanly instead of speaking. |
+| Size and syntax budget | PASS | `441,018 / 450,000` bytes, strict ES5 (`var`/`function` only), zero external `<link>` or external `<script src>`. |
