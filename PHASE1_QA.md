@@ -1,5 +1,7 @@
 # Phase 1 candidate: QA and release report
 
+> **Current release (v4.4.0 / v37, 2026-10-28):** verified in this sandbox with `node tests/check.cjs` PASS (strict ES5, zero external links, 441,710 / 450,000 bytes), `node --test tests/upgrade.test.cjs` **22 PASS / 0 FAIL**, `node tests/phase1.cjs` **65 PASS / 0 FAIL / 3 SKIP** (the skips need the historical baseline commit `7577968`), `node tests/server.cjs` PASS, `node tests/browser.cjs` **21 PASS / 0 FAIL / 1 SKIP** and `node tests/upgrade-browser.cjs` **13 PASS / 0 FAIL** in Chromium 138 (391 px, 320 px, 768 px and desktop). The report below documents the older 1.5.0-rc.1 candidate and is kept for history.
+
 **Status: incomplete, not merged, not deployed.** Chromium ran successfully here. WebKit did not run locally because its executable is absent. Real WebKit subsequently passed on GitHub CI (see below). A real iPhone, Android phone and Windows PC were not available. The live Pages host could not be reached from this sandbox. Later phases have not started.
 
 This report concerns **1.5.0-rc.1 / 2026-10-14**, not the older claims in `QA_REPORT.md`.

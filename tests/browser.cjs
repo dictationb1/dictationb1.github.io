@@ -46,7 +46,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v36_human_editorial') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v37_human_british') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -62,7 +62,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v36_human_editorial') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v37_human_british') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -73,7 +73,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v36_human_editorial','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v37_human_british','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -121,61 +121,53 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
     state.filter==='none'&&state.opacity==='1'&&
     state.src==='./assets/bunny-live-wallpaper.mp4'&&state.wrap!=='none'&&
-    /linear-gradient/.test(state.heroImg)&&state.heroImg.indexOf('15, 23, 42')>=0&&
+    state.heroImg==='none'&&/rgba\(11, 15, 25, 0\.72\)/.test(state.heroBg)&&
     state.heroBlur==='none'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v36 live bunny video decodes, autoplays and shines through the smoked crystal glass',status:ok?'PASS':'FAIL',detail:state,errors});
+  results.push({test:'Chromium v37 live bunny video decodes and autoplays behind the flat architectural glass',status:ok?'PASS':'FAIL',detail:state,errors});
   await context.close();
  }
  {
-  /* v35 gate: every control and every word must really pop out over the video.
-     Computed styles are measured in the real engine, so a lost !important rule or
-     an over-broad :not() guard in the v35 stylesheet cannot hide behind the text. */
+  /* v37 gate: the architectural interface is measured in the real engine, so a
+     lost !important rule or a resurrected 999px pill cannot hide behind text. */
   const context=await browser.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://**/*',route=>route.abort());
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
   await page.waitForTimeout(900);await closeSheet(page);
-  let v34={},ok=false;
+  let v37={},ok=false;
   try {
-   v34=await page.evaluate(()=>{
+   v37=await page.evaluate(()=>{
     const cs=(el)=>{if(!el)return null;const s=getComputedStyle(el);
-     return {bg:s.backgroundColor,img:s.backgroundImage,fg:s.color,fill:s.webkitTextFillColor,
-      weight:s.fontWeight,border:s.borderColor,borderWidth:s.borderWidth,shadow:s.boxShadow,
-      textShadow:s.textShadow,stroke:s.webkitTextStrokeWidth||'',blur:s.backdropFilter||s.webkitBackdropFilter||'none'};};
-    const hero=document.getElementById('homeHero');
-    const primary=document.getElementById('btnStart');
-    const ghost=document.getElementById('btnTheme');
-    const seg=document.getElementById('segMode');
-    const tab=document.querySelector('#tabbar button[aria-selected=true]');
-    const title=document.getElementById('homeTitle');
-    const thumb=document.getElementById('tabInd');
-    return {primary:cs(primary),ghost:cs(ghost),seg:cs(seg),tab:cs(tab),thumb:cs(thumb),
-     title:cs(title),hero:cs(hero),
-     mirror:document.getElementById('ansMirror')?cs(document.getElementById('ansMirror')):null,
-     video:cs(document.getElementById('bgLiveVideo'))};
+     return {bg:s.backgroundColor,img:s.backgroundImage,fg:s.color,radius:s.borderRadius,weight:s.fontWeight,
+      border:s.borderColor,shadow:s.boxShadow,textShadow:s.textShadow,stroke:s.webkitTextStrokeWidth||'',
+      blur:s.backdropFilter||s.webkitBackdropFilter||'none',z:s.zIndex};};
+    return {primary:cs(document.querySelector('.btn.pri')||document.getElementById('btnStart')),
+     ghost:cs(document.getElementById('btnTheme')),seg:cs(document.getElementById('segMode')),
+     tab:cs(document.querySelector('#tabbar button[aria-selected=true]')),
+     thumb:cs(document.getElementById('tabInd')),segThumb:cs(document.querySelector('.seg .thumb')),
+     tabbar:cs(document.getElementById('tabbar')),
+     hero:cs(document.getElementById('homeHero')),title:cs(document.getElementById('homeTitle')),
+     credit:cs(document.getElementById('credit')),video:cs(document.getElementById('bgLiveVideo'))};
    });
-   const hasWhiteText=(m)=>m&&m.fg==='rgb(255, 255, 255)';
-   const crafted=(m)=>m&&/37, 99, 235/.test(m)&&/79, 70, 229/.test(m)&&/8, 145, 178/.test(m)&&
-     !/56, 189, 248/.test(m)&&!/192, 132, 252/.test(m)&&!/255, 111, 97/.test(m);
-   const obsidian=(m)=>m&&/30, 41, 59/.test(m)&&/15, 23, 42/.test(m)&&!/192, 132, 252/.test(m);
-   ok=!!(v34.primary&&crafted(v34.primary.img)&&hasWhiteText(v34.primary)&&v34.primary.weight==='700'&&
-     v34.primary.shadow.indexOf('37, 99, 235')>=0&&/255, 255, 255/.test(v34.primary.border)&&v34.primary.blur==='none')&&
-    !!(v34.ghost&&obsidian(v34.ghost.img)&&v34.ghost.fg==='rgb(248, 250, 252)'&&v34.ghost.weight==='600'&&
-     /255, 255, 255/.test(v34.ghost.border)&&v34.ghost.shadow!=='none'&&v34.ghost.blur==='none')&&
-    !!(v34.seg&&/rgba\(9, 14, 28, 0\.8/.test(v34.seg.bg)&&/255, 255, 255/.test(v34.seg.border))&&
-    !!(v34.thumb&&/59, 130, 242/.test(v34.thumb.img)&&/79, 70, 229/.test(v34.thumb.img)&&hasWhiteText(v34.thumb)&&
-     v34.thumb.weight==='600'&&/255, 255, 255/.test(v34.thumb.border)&&v34.thumb.shadow!=='none')&&
-    !!(v34.title&&hasWhiteText(v34.title)&&v34.title.weight==='800'&&v34.title.img==='none'&&
-     /rgba\(0, 0, 0, 0\.92\)/.test(v34.title.textShadow))&&
-    !!(v34.hero&&v34.hero.blur==='none'&&/linear-gradient/.test(v34.hero.img)&&
-     /15, 23, 42/.test(v34.hero.img)&&!/radial-gradient/.test(v34.hero.img))&&
-    v34.hero.shadow.indexOf('16px 36px')>=0&&
-    !!(v34.video&&v34.video.blur==='none')&&errors.length===0;
-  } catch(e){v34.error=String(e);}
-  results.push({test:'Chromium v36 human-crafted sapphire CTAs, obsidian lenses, dock pill, title and smoked crystal card pop out over the live video',status:ok?'PASS':'FAIL',detail:v34,errors});
+   const cobalt=(m)=>!!m&&/59, 130, 246/.test(m.img)&&/37, 99, 235/.test(m.img)&&!/192, 132, 252/.test(m.img);
+   ok=!!(v37.primary&&cobalt(v37.primary)&&v37.primary.fg==='rgb(255, 255, 255)'&&v37.primary.radius==='10px'&&
+      v37.primary.weight==='600'&&/255, 255, 255/.test(v37.primary.border)&&v37.primary.blur==='none'&&v37.primary.stroke==='0px')&&
+    !!(v37.ghost&&/rgba\(17, 24, 39, 0\.88\)/.test(v37.ghost.bg)&&v37.ghost.fg==='rgb(248, 250, 252)'&&
+      v37.ghost.radius==='10px'&&v37.ghost.blur==='none')&&
+    !!(v37.seg&&v37.seg.radius==='11px'&&v37.seg.blur==='none')&&
+    !!(v37.tab&&v37.tab.radius==='11px')&&
+    !!(v37.thumb&&v37.thumb.radius==='11px'&&cobalt(v37.thumb))&&
+    !!(v37.segThumb&&v37.segThumb.radius==='8px'&&cobalt(v37.segThumb))&&
+    !!(v37.tabbar&&v37.tabbar.radius==='16px'&&/rgba\(11, 15, 25, 0\.72\)/.test(v37.tabbar.bg)&&v37.tabbar.blur==='none')&&
+    !!(v37.hero&&v37.hero.radius==='16px'&&/rgba\(11, 15, 25, 0\.72\)/.test(v37.hero.bg)&&v37.hero.blur==='none')&&
+    !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
+    !!(v37.credit&&v37.credit.radius==='10px'&&v37.credit.z==='9999'&&/251, 191, 36/.test(v37.credit.border))&&
+    !!(v37.video&&v37.video.blur==='none')&&errors.length===0;
+  } catch(e){v37.error=String(e);}
+  results.push({test:'Chromium v37 architectural UI: 10px cobalt CTAs, graphite controls, 11px segments and tabs, 16px cards and dock, 8px segment thumb, amber credit badge, zero blur or neon',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
