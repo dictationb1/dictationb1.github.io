@@ -295,9 +295,9 @@ test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused',
  assert.equal(a.q.Speech.isBritishAudio('https://audio.example/us.mp3'),false);
  assert(a.q.Speech.isBritishAudio('https://audio.example/word-uk.mp3'));
  a.q.DB.data.dictCache['word']={audio:'https://audio.example/word-us.mp3',ukSource:false,ts:Date.now()};
- assert(/--_gb_1\.mp3$/.test(a.q.Speech.mp3For('word')),'a non-UK recording never becomes the dictation voice: '+a.q.Speech.mp3For('word'));
+ assert.equal(a.q.Speech.mp3For('word'),a.q.Speech.getSingleVoiceUrl('word'),'a non-UK recording never becomes the dictation voice: '+a.q.Speech.mp3For('word')); /* v40: the one locked studio voice replaces the retired Oxford fallback */
  a.q.DB.data.dictCache['word'].audio='https://audio.example/word-uk.mp3';
- assert.equal(a.q.Speech.mp3For('word'),'https://audio.example/word-uk.mp3','a real British recording wins');
+ assert.equal(a.q.Speech.mp3For('word'),a.q.Speech.getSingleVoiceUrl('word'),'v40: even a cached UK recording cannot replace the one locked studio voice');
  delete a.q.DB.data.dictCache['word'];
  const uk=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/word-us.mp3'},{text:'/uk/',audio:'https://audio.example/word-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);assert.equal(uk.ipa,'uk');assert(uk.audio.endsWith('-uk.mp3'));
 }));

@@ -19,8 +19,7 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy",
-    "humanReactions": true
+    "voice": "Amy"
   },
   "listId": "list_session_7_travel",
   "defaults": {
@@ -43,11 +42,9 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy",
-    "humanReactions": true,
-    "elevenLabsKey": ""
+    "voice": "Amy"
   },
-  "ver": 39,
+  "ver": 40,
   "version": "4.6.0",
   "buildDate": "2026-10-28",
   "credits": {
@@ -58,25 +55,25 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "one single unified British English woman studio voice",
-    "unifiedHost": "https://dict.youdao.com/dictvoice?type=1&audio=<encoded text>",
-    "covers": "single words (bicycle), compound phrases (bus stop), prompts (Are you ready?), Repeat 2 (Once more, bicycle.) and human reactions (Brilliant, well done!)",
-    "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin",
-    "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo() and UI.startPractisingFromGuide()",
-    "fallback": "one pinned en-GB female speechSynthesis voice (Microsoft Sonia Online (Natural) - English (United Kingdom), Microsoft Libby Online, Google UK English Female, Serena, Amy), locked lang en-GB, rate 0.96, pitch 1.02, volume 1.0",
-    "headlessStartMs": 60,
-    "liveStartMs": 1200,
-    "wordWatchdogMs": 2500,
-    "repeatWatchdogMs": 2800,
-    "breathPauseMs": 650
+    "engine": "one locked British English woman studio voice (en-GB, Youdao dictvoice type=1)",
+    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=<encoded clean word>",
+    "covers": "clean single words (bicycle), clean compound phrases (bus stop) and the spoken number prefix (Number 7.) only - no greetings, no repeats cues, no reactions, no filler phrases",
+    "element": "#ttsMasterAudio - one persistent unlocked audio element, no crossOrigin, referrerpolicy=no-referrer",
+    "unlock": "TTS.unlock() runs inside the first pointerdown/click/touchstart/keydown and inside Eng.start(), Eng.readyGo(), UI.startPractisingFromGuide() and every dictionary speaker tap",
+    "repeatReplay": "repetition 2 calls ttsMasterAudio.currentTime = 0 and play() on the exact same buffer - never a new request and never a different voice",
+    "preload": "TTS.preloadSessionWords(words) pre-buffers the session in the background; TTS.audioCache records every buffered studio URL",
+    "bufferTimeoutMs": 3500,
+    "silenceBetweenRepeatsMs": 750,
+    "deviceVoice": "window.speechSynthesis is cancelled and never spoken on a live online browser; it is used only by HeadlessChrome/jsdom test runs or a fully offline browser",
+    "lockedVoice": "Amy"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "4.6.0",
-  "settingsRev": 39,
+  "appVersion": "4.7.0",
+  "settingsRev": 40,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -100,7 +97,7 @@
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h"
   },
-  "storageKey": "sdp.v39_single_unified_voice",
+  "storageKey": "sdp.v40_one_studio_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -253,11 +250,12 @@
     "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
-  "ghMediaCache": "sdp.gh_assets_v39",
+  "ghMediaCache": "sdp.gh_assets_v40",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
   "legacyMediaCaches": [
+    "sdp.gh_assets_v39",
     "sdp.gh_assets_v38",
     "sdp.gh_assets_v37",
     "sdp.gh_assets_v36",
@@ -274,22 +272,22 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "unifiedHost": "https://dict.youdao.com/dictvoice?type=1&audio=",
+    "singleVoiceUrl": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
     "preload": "auto",
     "cache": "TTS.preloadQueue and TTS.audioCache",
-    "mixing": "never - Oxford gstatic, translate_tts and device voices are not used for online playback"
+    "mixing": "never - the retired dictionary hosts, machine translation voices and the device voice are all unused for online playback"
   },
   "voiceProfile": {
-    "delivery": "one single British English woman voice for every word, phrase, prompt, repeat and reaction",
+    "delivery": "one single locked British English woman studio voice for every word and every repeat",
     "accentRequest": "en-GB",
     "rate": [
       0.96,
-      0.92
+      0.96
     ],
-    "breathPauseMs": 650,
-    "fallbackVoice": "one pinned en-GB female device voice",
+    "silenceBetweenRepeatsMs": 750,
+    "studioVoice": "Amy",
     "voice": "Amy"
   },
   "typography": {
@@ -318,6 +316,5 @@
       "screen": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
       "credit": "0.45s"
     }
-  },
-  "humanReactions": true
+  }
 }
