@@ -313,7 +313,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.spoken.some(s=>s.text==='Number 30.'));assert(a.spoken.filter(s=>s.text==='windscreen').length>=2);
+ assert(a.spoken.some(s=>s.text==='Final word. Number 30. windscreen.'),'v41: the last word is announced with its dictation number');assert(a.spoken.filter(s=>s.text==='windscreen').length>=1,'v41: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+\. /.test(s.text)),'v41: every word announces its dictation number');
  assert(!a.spoken.some(s=>s.text.includes('Clean the car windscreen')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {

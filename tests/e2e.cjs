@@ -29,7 +29,7 @@ function mockSpeech() {
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.volume = 1; this.pitch = 1; this.voice = null; };
 }
 
-const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
+const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
 const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
@@ -202,18 +202,18 @@ async function flow(browser, vp, label, seed) {
   try { await page.waitForFunction(() => (window.__spoken || []).some(s => s.text.trim()), null, { timeout: 15000 }); } catch (e) {}
   /* the first real utterance (iOS primes the audio engine with a blank one) */
   const heard = (await spoken(page)).filter(x => x.text.trim());
-  /* v40: every word and every repeat come from one locked British English woman
-     studio voice streamed through the persistent unlocked #ttsMasterAudio
-     element; there is no greeting and no filler phrase. */
+  /* v41: every clip - the pre-ready instructions, "Three, two, one.", the
+     numbered words, the clean repeat and the finish summary - comes from the
+     single neural en-GB endpoint streamed through #ttsMasterAudio. */
   const tier1 = await page.evaluate(() => {
     const a = document.getElementById('ttsMasterAudio');
-    return !!(a && a.getAttribute('src') && /dict\.youdao\.com/.test(a.getAttribute('src')));
+    return !!(a && a.getAttribute('src') && /translate\.googleapis\.com/.test(a.getAttribute('src')));
   });
-  /* v40: there is no spoken greeting, no spoken countdown and no filler phrase -
-     the very first audio is the dictation itself (the number prefix or Word 1). */
+  /* v41: the opening audio is the brief pre-ready instruction (or, on a live
+     browser, the single studio clip in #ttsMasterAudio) - never a filler cue. */
   const opening = heard.slice(0, 3).map(x => String(x.text).trim().toLowerCase()).join(' ');
-  rec(label + ' no filler greeting: the first audio is the dictation itself',
-    heard.length > 0 && !/ready|let's begin|listen again|once more|one more time|spot on/.test(opening),
+  rec(label + ' single neural en-GB voice, zero filler greeting',
+    tier1 && !/listen again|once more|one more time|spot on/.test(opening),
     { tier1, first: heard[0] && heard[0].text, lang: heard[0] && heard[0].lang, voice: heard[0] && heard[0].voice });
 
   const snap0 = await storage(page);
@@ -221,7 +221,7 @@ async function flow(browser, vp, label, seed) {
   const histBefore = (snap0.history || []).length;   /* old-build fixture already has one session */
   /* let each word finish speaking, then move on - never cut the speech short */
   for (let i = 0; i < words.length + 6; i++) {
-    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
+    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
     if (done > histBefore) break;
     try { await page.waitForFunction(() => {
       const n = document.querySelector('#plStatus');
@@ -260,14 +260,14 @@ async function flow(browser, vp, label, seed) {
     await page.waitForTimeout(200);
   }
   const snapBefore = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'none';
   });
   const statusBefore = await page.locator('#plStatus').textContent().catch(() => 'no player');
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'visible' });
   const probe = () => page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     const rc = document.querySelector('#homeResume');
     return { snap: d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'gone', rc: rc ? rc.className : 'missing' };
   });
@@ -303,8 +303,8 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
   await page.waitForTimeout(400);
   const commTxt = await page.locator('#commList').textContent();
-  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
-  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
+  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
+  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
   rec(label + ' anonymous comment posted with name and result badge',
     commTxt.includes('E2E check') && commTxt.includes(who) && !!badge,
     { nickname: who, badge: badge, nameShown: commTxt.includes(who) });
@@ -322,7 +322,7 @@ async function flow(browser, vp, label, seed) {
   /* the app re-saves its own data on unload, so clear the rate window on the
      way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const key = localStorage.getItem('sdp.v40_one_studio_voice') ? 'sdp.v40_one_studio_voice' : localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
+    const key = localStorage.getItem('sdp.v41_unified_voice_lifecycle') ? 'sdp.v41_unified_voice_lifecycle' : localStorage.getItem('sdp.v21_guide_start') ? 'sdp.v21_guide_start' : localStorage.getItem('sdp.v4_tue20') ? 'sdp.v4_tue20' : 'sdp.v1';
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
@@ -339,7 +339,7 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Send to lecturer', exact: true }).click();
   await page.waitForTimeout(500);
   const priv = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return (d.sentMessages || []).concat(d.inbox || []).map(m => m.text).join('|');
   });
   const sentToast = (await page.locator('#toasts').textContent()).slice(0, 120);
@@ -422,7 +422,7 @@ async function flow(browser, vp, label, seed) {
     await p.locator('#sheets textarea[aria-label="Comment text"]').fill('Offline comment stays on this device.');
     await p.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
     await p.waitForTimeout(300);
-    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v40_one_studio_voice') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
+    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v41_unified_voice_lifecycle') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
     rec('offline: app boots, comment kept on device', !await fatal(p) && st.c.includes('Offline comment') && errs.length === 0, { outbox: st.q, errs });
     await c.close();
   }

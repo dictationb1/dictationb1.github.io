@@ -1,10 +1,12 @@
 'use strict';
-/* v40 release gate — rewritten from scratch with fs.writeFileSync.
-   Dictation speaks ONLY the clean target word: Repetition 1 -> 750ms studio
-   silence -> Repetition 2 replays the exact same #ttsMasterAudio buffer with
-   currentTime = 0. One locked British English woman studio voice is the only
-   voice in the whole app, and window.speechSynthesis never speaks on a live
-   online browser. */
+/* v41 (4.8.0) release gate - written from scratch, no regex .replace() surgery.
+   ONE single neural British English (en-GB) female voice is the only voice in
+   the whole app: https://translate.googleapis.com/translate_tts?...&tl=en-GB
+   It speaks the pre-ready instructions, "Three, two, one.", "Number N. word."
+   followed by the clean word, "Session paused.", "Welcome back. Continuing
+   dictation number N." and the completion summary. dict.youdao.com (the hybrid
+   one-word / phrase two-voice server) and ssl.gstatic.com are gone, and
+   window.speechSynthesis.speak() never runs on a live online browser. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -18,11 +20,14 @@ const readJson = (name) => JSON.parse(fs.readFileSync(path.join(root, 'data', na
 const version = readJson('version.json');
 const config = readJson('config.json');
 const session = readJson('session.json');
-const KEY = 'sdp.v40_one_studio_voice';
-const GH_KEY = 'sdp.gh_assets_v40';
+const KEY = 'sdp.v41_unified_voice_lifecycle';
+const GH_KEY = 'sdp.gh_assets_v41';
 const DEFAULT = './assets/bunny-live-wallpaper.mp4';
-const UNIFIED = 'https://dict.youdao.com/dictvoice?type=1&audio=';
-const VOICE_LABEL = 'British English Studio Voice (en-GB · Professional)';
+const UNIFIED = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0.95&q=';
+const PAPER_INTRO = "Welcome. Prepare your pen and paper. Each word is read twice. Press Yes, I'm ready to begin.";
+const TYPE_INTRO = "Welcome. Each word is read twice. Type your answer and press Enter. Press Yes, I'm ready to begin.";
+const COUNTDOWN = 'Three, two, one.';
+const TEST_PHRASE = 'Sound check. Number 1. bicycle.';
 const FILLERS = ['listen again', 'one more time', 'once more', 'and again', 'spot on', "let's begin", 'listen carefully', 'brilliant, well done', 'nearly there', 'alright, listen'];
 const has = (value, token) => String(value).indexOf(token) !== -1;
 const compact = (value) => String(value).replace(/\s+/g, '');
@@ -32,35 +37,40 @@ const hasCss = (token) => has(CSS, compact(token));
 const script = (html.match(/<script>([\s\S]*?)<\/script>/) || ['', ''])[1];
 const masterTag = (html.match(/<audio id="ttsMasterAudio"[^>]*>/) || [''])[0];
 const sourceOf = (target) => Object.keys(target).filter((k) => typeof target[k] === 'function').map((k) => String(target[k])).join('\n');
-const decodeClip = (url) => decodeURIComponent(String(url || '').split('audio=')[1] || '');
 const fillerHits = (text) => FILLERS.filter((phrase) => String(text).toLowerCase().indexOf(phrase) !== -1);
+const spokenText = (url) => {
+  const raw = String(url || '');
+  if (raw.indexOf('data:') === 0) return '';
+  const at = raw.indexOf('&q=');
+  if (at < 0) return '';
+  try { return decodeURIComponent(raw.slice(at + 3)); } catch (e) { return ''; }
+};
 
-function withApp(fn, seed) {
-  const app = harness(seed);
+function withApp(fn) {
+  const app = harness();
   try { return fn(app); } finally { app.close(); }
 }
 
-/* jsdom has no speech engine: install one pinned en-GB woman so the headless
-   (test / offline) branch can be driven by the fake clock. */
-function withVoice(fn, seed) {
+/* headless / offline device-voice branch: a pinned en-GB woman the fake clock drives */
+function withVoice(fn) {
   return withApp(({ q, w, clock }) => {
     const spoken = [];
     w.SpeechSynthesisUtterance = function (text) { this.text = String(text); this.lang = ''; this.rate = 1; this.pitch = 1; this.volume = 1; this.voice = null; };
     w.speechSynthesis = {
       getVoices() { return [{ lang: 'en-GB', name: 'Microsoft Sonia Online (Natural) - English (United Kingdom)', localService: false }]; },
       cancel() {}, pause() {}, resume() {}, addEventListener() {}, removeEventListener() {},
-      speak(u) { spoken.push({ text: u.text, lang: u.lang, voice: u.voice && u.voice.name, rate: u.rate, pitch: u.pitch }); w.setTimeout(() => { if (u.onend) u.onend(); }, 1); }
+      speak(u) { spoken.push({ text: u.text, lang: u.lang, voice: u.voice && u.voice.name, rate: u.rate }); w.setTimeout(() => { if (u.onend) u.onend(); }, 1); }
     };
     q.Speech.supported = true;
     q.Speech._pinnedSynthVoice = null;
     q.Speech.readVoices();
     return fn({ q, w, clock, spoken });
-  }, seed);
+  });
 }
 
-/* the real browser path: a live UA, a master <audio> element that really
-   "plays", and a speech engine that throws if anything tries to use it. */
-function withStream(fn, seed) {
+/* the real browser branch: live UA, a master <audio> that really "plays", and a
+   speech engine that throws the moment anything asks it to speak. */
+function withStream(fn) {
   return withApp(({ q, w, clock }) => {
     Object.defineProperty(w.navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', configurable: true });
     const played = [];
@@ -75,34 +85,28 @@ function withStream(fn, seed) {
     w.HTMLMediaElement.prototype.pause = function () {};
     w.HTMLMediaElement.prototype.play = function () {
       const el = this;
-      if (String(el.tagName).toUpperCase() === 'AUDIO') played.push({ src: el.getAttribute('src'), at: w.Date.now() });
+      if (String(el.tagName).toUpperCase() === 'AUDIO') played.push(String(el.getAttribute('src') || ''));
       w.setTimeout(() => { if (el.onplaying) el.onplaying(); }, 5);
       w.setTimeout(() => { if (el.onended) el.onended(); }, 60);
       return Promise.resolve();
     };
-    const master = w.document.getElementById('ttsMasterAudio');
-    const clock2 = { value: 0, sets: [], src: [] };
-    Object.defineProperty(master, 'currentTime', {
-      configurable: true,
-      get() { return clock2.value; },
-      set(v) { clock2.value = v; clock2.sets.push(v); }
-    });
     q.Speech.supported = true;
-    return fn({ q, w, clock, played, master, ct: clock2, synthCalls: () => synthCalls });
-  }, seed);
+    const clips = () => played.map(spokenText).filter(Boolean);
+    return fn({ q, w, clock, played, clips, synthCalls: () => synthCalls });
+  });
 }
 
-const said = (spoken, text) => spoken.filter((s) => String(s.text).trim() === text);
-const heard = (spoken) => spoken.filter((s) => String(s.text).trim());
-const clips = (played) => played.filter((p) => String(p.src || '').indexOf('data:') !== 0);
-const qaList = (words) => ({ id: 'qa_list', name: 'QA list', version: 1, published: true, words: words.map((w) => (typeof w === 'string' ? { w } : w)) });
-const tickUntil = (clock, check, step, max) => {
-  for (let i = 0; i < max && !check(); i += 1) clock.tick(step);
+const readyButton = (w) => Array.from(w.document.querySelectorAll('#sheets button')).find((b) => /I['’]m ready/.test(b.textContent));
+const startSession = (ctx, opts) => {
+  ctx.q.Eng.start(opts || {});
+  ctx.clock.tick(250);
+  return readyButton(ctx.w);
 };
+const tickFor = (clock, ms, step) => { for (let i = 0; i < ms; i += (step || 100)) clock.tick(step || 100); };
 
 /* ------------------------------------------------------------------ build */
 
-test('v40 build gate: single-file ES5, no static external links, under 442,000 bytes', () => {
+test('v41 build gate: single-file ES5, no static external links, under 442,000 bytes', () => {
   assert.ok(script.length > 100000, 'the main inline app is present');
   assert.doesNotThrow(() => acorn.parse(script, { ecmaVersion: 5 }));
   for (const token of ['const ', 'let ', '=>', '`', 'async function', 'await ']) {
@@ -113,14 +117,14 @@ test('v40 build gate: single-file ES5, no static external links, under 442,000 b
   assert.ok(Buffer.byteLength(html) < 442000, 'index.html is under the 442,000-byte release budget: ' + Buffer.byteLength(html));
   const check = cp.spawnSync(process.execPath, ['tests/check.cjs'], { cwd: root, encoding: 'utf8' });
   assert.equal(check.status, 0, check.stdout + check.stderr);
-  assert.ok(has(html, 'APP_VERSION="4.7.0"'));
+  assert.ok(has(html, 'APP_VERSION="4.8.0"'));
 });
 
-test('release identity: schema 40, appVersion 4.7.0, English, Amy, paper, one studio voice key', () => {
+test('release identity: schema 41, appVersion 4.8.0, English, Amy, paper, one voice key', () => {
   for (const [name, data] of [['version', version], ['config', config], ['session', session]]) {
-    assert.equal(data.ver, 40, name + '.ver');
-    assert.equal(data.appVersion, '4.7.0', name + '.appVersion');
-    assert.equal(data.settingsRev, 40, name + '.settingsRev');
+    assert.equal(data.ver, 41, name + '.ver');
+    assert.equal(data.appVersion, '4.8.0', name + '.appVersion');
+    assert.equal(data.settingsRev, 41, name + '.settingsRev');
     assert.equal(data.lang, 'en', name + '.lang');
     assert.equal(data.guideLang, 'en', name + '.guideLang');
     assert.equal(data.voice, 'Amy', name + '.voice');
@@ -130,18 +134,21 @@ test('release identity: schema 40, appVersion 4.7.0, English, Amy, paper, one st
     assert.equal(data.activeMediaType, 'video', name + '.activeMediaType');
     assert.equal(data.videoDim, 18, name + '.videoDim');
     assert.equal(data.storageKey, KEY, name + '.storageKey');
-    assert.ok(!('humanReactions' in data), name + ' has no retired reaction setting');
+    assert.equal(data.ghMediaCache, GH_KEY, name + '.ghMediaCache');
+    assert.ok(!('dictHost' in data) || has(data.dictHost, 'dictionaryapi'), name + ' has no dictionary voice host');
+    assert.ok(!has(JSON.stringify(data), 'dict.youdao.com'), name + ' has zero secondary dictionary voice');
+    assert.ok(!has(JSON.stringify(data), 'ssl.gstatic.com'), name + ' has zero gstatic voice');
   }
-  assert.equal(version.version, '4.7.0');
+  assert.equal(version.version, '4.8.0');
   assert.equal(version.ghMediaCache, GH_KEY);
-  assert.ok(version.legacyMediaCaches.indexOf('sdp.gh_assets_v39') >= 0);
-  assert.match(version.features.humanVoice, /one locked British English woman studio voice/i);
-  assert.match(version.features.sessionFlow, /750ms/);
-  assert.match(version.features.cleanWords, /cleanWordOnly/);
-  assert.match(version.features.repeatReplay, /currentTime = 0/);
-  assert.match(version.features.noDeviceVoice, /never called on a live online browser/i);
-  assert.ok(!('humanReactions' in version.features));
-  assert.ok(!('elevenLabs' in version.features));
+  assert.ok(version.legacyMediaCaches.indexOf('sdp.gh_assets_v40') >= 0);
+  assert.match(version.features.humanVoice, /translate\.googleapis\.com\/translate_tts/);
+  assert.match(version.features.humanVoice, /tl=en-GB/);
+  assert.match(version.features.voiceLifecycle, /Eng\.readyGo/);
+  assert.match(version.features.testSound, /Sound check\. Number 1\. bicycle\./);
+  assert.match(version.features.numberedWords, /Number N\. <word>\./);
+  assert.match(version.features.pauseResume, /Session paused/);
+  assert.match(version.features.finishSummary, /Dictation complete\. Well done\./);
   assert.equal(config.defaults.voice, 'Amy');
   assert.equal(config.defaults.lang, 'en');
   assert.equal(config.defaults.guideLang, 'en');
@@ -149,24 +156,21 @@ test('release identity: schema 40, appVersion 4.7.0, English, Amy, paper, one st
   assert.equal(config.defaults.writeFixed, 5);
   assert.equal(config.session.voice, 'Amy');
   assert.equal(session.session.voice, 'Amy');
-  assert.equal(config.tts.silenceBetweenRepeatsMs, 750);
-  assert.equal(config.tts.bufferTimeoutMs, 3500);
-  assert.equal(config.tts.singleVoiceUrl.indexOf(UNIFIED), 0);
-  assert.ok(!has(JSON.stringify(config.defaults), 'humanReactions'));
-  assert.ok(!has(JSON.stringify(config.defaults), 'elevenLabsKey'));
+  assert.equal(config.tts.silenceBetweenRepeatsMs, 700);
+  assert.equal(config.tts.singleVoiceUrl.indexOf(UNIFIED), 0, 'the documented clip URL is the one neural en-GB endpoint');
 });
 
-test('CONFIG and defaultData expose the v40 key, the Amy lock and the one studio voice', () => withApp(({ q }) => {
-  assert.equal(q.APP_VERSION, '4.7.0');
+test('CONFIG and defaultData expose the v41 key, the Amy lock and the one voice', () => withApp(({ q }) => {
+  assert.equal(q.APP_VERSION, '4.8.0');
   assert.equal(q.CONFIG.key, KEY);
-  assert.equal(q.CONFIG.schema, 40);
-  assert.equal(q.CONFIG.settingsRev, 40);
+  assert.equal(q.CONFIG.schema, 41);
+  assert.equal(q.CONFIG.settingsRev, 41);
   assert.equal(q.CONFIG.lockedVoice, 'Amy');
   assert.equal(q.CONFIG.ghMediaCache, GH_KEY);
-  assert.ok(q.CONFIG.legacyMediaCaches.indexOf('sdp.gh_assets_v39') >= 0);
+  assert.ok(q.CONFIG.legacyMediaCaches.indexOf('sdp.gh_assets_v40') >= 0);
   const d = q.DB.defaults();
-  assert.equal(d.v, 40);
-  assert.equal(d.settingsRev, 40);
+  assert.equal(d.v, 41);
+  assert.equal(d.settingsRev, 41);
   assert.equal(d.settings.lang, 'en');
   assert.equal(d.settings.guideLang, 'en');
   assert.equal(d.settings.mode, 'paper');
@@ -200,7 +204,7 @@ test('the interface opens in English with an optional Sinhala User Guide switch 
   assert.ok(has(cssText(), 'line-height:1.72'));
 }));
 
-/* --------------------------------------------------------- one locked voice */
+/* --------------------------------------------------------- the one voice */
 
 test('one persistent #ttsMasterAudio element, preloaded, never CORS-tainted, never duplicated', () => withApp(({ q, w }) => {
   assert.ok(masterTag, 'the static #ttsMasterAudio tag exists');
@@ -219,12 +223,12 @@ test('one persistent #ttsMasterAudio element, preloaded, never CORS-tainted, nev
   assert.equal(q.Speech.master(), live, 'unlock never creates a second element');
   assert.equal(w.document.querySelectorAll('#ttsMasterAudio').length, 1);
   assert.ok(!/\.crossOrigin\s*=\s*["']anonymous/.test(script), 'crossOrigin is never set');
-  assert.equal((script.match(/createElement\("audio"\)/g) || []).length, 1, 'the master element is the only audio ever created');
+  assert.ok(has(script, 'referrerpolicy","no-referrer'), 'pre-buffered clips also use referrerpolicy=no-referrer');
   assert.ok(!has(script, 'new Audio('), 'never a throwaway Audio() inside a timer');
   assert.ok(has(script, 'pointerdown'), 'the master element is unlocked from a pointerdown gesture');
 }));
 
-test('TTS.cleanWordOnly sends ONLY the clean target word or phrase to the voice engine', () => withApp(({ q }) => {
+test('TTS.cleanWordOnly keeps only the clean target word or phrase', () => withApp(({ q }) => {
   const TTS = q.Speech;
   assert.equal(typeof TTS.cleanWordOnly, 'function');
   assert.equal(typeof TTS.getSingleVoiceUrl, 'function');
@@ -234,8 +238,7 @@ test('TTS.cleanWordOnly sends ONLY the clean target word or phrase to the voice 
     ['bus stop', 'bus stop'],
     ['bicycle', 'bicycle'],
     ['boarding pass', 'boarding pass'],
-    ['train station', 'train station'],
-    ['on vacation', 'on vacation'],
+    ['tourist information centre', 'tourist information centre'],
     ['  bicycle  ', 'bicycle'],
     ['', ''],
     ['   ', '']
@@ -243,31 +246,39 @@ test('TTS.cleanWordOnly sends ONLY the clean target word or phrase to the voice 
   for (const [raw, clean] of cases) {
     assert.equal(TTS.cleanWordOnly(raw), clean, 'cleanWordOnly(' + JSON.stringify(raw) + ')');
   }
-  assert.equal(TTS.getSingleVoiceUrl('bicycle'), UNIFIED + 'bicycle');
-  assert.equal(TTS.getSingleVoiceUrl('bus stop'), UNIFIED + 'bus%20stop');
-  assert.equal(TTS.getSingleVoiceUrl('tyre/tire'), UNIFIED + 'tyre');
-  assert.equal(TTS.getSingleVoiceUrl('boarding pass'), UNIFIED + 'boarding%20pass');
-  assert.equal(TTS.getSingleVoiceUrl('   '), '');
-  assert.equal(TTS.UNIFIED, UNIFIED, 'the one locked en-GB type=1 studio endpoint');
-  assert.equal(TTS.getUnifiedVoiceUrl('bicycle'), TTS.getSingleVoiceUrl('bicycle'), 'the legacy alias cannot point anywhere else');
-  assert.deepEqual(Array.from(TTS.getStudioMp3Candidates('bus stop')), [UNIFIED + 'bus%20stop']);
-  assert.deepEqual(Array.from(TTS.getStudioMp3Candidates('bicycle', true)), [UNIFIED + 'bicycle']);
-  assert.equal(TTS.mp3For('bicycle'), UNIFIED + 'bicycle', 'the dictionary fallback is the same single voice');
 }));
 
-test('there is exactly ONE voice URL: no secondary or fallback voice hosts anywhere', () => {
-  for (const dead of ['ssl.gstatic.com', 'translate.googleapis', 'translate_tts', 'translate.google', 'api.streamelements.com', 'oxford', 'elevenlabs', '20200429']) {
-    assert.ok(!has(script.toLowerCase(), dead), 'retired voice engine removed from the build: ' + dead);
+test('TTS.getSingleVoiceUrl is the ONLY voice URL: one neural en-GB endpoint, zero mixing', () => withApp(({ q }) => {
+  const TTS = q.Speech;
+  assert.equal(TTS.UNIFIED, UNIFIED, 'the one unified neural en-GB studio endpoint');
+  assert.equal(TTS.getSingleVoiceUrl('bicycle'), UNIFIED + 'bicycle');
+  assert.equal(TTS.getSingleVoiceUrl('bus stop'), UNIFIED + 'bus%20stop');
+  assert.equal(TTS.getSingleVoiceUrl('boarding pass'), UNIFIED + 'boarding%20pass');
+  assert.equal(TTS.getSingleVoiceUrl('Number 7. bus stop.'), UNIFIED + 'Number%207.%20bus%20stop.');
+  assert.equal(TTS.getSingleVoiceUrl('   '), '');
+  assert.equal(TTS.getUnifiedVoiceUrl('bicycle'), TTS.getSingleVoiceUrl('bicycle'), 'the legacy alias cannot point anywhere else');
+  assert.deepEqual(Array.from(TTS.getStudioMp3Candidates('bus stop')), [UNIFIED + 'bus%20stop']);
+  assert.equal(TTS.mp3For('bicycle'), UNIFIED + 'bicycle', 'the dictionary fallback is the same single voice');
+  for (const word of ['bicycle', 'bus stop', 'tyre/tire', 'windscreen', 'Number 30.', 'Three, two, one.']) {
+    const url = TTS.getSingleVoiceUrl(word);
+    assert.equal(url.indexOf(UNIFIED), 0, 'every clip uses the single locked URL: ' + url);
+    assert.ok(has(url, 'tl=en-GB'), 'every clip is British English');
+    assert.ok(has(url, 'ttsspeed=0.95'), 'every clip uses the same studio pace');
   }
-  assert.equal((script.match(/https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/g) || []).length, 1, 'one studio host, declared once');
+}));
+
+test('there is exactly ONE voice host: youdao, gstatic and multi-voice fallbacks are gone', () => {
+  for (const dead of ['dict.youdao.com', 'youdao', 'ssl.gstatic.com', 'translate.google.com', 'api.streamelements.com', 'elevenlabs', 'mp3-forvo']) {
+    assert.ok(!has(html.toLowerCase(), dead), 'retired voice engine removed from the build: ' + dead);
+  }
+  assert.equal((script.match(/translate\.googleapis\.com\/translate_tts\?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=0\.95&q=/g) || []).length, 1, 'one studio endpoint, declared once');
+  assert.equal((script.match(/https:\/\/[^"']*translate_tts/g) || []).length, 1, 'no second speech endpoint anywhere');
   withApp(({ q }) => {
     const engine = sourceOf(q.Speech);
-    assert.ok(engine.length > 2000, 'the Speech engine source was captured');
-    for (const dead of ['ssl.gstatic.com', 'translate_tts', 'streamelements', 'oxford', 'elevenlabs', 'mp3--_gb_1']) {
+    assert.ok(engine.length > 2000, 'the TTS engine source was captured');
+    for (const dead of ['youdao', 'gstatic', 'streamelements', 'elevenlabs', 'mp3--_gb_1']) {
       assert.ok(!has(engine.toLowerCase(), dead), 'no second voice engine in TTS: ' + dead);
     }
-    const urls = ['bicycle', 'bus stop', 'boarding pass', 'tyre/tire', 'windscreen', 'Number 7.'].map((w) => q.Speech.getSingleVoiceUrl(w));
-    urls.forEach((url) => assert.equal(url.indexOf(UNIFIED), 0, 'every clip uses the single locked studio URL: ' + url));
   });
 });
 
@@ -277,278 +288,242 @@ test('zero filler phrases survive in TTS or the Eng dictation playback', () => w
   assert.deepEqual(fillerHits(engine), [], 'TTS must never speak a filler phrase');
   assert.deepEqual(fillerHits(playback), [], 'Eng dictation playback must never speak a filler phrase');
   assert.deepEqual(fillerHits(html), [], 'the whole build is free of the retired filler phrases');
-  assert.equal(q.Speech.getHumanRepeatPhrase, undefined, 'TTS.getHumanRepeatPhrase is deleted');
-  assert.equal(q.Speech.speakHumanReaction, undefined, 'TTS.speakHumanReaction is deleted');
-  assert.equal(q.Speech.getHumanReactionPhrase, undefined, 'TTS.getHumanReactionPhrase is deleted');
-  assert.equal(q.Speech.reactionsEnabled, undefined, 'the reaction gate is deleted');
-  assert.equal(q.Speech.reactionPhrases, undefined, 'the reaction phrase table is deleted');
-  assert.equal(q.Speech.repeatCues, undefined, 'the repeat cue table is deleted');
-  assert.equal(q.Speech.setReactions, undefined, 'the reaction switch is deleted');
-  assert.ok(!('humanReactions' in q.DB.data.settings), 'no reaction toggle in the saved profile');
+  assert.equal(q.Speech.getHumanRepeatPhrase, undefined);
+  assert.equal(q.Speech.speakHumanReaction, undefined);
+  assert.equal(q.Speech.reactionsEnabled, undefined);
+  assert.ok(!('humanReactions' in q.DB.data.settings));
 }));
 
-/* ---------------------------------------------- the clean word cycle (headless) */
+/* ------------------------------------------------------- test sound button */
 
-test('speakWordCycle says ONLY the clean word: Repetition 1 -> 750ms silence -> Repetition 2', () => withVoice(({ q, clock, spoken }) => {
-  const TTS = q.Speech;
-  let done = null;
-  const phases = [];
-  TTS.speakWordCycle({ w: 'bicycle' }, 0, (ok) => { done = ok; }, (i, n) => phases.push(i + '/' + n));
-  assert.equal(done, null, 'the cycle waits for the onended of each repetition');
-  clock.tick(5);
-  assert.deepEqual(heard(spoken).map((s) => s.text), ['bicycle'], 'repetition 1 is the clean word and nothing else');
-  clock.tick(700);
-  assert.deepEqual(heard(spoken).map((s) => s.text), ['bicycle'], 'the 750ms studio silence is respected');
-  clock.tick(60);
-  assert.deepEqual(heard(spoken).map((s) => s.text), ['bicycle', 'bicycle'], 'repetition 2 is the exact same clean word');
-  clock.tick(40);
-  assert.equal(done, true);
-  assert.deepEqual(phases, ['1/2', '2/2']);
-  assert.ok(heard(spoken).every((s) => s.voice === TTS.getPinnedVoice().name), 'never changes voice between repeats');
-  assert.deepEqual(fillerHits(heard(spoken).map((s) => s.text).join(' ')), []);
-  spoken.length = 0;
-  TTS.speakWordCycle({ w: 'tyre/tire' }, 1, () => {});
-  clock.tick(2000);
-  assert.deepEqual(heard(spoken).map((s) => s.text), ['tyre', 'tyre'], 'tyre/tire is spoken as the clean word tyre');
-}));
-
-test('Repetition 2 replays the exact same #ttsMasterAudio buffer (currentTime = 0, no new request)', () => withStream(({ q, clock, played, master, ct, synthCalls }) => {
-  const TTS = q.Speech;
-  let done = null;
-  TTS.speakWordCycle({ w: 'bus stop' }, 0, (ok) => { done = ok; });
-  clock.tick(10);
-  const first = clips(played);
-  assert.equal(first.length, 1, 'repetition 1 requests the studio clip once');
-  assert.equal(decodeClip(first[0].src), 'bus stop');
-  const srcAfterRep1 = master.getAttribute('src');
-  clock.tick(80);
-  assert.equal(done, null, 'repetition 2 waits for the 750ms studio silence');
-  const setsBefore = ct.sets.length;
-  clock.tick(700);
-  assert.equal(clips(played).length, 1, 'still inside the 750ms silence');
-  clock.tick(40);
-  const both = clips(played);
-  assert.equal(both.length, 2, 'repetition 2 plays the buffered clip again');
-  assert.equal(both[0].src, both[1].src, 'the exact same buffer, never a different voice');
-  assert.equal(master.getAttribute('src'), srcAfterRep1, 'the master element never loads a second source for repetition 2');
-  assert.ok(ct.sets.length > setsBefore, 'repetition 2 rewinds the buffer');
-  assert.equal(ct.sets[ct.sets.length - 1], 0, 'repetition 2 sets currentTime = 0 before play()');
-  clock.tick(100);
-  assert.equal(done, true);
-  assert.equal(synthCalls(), 0, 'the device voice never speaks');
-  assert.deepEqual(fillerHits(decodeClip(both[1].src)), []);
-}));
-
-test('window.speechSynthesis.speak is NEVER called on a live online browser', () => withStream(({ q, clock, played, synthCalls }) => {
-  const TTS = q.Speech;
-  assert.equal(TTS.liveBrowser(), true, 'a live online Chrome browser is detected');
-  assert.equal(TTS.canSynth(), false, 'the device voice is disabled for live browsers');
-  let synthOk = null;
-  assert.doesNotThrow(() => TTS.speakSynth('bicycle', 0.96, (ok) => { synthOk = ok; }));
-  clock.tick(100);
-  assert.equal(synthOk, false, 'speakSynth refuses instead of speaking robotically');
-  assert.doesNotThrow(() => TTS.primeSynth(), 'priming never queues a device utterance');
-  TTS.unlock();
-  TTS.speakSingle('bicycle', () => {});
-  clock.tick(200);
-  assert.equal(synthCalls(), 0, 'no device utterance was ever requested');
-  assert.ok(clips(played).some((p) => decodeClip(p.src) === 'bicycle'), 'the studio clip played instead');
-}));
-
-test('preloadSessionWords pre-buffers every clean word through the single studio URL', () => withStream(({ q }) => {
-  const TTS = q.Speech;
-  assert.equal(typeof TTS.audioCache, 'object');
-  const n = TTS.preloadSessionWords([{ w: 'bicycle' }, { w: 'bus stop' }, { w: 'tyre/tire' }, 'windscreen']);
-  assert.equal(n, 4);
-  const keys = Object.keys(TTS.audioCache);
-  assert.ok(keys.length >= 4, 'every word is cached');
-  keys.forEach((url) => assert.equal(url.indexOf(UNIFIED), 0, 'only the single locked studio host is preloaded: ' + url));
-  assert.ok(TTS.audioCache[UNIFIED + 'bicycle']);
-  assert.ok(TTS.audioCache[UNIFIED + 'bus%20stop']);
-  assert.ok(TTS.audioCache[UNIFIED + 'tyre'], 'tyre/tire pre-buffers the clean word');
-  assert.ok(!keys.some((url) => url.indexOf('%2F') >= 0), 'no bilingual slash ever reaches the voice engine');
-}));
-
-/* ------------------------------------------------------------- the session */
-
-test('Eng.start opens the ready sheet with no spoken greeting and no spoken countdown', () => withStream(({ q, w, clock, played }) => {
+test('TTS.testSound plays the real dictation voice and marks ✓ Dictation Voice Verified', () => withStream(({ q, w, clock, clips }) => {
+  assert.equal(typeof q.Speech.testSound, 'function');
+  q.Speech.testSound();
+  clock.tick(400);
+  assert.ok(clips().indexOf(TEST_PHRASE) >= 0, 'Sound check. Number 1. bicycle. goes through the one dictation voice');
   q.Eng.start({});
-  const sheet = w.document.getElementById('readySheet');
-  assert.ok(sheet, '#readySheet is open');
-  assert.equal(q.Eng.st, 'ready');
-  assert.match(sheet.textContent, /Are you ready\?/);
-  assert.ok(sheet.textContent.indexOf("Get your pen and paper. Tap I'm ready when you are.") >= 0);
-  assert.ok(Array.from(sheet.querySelectorAll('button')).some((b) => b.textContent.trim() === 'Skip countdown'));
-  assert.ok(Array.from(sheet.querySelectorAll('button')).some((b) => b.textContent.trim() === 'Test sound'));
-  assert.equal(w.document.querySelectorAll('#sheets .sheet').length, 1, 'one single far-right cross sheet');
-  clock.tick(500);
-  assert.deepEqual(clips(played), [], 'not one word, greeting or countdown is spoken before the tap');
-  assert.equal(q.DB.data.settings.showWord, false);
+  clock.tick(250);
+  const pill = w.document.getElementById('voiceTestPill');
+  const btn = w.document.getElementById('btnReadyTest');
+  assert.ok(btn, 'the Are you ready? sheet has #btnReadyTest');
+  assert.ok(pill, 'the Are you ready? sheet has a voice status pill');
+  btn.click();
+  clock.tick(400);
+  assert.equal(pill.textContent, '✓ Dictation Voice Verified');
+  assert.ok(clips().indexOf(TEST_PHRASE) >= 0);
+  for (const id of ['btnTestVoice', 'btnTestVoicePlayer', 'btnTestVoiceDiag']) {
+    assert.ok(has(html, id), 'every test-sound button exists: ' + id);
+  }
+  assert.equal(q.Speech.testSound.length >= 0, true);
+  assert.ok(!/AudioContext|OscillatorNode/.test(String(q.Speech.testSound)), 'Test sound never falls back to an oscillator beep');
 }));
 
-test('Word 1: clean word twice from one buffer, then the 5s writing timer, then Word 2', () => withStream(({ q, w, clock, played }) => {
-  q.DB.data.settings.numbers = false;
-  q.DB.data.settings.writeFixed = 5;
-  const list = qaList([{ w: 'bicycle', s: 'I ride a bicycle.' }, { w: 'bus stop', s: 'Meet me at the bus stop.' }]);
-  q.Eng.start({ list, listName: 'QA' });
-  q.Eng.skipReady();
-  tickUntil(clock, () => q.Eng.st === 'waiting', 50, 200);
-  assert.equal(q.Eng.st, 'waiting', 'Word 1 reached its writing timer');
-  const first = clips(played).map((p) => decodeClip(p.src));
-  assert.deepEqual(first, ['bicycle', 'bicycle'], 'only the clean word is heard, twice: ' + JSON.stringify(first));
-  const status = (w.document.querySelector('#plStatus') || {}).textContent || '';
-  assert.match(status, /Write the word now \(5s\)/);
-  assert.ok(q.Eng.countdown && q.Eng.countdown.left > 0 && q.Eng.countdown.left <= 5);
-  clock.tick(4000);
-  assert.equal(q.Eng.st, 'waiting');
-  clock.tick(1500);
-  assert.equal(q.Eng.idx, 1, 'the five-second timer advanced to Word 2');
-  tickUntil(clock, () => q.Eng.st === 'waiting', 50, 200);
-  const all = clips(played).map((p) => decodeClip(p.src));
-  assert.deepEqual(all, ['bicycle', 'bicycle', 'bus stop', 'bus stop'], 'Word 2 speaks its own clean word twice');
-  assert.deepEqual(fillerHits(all.join(' ')), []);
+/* ---------------------------------------------------- pre-ready instructions */
+
+test('Eng.start speaks brief professional pre-ready instructions in the single voice', () => withStream(({ q, w, clock, clips }) => {
+  const btn = startSession({ q, w, clock });
+  assert.ok(btn, 'the Are you ready? sheet is open');
+  assert.ok(clips().indexOf(PAPER_INTRO) >= 0, 'paper mode instructions: ' + clips().join(' | '));
+  assert.ok(clips().every((text) => text === PAPER_INTRO || text === ''), 'nothing else is spoken before Yes, I\'m ready');
 }));
 
-test('Skip countdown jumps straight to Word 1 without waiting for a spoken countdown', () => withVoice(({ q, w, clock }) => {
-  q.DB.data.settings.numbers = false;
-  q.Eng.start({ list: qaList(['apple', 'pear']), listName: 'QA' });
-  const skip = Array.from(w.document.querySelectorAll('#sheets button')).find((b) => b.textContent.trim() === 'Skip countdown');
-  skip.click();
-  clock.tick(50);
+test('Eng.start speaks the typing instructions when the session is typed', () => withStream(({ q, clock, clips }) => {
+  q.Eng.start({ mode: 'type' });
+  clock.tick(250);
+  assert.ok(clips().indexOf(TYPE_INTRO) >= 0, 'type mode instructions: ' + clips().join(' | '));
+}));
+
+/* ------------------------------------------- three, two, one then word one */
+
+test('Eng.readyGo speaks "Three, two, one." and starts Word 1 only after the visual countdown', () => withStream(({ q, w, clock, clips }) => {
+  const btn = startSession({ q, clock, w });
+  btn.click();
+  clock.tick(100);
+  assert.ok(clips().indexOf(COUNTDOWN) >= 0, 'the countdown is spoken immediately');
+  assert.equal(q.Eng.phase, 'countdown');
+  assert.equal(w.document.getElementById('cdNum').textContent, '3');
+  clock.tick(700);
+  assert.equal(w.document.getElementById('cdNum').textContent, '2');
+  clock.tick(700);
+  assert.equal(w.document.getElementById('cdNum').textContent, '1');
+  assert.equal(q.Eng.idx, 0, 'word 1 has not started while the countdown runs');
+  assert.notEqual(q.Eng.st, 'waiting');
+  tickFor(clock, 1400);
+  assert.ok(clips().indexOf('Number 1. guidebook.') >= 0, 'word 1 launches after the countdown: ' + clips().join(' | '));
   assert.equal(q.Eng.idx, 0);
-  assert.equal(w.document.getElementById('readySheet'), null);
-  clock.tick(3000);
-  assert.equal(q.Eng.st, 'waiting');
 }));
 
-test('the 5s paper timer auto-advances from Word 1 to Word 30 and finishes the session', () => withVoice(({ q, clock, spoken }) => {
-  q.DB.data.settings.numbers = false;
-  const words = [];
-  for (let i = 1; i <= 30; i += 1) words.push({ w: 'word' + i });
-  q.Eng.start({ list: qaList(words), listName: 'QA 30' });
-  q.Eng.skipReady();
-  for (let i = 0; i < 6000 && !q.DB.data.history.length; i += 1) clock.tick(100);
-  assert.equal(q.DB.data.history.length, 1, 'the full session finished');
-  assert.equal(q.DB.data.history[0].wordCount, 30);
-  assert.equal(q.DB.data.history[0].mode, 'paper');
-  assert.ok(['finished', 'idle'].indexOf(q.Eng.st) >= 0, 'the player closed onto the Results screen');
-  assert.ok(q.Errors.items.length === 0, 'the 30-word session ran without an error');
-  assert.deepEqual(fillerHits(heard(spoken).map((s) => s.text).join(' ')), [], 'only clean dictation words were spoken');
+/* ------------------------------------------- numbered words + clean repeat */
+
+test('every dictation announces "Number N. <word>." then repeats only the clean word', () => withStream(({ q, w, clock, clips }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 3000);
+  const first = clips();
+  assert.ok(first.indexOf('Number 1. guidebook.') >= 0, 'pass 1 announces the dictation number and the word: ' + first.join(' | '));
+  assert.ok(first.indexOf('guidebook') >= 0, 'pass 2 repeats only the clean word');
+  assert.ok(first.indexOf('Number 1. guidebook.') < first.indexOf('guidebook'), 'number first, clean repeat second');
+  q.Eng.startWord(1);
+  tickFor(clock, 1200);
+  const second = clips();
+  assert.ok(second.indexOf('Number 2. handlebars.') >= 0, 'the second word is announced with its number');
+  assert.ok(second.lastIndexOf('handlebars') > second.indexOf('Number 2. handlebars.'));
+  const compound = q.Eng.words.map((item) => item.w).indexOf('public transport');
+  assert.ok(compound >= 0, 'the compound phrase is in Session 7');
+  q.Eng.startWord(compound);
+  tickFor(clock, 1200);
+  const phrase = 'Number ' + (compound + 1) + '. public transport.';
+  assert.ok(clips().indexOf(phrase) >= 0, 'compound phrases keep one voice: ' + clips().join(' | '));
+  assert.ok(clips().indexOf('public transport') >= 0);
 }));
 
-test('Pause stops the state machine and Resume replays the current word cleanly', () => withVoice(({ q, clock, spoken }) => {
-  q.DB.data.settings.numbers = false;
-  q.Eng.start({ list: qaList(['apple', 'pear']), listName: 'QA' });
-  q.Eng.skipReady();
-  for (let i = 0; i < 60 && q.Eng.st !== 'waiting'; i += 1) clock.tick(100);
-  assert.equal(q.Eng.st, 'waiting');
+test('the last dictation is announced as "Final word. Number 30. windscreen."', () => withStream(({ q, w, clock, clips }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 2600);
+  assert.equal(q.Eng.words.length, 30);
+  q.Eng.startWord(29);
+  tickFor(clock, 1200);
+  assert.ok(clips().indexOf('Final word. Number 30. windscreen.') >= 0, 'the final numbered announcement: ' + clips().join(' | '));
+  assert.ok(clips().indexOf('windscreen') >= 0, 'the final word is repeated clean');
+}));
+
+test('the player badge always shows which dictation number is continuing', () => withStream(({ q, w, clock }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 2600);
+  assert.equal(w.document.getElementById('plStep').textContent, 'Dictation #1 of 30');
+  assert.equal(w.document.getElementById('plProgText').textContent, 'Dictation #1 of 30');
+  q.Eng.startWord(4);
+  tickFor(clock, 300);
+  assert.equal(w.document.getElementById('plStep').textContent, 'Dictation #5 of 30');
+  assert.equal(w.document.getElementById('plProgText').textContent, 'Dictation #5 of 30');
+  assert.match(w.document.getElementById('plStatus').textContent, /Number 5 of 30/);
+}));
+
+test('the writing timer is five seconds and starts after the clean repeat', () => withStream(({ q, w, clock, clips }) => {
+  assert.equal(q.DB.data.settings.writeFixed, 5);
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 4400);
+  assert.equal(q.Eng.phase, 'write');
+  assert.equal(q.Eng.countdown.total, 5);
+  const before = clips().length;
+  tickFor(clock, 5200);
+  assert.ok(clips().length > before, 'the next dictation starts after the timer');
+  assert.equal(q.Eng.idx, 1);
+}));
+
+test('Replay repeats "Number N. word." then the clean word and restarts the timer', () => withStream(({ q, w, clock, clips }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 3000);
+  const btn = w.document.getElementById('btnReplay');
+  assert.ok(btn, 'the player has #btnReplay');
+  btn.click();
+  tickFor(clock, 300);
+  assert.ok(clips().filter((t) => t === 'Number 1. guidebook.').length >= 2, 'the number is repeated: ' + clips().join(' | '));
+  assert.equal(q.Eng.phase, 'write', 'the five second timer restarts after the replay');
+}));
+
+/* ------------------------------------------------ pause and welcome back */
+
+test('pause speaks "Session paused." and resume speaks the welcome-back number', () => withStream(({ q, w, clock, clips }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 3000);
   q.Eng.pause();
+  clock.tick(300);
   assert.equal(q.Eng.st, 'paused');
-  assert.equal(q.Eng.idx, 0);
-  const before = said(spoken, 'apple').length;
+  assert.ok(clips().indexOf('Session paused.') >= 0, 'pause is spoken: ' + clips().join(' | '));
+  assert.match(w.document.getElementById('plStatus').textContent, /Paused · Dictation #1/);
+  const before = clips().filter((t) => t === 'Number 1. guidebook.').length;
   q.Eng.resume();
-  clock.tick(3000);
-  assert.ok(said(spoken, 'apple').length >= before, 'resume keeps the same word audible');
+  assert.match(w.document.getElementById('plStatus').textContent, /Resuming Dictation #1/);
+  clock.tick(300);
+  assert.ok(clips().indexOf('Welcome back. Continuing dictation number 1.') >= 0, 'resume is spoken: ' + clips().join(' | '));
+  tickFor(clock, 1600);
+  assert.ok(clips().filter((t) => t === 'Number 1. guidebook.').length > before, 'the full reading restarts after welcome back');
   assert.equal(q.Eng.idx, 0);
-  assert.ok(q.Eng.st === 'waiting' || q.Eng.st === 'speaking');
+  assert.equal(q.Eng.phase, 'write');
 }));
 
-test('Repeat word, Slower and Spell stay on the one voice and return to the writing timer', () => withVoice(({ q, clock, spoken }) => {
-  q.DB.data.settings.numbers = false;
-  q.Eng.start({ list: qaList(['bicycle']), listName: 'QA' });
-  q.Eng.skipReady();
-  for (let i = 0; i < 60 && q.Eng.st !== 'waiting'; i += 1) clock.tick(100);
-  const before = heard(spoken).length;
-  q.Eng.repeatWord();
+/* ------------------------------------------------------- finish summaries */
+
+test('finishing a paper session speaks the completion summary', () => withStream(({ q, w, clock, clips }) => {
+  startSession({ q, w, clock });
+  q.Eng.finish(false);
   clock.tick(400);
-  assert.ok(heard(spoken).length > before, 'the repeat is spoken');
-  assert.ok(heard(spoken).slice(before).every((s) => s.voice === q.Speech.getPinnedVoice().name));
-  assert.ok(heard(spoken).slice(before).every((s) => s.text === 'bicycle'), 'the repeat is the clean word only');
-  q.Eng.slower();
+  assert.ok(clips().indexOf('Dictation complete. Well done. Review all thirty words below.') >= 0, clips().join(' | '));
+  assert.equal(q.DB.data.history.length, 1);
+}));
+
+test('finishing a typed session reads the score out loud', () => withStream(({ q, clock, clips }) => {
+  q.Eng.start({ mode: 'type' });
+  clock.tick(250);
+  q.Eng.finish(false);
   clock.tick(400);
-  assert.ok(q.Eng.st === 'waiting' || q.Eng.st === 'speaking');
-  q.Eng.spellWord();
-  clock.tick(3000);
-  assert.ok(heard(spoken).some((s) => /^bicycle\.$/.test(s.text)), 'spelling returns to the writing phase');
+  assert.ok(clips().some((t) => /^Dictation complete\. Well done\. Your score is \d+ percent\.$/.test(t)), clips().join(' | '));
 }));
 
-test('the dictionary speaker, practice replay and review all use the single studio voice', () => withStream(({ q, w, clock, played, master }) => {
-  q.Dict.speak('bicycle');
-  clock.tick(20);
-  assert.equal(decodeClip(master.getAttribute('src')), 'bicycle', 'the dictionary speaker streams the clean word');
-  q.Screens.practice();
-  clock.tick(20);
-  q.Screens.pracSay('bus stop');
-  clock.tick(20);
-  assert.equal(decodeClip(master.getAttribute('src')), 'bus stop', 'practice replay uses the same single voice');
-  q.UI.closeSheet();
-  const urls = clips(played).map((p) => String(p.src));
-  assert.ok(urls.length >= 2);
-  urls.forEach((url) => assert.equal(url.indexOf(UNIFIED), 0, 'one host for every screen: ' + url));
-  assert.ok(!has(w.document.body.textContent, 'Human studio reactions'));
+test('exiting the player or the ready sheet stops every sound immediately', () => withStream(({ q, w, clock }) => {
+  startSession({ q, w, clock });
+  q.Eng.stop();
+  clock.tick(100);
+  assert.equal(q.Eng.st, 'idle');
+  assert.equal(q.Speech._playing, false, 'nothing is left playing after an exit');
+  assert.equal(q.Speech.audioStarted, false);
 }));
 
-/* --------------------------------------------------------------- settings */
+/* ------------------------------------------- the device voice is never used */
 
-test('Settings shows one locked studio voice and no reaction or second-voice controls', () => withApp(({ q, w }) => {
-  q.UI.setTab('set');
-  const body = w.document.getElementById('setBody');
-  const text = body.textContent;
-  assert.ok(!w.document.getElementById('tHumanReactions'), 'the reactions toggle is gone');
-  assert.ok(!w.document.getElementById('tElevenLabsKey'), 'the second voice provider is gone');
-  assert.ok(text.indexOf(VOICE_LABEL) >= 0, 'the one studio voice is named in Settings');
-  assert.ok(text.indexOf('Offline device voice') < 0, 'no device-voice picker');
-  assert.ok(!has(text, 'Human studio reactions'));
-  const badge = w.document.getElementById('voiceHumanBadgeSettings');
-  assert.ok(badge);
-  assert.match(badge.textContent, /British English Studio Voice \(en-GB · Professional\)/);
-  assert.equal(badge.getAttribute('role'), 'status');
-  assert.equal(q.Errors.items.length, 0, 'the Settings screen renders without an error');
+test('window.speechSynthesis.speak() never runs on a live online browser', () => withStream(({ q, w, clock, synthCalls }) => {
+  startSession({ q, clock, w }).click();
+  tickFor(clock, 3000);
+  q.Eng.pause();
+  clock.tick(300);
+  q.Eng.resume();
+  tickFor(clock, 2000);
+  q.Eng.finish(false);
+  clock.tick(300);
+  assert.equal(synthCalls(), 0, 'the OS voice is never spoken on a live online browser');
+  assert.ok(has(script, 'hushSynth'), 'TTS always cancels the device voice first');
+  assert.ok(/hushSynth:function\(\)\{try\{window\.speechSynthesis&&window\.speechSynthesis\.cancel\(\)\}/.test(script));
 }));
 
-test('the Dictation Player mounts the single-voice presence badge', () => withApp(({ q, w }) => {
-  q.Eng.start({});
-  const badge = w.document.querySelector('#layers #voiceHumanBadge');
-  assert.ok(badge);
-  assert.match(badge.textContent, /British English Studio Voice/);
-  assert.equal(badge.getAttribute('role'), 'status');
-  assert.equal(badge.querySelectorAll('.vh-eq i').length, 4);
+test('the headless / fully offline branch still speaks through the device voice', () => withVoice(({ q, clock, spoken }) => {
+  q.Speech.speakSingle('Hello Britain');
+  clock.tick(200);
+  assert.ok(spoken.length >= 1, 'the offline fallback is audible');
+  assert.equal(spoken[0].lang, 'en-GB');
 }));
 
 /* ------------------------------------------------------------- migration */
 
-test('v39 profile migration and resetToV40 force English, paper, Amy and the bundled video', () => withApp(({ q }) => {
+test('v40 profile migration and resetToV41 force English, paper, Amy and the bundled video', () => withApp(({ q }) => {
   const old = q.defaultData();
-  old.v = 39;
-  old.settingsRev = 39;
+  old.v = 40;
+  old.settingsRev = 40;
   old.settings.lang = 'si';
   old.settings.guideLang = 'si';
   old.settings.mode = 'typed';
   old.settings.voice = 'Daniel';
   old.settings.rate = 0.5;
-  old.settings.humanReactions = false;
   old.settings.elevenLabsKey = 'sk-test';
   old.settings.activeVideoSrc = 'https://example.test/outside.mp4';
   old.settings.activeMediaType = 'photo';
   const migrated = q.DB.migrate(old);
-  assert.equal(migrated.v, 40);
-  assert.equal(migrated.settingsRev, 40);
+  assert.equal(migrated.v, 41);
+  assert.equal(migrated.settingsRev, 41);
   assert.equal(migrated.settings.lang, 'en');
   assert.equal(migrated.settings.guideLang, 'en');
   assert.equal(migrated.settings.mode, 'paper');
   assert.equal(migrated.settings.voice, 'Amy');
   assert.equal(migrated.settings.rate, 0.96);
+  assert.equal(migrated.settings.writeFixed, 5);
+  assert.equal(migrated.settings.repeats, 2);
   assert.equal(migrated.settings.activeVideoSrc, DEFAULT);
   assert.equal(migrated.settings.activeMediaType, 'video');
   assert.equal(migrated.settings.videoDim, 18);
-  assert.ok(!('humanReactions' in q.DB.defaults().settings), 'the v40 profile has no reaction setting');
-  assert.equal(sourceOf(q.Speech).toLowerCase().indexOf('elevenlabs'), -1, 'the retired provider is never read by TTS');
-  assert.equal(sourceOf(q.Speech).toLowerCase().indexOf('humanreactions'), -1, 'the retired reaction flag is never read by TTS');
-  assert.equal(typeof q.DB.resetToV40, 'function');
+  assert.equal(typeof q.DB.resetToV41, 'function');
   const again = q.DB.migrate(migrated);
-  assert.equal(again.v, 40);
-  assert.equal(again.settingsRev, 40);
-  assert.ok(has(html, 'sdp.v39_single_unified_voice'), 'the v39 profile is read once for migration');
+  assert.equal(again.v, 41);
+  assert.equal(again.settingsRev, 41);
+  assert.ok(has(html, 'sdp.v40_one_studio_voice'), 'the v40 profile is read once for migration');
 }));
 
 test('Session 7 keeps all 30 travel words, five-second writing, x2 repeats and Amy en-GB defaults', () => {
@@ -565,7 +540,7 @@ test('Session 7 keeps all 30 travel words, five-second writing, x2 repeats and A
   assert.equal(config.session.guideLang, 'en');
 });
 
-/* ---------------------------------------------------- preserved v22-v39 UI */
+/* ---------------------------------------------------- preserved v22-v40 UI */
 
 test('architectural interface keeps its radii, cobalt/graphite palette, white headings and hidden orbs', () => withApp(({ w }) => {
   assert.ok(hasCss('border-radius:10px!important'));
@@ -598,12 +573,12 @@ test('GPU motion and Hansana credits retain the 0.04s press, 0.22s glide and rev
   assert.ok(has(html, 'setTimeout(function(){U.setCls(document.body,"credit-intro",!1)},2800)'));
 });
 
-test('wallpaper stays an /assets/-only single hardware video with the v40 discovery cache', () => withApp(({ q, w }) => {
+test('wallpaper stays an /assets/-only single hardware video with the v41 discovery cache', () => withApp(({ q, w }) => {
   assert.equal(q.DEFAULT_WALLPAPER_SRC, DEFAULT);
   assert.equal(q.DB.data.settings.activeVideoSrc, DEFAULT);
   assert.equal(q.DB.data.settings.activeMediaType, 'video');
   assert.ok(q.isAssetsMedia(DEFAULT));
-  assert.equal(q.normalizeAssetPath('https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/assets/bunny-live-wallpaper.mp4?v=40#t=1'), DEFAULT);
+  assert.equal(q.normalizeAssetPath('https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/assets/bunny-live-wallpaper.mp4?v=41#t=1'), DEFAULT);
   assert.equal(q.normalizeAssetPath('./qa/evidence/fatal-390.png'), '');
   assert.equal(w.document.querySelectorAll('#bgLiveVideo').length, 1);
   assert.ok(has(html, GH_KEY));
@@ -611,10 +586,10 @@ test('wallpaper stays an /assets/-only single hardware video with the v40 discov
   assert.ok(has(html, 'preload="none"'));
   assert.ok(CSS.indexOf('#bgLiveAmbilight{') >= 0 && CSS.indexOf('#bgLiveAmbilight{') < CSS.indexOf('display:none!important', CSS.indexOf('#bgLiveAmbilight{')));
   assert.ok(hasCss('filter:none'));
-  assert.ok(has(html, '?v=40'));
+  assert.ok(has(html, '?v=41'));
 }));
 
-test('legacy v22-v39 core contracts remain in the v40 single-file app', () => {
+test('legacy v22-v40 core contracts remain in the v41 single-file app', () => {
   const tokens = [
     '#bgLiveWrap', '#bgLiveAmbilight', '#bgLiveVideo', '#bgLiveCanvas', '#bgContrastScrim', '#bgLivePhoto', '#liveVideoInput',
     'video-gallery-badge', 'syncAmbilight:function(){}', 'playAmbilight:function(){}', 'renderGallery:function', 'previewThumb:function',
@@ -624,11 +599,12 @@ test('legacy v22-v39 core contracts remain in the v40 single-file app', () => {
     'cancelReadyAndExit', 'ansInput', 'tabInd', 'segSync', 'lgStage', 'hollow', 'sanitiseWallpaper',
     'syncRemote', 'buildSearchIndex', 'searchWords', 'ansCompare', 'Next Wallpaper', 'Refresh from GitHub', 'resetToV33:function',
     'resetToV34:function', 'resetToV35:function', 'resetToV36:function', 'resetToV37:function', 'resetToV38:function', 'resetToV39:function',
-    'resetToV40:function', 'sdp.v37_human_british', 'sdp.v35_rainbow_liquid_glass', 'sdp.v34_highlighted_ui', GH_KEY, 'sdp.gh_assets_v39',
+    'resetToV40:function', 'resetToV41:function', 'sdp.v37_human_british', 'sdp.v35_rainbow_liquid_glass', 'sdp.v34_highlighted_ui', GH_KEY, 'sdp.gh_assets_v40',
     '_loadedSrc', 'adaptPerformance:function', 'gal-preview-btn', 'bindStreamStatus:function', 'recoverVideo:function', 'liteFx:function',
     'markPlaying:function', 'credit-intro', 'hansanaRevealCycle', 'sdpDynamicFonts', 'Noto Sans Sinhala', 'btnPlayerClose',
     'touch-action:manipulation', 'scale(.965) translateZ(0)', 'preloadSessionWords', 'mountVoiceBadge', 'isBritishAudio', 'mp3For',
     'spell', 'splitLong', 'speakText', 'getSingleVoiceUrl', 'cleanWordOnly', 'replayMaster', 'audioCache', 'liveBrowser', 'hushSynth',
+    'preBuffer', 'testSound', 'numberedPhrase', 'markVoiceVerified', 'speakFinishSummary', 'paintProg', 'btnReadyTest', 'btnReplay',
     KEY
   ];
   tokens.forEach((token) => assert.ok(has(html, token), 'missing preserved feature token: ' + token));
