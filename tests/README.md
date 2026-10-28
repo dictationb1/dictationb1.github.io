@@ -57,6 +57,22 @@ offline boot. `SDP_E2E_ONLY=old|offline|iphone|360|1280` runs a subset.
 This is Chromium only. WebKit and Firefox are **not** run: the sandbox has no such
 binary and cannot download one, so iPhone Safari and Firefox behaviour is unverified.
 
+## v42 real-Chromium troubleshooting audit
+
+```sh
+LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" node tests/audit-v42.cjs
+```
+
+`audit-v42.cjs` boots `index.html` in a **real Chromium** and drives the whole v42
+voice lifecycle: the single `dict.youdao.com` endpoint, the `" ."` marker on every
+clip, the pre-ready instructions, `"Three, two, one ."`, `"Number N, word ."`,
+`"word ."`, the `Dictation #N of 30` badge, the 5-second writing countdown, the
+paused badge, `"Session paused ."`, `"Welcome back. Continuing dictation number N ."`,
+the completion summary, `TTS.testSound()` (`✓ Dictation Voice Verified`), the
+spoken/visual countdown sync (Word 1 waits for both) and the dead-host fallback to
+the one locked en-GB female device voice — with zero console errors and zero
+uncaught page errors. The report is written to `tests/artifacts/audit-v42.json`.
+
 ## Current Phase 1 candidate
 
 See `../PHASE1_QA.md` for the current release blockers and actually observed outputs.
