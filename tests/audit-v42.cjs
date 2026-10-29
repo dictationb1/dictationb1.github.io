@@ -9,6 +9,7 @@ const serverChromium = require('@sparticuz/chromium');
 require('./chromium-env.cjs').ensureChromiumLibs();
 const root = path.resolve(__dirname, '..');
 const indexFile = path.join(root, 'index.html');
+const GB = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=';
 const OXFORD = 'https://ssl.gstatic.com/dictionary/static/sounds/20200429/';
 const YOUDAO = 'https://dict.youdao.com/dictvoice?type=1&audio=';
 const results = [];
@@ -108,18 +109,20 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     const voice = await page.evaluate(() => {
       const T = window.TTS, a = T.master();
       return {
-        local: String(T.LOCAL_AUDIO_BASE || ''), oxford: String(T.OXFORD_BASE || ''),
+        local: String(T.LOCAL_AUDIO_BASE || ''), cache: String(T.CACHE_NAME || ''),
         word: T.getSingleVoiceUrl('afraid'), number: T.getSingleVoiceUrl('Number 1'),
-        phrase: T.getSingleVoiceUrl('zebra crossing'), version: window.SDP.version,
+        phrase: T.getSingleVoiceUrl('zebra crossing'), si: T.getSingleVoiceUrl('ආයුබෝවන්', 'si'),
+        version: window.SDP.version,
         preload: a.getAttribute('preload'), playsinline: a.hasAttribute('playsinline'),
         referrer: a.getAttribute('referrerpolicy'), cross: a.hasAttribute('crossorigin')
       };
     });
     eq('no local audio base or generated pack remains', voice.local, '');
-    eq('the Oxford studio base is active', voice.oxford, OXFORD);
-    eq('a word resolves to real Oxford UK audio', voice.word, OXFORD + 'afraid--_gb_1.mp3');
-    eq('a numbered phrase resolves to Youdao UK', voice.number, YOUDAO + 'Number%201');
-    ok('a custom phrase uses the documented Youdao endpoint', voice.phrase.indexOf(YOUDAO) === 0, voice.phrase);
+    ok('the one unified Cambridge British en-GB stream is active', voice.word === GB + 'afraid', voice.word);
+    ok('a numbered phrase uses the same single voice', voice.number === GB + 'Number%201', voice.number);
+    ok('a custom phrase uses the same single voice', voice.phrase === GB + 'zebra%20crossing', voice.phrase);
+    ok('Sinhala uses the si stream of the same engine', /tl=si&q=/.test(voice.si), voice.si);
+    eq('the pinned cache bucket is sdp-voice-v48', voice.cache, 'sdp-voice-v48');
     eq('the running build is 5.4.0', voice.version, '5.4.0');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
@@ -140,14 +143,15 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     eq('Three is the first spoken count', textOf(marks[0] && marks[0].url), 'Three');
     eq('Two follows', textOf(marks[1] && marks[1].url), 'Two');
     eq('One follows', textOf(marks[2] && marks[2].url), 'One');
-    eq('Word 1 begins with its dictation number', textOf(marks[3] && marks[3].url), 'Number 1');
-    eq('the numbered cue is followed by Oxford afraid', textOf(marks[4] && marks[4].url), 'afraid');
-    eq('Pass 2 is the identical Oxford URL', textOf(marks[5] && marks[5].url), 'afraid');
-    eq('Pass 2 adds no master load', marks[5] && marks[4] && marks[5].loads === marks[4].loads, true);
+    eq('Word 1 announces its number and the word in one stream', textOf(marks[3] && marks[3].url), 'Number 1, afraid');
+    eq('Pass 2 replays only the clean word', textOf(marks[4] && marks[4].url), 'afraid');
+    eq('Pass 2 reuses the one master element', await page.evaluate(() => document.querySelectorAll('audio#ttsMasterAudio').length), 1);
+    ok('the loaded word URL is remembered for zero-network replays', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('tl=en-GB') >= 0));
+    ok('the pinned cache bucket and blob cache exist', await page.evaluate(() => String(window.TTS.CACHE_NAME) === 'sdp-voice-v48' && !!window.TTS._blobCache));
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1, gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
     ok('the spoken countdown holds each number for at least 500ms', gap1 >= 480 && gap1 <= 1200 && gap2 >= 480 && gap2 <= 1200, { gap1, gap2 });
-    const wordGap = marks[5] && marks[4] ? marks[5].t - marks[4].t : -1;
-    ok('Pass 2 follows the Oxford word after about 650ms', wordGap >= 630 && wordGap <= 1100, wordGap);
+    const wordGap = marks[4] && marks[3] ? marks[4].t - marks[3].t : -1;
+    ok('Pass 2 follows the first reading after about 650ms', wordGap >= 630 && wordGap <= 1200, wordGap);
 
     let now = await state(page);
     eq('the duplicate dictation badge is removed', now.badge, '');
@@ -171,7 +175,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     await page.waitForTimeout(1200);
     clips = await clipsOf(page);
     ok('Finish uses remote human audio', clips.some((c) => /Dictation%20complete/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    const bad = clips.map((c) => c.url).filter((u) => !/^https:\/\/(ssl\.gstatic\.com|dict\.youdao\.com|translate\.googleapis\.com)\//.test(u));
+    const bad = clips.map((c) => c.url).filter((u) => /^https?:/i.test(u) && !/^https:\/\/(ssl\.gstatic\.com|dict\.youdao\.com|translate\.googleapis\.com)\//.test(u));
     eq('every session clip is an allowed real remote source', bad.length, 0);
     eq('the robotic device voice never speaks', await page.evaluate(() => (window.__synth || []).length), 0);
     eq('zero console errors during the session', noise(consoleErrors).length, 0);

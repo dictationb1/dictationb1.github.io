@@ -192,9 +192,9 @@ function device(html, base) {
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (String(posted.session.no) !== NEXT_NO) throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      /* v48: every published single word carries its real Oxford UK studio URL;
+      /* v48: every published single word carries the one unified Cambridge British en-GB stream;
          custom phrases retain the documented Youdao remote fallback. */
-      if (!posted.lists[0].words.every(x => x.m && x.s && (/^https:\/\/ssl\.gstatic\.com\/dictionary\/static\/sounds\/20200429\/[a-z0-9-]+--_gb_1\.mp3$/.test(x.audio) || /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(x.audio)))) throw Error('a word has no B1 meaning/sentence/UK audio');
+      if (!posted.lists[0].words.every(x => x.m && x.s && (/^https:\/\/translate\.googleapis\.com\/translate_tts\?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0\.95&q=/.test(x.audio) || /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(x.audio)))) throw Error('a word has no B1 meaning/sentence/UK audio');
     });
 
     /* --- the student phone updates itself, live -------------------------- */
