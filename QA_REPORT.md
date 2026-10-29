@@ -1,4 +1,4 @@
-> Historical report for v1.3.0. The current release is **v5.4.0 (v48, 2026-10-29)**. It uses real remote Oxford/Youdao/Google human audio with same-element replay; the former local MP3 pack and generators have been removed. See `README.md`, `CHANGELOG.md` and the nine commands in `tests/README.md` for the current contract and verification. The detailed observations below describe the historical candidate, not v48.
+> Historical report for v1.3.0; its results below are not evidence for the current release. The current app is **v5.6.0 (v50, 2026-10-29)**. See `README.md`, `CHANGELOG.md` and `tests/README.md` for the current contract and verification. Remote-provider availability and actual pronunciation are not certified by mocked tests.
 
 # Smart Dictation Player — repair and QA report
 

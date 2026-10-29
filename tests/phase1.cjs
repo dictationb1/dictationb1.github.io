@@ -165,10 +165,10 @@ test('1.4 flex fatal card uses scale-only animation; confirm keeps translate', (
  assert(a.w.document.querySelector('#fatal .modal').classList.contains('flex-card'));
  const keyframe=current.match(/@keyframes pop-flex\s*\{[\s\S]*?\}\s*\}/)[0];assert(!keyframe.includes('translate'));assert(/@keyframes pop\s*\{/.test(current));
 }));
-test('1.5 injected script removed, gas-source retained, 20 sections kept', () => {
+test('1.5 injected script removed and lazy gas-source retained', () => {
  assert(!/__CF\$|cdn-cgi|challenge-platform/.test(current));
  const gas=fs.readFileSync(path.join(__dirname,'..','data','gas-source.txt'),'utf8');assert(/id="gas-source"><\/script>/.test(current),'the lazy gas-source holder is present');assert(gas.includes("function handlePost(e)")); assert(gas.includes("function adminOk(body)"));
- const sections=Array.from(current.matchAll(/SECTION (\d+) -/g)).map(m=>Number(m[1]));assert.deepEqual(sections,Array.from({length:20},(_,i)=>i+1));
+ assert(current.includes('var APP_VERSION'),'the inline application remains present after comments are stripped');
 });
 test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=4 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
 test('1.6 invalid dates and malformed backup import are guarded', () => withApp({}, a => {
@@ -286,7 +286,7 @@ test('3.5 sync time advances only after successful state reply', () => withApp({
 test('4.1 remote studio audio needs no device voice and never throws a blocking sheet', () => withApp({voice:'en-US'}, a => {
  a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);
  assert.equal(a.audio.length,1,'the remote human recording plays without speechSynthesis');
- assert.equal(a.audio[0].src,'https://dict.youdao.com/dictvoice?type=1&audio=Hello%20.','v49: the direct Youdao studio stream is assigned to the master element');
+ assert.equal(a.audio[0].src,'https://dict.youdao.com/dictvoice?type=1&audio=Hello','v50: the direct Youdao studio stream is assigned to the master element');
  assert.equal(a.spoken.length,0,'device speech stays disabled');
  assert(!a.q.Speech.textOnly,'never silently dropped into Text mode');
  a.q.Eng.start({});
@@ -320,8 +320,8 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
  assert(a.audio.some(s=>/Final%20word%2C%20number%2030/.test(s.src)),'v48: the last word is announced with its dictation number');
- assert(a.audio.filter(s=>/audio=hungry%20\.$/.test(s.src)).length>=1,'v49: the second pass replays the clean word on the same element');
- assert(a.audio.some(s=>/Number%201%2C/.test(s.src)),'v48: every word announces its dictation number');
+ assert(a.audio.filter(s=>/audio=hungry$/.test(s.src)).length>=1,'v49: the second pass replays the clean word on the same element');
+ assert(a.audio.some(s=>/audio=Number%201$/.test(s.src)),'v48: every word announces its dictation number');
  assert.equal(a.spoken.length,0);assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {

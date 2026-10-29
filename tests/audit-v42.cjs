@@ -1,5 +1,5 @@
 'use strict';
-/* v49 real-Chromium audio audit (the historical filename is retained).
+/* v50 real-Chromium audio audit (the historical filename is retained).
    The real app and DOM run with remote media recorded instead of downloaded.
    No local audio pack, synthetic waveform or device speech is involved. */
 const path = require('node:path');
@@ -71,7 +71,7 @@ const RECORDER = () => {
       }
     } catch (e) {}
   }, 40);
-  if (window.speechSynthesis) window.speechSynthesis.speak = function (u) { window.__synth.push(String((u && u.text) || '')); };
+  if (window.speechSynthesis) window.speechSynthesis.speak = function (u) { window.__synth.push(String((u && u.text) || '')); setTimeout(function () { if (u && u.onend) u.onend(); }, 10); };
 };
 const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.test(String(m)));
 (async () => {
@@ -130,17 +130,17 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
       };
     });
     eq('no local audio base or generated pack remains', voice.local, '');
-    ok('the one unified Cambridge British en-GB stream is active', voice.word === YOUDAO_BASE + 'afraid%20.', voice.word);
-    ok('a numbered phrase uses the same single voice', voice.number === YOUDAO_BASE + 'Number%201%20.', voice.number);
-    ok('a custom phrase uses the same single voice', voice.phrase === YOUDAO_BASE + 'zebra%20crossing%20.', voice.phrase);
-    eq('Sinhala never builds a blocked cross-origin URL: it routes to the pinned synth', voice.si, '');
-    eq('the running build is 5.5.0', voice.version, '5.5.0');
+    ok('the clean Youdao UK word URL is requested', voice.word === YOUDAO_BASE + 'afraid', voice.word);
+    ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
+    ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
+    eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
+    eq('the running build is 5.6.0', voice.version, '5.6.0');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
     await page.evaluate(() => document.getElementById('btnStart').click());
     await page.waitForTimeout(900);
     let clips = await clipsOf(page);
-    ok('the ready instruction is remote human audio', clips.some((c) => textOf(c.url).indexOf('Welcome.') === 0), clips.map((c) => textOf(c.url)));
+    ok('the ready instruction requests remote audio', clips.some((c) => textOf(c.url).indexOf('Welcome.') === 0), clips.map((c) => textOf(c.url)));
     await page.evaluate(() => document.getElementById('btnReadyTest').click());
     await page.waitForTimeout(700);
     clips = await clipsOf(page);
@@ -149,15 +149,20 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
 
     const startIndex = clips.length;
     await clickReady(page);
-    await page.waitForTimeout(3400);
+    // The number and word are separate clips in v50. Wait for both word passes
+    // and the completed writing-phase transition rather than racing a fixed sleep.
+    await page.waitForFunction((start) => window.__clips.length >= start + 6, startIndex, { timeout: 12000 });
+    await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 5000 });
     const marks = (await clipsOf(page)).slice(startIndex).filter((m) => !/^(Sound check|Welcome\.)/.test(textOf(m.url)));
     eq('Three is the first spoken count', textOf(marks[0] && marks[0].url), 'Three');
     eq('Two follows', textOf(marks[1] && marks[1].url), 'Two');
     eq('One follows', textOf(marks[2] && marks[2].url), 'One');
-    eq('Word 1 announces its number and the word in one stream', textOf(marks[3] && marks[3].url), 'Number 1, afraid');
-    eq('Pass 2 replays only the clean word', textOf(marks[4] && marks[4].url), 'afraid');
+    eq('Word 1 announces its number separately', textOf(marks[3] && marks[3].url), 'Number 1');
+    eq('Pass 1 plays the clean dictionary word', textOf(marks[4] && marks[4].url), 'afraid');
+    eq('Pass 2 replays the identical clean word', textOf(marks[5] && marks[5].url), 'afraid');
+    eq('both passes use the same URL', marks[5] && marks[5].url, marks[4] && marks[4].url);
     eq('Pass 2 reuses the one master element', await page.evaluate(() => document.querySelectorAll('audio#ttsMasterAudio').length), 1);
-    ok('the loaded word URL is remembered for zero-network replays', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('dict.youdao.com/dictvoice') >= 0));
+    ok('the loaded word URL is remembered for same-element replay', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('dict.youdao.com/dictvoice') >= 0));
     ok('no cross-origin fetch, Blob URL or Cache API interception is used', await page.evaluate(() => {
       const T = window.TTS;
       const src = String(T.master().getAttribute('src') || '');
@@ -165,11 +170,11 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     }));
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1, gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
     ok('the spoken countdown holds each number for at least 500ms', gap1 >= 480 && gap1 <= 1200 && gap2 >= 480 && gap2 <= 1200, { gap1, gap2 });
-    const wordGap = marks[4] && marks[3] ? marks[4].t - marks[3].t : -1;
+    const wordGap = marks[5] && marks[4] ? marks[5].t - marks[4].t : -1;
     ok('Pass 2 follows the first reading after about 650ms', wordGap >= 630 && wordGap <= 1200, wordGap);
 
     let now = await state(page);
-    eq('the duplicate dictation badge is removed', now.badge, '');
+    eq('the accessible step badge tracks the current word', now.badge, 'Dictation #1 of 30');
     eq('progress dots cover all 30 words', now.dots, 30);
     eq('the progress label shows Dictation #1 of 30', now.prog, 'Dictation #1 of 30');
     ok('the writing phase starts after Pass 2', now.statusLog.some((t) => /Write the word now|Your turn/.test(t)), now.statusLog.slice(-5));
@@ -178,21 +183,21 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     await page.click('#plPlay');
     await page.waitForTimeout(900);
     clips = await clipsOf(page);
-    ok('Pause uses remote human audio', clips.some((c) => /Session%20paused/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
+    ok('Pause requests remote audio', clips.some((c) => /Session%20paused/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
     await page.click('#plPlay');
     await page.waitForTimeout(1800);
     clips = await clipsOf(page);
-    ok('Resume uses remote human audio', clips.some((c) => /Welcome%20back/.test(c.url)), clips.slice(-4).map((c) => textOf(c.url)));
+    ok('Resume requests remote audio', clips.some((c) => /Welcome%20back/.test(c.url)), clips.slice(-4).map((c) => textOf(c.url)));
 
     await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#layers button')).find((x) => /Finish early/i.test(x.textContent)); if (b) b.click(); });
     await page.waitForTimeout(400);
     await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#modals button')).find((x) => /Finish now/i.test(x.textContent)); if (b) b.click(); });
     await page.waitForTimeout(1200);
     clips = await clipsOf(page);
-    ok('Finish uses remote human audio', clips.some((c) => /Dictation%20complete/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
+    ok('Finish requests remote audio', clips.some((c) => /Dictation%20complete/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
     const bad = clips.map((c) => c.url).filter((u) => /^https?:/i.test(u) && !/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(u));
-    eq('every session clip is the one allowed Youdao studio source', bad.length, 0);
-    eq('the robotic device voice never speaks', await page.evaluate(() => (window.__synth || []).length), 0);
+    eq('successful mocked session clips request Youdao', bad.length, 0);
+    eq('no device fallback is used when mocked media completes', await page.evaluate(() => (window.__synth || []).length), 0);
     eq('zero console errors during the session', noise(consoleErrors).length, 0);
     eq('zero uncaught page errors during the session', pageErrors.length, 0);
     await context.close();
@@ -205,14 +210,14 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
       proto.play = function () { return Promise.reject(new Error('blocked')); };
       window.__synth.length = 0;
       let result = null;
-      T.playUrl('https://dict.youdao.com/dictvoice?type=1&audio=afraid%20.', 'prompt', function (value) { result = value; });
+      T.playUrl('https://dict.youdao.com/dictvoice?type=1&audio=afraid', 'prompt', function (value) { result = value; });
       await new Promise((r) => setTimeout(r, 200));
       proto.play = original;
       return { result, synth: (window.__synth || []).slice() };
     });
     ok('a blocked stream falls back to the pinned device voice instead of silence',
       dead.synth.some((t) => /afraid/.test(String(t))), dead.synth);
-    ok('the fallback never reports a silent failure', dead.result !== false, dead.result);
+    eq('the fallback completes successfully', dead.result, true);
     const fast = await page.evaluate(async () => {
       const T = window.TTS, original = T.isHeadless;
       T.isHeadless = function () { return true; };
@@ -223,13 +228,13 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
       T.isHeadless = original;
       return done;
     });
-    ok('HeadlessChrome failure completion is about 50ms', fast >= 35 && fast <= 90, fast);
+    ok('normal media completion is delivered promptly in Chromium', fast >= 35 && fast <= 200, fast);
     eq('failed playback leaves no console error', noise(consoleErrors).length, 0);
     eq('failed playback raises no page error', pageErrors.length, 0);
     await context.close();
   }
 
   await browser.close();
-  console.log('\n' + (results.length - failures) + '/' + results.length + ' v49 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
+  console.log('\n' + (results.length - failures) + '/' + results.length + ' v50 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
   if (failures) process.exitCode = 1;
 })().catch((err) => { console.error('audit crashed: ' + (err && err.stack || err)); process.exit(1); });

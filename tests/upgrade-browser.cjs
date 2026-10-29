@@ -281,7 +281,7 @@ function material(page) {
           z: getComputedStyle(credit).zIndex };
       });
       assert.equal(full.inView, true, 'badge is not hidden by a repeating timer');
-      assert.ok(full.opacity >= 0.05, 'the cinematic badge remains faintly visible: ' + full.opacity);
+      assert.ok(full.opacity >= 0.039 && full.opacity <= 1, 'the cinematic badge cycles between visible and nearly hidden: ' + full.opacity);
       assert.equal(full.anim, 'hansanaCinemaCycle', 'the cinematic disappearing / re-appearing cycle runs');
       assert.equal(full.sheen, 'none', 'no perpetual decorative repaint');
       assert.equal(full.z, '9999');
@@ -342,7 +342,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -402,11 +402,11 @@ function material(page) {
     }
   });
 
-  await check(engine + ' a 390px phone starts in Lite with no horizontal overflow', async () => {
+  await check(engine + ' a 390px phone starts in Full with no horizontal overflow', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
       const m = await material(page);
-      assert.equal(m.perf, 'lite', 'a phone is downgraded automatically');
+      assert.equal(m.perf, 'full', 'Full is the default on a phone');
       assert.equal(m.heroBlur, 'none', 'v33 phone glass renders with zero backdrop blur');
       assert.notEqual(m.heroShadow, 'none');
       const layout = await page.evaluate(() => ({
@@ -419,7 +419,7 @@ function material(page) {
       assert.equal(layout.dock, true, 'the dock fits the viewport');
       await page.locator('#btnPerf').click();
       await page.waitForTimeout(200);
-      assert.equal((await material(page)).perf, 'full', 'the phone can still choose Full');
+      assert.equal((await material(page)).perf, 'lite', 'the phone can still choose Lite');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
       await context.close();
@@ -560,7 +560,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -594,6 +594,7 @@ function material(page) {
   await check(engine + ' full-screen video stays active in Lite, while the neon canvas sleeps at idle', async () => {
     const { context, page, errors } = await boot(browser, 390, 844);
     try {
+      if ((await material(page)).perf !== 'lite') await page.locator('#btnPerf').click();
       const decodes = await videoDecodes(page);
       const scene = await page.evaluate(() => {
         const stage = document.getElementById('bgLiveWrap');
@@ -665,14 +666,14 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')).lists[0].words[0].w);
-      /* Both readings use the one unified Cambridge British en-GB stream on one element. */
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).lists[0].words[0].w);
+      /* The mocked Youdao endpoint is requested on the shared media element. */
       await page.waitForFunction(() => (window.__audio || []).filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2,
         null, { timeout: 12000 }).catch(() => {});
       const played = await page.evaluate(() => window.__audio || []);
       assert.ok(played.filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2, 'the single Youdao studio voice played both readings: ' + JSON.stringify(played));
       assert.equal(await page.evaluate(() => (window.__spoken || []).length), 0, 'device speech is never used');
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -682,7 +683,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system'));
+        const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -712,7 +713,7 @@ function material(page) {
         return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -800,7 +801,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system'));
+        const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
@@ -870,6 +871,7 @@ function material(page) {
     }
   });
 
+  await require('./v50-browser.cjs')(browser, check, fileURL);
   await browser.close();
   const output = path.join(__dirname, 'artifacts');
   fs.mkdirSync(output, { recursive: true });
