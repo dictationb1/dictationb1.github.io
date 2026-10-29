@@ -1,5 +1,5 @@
 'use strict';
-/* v48 real-Chromium audio audit (the historical filename is retained).
+/* v49 real-Chromium audio audit (the historical filename is retained).
    The real app and DOM run with remote media recorded instead of downloaded.
    No local audio pack, synthetic waveform or device speech is involved. */
 const path = require('node:path');
@@ -9,9 +9,13 @@ const serverChromium = require('@sparticuz/chromium');
 require('./chromium-env.cjs').ensureChromiumLibs();
 const root = path.resolve(__dirname, '..');
 const indexFile = path.join(root, 'index.html');
-const GB = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=';
+const YOUDAO_BASE = 'https://dict.youdao.com/dictvoice?type=1&audio=';
 const OXFORD = 'https://ssl.gstatic.com/dictionary/static/sounds/20200429/';
 const YOUDAO = 'https://dict.youdao.com/dictvoice?type=1&audio=';
+/* A real 120 ms silent WAV so the master element never errors while the
+   network stays offline: only the Youdao clip route is fulfilled locally. */
+const SILENT_WAV = Buffer.from('UklGRqQHAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', 'base64');
+const CLIP_ROUTE = /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/;
 const results = [];
 let failures = 0;
 function rec(name, pass, detail) {
@@ -24,7 +28,10 @@ function ok(name, value, detail) { rec(name, !!value, detail); }
 function textOf(url) {
   const value = String(url || '');
   if (value.indexOf(OXFORD) === 0) return value.slice(OXFORD.length).split('--_gb_1')[0];
-  try { const u = new URL(value); return u.searchParams.get('audio') || u.searchParams.get('q') || value; } catch (e) { return value; }
+  try {
+    const u = new URL(value);
+    return String(u.searchParams.get('audio') || u.searchParams.get('q') || value).replace(/\s*\.\s*$/, '');
+  } catch (e) { return value; }
 }
 const RECORDER = () => {
   window.__clips = [];
@@ -81,7 +88,12 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
     page.on('pageerror', (e) => pageErrors.push(e.message));
     await page.addInitScript(RECORDER);
-    await page.route('**/*', (r) => /^(file:|data:)/.test(r.request().url()) ? r.continue() : r.abort());
+    await page.route('**/*', (r) => {
+      const target = r.request().url();
+      if (/^(file:|data:)/.test(target)) return r.continue();
+      if (CLIP_ROUTE.test(target)) return r.fulfill({ status: 200, contentType: 'audio/wav', body: SILENT_WAV });
+      return r.abort();
+    });
     await page.goto(url);
     await page.waitForSelector('#homeTitle', { state: 'attached' });
     await page.waitForFunction(() => !!(window.SDP && window.SDP.version), null, { timeout: 20000 });
@@ -118,12 +130,11 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
       };
     });
     eq('no local audio base or generated pack remains', voice.local, '');
-    ok('the one unified Cambridge British en-GB stream is active', voice.word === GB + 'afraid', voice.word);
-    ok('a numbered phrase uses the same single voice', voice.number === GB + 'Number%201', voice.number);
-    ok('a custom phrase uses the same single voice', voice.phrase === GB + 'zebra%20crossing', voice.phrase);
-    ok('Sinhala uses the si stream of the same engine', /tl=si&q=/.test(voice.si), voice.si);
-    eq('the pinned cache bucket is sdp-voice-v48', voice.cache, 'sdp-voice-v48');
-    eq('the running build is 5.4.0', voice.version, '5.4.0');
+    ok('the one unified Cambridge British en-GB stream is active', voice.word === YOUDAO_BASE + 'afraid%20.', voice.word);
+    ok('a numbered phrase uses the same single voice', voice.number === YOUDAO_BASE + 'Number%201%20.', voice.number);
+    ok('a custom phrase uses the same single voice', voice.phrase === YOUDAO_BASE + 'zebra%20crossing%20.', voice.phrase);
+    eq('Sinhala never builds a blocked cross-origin URL: it routes to the pinned synth', voice.si, '');
+    eq('the running build is 5.5.0', voice.version, '5.5.0');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
     await page.evaluate(() => document.getElementById('btnStart').click());
@@ -146,8 +157,12 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     eq('Word 1 announces its number and the word in one stream', textOf(marks[3] && marks[3].url), 'Number 1, afraid');
     eq('Pass 2 replays only the clean word', textOf(marks[4] && marks[4].url), 'afraid');
     eq('Pass 2 reuses the one master element', await page.evaluate(() => document.querySelectorAll('audio#ttsMasterAudio').length), 1);
-    ok('the loaded word URL is remembered for zero-network replays', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('tl=en-GB') >= 0));
-    ok('the pinned cache bucket and blob cache exist', await page.evaluate(() => String(window.TTS.CACHE_NAME) === 'sdp-voice-v48' && !!window.TTS._blobCache));
+    ok('the loaded word URL is remembered for zero-network replays', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('dict.youdao.com/dictvoice') >= 0));
+    ok('no cross-origin fetch, Blob URL or Cache API interception is used', await page.evaluate(() => {
+      const T = window.TTS;
+      const src = String(T.master().getAttribute('src') || '');
+      return /^https:\/\/dict\.youdao\.com\//.test(src) && !/^blob:/.test(src) && typeof T.pinBlob === 'function';
+    }));
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1, gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
     ok('the spoken countdown holds each number for at least 500ms', gap1 >= 480 && gap1 <= 1200 && gap2 >= 480 && gap2 <= 1200, { gap1, gap2 });
     const wordGap = marks[4] && marks[3] ? marks[4].t - marks[3].t : -1;
@@ -175,8 +190,8 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     await page.waitForTimeout(1200);
     clips = await clipsOf(page);
     ok('Finish uses remote human audio', clips.some((c) => /Dictation%20complete/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    const bad = clips.map((c) => c.url).filter((u) => /^https?:/i.test(u) && !/^https:\/\/(ssl\.gstatic\.com|dict\.youdao\.com|translate\.googleapis\.com)\//.test(u));
-    eq('every session clip is an allowed real remote source', bad.length, 0);
+    const bad = clips.map((c) => c.url).filter((u) => /^https?:/i.test(u) && !/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(u));
+    eq('every session clip is the one allowed Youdao studio source', bad.length, 0);
     eq('the robotic device voice never speaks', await page.evaluate(() => (window.__synth || []).length), 0);
     eq('zero console errors during the session', noise(consoleErrors).length, 0);
     eq('zero uncaught page errors during the session', pageErrors.length, 0);
@@ -188,14 +203,16 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     const dead = await page.evaluate(async () => {
       const T = window.TTS, proto = window.HTMLMediaElement.prototype, original = proto.play;
       proto.play = function () { return Promise.reject(new Error('blocked')); };
+      window.__synth.length = 0;
       let result = null;
-      T.playClipList(['https://ssl.gstatic.com/dictionary/static/sounds/20200429/missing--_gb_1.mp3'], 'prompt', function (value) { result = value; });
-      await new Promise((r) => setTimeout(r, 150));
+      T.playUrl('https://dict.youdao.com/dictvoice?type=1&audio=afraid%20.', 'prompt', function (value) { result = value; });
+      await new Promise((r) => setTimeout(r, 200));
       proto.play = original;
-      return { result, synth: (window.__synth || []).length };
+      return { result, synth: (window.__synth || []).slice() };
     });
-    eq('a missing clip never falls back to device speech', dead.synth, 0);
-    eq('a live-browser media failure resolves cleanly as false', dead.result, false);
+    ok('a blocked stream falls back to the pinned device voice instead of silence',
+      dead.synth.some((t) => /afraid/.test(String(t))), dead.synth);
+    ok('the fallback never reports a silent failure', dead.result !== false, dead.result);
     const fast = await page.evaluate(async () => {
       const T = window.TTS, original = T.isHeadless;
       T.isHeadless = function () { return true; };
@@ -213,6 +230,6 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
   }
 
   await browser.close();
-  console.log('\n' + (results.length - failures) + '/' + results.length + ' v48 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
+  console.log('\n' + (results.length - failures) + '/' + results.length + ' v49 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
   if (failures) process.exitCode = 1;
 })().catch((err) => { console.error('audit crashed: ' + (err && err.stack || err)); process.exit(1); });

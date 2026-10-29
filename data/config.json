@@ -48,8 +48,8 @@
     "adminPin": "78987898",
     "liveSync": false
   },
-  "ver": 48,
-  "version": "5.4.0",
+  "ver": 49,
+  "version": "5.5.0",
   "buildDate": "2026-10-29",
   "credits": {
     "createdBy": "Hansana",
@@ -59,13 +59,13 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "Real remote studio recordings; no generated local MP3 files",
+    "engine": "Direct streamed Youdao en-GB studio MP3 assigned to #ttsMasterAudio (native media cache, no fetch/Blob) with a pinned British female speechSynthesis fallback after 1600 ms",
     "englishVoice": "Single unified Cambridge British woman studio voice (en-GB)",
-    "sinhalaGuideVoice": "Google si female sentence stream",
+    "sinhalaGuideVoice": "Locked device si-LK female speechSynthesis fallback",
     "lockedVoice": "Amy",
-    "singleWordBase": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=",
+    "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
-    "fallbackBase": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx",
+    "fallbackBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "element": "#ttsMasterAudio",
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
@@ -73,15 +73,17 @@
     "numberToWordBeatMs": 0,
     "slowPlaybackRate": 0.72,
     "pass2": "currentTime=0 on the already loaded master element; 0 KB",
-    "headlessErrorDelayMs": 50
+    "headlessErrorDelayMs": 50,
+    "startTimeoutMs": 1600,
+    "fallback": "speechSynthesis pinned to Microsoft Sonia Online (Natural) / Microsoft Libby Online (Natural) / Google UK English Female / Serena / Amy at rate 0.96 pitch 1.02"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.4.0",
-  "settingsRev": 48,
+  "appVersion": "5.5.0",
+  "settingsRev": 49,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -117,7 +119,7 @@
     },
     "publicSheet": "https://dictationb1.github.io/data"
   },
-  "key": "sdp.v48_cambridge_single_voice",
+  "key": "sdp.v49_working_sound_system",
   "storageKey": "sdp.v48_cambridge_single_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
@@ -307,7 +309,7 @@
   "lockedVoice": "Amy",
   "humanAudio": {
     "voice": "Single unified Cambridge British woman studio voice (en-GB)",
-    "singleWordBase": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=",
+    "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "lang": "en-GB",
     "referrerPolicy": "no-referrer",
@@ -342,7 +344,7 @@
   "updatedAt": "2026-10-29T00:00:00Z",
   "updatedAtMs": 1793232000000,
   "adminPin": "78987898",
-  "schema": 48,
+  "schema": 49,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",

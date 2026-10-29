@@ -103,7 +103,6 @@
 (function () {
   "use strict";
   var YOUDAO = "https://dict.youdao.com/dictvoice?type=1&audio=";
-  var GOOGLE = "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=";
   var WORDS = [["afraid","əˈfreɪd","බියට පත් වූ"],["amazed","əˈmeɪzd","මවිතයට පත් වූ"],["amusing","əˈmjuː.zɪŋ","විනෝදජනක"],["annoyed","əˈnɔɪd","කෝපයට හෝ කරදරයට පත් වූ"],["anxious","ˈæŋk.ʃəs","කනස්සල්ලෙන් සිටින"],["ashamed","əˈʃeɪmd","ලැජ්ජාවට පත් වූ"],["awesome","ˈɔː.səm","ඉතා විශිෂ්ට"],["boring","ˈbɔː.rɪŋ","කම්මැලි හෝ නීරස"],["brilliant","ˈbrɪl.jənt","ඉතා දක්ෂ හෝ විශිෂ්ට"],["challenging","ˈtʃæl.ɪn.dʒɪŋ","අභියෝගාත්මක"],["charming","ˈtʃɑː.mɪŋ","ආකර්ෂණීය හෝ සිත්ගන්නාසුලු"],["confident","ˈkɒn.fɪ.dənt","ආත්ම විශ්වාසයෙන් යුතු"],["confusing","kənˈfjuː.zɪŋ","ව්‍යාකූල කරන"],["cruel","ˈkruː.əl","කෲර හෝ නපුරු"],["curious","ˈkjʊə.ri.əs","කුතුහලයෙන් යුතු"],["delighted","dɪˈlaɪ.tɪd","ඉතා සතුටට පත් වූ"],["depressed","dɪˈprest","දැඩි කලකිරීමට හෝ දුකට පත් වූ"],["disappointed","ˌdɪs.əˈpɔɪn.tɪd","බලාපොරොත්තු සුන් වූ"],["embarrassing","ɪmˈbær.ə.sɪŋ","අපහසුතාවයට පත් කරන"],["enjoyable","ɪnˈdʒɔɪ.ə.bəl","රසවත් හෝ සතුටුදායක"],["excellent","ˈek.səl.ənt","ඉතා විශිෂ්ට"],["excited","ɪkˈsaɪ.tɪd","උද්‍යෝගිමත් වූ"],["fantastic","fænˈtæs.tɪk","අති විශිෂ්ට"],["favourite","ˈfeɪ.vər.ɪt","ප්‍රියතම"],["frightened","ˈfraɪ.tənd","බියට පත් වූ"],["friendly","ˈfrend.li","මිත්‍රශීලී"],["generous","ˈdʒen.ər.əs","ත්‍යාගශීලී"],["guilty","ˈɡɪl.ti","වරදකාරී හැඟීමක් ඇති"],["healthy","ˈhel.θi","සෞඛ්‍ය සම්පන්න"],["hungry","ˈhʌŋ.ɡri","කුසගින්නෙන් පෙළෙන"]];
   var lang = "en";
   var mode = "video";
@@ -112,7 +111,6 @@
   var videoOn = true;
   function byId(id) { return document.getElementById(id); }
   function clean(value) { return String(value === null || typeof value === "undefined" ? "" : value).replace(/\s+/g, " ").replace(/^\s+|\s+$/g, ""); }
-  function google(value, language) { return GOOGLE + (language === "si" ? "si" : "en-GB&ttsspeed=0.95") + "&q=" + encodeURIComponent(value); }
   function cleanWordOnly(value) { var text = clean(value); if (/^tyre\s*\/\s*tire$/i.test(text)) { return "tyre"; } return text.indexOf("/") >= 0 ? clean(text.split("/")[0]) : text; }
   function once(fn) { var called = false; return function (value) { if (!called) { called = true; fn(value); } }; }
   function toast(message) { var el = byId("toast"); el.textContent = message; el.className = "toast on"; if (toastTimer) { clearTimeout(toastTimer); } toastTimer = setTimeout(function () { el.className = "toast"; }, 2800); }
@@ -138,43 +136,136 @@
     if (current) { out.push(current); }
     return out;
   }
+  var FEMALE = "microsoft sonia online (natural)|microsoft libby online (natural)|google uk english female|microsoft hazel|sonia|libby|serena|amy|kate|stephanie|hazel|emma|olivia|sophie|freya|susan";
+  var MALE = /male|daniel|alex|fred|george|arthur|oliver|tom\b|guy|ryan|david|mark\b|james|aaron|liam|eric|brian|matthew|joey|justin|rishi|thomas|graham|ravi|davis/i;
+  var SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+  var START_MS = 1600;
   var TTS = window.TTS = {
     sequence: 0,
     getRealStudioUrls: function (value, language) {
       var valueClean = cleanWordOnly(value);
-      if (!valueClean) { return []; }
-      if (language === "si") { return [google(valueClean, "si")]; }
-      return [google(valueClean, "en-GB"), YOUDAO + encodeURIComponent(valueClean + " .")];
+      if (!valueClean || language === "si") { return []; }
+      return [YOUDAO + encodeURIComponent(valueClean + " .")];
     },
     getSingleVoiceUrl: function (value) { return this.getRealStudioUrls(value, "en-GB")[0] || ""; },
-    master: function () { var audio = byId("ttsMasterAudio"); audio.removeAttribute("crossorigin"); audio.setAttribute("referrerpolicy", "no-referrer"); return audio; },
-    stop: function () { var audio = this.master(); this.sequence++; try { audio.onended = null; audio.onerror = null; audio.pause(); } catch (ignore) {} },
-    playUrls: function (urls, done, replay, rate) {
+    master: function () {
+      var audio = byId("ttsMasterAudio");
+      audio.removeAttribute("crossorigin");
+      audio.removeAttribute("crossOrigin");
+      audio.setAttribute("referrerpolicy", "no-referrer");
+      audio.setAttribute("preload", "auto");
+      return audio;
+    },
+    pickVoice: function (language) {
+      var list = [], wanted, i, voice, name, names;
+      try { list = window.speechSynthesis && window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() || [] : []; } catch (ignore) { list = []; }
+      if (language === "si") { for (i = 0; i < list.length; i += 1) { if (list[i] && /^si/i.test(String(list[i].lang || ""))) { return list[i]; } } return null; }
+      names = FEMALE.split("|");
+      for (wanted = 0; wanted < names.length; wanted += 1) {
+        for (i = 0; i < list.length; i += 1) {
+          voice = list[i];
+          if (!voice) { continue; }
+          name = String(voice.name || "").toLowerCase();
+          if (name.indexOf(names[wanted]) >= 0 && !MALE.test(name)) { return voice; }
+        }
+      }
+      for (i = 0; i < list.length; i += 1) {
+        voice = list[i];
+        if (voice && /^en[-_]GB/i.test(String(voice.lang || "")) && !MALE.test(String(voice.name || ""))) { return voice; }
+      }
+      for (i = 0; i < list.length; i += 1) {
+        voice = list[i];
+        name = String(voice && voice.name || "");
+        if (voice && /^en/i.test(String(voice.lang || "")) && /female|woman/i.test(name) && !MALE.test(name)) { return voice; }
+      }
+      return null;
+    },
+    speakPinnedSynth: function (value, done, language) {
+      var finish = once(done || function () {});
+      var text = clean(value);
+      var synth = null;
+      var Utter = null;
+      var utter;
+      var guard = null;
+      var settled = false;
+      function end(ok) { if (settled) { return; } settled = true; if (guard) { clearTimeout(guard); guard = null; } finish(ok === true); }
+      if (!text) { finish(true); return true; }
+      try { synth = window.speechSynthesis; Utter = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance || null; } catch (ignore) { synth = null; }
+      if (!synth || !Utter) { if (headless()) { setTimeout(function () { finish(true); }, 50); return true; } finish(false); return false; }
+      try { synth.cancel(); } catch (ignore) {}
+      try { utter = new Utter(text); } catch (ignore) { finish(false); return false; }
+      utter.lang = language === "si" ? "si-LK" : "en-GB";
+      var voice = this.pickVoice(language === "si" ? "si" : "en");
+      if (voice) { try { utter.voice = voice; if (voice.lang) { utter.lang = voice.lang; } } catch (ignore) {} }
+      utter.rate = 0.96;
+      utter.pitch = 1.02;
+      utter.volume = 1;
+      utter.onend = function () { end(true); };
+      utter.onerror = function () { end(false); };
+      guard = setTimeout(function () { end(headless()); }, headless() ? 80 : 180000);
+      try { synth.speak(utter); this.synthSpoken = (this.synthSpoken || 0) + 1; return true; } catch (ignore) { end(false); return false; }
+    },
+    unlock: function () {
+      var audio = this.master();
+      try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (ignore) {}
+      try { audio.muted = false; audio.volume = 1; } catch (ignore) {}
+      if (!this.armed && !headless()) {
+        this.armed = true;
+        try {
+          audio.src = SILENT;
+          var armed = audio.play();
+          if (armed && armed.then) { armed.then(function () { try { audio.pause(); audio.removeAttribute("src"); } catch (ignore) {} }, function () {}); }
+        } catch (ignore) {}
+      }
+      return true;
+    },
+    stop: function () {
+      var audio = this.master();
+      this.sequence += 1;
+      try { audio.onended = null; audio.onerror = null; audio.onplaying = null; audio.pause(); } catch (ignore) {}
+      try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (ignore) {}
+    },
+    playUrls: function (urls, done, replay, rate, label) {
       var self = this;
       var audio = this.master();
       var token = this.sequence;
       var index = 0;
       var finish = once(done || function () {});
-      function next() {
-        if (token !== self.sequence || index >= urls.length) { finish(false); return; }
+      function next(ok) {
+        if (index && !ok && urls.length) { finish(false); return; }
+        if (token !== self.sequence || index >= urls.length) { finish(token === self.sequence && ok !== false); return; }
         var url = urls[index++];
         var settled = false;
         var started = false;
         var timer = null;
-        function complete(ok) { if (settled) { return; } settled = true; if (timer) { clearTimeout(timer); } audio.onended = null; audio.onerror = null; if (ok) { finish(true); } else if (!headless() && index < urls.length) { next(); } else { finish(headless()); } }
-        function failed() { if (settled || started) { return; } if (timer) { clearTimeout(timer); } if (headless()) { timer = setTimeout(function () { complete(true); }, 50); } else { complete(false); } }
+        function clear() { if (timer) { clearTimeout(timer); timer = null; } try { audio.onended = null; audio.onerror = null; audio.onplaying = null; } catch (ignore) {} try { audio.playbackRate = 1; } catch (ignore) {} }
+        function complete(ok2) { if (settled) { return; } settled = true; clear(); if (ok2) { self.lastUrl = url; } finish(ok2 === true); }
+        function fallback() {
+          if (settled) { return; }
+          settled = true;
+          clear();
+          var spoken = label || "";
+          if (!spoken) { finish(headless()); return; }
+          if (headless()) { setTimeout(function () { finish(true); }, 50); return; }
+          self.speakPinnedSynth(spoken, function (ok2) { finish(ok2 === true); }, "en");
+        }
         try {
-          audio.preservesPitch = true; audio.webkitPreservesPitch = true;
+          audio.setAttribute("referrerpolicy", "no-referrer");
+          audio.removeAttribute("crossorigin");
+          audio.muted = false;
+          audio.volume = 1;
+          audio.preservesPitch = true;
+          audio.webkitPreservesPitch = true;
           audio.playbackRate = rate || 1;
           audio.onended = function () { complete(true); };
-          audio.onerror = failed;
+          audio.onerror = fallback;
           audio.onplaying = function () { started = true; };
-          if (!replay && audio.getAttribute("src") !== url) { audio.src = url; if (audio.load) { audio.load(); } }
+          if (String(audio.getAttribute("src") || "") !== url) { audio.src = url; if (audio.load) { audio.load(); } }
           try { audio.currentTime = 0; } catch (ignore) {}
           var promise = audio.play();
-          if (promise && promise.then) { promise.then(function () { started = true; }, failed); }
-          timer = setTimeout(function () { if (headless()) { complete(true); } else if (started) { complete(false); } else { failed(); } }, headless() ? 700 : 15000);
-        } catch (error) { failed(); }
+          if (promise && promise.then) { promise.then(function () { started = true; }, fallback); }
+          timer = setTimeout(function () { timer = null; if (settled || started) { return; } if (headless()) { complete(true); } else { fallback(); } }, headless() ? 700 : START_MS);
+        } catch (ignore) { fallback(); }
       }
       next();
     },
@@ -184,7 +275,14 @@
       var index = 0;
       var finish = once(done || function () {});
       this.stop();
-      (function next(ok) { if (index && !ok) { finish(false); return; } if (index >= parts.length) { finish(true); return; } self.playUrls(self.getRealStudioUrls(parts[index++], language), next, false, 1); }(true));
+      var token = this.sequence;
+      if (language === "si") { this.speakPinnedSynth(value, finish, "si"); return; }
+      (function next(ok) {
+        if (index && !ok) { finish(false); return; }
+        if (token !== self.sequence || index >= parts.length) { finish(token === self.sequence); return; }
+        var part = parts[index++];
+        self.playUrls([YOUDAO + encodeURIComponent(cleanWordOnly(part) + " .")], next, false, 1, cleanWordOnly(part));
+      }(true));
     }
   };
   function setStatus(message) { byId("audioStatus").textContent = message; }
@@ -198,10 +296,11 @@
     var audio = TTS.master();
     var url = TTS.getSingleVoiceUrl(word);
     var replay = audio.getAttribute("src") === url;
-    TTS.playUrls([url, YOUDAO + encodeURIComponent(word + " .")], function (ok) {
+    TTS.unlock();
+    TTS.playUrls([url], function (ok) {
       clearPlaying();
       setStatus(ok ? (replay ? (lang === "si" ? word + " · නැවත වාචනය: KB 0 (මතක හැඹිලිය)" : word + " · replayed from memory: 0 KB (Memory Cache)") : (lang === "si" ? word + " · පළමු වාචනය ~11 KB" : word + " · first play streamed ~11 KB")) : (lang === "si" ? "හඬ ආරම්භ කළ නොහැක. නැවත උත්සාහ කරන්න." : "Audio could not start. Check media volume and tap again."));
-    }, replay, 1);
+    }, replay, 1, cleanWordOnly(word));
   }
   function renderWords() {
     var host = byId("wordRows");

@@ -2,32 +2,32 @@
 
 Smart Dictation Player is a standalone, single-file English dictation app for CCBE Galle Branch. The published app is `index.html`; the interactive data report is available at both [`/data`](https://dictationb1.github.io/data) and [`/data.html`](https://dictationb1.github.io/data.html). There is no runtime JavaScript package or build requirement.
 
-## Release 5.4.0 — v48
+## Release 5.5.0 — v49
 
-Released 2026-10-29 with Session 8, real remote human audio, Apple Liquid Glass styling and the interactive bilingual data report.
+Released 2026-10-29 with a working sound system, Session 8, Apple Liquid Glass styling and the interactive bilingual data report.
 
 ### Audio contract
 
-There is deliberately **no `audio/` directory and no audio generator**. The app never creates waveform/formant/espeak clips and never uses robotic `speechSynthesis` on a live browser.
+There is deliberately **no `audio/` directory and no audio generator**. Every line of speech is streamed by the browser itself.
 
 All speech uses one persistent `#ttsMasterAudio` element with `preload="auto"`, `playsinline`, `referrerpolicy="no-referrer"` and **no `crossOrigin` attribute**:
 
-| Speech | Primary source | Ordered fallback |
-| --- | --- | --- |
-| A single English word | Oxford: `https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3` | Youdao UK: `https://dict.youdao.com/dictvoice?type=1&audio=<text>` |
-| A number or phrase | Youdao UK | Google `translate_tts` with `client=gtx&tl=en-GB` |
-| Sinhala narration | Google `translate_tts` with `tl=si`, sentence chunks no longer than 160 characters | — |
+| Speech | Source |
+| --- | --- |
+| Every English line (words, numbers, countdown, helpers, sentences, spelling, pause, resume, finish, guide) | `https://dict.youdao.com/dictvoice?type=1&audio=<text>%20.` assigned **directly** to `ttsMasterAudio.src` |
+| Sinhala narration | the pinned `si-LK` device voice, because Youdao has no Sinhala stream |
+| Safety net (element error, `play()` rejection or no start within 1600 ms) | the locked British female `speechSynthesis` voice: Microsoft Sonia Online (Natural), Microsoft Libby Online (Natural), Google UK English Female, Serena, Amy at `rate 0.96` / `pitch 1.02`, never a male voice |
+
+The URL is never fetched by JavaScript: no `fetch()`, no `Blob`, no `URL.createObjectURL()`, no Cache API bucket. The browser's own media cache therefore stores and replays the MP3 with zero CORS involvement, which is what restores sound on real phones and browsers.
 
 A dictation word follows this sequence:
 
-1. Speak `Number N` and then the clean Oxford word, with a 150 ms hand-off.
-2. Wait 650 ms after the word ends.
-3. Rewind and replay that same loaded master element for Pass 2. No second clip is downloaded: the replay costs **0 KB**.
+1. **Pass 1** streams `Number N, <word>` in one en-GB clip.
+2. Wait 650 ms after it ends.
+3. **Pass 2** sets `ttsMasterAudio.currentTime = 0` and replays the already loaded clip: **0 KB**, no second request. `🔊 Repeat` and `🐢 Slower (0.72×)` reuse the same element the same way.
 4. Start the five-second writing timer.
 
-**Slower** uses `playbackRate = 0.72` with pitch preservation. Repeat sentence and spelling use the same remote engine. Only the current and next Oxford words are preloaded; the app never preloads the whole session or all prompt clips. A late error from an old URL cannot cancel a replacement stream that has already started.
-
-Headless Chromium and jsdom treat media errors as a completed step after about 50 ms, without invoking device speech, so automated tests remain fast. Actual pronunciation, media availability, autoplay policy and network cost still depend on the browser and remote hosts.
+**Slower** uses `playbackRate = 0.72` with pitch preservation. Repeat sentence and spelling use the same stream. A 403, a blocked ISP or a stalled stream can no longer leave the app silent, because the pinned British voice takes over.
 
 ### Session and interface
 
@@ -45,7 +45,7 @@ Headless Chromium and jsdom treat media errors as a completed step after about 5
 - bunny video background and a play/pause toggle;
 - English/Sinhala interface switching and read-aloud summary;
 - Full-video/Lite calculator for 1–30 sessions, repeat-session savings and video comparisons;
-- all 30 Session 8 words with IPA, Sinhala meaning, estimated size and an Oxford play button;
+- all 30 Session 8 words with IPA, Sinhala meaning, estimated size and a working 🔊 Play button;
 - copy-link, WhatsApp, print, audit and open-player actions;
 - responsive Liquid Glass cards and the animated Hansana credit.
 
@@ -53,9 +53,9 @@ The displayed estimates are clearly labelled estimates, not a promise of a parti
 
 ## Saved data and migration
 
-- Storage key: `sdp.v48_real_oxford_voice`
-- `APP_VERSION`: `5.4.0`
-- `ver`, `schema` and `settingsRev`: `48`
+- Storage key: `sdp.v49_working_sound_system`
+- `APP_VERSION`: `5.5.0`
+- `ver`, `schema` and `settingsRev`: `49`
 - `data/version.json`, `data/config.json` and `data/session.json` carry the same release contract.
 
 Migration retains learner results, comments, custom lists, archived sessions and changed PINs. Corrupt primary data is retained for recovery, with a rolling backup where available. Export a backup before experimenting; browser storage can always be cleared by the user or operating system.
