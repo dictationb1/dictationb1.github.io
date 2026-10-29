@@ -1,14 +1,14 @@
 {
   "date": "2026-10-29",
-  "appVersion": "5.4.0",
-  "ver": 48,
-  "schema": 48,
-  "settingsRev": 48,
-  "storageKey": "sdp.v48_real_oxford_voice",
-  "indexBytes": 428809,
-  "indexSHA256": "3ee81552efb2de473af144d5c734570878b219e6b43e26b22299c0a27274f861",
-  "dataBytes": 42521,
-  "dataSHA256": "f5cd894a9f9df8036505a6aea9e392714b48501eb1989228fd2ab994906025fd",
+  "appVersion": "5.5.0",
+  "ver": 49,
+  "schema": 49,
+  "settingsRev": 49,
+  "storageKey": "sdp.v49_working_sound_system",
+  "indexBytes": 423463,
+  "indexSHA256": "eae6876a099d85b9044c6f8fc35cc5666afb1336816e4207b9aa2a2afdfa11e2",
+  "dataBytes": 47813,
+  "dataSHA256": "dd06f7aba45b35998d6a4e4269b71285c4ee68ed2fda876f3485f13a19381c9e",
   "dataRoutesIdentical": true,
   "browsers": {
     "chromium": "run with Playwright and @sparticuz/chromium",
@@ -17,26 +17,29 @@
   },
   "audio": {
     "localPack": false,
-    "deviceSpeechOnLiveBrowser": false,
+    "deviceSpeechOnLiveBrowser": "safety net only (element error, play() rejection or 1600 ms start timeout)",
     "sources": [
-      "Oxford GB single-word studio MP3",
-      "Youdao UK phrase audio",
-      "Google translate_tts en-GB/si fallback"
+      "Direct https://dict.youdao.com/dictvoice?type=1&audio= stream assigned to #ttsMasterAudio.src"
+    ],
+    "blockedSources": [
+      "translate.googleapis.com/translate_tts (HTTP 403) - removed",
+      "cross-origin fetch()/Blob/Cache API audio - removed"
     ],
     "master": "#ttsMasterAudio",
-    "pass2": "same-element replay, 0 KB",
+    "pass2": "same-element currentTime=0 replay, 0 KB",
+    "startTimeoutMs": 1600,
     "headlessErrorCompletionMs": 50
   },
   "gates": [
     {
       "command": "node tests/check.cjs",
       "status": "PASS",
-      "detail": "index/data ES5; no static links; 428809/430000 and 42521/60000 bytes"
+      "detail": "index/data ES5; no static links; 423463/430000 and 47813/60000 bytes"
     },
     {
       "command": "node --test tests/upgrade.test.cjs",
       "status": "PASS",
-      "passed": 19,
+      "passed": 28,
       "failed": 0
     },
     {
@@ -51,9 +54,7 @@
       "command": "node tests/browser.cjs",
       "status": "PASS",
       "passed": 23,
-      "failed": 0,
-      "skipped": 1,
-      "skipReason": "historical baseline commit 7577968 unavailable"
+      "failed": 0
     },
     {
       "command": "node tests/upgrade-browser.cjs",
@@ -82,7 +83,7 @@
     {
       "command": "node tests/audit-v42.cjs",
       "status": "PASS",
-      "passed": 36,
+      "passed": 37,
       "failed": 0
     }
   ],
@@ -96,6 +97,7 @@
   "notes": [
     "Zero failed assertions in the nine release gates.",
     "Public data.html and /data were both exercised in real Chromium.",
-    "Remote media was mocked for sequencing tests; audible pronunciation and physical-device media policies require device testing."
+    "The real-Chromium audit fulfils only the Youdao clip route and proves the device voice is never needed when the stream plays.",
+    "Audible pronunciation and physical-device media policies still require device testing."
   ]
 }

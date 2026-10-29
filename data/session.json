@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 48,
+  "ver": 49,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -23,7 +23,7 @@
     {
       "id": "list_session_8_feelings",
       "name": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-      "version": "5.4.0",
+      "version": "5.5.0",
       "published": true,
       "session": "Session 8",
       "date": "2026-10-29",
@@ -36,7 +36,7 @@
           "m": "Feeling fear or anxiety; frightened.",
           "si": "බියට පත් වූ",
           "s": "She was never afraid of speaking in front of a large audience.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=afraid"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=afraid%20."
         },
         {
           "w": "amazed",
@@ -45,7 +45,7 @@
           "m": "Greatly surprised; astonished.",
           "si": "මවිතයට පත් වූ",
           "s": "We were amazed by how quickly the students learned the new words.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=amazed"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=amazed%20."
         },
         {
           "w": "amusing",
@@ -54,7 +54,7 @@
           "m": "Causing laughter and providing entertainment.",
           "si": "විනෝදජනක",
           "s": "The lecturer told an amusing story at the start of the lesson.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=amusing"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=amusing%20."
         },
         {
           "w": "annoyed",
@@ -63,7 +63,7 @@
           "m": "Slightly angry; irritated.",
           "si": "කෝපයට හෝ කරදරයට පත් වූ",
           "s": "He felt annoyed when he missed the morning bus by ten seconds.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=annoyed"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=annoyed%20."
         },
         {
           "w": "anxious",
@@ -72,7 +72,7 @@
           "m": "Experiencing worry, unease, or nervousness.",
           "si": "කනස්සල්ලෙන් සිටින",
           "s": "Many students feel anxious right before an important examination.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=anxious"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=anxious%20."
         },
         {
           "w": "ashamed",
@@ -81,7 +81,7 @@
           "m": "Embarrassed or guilty because of one's actions.",
           "si": "ලැජ්ජාවට පත් වූ",
           "s": "He felt ashamed after forgetting his best friend's birthday.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=ashamed"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=ashamed%20."
         },
         {
           "w": "awesome",
@@ -90,7 +90,7 @@
           "m": "Extremely impressive or daunting; inspiring admiration.",
           "si": "ඉතා විශිෂ්ට",
           "s": "The view from the top of the mountain was truly awesome.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=awesome"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=awesome%20."
         },
         {
           "w": "boring",
@@ -99,7 +99,7 @@
           "m": "Not interesting; tedious.",
           "si": "කම්මැලි හෝ නීරස",
           "s": "Sitting indoors all afternoon on a rainy day can feel boring.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=boring"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=boring%20."
         },
         {
           "w": "brilliant",
@@ -108,7 +108,7 @@
           "m": "Exceptionally clever, talented, or impressive.",
           "si": "ඉතා දක්ෂ හෝ විශිෂ්ට",
           "s": "She came up with a brilliant idea for the science project.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=brilliant"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=brilliant%20."
         },
         {
           "w": "challenging",
@@ -117,7 +117,7 @@
           "m": "Testing one's abilities; demanding.",
           "si": "අභියෝගාත්මක",
           "s": "Learning a new language is challenging but very rewarding.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=challenging"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=challenging%20."
         },
         {
           "w": "charming",
@@ -126,7 +126,7 @@
           "m": "Very pleasant, polite, or attractive.",
           "si": "ආකර්ෂණීය හෝ සිත්ගන්නාසුලු",
           "s": "They stayed in a charming little cottage near the coast in Galle.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=charming"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=charming%20."
         },
         {
           "w": "confident",
@@ -135,7 +135,7 @@
           "m": "Feeling sure of oneself and one's abilities.",
           "si": "ආත්ම විශ්වාසයෙන් යුතු",
           "s": "Regular dictation practice makes students confident in their spelling.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=confident"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=confident%20."
         },
         {
           "w": "confusing",
@@ -144,7 +144,7 @@
           "m": "Bewildering or perplexing; hard to understand.",
           "si": "ව්‍යාකූල කරන",
           "s": "The road signs at the busy junction were quite confusing.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=confusing"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=confusing%20."
         },
         {
           "w": "cruel",
@@ -153,7 +153,7 @@
           "m": "Wilfully causing pain or suffering to others.",
           "si": "කෲර හෝ නපුරු",
           "s": "It is cruel to keep wild birds locked inside a tiny cage.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=cruel"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=cruel%20."
         },
         {
           "w": "curious",
@@ -162,7 +162,7 @@
           "m": "Eager to know or learn something.",
           "si": "කුතුහලයෙන් යුතු",
           "s": "The curious child asked dozens of questions about the stars.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=curious"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=curious%20."
         },
         {
           "w": "delighted",
@@ -171,7 +171,7 @@
           "m": "Feeling or showing great pleasure.",
           "si": "ඉතා සතුටට පත් වූ",
           "s": "Her parents were delighted when she passed the exam with top marks.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=delighted"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=delighted%20."
         },
         {
           "w": "depressed",
@@ -180,7 +180,7 @@
           "m": "In a state of unhappiness or despondency.",
           "si": "දැඩි කලකිරීමට හෝ දුකට පත් වූ",
           "s": "He felt depressed after his team lost the final match.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=depressed"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=depressed%20."
         },
         {
           "w": "disappointed",
@@ -189,7 +189,7 @@
           "m": "Sad or displeased because expectations were not met.",
           "si": "බලාපොරොත්තු සුන් වූ",
           "s": "We were disappointed that the concert was cancelled due to rain.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=disappointed"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=disappointed%20."
         },
         {
           "w": "embarrassing",
@@ -198,7 +198,7 @@
           "m": "Causing a feeling of self-consciousness or shame.",
           "si": "අපහසුතාවයට පත් කරන",
           "s": "Forgetting someone's name during an introduction can be embarrassing.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=embarrassing"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=embarrassing%20."
         },
         {
           "w": "enjoyable",
@@ -207,7 +207,7 @@
           "m": "Giving delight or pleasure.",
           "si": "රසවත් හෝ සතුටුදායක",
           "s": "We spent a very enjoyable evening talking with our classmates.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=enjoyable"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=enjoyable%20."
         },
         {
           "w": "excellent",
@@ -216,7 +216,7 @@
           "m": "Extremely good; outstanding.",
           "si": "ඉතා විශිෂ්ට",
           "s": "The restaurant near the harbour serves excellent seafood.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=excellent"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=excellent%20."
         },
         {
           "w": "excited",
@@ -225,7 +225,7 @@
           "m": "Very enthusiastic and eager.",
           "si": "උද්‍යෝගිමත් වූ",
           "s": "The students were excited about the upcoming school trip.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=excited"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=excited%20."
         },
         {
           "w": "fantastic",
@@ -234,7 +234,7 @@
           "m": "Extraordinarily good or attractive.",
           "si": "අති විශිෂ්ට",
           "s": "You did a fantastic job completing all thirty dictation words.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=fantastic"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=fantastic%20."
         },
         {
           "w": "favourite",
@@ -243,7 +243,7 @@
           "m": "Preferred before all others of the same kind.",
           "si": "ප්‍රියතම",
           "s": "English is her favourite subject at the academy.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=favourite"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=favourite%20."
         },
         {
           "w": "frightened",
@@ -252,7 +252,7 @@
           "m": "Afraid or anxious.",
           "si": "බියට පත් වූ",
           "s": "The little puppy was frightened by the loud thunder.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=frightened"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=frightened%20."
         },
         {
           "w": "friendly",
@@ -261,7 +261,7 @@
           "m": "Kind, pleasant, and welcoming towards others.",
           "si": "මිත්‍රශීලී",
           "s": "Everyone at the Galle branch gave the new student a friendly welcome.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=friendly"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=friendly%20."
         },
         {
           "w": "generous",
@@ -270,7 +270,7 @@
           "m": "Showing a readiness to give more of something than is necessary.",
           "si": "ත්‍යාගශීලී",
           "s": "It was very generous of her to share her notes with the whole class.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=generous"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=generous%20."
         },
         {
           "w": "guilty",
@@ -279,7 +279,7 @@
           "m": "Culpable of or responsible for a specified wrongdoing.",
           "si": "වරදකාරී හැඟීමක් ඇති",
           "s": "He felt guilty for not studying harder before the test.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=guilty"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=guilty%20."
         },
         {
           "w": "healthy",
@@ -288,7 +288,7 @@
           "m": "In a good physical or mental condition.",
           "si": "සෞඛ්‍ය සම්පන්න",
           "s": "Eating fresh fruit and sleeping well keeps your mind healthy.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=healthy"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=healthy%20."
         },
         {
           "w": "hungry",
@@ -297,14 +297,14 @@
           "m": "Feeling or displaying the need for food.",
           "si": "කුසගින්නෙන් පෙළෙන",
           "s": "After the two-hour lecture, everyone in the class was hungry.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=hungry"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hungry%20."
         }
       ]
     },
     {
       "id": "list_session_7_travel",
       "name": "Session 7 - Travel & Transport",
-      "version": "4.2.0",
+      "version": "5.5.0",
       "published": true,
       "session": "Session 7",
       "date": "2026-10-22",
@@ -314,181 +314,181 @@
           "w": "guidebook",
           "m": "a book that gives information for visitors about a place, such as a city or country",
           "s": "We bought a guidebook to learn about the best museums in Rome.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=guidebook"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=guidebook%20."
         },
         {
           "w": "handlebars",
           "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
           "s": "Hold the handlebars with both hands when you ride down the hill.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=handlebars"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=handlebars%20."
         },
         {
           "w": "harbour",
           "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
           "s": "The fishing boats returned safely to the harbour before the storm.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=harbour"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=harbour%20."
         },
         {
           "w": "helicopter",
           "m": "a type of aircraft without wings that has large blades on top that go round",
           "s": "The rescue helicopter flew over the mountains to find the hikers.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=helicopter"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=helicopter%20."
         },
         {
           "w": "hitchhike",
           "m": "to travel for free by standing by the road and asking drivers for a ride",
           "s": "It is not safe to hitchhike alone along a busy motorway at night.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=hitchhike"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hitchhike%20."
         },
         {
           "w": "immigration",
           "m": "the area at an airport or port where officials check the passports of people entering a country",
           "s": "We showed our passports at immigration after landing in London.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=immigration"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=immigration%20."
         },
         {
           "w": "journey",
           "m": "the act of travelling from one place to another, especially in a vehicle",
           "s": "The train journey from Galle to Colombo takes about two hours.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=journey"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=journey%20."
         },
         {
           "w": "luggage",
           "m": "the bags, suitcases, and things that you take with you when you are travelling",
           "s": "You are allowed one piece of hand luggage on the aircraft.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=luggage"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=luggage%20."
         },
         {
           "w": "machine",
           "m": "a piece of equipment with moving parts that uses power to do a particular job",
           "s": "You can buy your train ticket from the machine at the station.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=machine"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=machine%20."
         },
         {
           "w": "mechanic",
           "m": "someone whose job is repairing the engines of vehicles and other machines",
           "s": "The mechanic repaired our car engine at the garage this morning.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=mechanic"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mechanic%20."
         },
         {
           "w": "nationality",
           "m": "the official right to belong to a particular country",
           "s": "Please write your full name and nationality on the arrival form.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=nationality"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=nationality%20."
         },
         {
           "w": "on business",
           "m": "travelling or staying somewhere as part of your work, not for a holiday",
           "s": "Her father has gone to Singapore on business for three days.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20business"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20business%20."
         },
         {
           "w": "on vacation",
           "m": "away from work or school for a holiday",
           "s": "The office is closed because the manager is away on vacation.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20vacation"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20vacation%20."
         },
         {
           "w": "overnight",
           "m": "for or during the night",
           "s": "We took the overnight ferry and arrived early the next morning.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=overnight"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=overnight%20."
         },
         {
           "w": "passenger",
           "m": "a person who is travelling in a vehicle but is not driving it or working on it",
           "s": "Every passenger must fasten their seatbelt before the plane takes off.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=passenger"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=passenger%20."
         },
         {
           "w": "public transport",
           "m": "buses, trains, and other vehicles that anyone can pay to use",
           "s": "Using public transport helps to reduce traffic in the city centre.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=public%20transport"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=public%20transport%20."
         },
         {
           "w": "reception",
           "m": "the desk in a hotel or office building where visitors go when they first arrive",
           "s": "Please leave your room key at reception when you check out.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=reception"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reception%20."
         },
         {
           "w": "reservation",
           "m": "an arrangement in which something such as a seat or hotel room is kept for you",
           "s": "I called the hotel to make a room reservation for two nights.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=reservation"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reservation%20."
         },
         {
           "w": "road sign",
           "m": "a notice at the side of a road that gives information or instructions to drivers",
           "s": "The road sign warned drivers about a sharp bend ahead.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=road%20sign"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=road%20sign%20."
         },
         {
           "w": "signpost",
           "m": "a sign by the side of a road or path that shows the direction and distance to places",
           "s": "We followed the wooden signpost pointing towards the village.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=signpost"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=signpost%20."
         },
         {
           "w": "spaceship",
           "m": "a vehicle that is able to travel in space",
           "s": "The astronauts travelled to the moon inside a silver spaceship.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=spaceship"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=spaceship%20."
         },
         {
           "w": "suitcase",
           "m": "a large flat box with a handle used for carrying clothes when you travel",
           "s": "She packed her warm winter clothes into a large blue suitcase.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=suitcase"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=suitcase%20."
         },
         {
           "w": "tourist information centre",
           "m": "an office that gives free maps, brochures, and advice to visitors",
           "s": "We got a free city map from the tourist information centre.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tourist%20information%20centre"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tourist%20information%20centre%20."
         },
         {
           "w": "traffic lights",
           "m": "sets of red, amber, and green lights at road junctions that control traffic",
           "s": "Walk across the pedestrian crossing when the traffic lights turn green.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=traffic%20lights"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=traffic%20lights%20."
         },
         {
           "w": "tunnel",
           "m": "a long passage built underground or through a hill for a road or railway",
           "s": "The express train went through a long dark tunnel under the river.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=tunnel"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tunnel%20."
         },
         {
           "w": "tyre/tire",
           "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
           "s": "He had to stop by the road to change a flat tyre on his car.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=tyre"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tyre%20."
         },
         {
           "w": "vehicle",
           "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
           "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=vehicle"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=vehicle%20."
         },
         {
           "w": "visa",
           "m": "an official mark in your passport that allows you to enter or leave a country",
           "s": "You need to apply for a tourist visa before travelling to that country.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=visa"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=visa%20."
         },
         {
           "w": "waiting room",
           "m": "a room at a station, airport, or doctor's surgery where people can sit and wait",
           "s": "The passengers sat in the warm waiting room until the train arrived.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=waiting%20room"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=waiting%20room%20."
         },
         {
           "w": "windscreen",
           "m": "the large glass window at the front of a car, bus, or other vehicle",
           "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
-          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=windscreen"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=windscreen%20."
         }
       ]
     }
@@ -512,11 +512,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "5.4.0",
+  "appVersion": "5.5.0",
   "updatedAt": "2026-10-29T00:00:00Z",
-  "version": "5.4.0",
+  "version": "5.5.0",
   "buildDate": "2026-10-29",
-  "settingsRev": 48,
+  "settingsRev": 49,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -581,7 +581,7 @@
   "lockedVoice": "Amy",
   "updatedAtMs": 1793232000000,
   "adminPin": "78987898",
-  "schema": 48,
+  "schema": 49,
   "pastSessions": [
     {
       "no": "7",
@@ -592,5 +592,6 @@
       "wordCount": 30,
       "archived": true
     }
-  ]
+  ],
+  "key": "sdp.v49_working_sound_system"
 }

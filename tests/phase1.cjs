@@ -286,7 +286,7 @@ test('3.5 sync time advances only after successful state reply', () => withApp({
 test('4.1 remote studio audio needs no device voice and never throws a blocking sheet', () => withApp({voice:'en-US'}, a => {
  a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);
  assert.equal(a.audio.length,1,'the remote human recording plays without speechSynthesis');
- assert.match(a.audio[0].src,/tl=en-GB&ttsspeed=0\.95&q=Hello$/);
+ assert.equal(a.audio[0].src,'https://dict.youdao.com/dictvoice?type=1&audio=Hello%20.','v49: the direct Youdao studio stream is assigned to the master element');
  assert.equal(a.spoken.length,0,'device speech stays disabled');
  assert(!a.q.Speech.textOnly,'never silently dropped into Text mode');
  a.q.Eng.start({});
@@ -296,7 +296,7 @@ test('4.1 remote studio audio needs no device voice and never throws a blocking 
  assert(/NoVoice\s*=\s*\{/.test(current) && current.includes('No UK English voice found on this device'),'the guidance card still exists for Diagnostics');
 }));
 test('4.1 dictionary ranking stays UK while dictation uses the locked Oxford voice', () => withApp({voice:'en-GB'}, a => {
- a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.audio.length);assert(a.audio.every(s=>/youdao|translate\.googleapis|ssl\.gstatic/.test(s.src)));assert.equal(a.spoken.length,0);
+ a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.audio.length);assert(a.audio.every(s=>/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(s.src)),'v49: one direct Youdao stream for every prompt');assert.equal(a.spoken.length,0,'no device voice while the studio stream plays');
  const parsed=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/us.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);
  assert.equal(parsed.audio,'https://audio.example/us.mp3');assert.equal(parsed.ukSource,false);
  assert.equal(a.q.Speech.isBritishAudio('https://audio.example/us.mp3'),false);
@@ -320,7 +320,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
  assert(a.audio.some(s=>/Final%20word%2C%20number%2030/.test(s.src)),'v48: the last word is announced with its dictation number');
- assert(a.audio.filter(s=>s.src.endsWith('&q=hungry')).length>=1,'v48: the second pass replays the clean word on the same element');
+ assert(a.audio.filter(s=>/audio=hungry%20\.$/.test(s.src)).length>=1,'v49: the second pass replays the clean word on the same element');
  assert(a.audio.some(s=>/Number%201%2C/.test(s.src)),'v48: every word announces its dictation number');
  assert.equal(a.spoken.length,0);assert.equal(a.q.Errors.items.length,0);
 }));
@@ -446,7 +446,7 @@ test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a =
  const btn=Array.from(a.w.document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Test sound');
  assert(btn, 'Test sound button');
  const before=a.audio.length; btn.click(); a.clock.tick(500);
- assert(a.audio.length>before); assert(a.audio.slice(before).every(s=>/youdao|translate\.googleapis|ssl\.gstatic/.test(s.src)));assert.equal(a.spoken.length,0);
+ assert(a.audio.length>before); assert(a.audio.slice(before).every(s=>/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(s.src)),'v49: Test sound streams the Youdao studio voice directly');assert.equal(a.spoken.length,0);
 }));
 test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
  assert(current.includes('env(safe-area-inset-top, 0px)'));

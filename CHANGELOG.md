@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.5.0 (v49) — 2026-10-29 (working sound system: direct Youdao studio stream plus a pinned British fallback)
+
+- **Root cause of the v48 silence.** `translate.googleapis.com/translate_tts?client=gtx` answered **HTTP 403** in real browsers (`MEDIA_ERR_SRC_NOT_SUPPORTED`); cross-origin `fetch()` + `caches.open()` + `URL.createObjectURL()` produced **0-byte opaque blobs** because those hosts send no `Access-Control-Allow-Origin`; and the `speechSynthesis` safety net had been disabled, so the app simply went quiet.
+- **Direct streaming, no interception.** Every English line is assigned straight to `#ttsMasterAudio.src` as `https://dict.youdao.com/dictvoice?type=1&audio=<text>%20.`. There is no `fetch()` for audio, no `Blob`, no `createObjectURL`, no Cache API bucket and no `crossOrigin` attribute, so the browser's native media cache handles the cross-origin MP3. `muted = false` and `volume = 1` are re-asserted before every `play()`. `translate.googleapis.com` is gone from `index.html`, `data.html` and `data/index.html`.
+- **Pinned British fallback.** `TTS.speakPinnedSynth(text, onDone, lang)` is active again: an element error, a rejected `play()` or a stream that has not started within **1600 ms** hands the same text to the best available `en-GB` female `speechSynthesis` voice (Microsoft Sonia Online (Natural) → Microsoft Libby Online (Natural) → Google UK English Female → Serena → Amy, `rate 0.96`, `pitch 1.02`, male voices excluded) or `si-LK` for Sinhala, so the app can never be silent.
+- **Zero-bandwidth replay.** Pass 1 says `Number N, <word>`; after the 650 ms studio pause, Pass 2 sets `currentTime = 0` on the already loaded element for **0 KB**. `🔊 Repeat` and `🐢 Slower (0.72×)` reuse the same loaded clip.
+- **Data sheet.** `data.html` and `data/index.html` run the same engine, so all 30 🔊 Play buttons stream the Youdao voice and fall back to the pinned voice on failure.
+- **Smaller bundle.** Removed unreferenced legacy helpers (`urlSheet`, `gasSheet`, `howTo`, `runTour`, `exit`, `isIOS`, the retired synth pickers, `pinBlob`/`pinMedia`) and the dead `.voice-key-row` CSS: `index.html` is now **423,463 bytes**, comfortably under the 425,000-byte target and far below the 430,000-byte gate.
+- **Metadata and storage.** `APP_VERSION 5.5.0`, `ver`/`schema`/`settingsRev` **49**, `CONFIG.key = "sdp.v49_working_sound_system"`, admin PIN `78987898`, Amy voice, paper default; `sdp.v48_cambridge_single_voice` is migrated automatically.
+- **Tests.** `tests/upgrade.test.cjs` was rewritten with `fs.writeFileSync` as 28 v49 gates, and `phase1`, `browser`, `e2e`, `upgrade-browser`, `live-lab`, `server` and the real-Chromium `audit-v42` were migrated to the Youdao contract. All nine suites pass with 0 errors.
+
 ## 5.4.0 (v48) — 2026-10-29 (real Oxford studio voice and the interactive Liquid Glass data report)
 
 - **Removed the generated voice pack.** Deleted `audio/`, its 264 MP3s, `scripts/build-audio.cjs`, the manifest, offline renderers and the audio-pack workflow. No synthetic waveform, formant, espeak or live-device `speechSynthesis` voice is used.
