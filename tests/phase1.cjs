@@ -286,7 +286,7 @@ test('3.5 sync time advances only after successful state reply', () => withApp({
 test('4.1 remote studio audio needs no device voice and never throws a blocking sheet', () => withApp({voice:'en-US'}, a => {
  a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);
  assert.equal(a.audio.length,1,'the remote human recording plays without speechSynthesis');
- assert.match(a.audio[0].src,/hello--_gb_1\.mp3$/);
+ assert.match(a.audio[0].src,/tl=en-GB&ttsspeed=0\.95&q=Hello$/);
  assert.equal(a.spoken.length,0,'device speech stays disabled');
  assert(!a.q.Speech.textOnly,'never silently dropped into Text mode');
  a.q.Eng.start({});
@@ -319,9 +319,9 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.audio.some(s=>s.src.includes('Number%2030')),'v48: the last word is announced with its dictation number');
- assert(a.audio.filter(s=>s.src.endsWith('/hungry--_gb_1.mp3')).length>=2,'v48: both Oxford passes replay the clean word');
- assert(a.audio.some(s=>s.src.includes('Number%201')),'v48: every word announces its dictation number');
+ assert(a.audio.some(s=>/Final%20word%2C%20number%2030/.test(s.src)),'v48: the last word is announced with its dictation number');
+ assert(a.audio.filter(s=>s.src.endsWith('&q=hungry')).length>=1,'v48: the second pass replays the clean word on the same element');
+ assert(a.audio.some(s=>/Number%201%2C/.test(s.src)),'v48: every word announces its dictation number');
  assert.equal(a.spoken.length,0);assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {

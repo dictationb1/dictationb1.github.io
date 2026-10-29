@@ -11,7 +11,7 @@
     "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
     "branch": "CCBE Galle Branch",
     "mode": "paper",
-    "voice": "Oxford GB Female",
+    "voice": "Amy",
     "writeFixed": 5,
     "repeats": 2,
     "adminPin": "78987898",
@@ -36,7 +36,7 @@
           "m": "Feeling fear or anxiety; frightened.",
           "si": "බියට පත් වූ",
           "s": "She was never afraid of speaking in front of a large audience.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/afraid--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=afraid"
         },
         {
           "w": "amazed",
@@ -45,7 +45,7 @@
           "m": "Greatly surprised; astonished.",
           "si": "මවිතයට පත් වූ",
           "s": "We were amazed by how quickly the students learned the new words.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/amazed--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=amazed"
         },
         {
           "w": "amusing",
@@ -54,7 +54,7 @@
           "m": "Causing laughter and providing entertainment.",
           "si": "විනෝදජනක",
           "s": "The lecturer told an amusing story at the start of the lesson.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/amusing--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=amusing"
         },
         {
           "w": "annoyed",
@@ -63,7 +63,7 @@
           "m": "Slightly angry; irritated.",
           "si": "කෝපයට හෝ කරදරයට පත් වූ",
           "s": "He felt annoyed when he missed the morning bus by ten seconds.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/annoyed--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=annoyed"
         },
         {
           "w": "anxious",
@@ -72,7 +72,7 @@
           "m": "Experiencing worry, unease, or nervousness.",
           "si": "කනස්සල්ලෙන් සිටින",
           "s": "Many students feel anxious right before an important examination.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/anxious--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=anxious"
         },
         {
           "w": "ashamed",
@@ -81,7 +81,7 @@
           "m": "Embarrassed or guilty because of one's actions.",
           "si": "ලැජ්ජාවට පත් වූ",
           "s": "He felt ashamed after forgetting his best friend's birthday.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/ashamed--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=ashamed"
         },
         {
           "w": "awesome",
@@ -90,7 +90,7 @@
           "m": "Extremely impressive or daunting; inspiring admiration.",
           "si": "ඉතා විශිෂ්ට",
           "s": "The view from the top of the mountain was truly awesome.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/awesome--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=awesome"
         },
         {
           "w": "boring",
@@ -99,7 +99,7 @@
           "m": "Not interesting; tedious.",
           "si": "කම්මැලි හෝ නීරස",
           "s": "Sitting indoors all afternoon on a rainy day can feel boring.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/boring--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=boring"
         },
         {
           "w": "brilliant",
@@ -108,7 +108,7 @@
           "m": "Exceptionally clever, talented, or impressive.",
           "si": "ඉතා දක්ෂ හෝ විශිෂ්ට",
           "s": "She came up with a brilliant idea for the science project.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/brilliant--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=brilliant"
         },
         {
           "w": "challenging",
@@ -117,7 +117,7 @@
           "m": "Testing one's abilities; demanding.",
           "si": "අභියෝගාත්මක",
           "s": "Learning a new language is challenging but very rewarding.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/challenging--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=challenging"
         },
         {
           "w": "charming",
@@ -126,7 +126,7 @@
           "m": "Very pleasant, polite, or attractive.",
           "si": "ආකර්ෂණීය හෝ සිත්ගන්නාසුලු",
           "s": "They stayed in a charming little cottage near the coast in Galle.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/charming--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=charming"
         },
         {
           "w": "confident",
@@ -135,7 +135,7 @@
           "m": "Feeling sure of oneself and one's abilities.",
           "si": "ආත්ම විශ්වාසයෙන් යුතු",
           "s": "Regular dictation practice makes students confident in their spelling.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/confident--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=confident"
         },
         {
           "w": "confusing",
@@ -144,7 +144,7 @@
           "m": "Bewildering or perplexing; hard to understand.",
           "si": "ව්‍යාකූල කරන",
           "s": "The road signs at the busy junction were quite confusing.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/confusing--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=confusing"
         },
         {
           "w": "cruel",
@@ -153,7 +153,7 @@
           "m": "Wilfully causing pain or suffering to others.",
           "si": "කෲර හෝ නපුරු",
           "s": "It is cruel to keep wild birds locked inside a tiny cage.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/cruel--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=cruel"
         },
         {
           "w": "curious",
@@ -162,7 +162,7 @@
           "m": "Eager to know or learn something.",
           "si": "කුතුහලයෙන් යුතු",
           "s": "The curious child asked dozens of questions about the stars.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/curious--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=curious"
         },
         {
           "w": "delighted",
@@ -171,7 +171,7 @@
           "m": "Feeling or showing great pleasure.",
           "si": "ඉතා සතුටට පත් වූ",
           "s": "Her parents were delighted when she passed the exam with top marks.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/delighted--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=delighted"
         },
         {
           "w": "depressed",
@@ -180,7 +180,7 @@
           "m": "In a state of unhappiness or despondency.",
           "si": "දැඩි කලකිරීමට හෝ දුකට පත් වූ",
           "s": "He felt depressed after his team lost the final match.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/depressed--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=depressed"
         },
         {
           "w": "disappointed",
@@ -189,7 +189,7 @@
           "m": "Sad or displeased because expectations were not met.",
           "si": "බලාපොරොත්තු සුන් වූ",
           "s": "We were disappointed that the concert was cancelled due to rain.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/disappointed--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=disappointed"
         },
         {
           "w": "embarrassing",
@@ -198,7 +198,7 @@
           "m": "Causing a feeling of self-consciousness or shame.",
           "si": "අපහසුතාවයට පත් කරන",
           "s": "Forgetting someone's name during an introduction can be embarrassing.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/embarrassing--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=embarrassing"
         },
         {
           "w": "enjoyable",
@@ -207,7 +207,7 @@
           "m": "Giving delight or pleasure.",
           "si": "රසවත් හෝ සතුටුදායක",
           "s": "We spent a very enjoyable evening talking with our classmates.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/enjoyable--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=enjoyable"
         },
         {
           "w": "excellent",
@@ -216,7 +216,7 @@
           "m": "Extremely good; outstanding.",
           "si": "ඉතා විශිෂ්ට",
           "s": "The restaurant near the harbour serves excellent seafood.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/excellent--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=excellent"
         },
         {
           "w": "excited",
@@ -225,7 +225,7 @@
           "m": "Very enthusiastic and eager.",
           "si": "උද්‍යෝගිමත් වූ",
           "s": "The students were excited about the upcoming school trip.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/excited--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=excited"
         },
         {
           "w": "fantastic",
@@ -234,7 +234,7 @@
           "m": "Extraordinarily good or attractive.",
           "si": "අති විශිෂ්ට",
           "s": "You did a fantastic job completing all thirty dictation words.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/fantastic--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=fantastic"
         },
         {
           "w": "favourite",
@@ -243,7 +243,7 @@
           "m": "Preferred before all others of the same kind.",
           "si": "ප්‍රියතම",
           "s": "English is her favourite subject at the academy.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/favourite--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=favourite"
         },
         {
           "w": "frightened",
@@ -252,7 +252,7 @@
           "m": "Afraid or anxious.",
           "si": "බියට පත් වූ",
           "s": "The little puppy was frightened by the loud thunder.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/frightened--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=frightened"
         },
         {
           "w": "friendly",
@@ -261,7 +261,7 @@
           "m": "Kind, pleasant, and welcoming towards others.",
           "si": "මිත්‍රශීලී",
           "s": "Everyone at the Galle branch gave the new student a friendly welcome.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/friendly--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=friendly"
         },
         {
           "w": "generous",
@@ -270,7 +270,7 @@
           "m": "Showing a readiness to give more of something than is necessary.",
           "si": "ත්‍යාගශීලී",
           "s": "It was very generous of her to share her notes with the whole class.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/generous--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=generous"
         },
         {
           "w": "guilty",
@@ -279,7 +279,7 @@
           "m": "Culpable of or responsible for a specified wrongdoing.",
           "si": "වරදකාරී හැඟීමක් ඇති",
           "s": "He felt guilty for not studying harder before the test.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/guilty--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=guilty"
         },
         {
           "w": "healthy",
@@ -288,7 +288,7 @@
           "m": "In a good physical or mental condition.",
           "si": "සෞඛ්‍ය සම්පන්න",
           "s": "Eating fresh fruit and sleeping well keeps your mind healthy.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/healthy--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=healthy"
         },
         {
           "w": "hungry",
@@ -297,7 +297,7 @@
           "m": "Feeling or displaying the need for food.",
           "si": "කුසගින්නෙන් පෙළෙන",
           "s": "After the two-hour lecture, everyone in the class was hungry.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/hungry--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=hungry"
         }
       ]
     },
@@ -314,67 +314,67 @@
           "w": "guidebook",
           "m": "a book that gives information for visitors about a place, such as a city or country",
           "s": "We bought a guidebook to learn about the best museums in Rome.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/guidebook--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=guidebook"
         },
         {
           "w": "handlebars",
           "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
           "s": "Hold the handlebars with both hands when you ride down the hill.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/handlebars--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=handlebars"
         },
         {
           "w": "harbour",
           "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
           "s": "The fishing boats returned safely to the harbour before the storm.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/harbour--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=harbour"
         },
         {
           "w": "helicopter",
           "m": "a type of aircraft without wings that has large blades on top that go round",
           "s": "The rescue helicopter flew over the mountains to find the hikers.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/helicopter--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=helicopter"
         },
         {
           "w": "hitchhike",
           "m": "to travel for free by standing by the road and asking drivers for a ride",
           "s": "It is not safe to hitchhike alone along a busy motorway at night.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/hitchhike--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=hitchhike"
         },
         {
           "w": "immigration",
           "m": "the area at an airport or port where officials check the passports of people entering a country",
           "s": "We showed our passports at immigration after landing in London.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/immigration--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=immigration"
         },
         {
           "w": "journey",
           "m": "the act of travelling from one place to another, especially in a vehicle",
           "s": "The train journey from Galle to Colombo takes about two hours.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/journey--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=journey"
         },
         {
           "w": "luggage",
           "m": "the bags, suitcases, and things that you take with you when you are travelling",
           "s": "You are allowed one piece of hand luggage on the aircraft.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/luggage--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=luggage"
         },
         {
           "w": "machine",
           "m": "a piece of equipment with moving parts that uses power to do a particular job",
           "s": "You can buy your train ticket from the machine at the station.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/machine--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=machine"
         },
         {
           "w": "mechanic",
           "m": "someone whose job is repairing the engines of vehicles and other machines",
           "s": "The mechanic repaired our car engine at the garage this morning.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/mechanic--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=mechanic"
         },
         {
           "w": "nationality",
           "m": "the official right to belong to a particular country",
           "s": "Please write your full name and nationality on the arrival form.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/nationality--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=nationality"
         },
         {
           "w": "on business",
@@ -392,13 +392,13 @@
           "w": "overnight",
           "m": "for or during the night",
           "s": "We took the overnight ferry and arrived early the next morning.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/overnight--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=overnight"
         },
         {
           "w": "passenger",
           "m": "a person who is travelling in a vehicle but is not driving it or working on it",
           "s": "Every passenger must fasten their seatbelt before the plane takes off.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/passenger--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=passenger"
         },
         {
           "w": "public transport",
@@ -410,13 +410,13 @@
           "w": "reception",
           "m": "the desk in a hotel or office building where visitors go when they first arrive",
           "s": "Please leave your room key at reception when you check out.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/reception--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=reception"
         },
         {
           "w": "reservation",
           "m": "an arrangement in which something such as a seat or hotel room is kept for you",
           "s": "I called the hotel to make a room reservation for two nights.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/reservation--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=reservation"
         },
         {
           "w": "road sign",
@@ -428,19 +428,19 @@
           "w": "signpost",
           "m": "a sign by the side of a road or path that shows the direction and distance to places",
           "s": "We followed the wooden signpost pointing towards the village.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/signpost--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=signpost"
         },
         {
           "w": "spaceship",
           "m": "a vehicle that is able to travel in space",
           "s": "The astronauts travelled to the moon inside a silver spaceship.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/spaceship--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=spaceship"
         },
         {
           "w": "suitcase",
           "m": "a large flat box with a handle used for carrying clothes when you travel",
           "s": "She packed her warm winter clothes into a large blue suitcase.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/suitcase--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=suitcase"
         },
         {
           "w": "tourist information centre",
@@ -458,25 +458,25 @@
           "w": "tunnel",
           "m": "a long passage built underground or through a hill for a road or railway",
           "s": "The express train went through a long dark tunnel under the river.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/tunnel--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=tunnel"
         },
         {
           "w": "tyre/tire",
           "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
           "s": "He had to stop by the road to change a flat tyre on his car.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/tyre--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=tyre"
         },
         {
           "w": "vehicle",
           "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
           "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/vehicle--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=vehicle"
         },
         {
           "w": "visa",
           "m": "an official mark in your passport that allows you to enter or leave a country",
           "s": "You need to apply for a tourist visa before travelling to that country.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/visa--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=visa"
         },
         {
           "w": "waiting room",
@@ -488,7 +488,7 @@
           "w": "windscreen",
           "m": "the large glass window at the front of a car, bus, or other vehicle",
           "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
-          "audio": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/windscreen--_gb_1.mp3"
+          "audio": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-GB&ttsspeed=0.95&q=windscreen"
         }
       ]
     }
@@ -524,7 +524,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v48_real_oxford_voice",
+  "storageKey": "sdp.v48_cambridge_single_voice",
   "repoVideos": [
     {
       "id": "media_bunny_live_wallpaper",
@@ -577,8 +577,8 @@
   ],
   "lang": "en",
   "guideLang": "en",
-  "voice": "Oxford GB Female",
-  "lockedVoice": "Oxford GB Female",
+  "voice": "Amy",
+  "lockedVoice": "Amy",
   "updatedAtMs": 1793232000000,
   "adminPin": "78987898",
   "schema": 48,
