@@ -21,7 +21,8 @@
     "adminPin": "78987898",
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "activeMediaType": "video",
-    "videoPlaylistMode": "loop"
+    "videoPlaylistMode": "loop",
+    "perf": "full"
   },
   "listId": "list_session_8_feelings",
   "defaults": {
@@ -35,7 +36,7 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6,
     "theme": "dark",
-    "perf": "auto",
+    "perf": "full",
     "glassTint": 0,
     "wallpaperVideo": true,
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
@@ -48,8 +49,8 @@
     "adminPin": "78987898",
     "liveSync": false
   },
-  "ver": 49,
-  "version": "5.5.0",
+  "ver": 50,
+  "version": "5.6.0",
   "buildDate": "2026-10-29",
   "credits": {
     "createdBy": "Hansana",
@@ -59,9 +60,9 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "Direct streamed Youdao en-GB studio MP3 assigned to #ttsMasterAudio (native media cache, no fetch/Blob) with a pinned British female speechSynthesis fallback after 1600 ms",
-    "englishVoice": "Single unified Cambridge British woman studio voice (en-GB)",
-    "sinhalaGuideVoice": "Locked device si-LK female speechSynthesis fallback",
+    "engine": "Direct Youdao UK dictionary requests, Google dictionary UK backup for single words, then device speech synthesis if needed",
+    "englishVoice": "UK dictionary recording where available; British device voice fallback",
+    "sinhalaGuideVoice": "Youdao Sinhala request; si-LK device voice or approximate romanisation fallback when unavailable",
     "lockedVoice": "Amy",
     "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
@@ -70,20 +71,21 @@
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
     "silenceBetweenRepeatsMs": 650,
-    "numberToWordBeatMs": 0,
+    "numberToWordBeatMs": 120,
     "slowPlaybackRate": 0.72,
-    "pass2": "currentTime=0 on the already loaded master element; 0 KB",
-    "headlessErrorDelayMs": 50,
+    "pass2": "Replay the identical loaded word URL using currentTime=0 when available",
     "startTimeoutMs": 1600,
-    "fallback": "speechSynthesis pinned to Microsoft Sonia Online (Natural) / Microsoft Libby Online (Natural) / Google UK English Female / Serena / Amy at rate 0.96 pitch 1.02"
+    "fallback": "On media failure or timeout, prefer an available British female speechSynthesis voice; Sinhala falls back to si-LK or approximate romanisation",
+    "singleWordBackup": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
+    "sinhalaBase": "https://dict.youdao.com/dictvoice?type=1&le=si&audio="
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.5.0",
-  "settingsRev": 49,
+  "appVersion": "5.6.0",
+  "settingsRev": 50,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -106,10 +108,10 @@
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h",
-    "engine": "zero-waste v48 single cambridge british voice",
+    "engine": "v50 direct dictionary playback",
     "bootAudioPreload": "none - the welcome clip is fetched only when Start dictation is tapped",
-    "rollingWindow": "current word + next word only (TTS.preloadRollingWindow)",
-    "persistentCache": "Single in-memory #ttsMasterAudio replay plus rolling two-word audio preloads",
+    "rollingWindow": "no audio prefetch",
+    "persistentCache": "The current loaded audio element can be replayed; browser caching varies",
     "ntfyPolling": "off until Live Sync is enabled in Community",
     "versionJsonCache": "ETag / 304 friendly (no cache:no-store)",
     "measured": {
@@ -119,8 +121,8 @@
     },
     "publicSheet": "https://dictationb1.github.io/data"
   },
-  "key": "sdp.v49_working_sound_system",
-  "storageKey": "sdp.v48_cambridge_single_voice",
+  "key": "sdp.v50_all_p0_p6_fixed",
+  "storageKey": "sdp.v50_all_p0_p6_fixed",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -308,16 +310,17 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "voice": "Single unified Cambridge British woman studio voice (en-GB)",
+    "voice": "British dictionary audio where available, with device speech fallback",
     "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "lang": "en-GB",
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
-    "bundle": "none - real remote recordings only"
+    "bundle": "none - remote dictionary requests and device fallback",
+    "singleWordBackup": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3"
   },
   "voiceProfile": {
-    "name": "Single unified Cambridge British woman studio voice (en-GB)",
+    "name": "British dictionary audio with device voice fallback",
     "voice": "Amy",
     "studioVoice": "Amy",
     "accentRequest": "en-GB",
@@ -338,13 +341,13 @@
     "motion": {
       "press": "0.04s",
       "release": "0.20s spring",
-      "credit": "8s disappearing/reappearing cycle"
+      "credit": "7s disappearing/reappearing cycle, including reduced-motion preference"
     }
   },
   "updatedAt": "2026-10-29T00:00:00Z",
   "updatedAtMs": 1793232000000,
   "adminPin": "78987898",
-  "schema": 49,
+  "schema": 50,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",
@@ -359,5 +362,6 @@
       "wordCount": 30,
       "archived": true
     }
-  ]
+  ],
+  "perf": "full"
 }

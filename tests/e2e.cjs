@@ -28,7 +28,7 @@ function mockSpeech() {
   };
   Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true, writable: true });
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.volume = 1; this.pitch = 1; this.voice = null; };
-  /* v49: record every remote studio-audio play without contacting the network. */
+  /* Record requested remote-audio URLs without contacting the providers. */
   const media = window.HTMLMediaElement.prototype;
   const play = media.play, load = media.load, pause = media.pause;
   media.load = function () { if (this.id !== 'ttsMasterAudio') return load.call(this); };
@@ -37,18 +37,18 @@ function mockSpeech() {
     const el = this;
     if (el.id !== 'ttsMasterAudio') return play.apply(el, arguments);
     const src = String(el.getAttribute('src') || '');
-    let text = src, lang = 'en-GB', voice = 'Real Remote Human Studio';
+    let text = src, lang = 'en-GB', voice = 'Mocked remote audio';
     try {
       if (/translate\.googleapis\.com/.test(src)) {
         const parsed = new URL(src);
         text = parsed.searchParams.get('q') || src;
-        if (parsed.searchParams.get('tl') === 'si') lang = 'si';
-        voice = 'Cambridge British Studio';
+        if (parsed.searchParams.get('tl') === 'si' || parsed.searchParams.get('le') === 'si') lang = 'si';
+        voice = 'Mocked Google speech';
       } else {
         const parsed = new URL(src);
         text = parsed.searchParams.get('audio') || parsed.searchParams.get('q') || src;
-        if (parsed.searchParams.get('tl') === 'si') lang = 'si';
-        if (/youdao/.test(src)) voice = 'Youdao UK Studio';
+        if (parsed.searchParams.get('tl') === 'si' || parsed.searchParams.get('le') === 'si') lang = 'si';
+        if (/youdao/.test(src)) voice = 'Mocked Youdao speech';
       }
     } catch (e) {}
     window.__spoken.push({ text: text, lang: lang, voice: voice, rate: el.playbackRate, clip: src });
@@ -58,7 +58,7 @@ function mockSpeech() {
   };
 }
 
-const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
+const storage = p => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || 'null') || (window.DB && window.DB.data) || null; } catch (e) { return (window.DB && window.DB.data) || null; } });
 const spoken = p => p.evaluate(() => window.__spoken || []);
 const fatal = p => p.locator('#fatal').isVisible();
 
@@ -243,12 +243,12 @@ async function flow(browser, vp, label, seed) {
     if (!TTS) return false;
     const word = String(TTS.getSingleVoiceUrl('bicycle'));
     const si = String(TTS.getSingleVoiceUrl('bicycle', 'si'));
-    return word === YOUDAO + 'bicycle%20.' && si === '' && String(TTS.CACHE_NAME) === 'sdp-voice-v49';
+    return word === YOUDAO + 'bicycle' && si === 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=bicycle' && String(TTS.CACHE_NAME) === 'sdp-voice-v50';
   });
   /* v41: the opening audio is the brief pre-ready instruction (or, on a live
      browser, the single studio clip in #ttsMasterAudio) - never a filler cue. */
   const opening = heard.slice(0, 3).map(x => String(x.text).trim().toLowerCase()).join(' ');
-  rec(label + ' one unified Cambridge British en-GB voice, zero filler greeting',
+  rec(label + ' clean British word URL and Sinhala route, zero filler greeting',
     tier1 && !/listen again|once more|one more time|spot on/.test(opening),
     { tier1, first: heard[0] && heard[0].text, lang: heard[0] && heard[0].lang, voice: heard[0] && heard[0].voice });
 
@@ -257,7 +257,7 @@ async function flow(browser, vp, label, seed) {
   const histBefore = (snap0.history || []).length;   /* old-build fixture already has one session */
   /* let each word finish speaking, then move on - never cut the speech short */
   for (let i = 0; i < words.length + 6; i++) {
-    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
+    const done = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.history || []).length; });
     if (done > histBefore) break;
     try { await page.waitForFunction(() => {
       const n = document.querySelector('#plStatus');
@@ -298,14 +298,14 @@ async function flow(browser, vp, label, seed) {
     await page.waitForTimeout(200);
   }
   const snapBefore = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'none';
   });
   const statusBefore = await page.locator('#plStatus').textContent().catch(() => 'no player');
   await page.reload();
   await page.waitForSelector('#homeTitle', { state: 'attached' });
   const probe = () => page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     const rc = document.querySelector('#homeResume');
     return { snap: d.snapshot ? d.snapshot.index + '/' + d.snapshot.words.length : 'gone', rc: rc ? rc.className : 'missing' };
   });
@@ -341,8 +341,8 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
   await page.waitForTimeout(400);
   const commTxt = await page.locator('#commList').textContent();
-  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
-  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
+  const who = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return d.profile ? d.profile.nickname : ''; });
+  const badge = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return (d.comments && d.comments[0] || {}).status; });
   rec(label + ' anonymous comment posted with name and result badge',
     commTxt.includes('E2E check') && commTxt.includes(who) && !!badge,
     { nickname: who, badge: badge, nameShown: commTxt.includes(who) });
@@ -360,7 +360,7 @@ async function flow(browser, vp, label, seed) {
   /* the app re-saves its own data on unload, so clear the rate window on the
      way back in, before the app script runs again */
   await page.addInitScript(() => {
-    const key = ['sdp.v49_working_sound_system','sdp.v46_session8_datasheet','sdp.v44_apple_liquid_complete','sdp.v21_guide_start','sdp.v4_tue20','sdp.v1'].filter(k => localStorage.getItem(k))[0] || 'sdp.v1';
+    const key = ['sdp.v50_all_p0_p6_fixed','sdp.v46_session8_datasheet','sdp.v44_apple_liquid_complete','sdp.v21_guide_start','sdp.v4_tue20','sdp.v1'].filter(k => localStorage.getItem(k))[0] || 'sdp.v1';
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try { const d = JSON.parse(raw); d.rate = { last: 0, hourStart: 0, hourCount: 1 }; localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
@@ -377,7 +377,7 @@ async function flow(browser, vp, label, seed) {
   await page.locator('#sheets').getByRole('button', { name: 'Send to lecturer', exact: true }).click();
   await page.waitForTimeout(500);
   const priv = await page.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
+    const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {};
     return (d.sentMessages || []).concat(d.inbox || []).map(m => m.text).join('|');
   });
   const sentToast = (await page.locator('#toasts').textContent()).slice(0, 120);
@@ -398,17 +398,23 @@ async function flow(browser, vp, label, seed) {
     args: serverChromium.args.filter(a => !['--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'].includes(a))
   });
 
-  /* storage written by the OLD build (commit 7577968, v1.0.0) must still load */
-  let oldSeed = null;
+  /* Test the actual 1.0.0 storage when its Git object is available. A shallow
+     checkout cannot produce this fixture; report a skip rather than testing a
+     fresh session under the misleading label "storage from old build". */
+  let oldSeed = null, oldError = '', oldContext = null, oldBuildAvailable = false;
   try {
+    cp.execFileSync('git', ['cat-file', '-e', '7577968:index.html'], { cwd: root, stdio: 'ignore' });
+    oldBuildAvailable = true;
+  } catch (_) {}
+  if (oldBuildAvailable) try {
     /* the 1.0.0 build dies on classList.add("") before it can save, so use its
        documented one-line class-token hotfix to let it write real 1.0.0 data */
     const base = cp.execFileSync('git', ['show', '7577968:index.html'], { cwd: root, maxBuffer: 4e6 }).toString()
       .replace('chip.classList.add(Cloud.mode && online ? "good" : "");', 'if (Cloud.mode && online) chip.classList.add("good");');
     const tmp = path.join(require('os').tmpdir(), 'sdp-old-build.html');
     require('fs').writeFileSync(tmp, base);
-    const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const p = await c.newPage();
+    oldContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p = await oldContext.newPage();
     await p.addInitScript(mockSpeech);
     await p.route('**/*', r => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
     await p.goto(require('url').pathToFileURL(tmp).href);
@@ -428,18 +434,24 @@ async function flow(browser, vp, label, seed) {
       localStorage.setItem('sdp.v1', JSON.stringify(d));
       return localStorage.getItem('sdp.v21_guide_start');
     });
-    await c.close();
   } catch (e) {
-    oldSeed = null;
+    oldError = String(e && e.message || e);
+  } finally {
+    if (oldContext) await oldContext.close();
   }
-  rec('old-version storage fixture captured', true, { detail: oldSeed ? 'captured' : 'skipped baseline check' });
+  if (oldBuildAvailable) {
+    rec('old-version storage fixture captured', !!oldSeed, { detail: oldSeed ? 'captured' : (oldError || 'fixture was empty') });
+  } else {
+    results.push({ test: 'old-version storage fixture and flow', status: 'SKIP', detail: 'historical Git object 7577968 is unavailable' });
+    console.error('[SKIP] old-version storage fixture and flow: historical Git object 7577968 is unavailable');
+  }
 
   const only = process.env.SDP_E2E_ONLY || '';
   for (const [vp, label] of [[[390, 844], 'iPhone 390x844'], [[360, 640], 'low-end Android 360x640'], [[1280, 800], 'desktop 1280x800']]) {
     if (only && !label.toLowerCase().includes(only.toLowerCase())) continue;
     await flow(browser, vp, label + ' / fresh storage:', null);
   }
-  if (!only || only === 'old') await flow(browser, [390, 844], 'iPhone 390x844 / storage from old build:', oldSeed);
+  if (oldSeed && (!only || only === 'old')) await flow(browser, [390, 844], 'iPhone 390x844 / storage from old build:', oldSeed);
 
   /* offline boot and offline comment queue */
   if (!only || only === 'offline') {
@@ -460,7 +472,7 @@ async function flow(browser, vp, label, seed) {
     await p.locator('#sheets textarea[aria-label="Comment text"]').fill('Offline comment stays on this device.');
     await p.locator('#sheets').getByRole('button', { name: 'Post comment', exact: true }).click();
     await p.waitForTimeout(300);
-    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v49_working_sound_system')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
+    const st = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start') || localStorage.getItem('sdp.v4_tue20') || localStorage.getItem('sdp.v1') || '{}') || (window.DB && window.DB.data) || {}; return { c: (d.comments && d.comments[0] ? d.comments[0].text : ''), q: (d.outbox || []).length }; });
     rec('offline: app boots, comment kept on device', !await fatal(p) && st.c.includes('Offline comment') && errs.length === 0, { outbox: st.q, errs });
     await c.close();
   }

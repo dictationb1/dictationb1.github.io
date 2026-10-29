@@ -192,7 +192,7 @@ function device(html, base) {
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (String(posted.session.no) !== NEXT_NO) throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      /* v49: every published single word carries the one unified Youdao Cambridge British en-GB stream. */
+      /* Every published single word carries a clean Youdao dictionary URL. */
       if (!posted.lists[0].words.every(x => x.m && x.s && /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(x.audio))) throw Error('a word has no B1 meaning/sentence/UK audio');
     });
 

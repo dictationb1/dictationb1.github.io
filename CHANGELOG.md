@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.6.0 (v50) — 2026-10-29
+
+- Request clean UK dictionary URLs for words, announce the number separately, and replay the same word recording; use the Google UK dictionary as a backup before device synthesis. Sinhala requests are chunked, with an installed Sinhala voice or approximate romanisation as fallback. External voice quality and host support are not guaranteed by the app.
+- Reapply both audio playback rates after `load()` and media events. Fix asynchronous voice discovery and cancellation of stale playback/unlock callbacks.
+- Start the five-second writing timer after helper audio finishes; add Pause/Resume and wait for the resume prompt before restarting the word.
+- Default migrated and fresh settings to Full, retain a subsequently selected Lite mode and display glass highlights in both modes. The redesigned credit animation continues under reduced motion, with player-header clearance.
+- Migrate v49 storage without losing learner data; update metadata, the bilingual data page and the ES5, unit, Chromium and integration regression gates.
+
 ## 5.5.0 (v49) — 2026-10-29 (working sound system: direct Youdao studio stream plus a pinned British fallback)
 
 - **Root cause of the v48 silence.** `translate.googleapis.com/translate_tts?client=gtx` answered **HTTP 403** in real browsers (`MEDIA_ERR_SRC_NOT_SUPPORTED`); cross-origin `fetch()` + `caches.open()` + `URL.createObjectURL()` produced **0-byte opaque blobs** because those hosts send no `Access-Control-Allow-Origin`; and the `speechSynthesis` safety net had been disabled, so the app simply went quiet.

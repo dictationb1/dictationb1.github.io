@@ -2,7 +2,7 @@
 
 These packages are development-only. `index.html`, `data.html` and `data/index.html` load none of them and contain strict ES5 application JavaScript.
 
-## Nine v48 release gates
+## Nine v50 release gates
 
 From the repository root:
 
@@ -20,17 +20,17 @@ node tests/audit-v42.cjs
 ```
 
 - `check.cjs` extracts and parses the app and both data-route scripts as ES5, rejects static `<link>` tags and enforces the byte budgets.
-- `upgrade.test.cjs` verifies v48/5.4.0 metadata, Session 8 and archived Session 7, spelling pairs, Oxford/Youdao/Google routing, 150/650 ms timing, 0 KB Pass 2, 0.72× replay, rolling preloads, 50 ms headless completion, Sinhala chunks and the interactive data pages.
+- `upgrade.test.cjs` verifies v50 metadata, storage migration, clean dictionary URLs, 120/650 ms timing, same-element replay, 0.72× playback, cancellation, Sinhala chunks and fallbacks, helper timers, pause/resume and the data pages.
 - `phase1.cjs` retains boot, recovery, PIN, editor, sharing, accessibility and fake-timer dictation regressions. Historical before/after cases skip if commit `7577968` is not present.
 - `browser.cjs` and `upgrade-browser.cjs` exercise real Chromium layout, wallpaper, Liquid Glass, credit, PIN, sharing, typing, results and media behavior.
-- `e2e.cjs` drives complete fresh/old-storage flows at phone and desktop sizes, including ordered remote audio, resume, comments and offline behavior. `SDP_E2E_ONLY=old|offline|iphone|360|1280` selects a subset.
+- `e2e.cjs` drives complete fresh/old-storage flows at phone and desktop sizes, including ordered remote audio, resume, comments and offline behavior. The v1.0.0 Git-object fixture and flow are explicitly skipped if historical commit `7577968` is unavailable; v49 migration is also covered by the v50 tests. `SDP_E2E_ONLY=old|offline|iphone|360|1280` selects a subset.
 - `server.cjs` executes the Apps Script against mock Sheet, Cache, Properties and Lock services. It does not verify a live Google deployment.
 - `live-lab.cjs` boots two independent devices against a local repository server and in-process ntfy emulator, then verifies publishing, live receipt, completion and honest offline status.
-- `audit-v42.cjs` retains its historical filename but is the v48 real-Chromium audio audit. It records remote media, checks countdown/word timing and same-element replay, and verifies clean failure completion without device speech.
+- `audit-v42.cjs` retains its historical filename but audits v50 in Chromium. It records remote media, checks countdown/word timing and same-element replay, and exercises device-speech failure fallback.
 
 ## Remote-audio mocks
 
-The tests never require the deleted `audio/` pack, an audio manifest, generated waveforms or a device voice. Browser and jsdom harnesses record Oxford, Youdao and Google URLs and simulate media completion. Some tests intentionally exercise ordered fallbacks and late stale errors. These mocks verify application sequencing, not audible pronunciation or a remote host's availability.
+The tests never require the deleted `audio/` pack, an audio manifest or a real installed device voice. Browser and jsdom harnesses record Oxford, Youdao and Google URLs and simulate media completion. The v50 browser checks also deliver a local silent WAV response to a real Chromium media element. Some tests intentionally exercise ordered fallbacks and late stale errors. These mocks verify application sequencing, not audible pronunciation or a remote host's availability.
 
 No test needs real cloud credentials. Raw traces, screenshots and extracted scripts stay in ignored `tests/artifacts/`.
 

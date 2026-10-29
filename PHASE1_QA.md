@@ -1,6 +1,6 @@
 # Phase 1 candidate: QA and release report
 
-> **Current release:** v5.4.0 / v48 (2026-10-29). The current app uses real remote Oxford/Youdao/Google audio and contains no local audio pack or generator. Run the nine current gates documented in `tests/README.md`. The v43/v46 commands, byte counts, audio manifests and release observations below are retained only as historical evidence and do not describe v48.
+> **Current release:** v5.6.0 / v50 (2026-10-29). This document describes a historical candidate, not the current release. Run the nine gates in `tests/README.md`; mocked provider requests do not verify external audio quality or availability.
 
 **Status: incomplete, not merged, not deployed.** Chromium ran successfully here. WebKit did not run locally because its executable is absent. Real WebKit subsequently passed on GitHub CI (see below). A real iPhone, Android phone and Windows PC were not available. The live Pages host could not be reached from this sandbox. Later phases have not started.
 
