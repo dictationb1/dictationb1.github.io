@@ -5,7 +5,7 @@
    free ntfy.sh API (POST + /json?poll=1&since=all + /sse) on the same origin,
    then boots TWO independent devices:
 
-     Device A  the lecturer   publishes "Session 4 words" from Admin mode
+     Device A  the lecturer   publishes "Session 9 words" from Admin mode
      Device B  a student      must see those 30 words without a reload
 
    Run: node tests/live-lab.cjs
@@ -140,11 +140,17 @@ function device(html, base) {
     const stateTopic = student.q.CONFIG.ntfyState;
     const commTopic = student.q.CONFIG.ntfyComm;
     const session = JSON.parse(fs.readFileSync(path.join(root, 'data/session.json'), 'utf8')).session;
-    await waitUntil(() => requests.some(r => r.startsWith('GET /data/session.json')) &&
-      requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse') && student.q.Cloud.live.ok);
+    const NEXT_NO = '9';
+    await waitUntil(() => requests.some(r => r.startsWith('GET /data/session.json')));
     check('boot sync loads repository version and session data', () =>
       { if (!requests.some(r => r.startsWith('GET /data/version.json')) || !requests.some(r => r.startsWith('GET /data/session.json'))) throw Error('no boot fetch: ' + requests.join(' | ')); });
-    check('boot sync opens the live SSE stream on the state and community topics', () =>
+    /* W-5: nothing at all may touch ntfy.sh before the reader switches Live Sync on */
+    check('boot sends zero ntfy.sh traffic (W-5 opt-in live sync)', () =>
+      { const live = requests.filter(r => /sdp_dictationb1_|ntfy/.test(r)); if (live.length) throw Error('eager live traffic: ' + live.join(' | ')); });
+    student.q.Cloud.enableLive();
+    lecturer.q.Cloud.enableLive();
+    await waitUntil(() => requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse') && student.q.Cloud.live.ok);
+    check('opting into Live Sync opens the SSE stream on the state and community topics', () =>
       { if (!requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse')) throw Error(requests.join(' | ')); });
     check('the student picked up the published B1 session from the repository', () => {
       const d = student.q.DB.data;
@@ -158,7 +164,7 @@ function device(html, base) {
 
     /* --- the lecturer publishes a new list for Session 4 ---------------- */
     const L = lecturer.q;
-    const list = { id: 'list_session4', name: 'Session 4 words', words: [], version: 1, published: false, draft: true };
+    const list = { id: 'list_session9', name: 'Session 9 words', words: [], version: 1, published: false, draft: true };
     L.DB.data.lists.push(list);
     L.DB.data.outbox = [];
     L.Admin.unlocked = true;
@@ -167,24 +173,24 @@ function device(html, base) {
     L.Admin.editListId = list.id;
     L.DB.data.plan.pinned = list.id;
     L.DB.data.session.title = list.name;
-    L.Admin.saveAll(list, words, ['2026-10-21'], null);
+    L.Admin.saveAll(list, words, ['2026-11-05'], null);
     L.Admin.unlocked = false;
-    await waitUntil(() => (topics[stateTopic] || []).length && String(student.q.DB.data.session.no) === '4');
+    await waitUntil(() => (topics[stateTopic] || []).length && String(student.q.DB.data.session.no) === NEXT_NO);
     check('one publish posts the whole session to the ntfy state topic', () =>
       { if (!(topics[stateTopic] || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
     check('the lecturer Home header is internally consistent (SESSION 4 + the same title)', () => {
       const kicker = lecturer.w.document.getElementById('homeKicker').textContent;
       const title = lecturer.w.document.getElementById('homeTitle').textContent;
-      if (!/^SESSION 4\b/i.test(kicker)) throw Error('kicker: ' + kicker);
-      if (!/Session 4 words/.test(title)) throw Error('title: ' + title);
-      if (kicker.indexOf('21/10/2026') < 0) throw Error('kicker has no real session date: ' + kicker);
+      if (!/^SESSION 9\b/i.test(kicker)) throw Error('kicker: ' + kicker);
+      if (!/Session 9 words/.test(title)) throw Error('title: ' + title);
+      if (kicker.indexOf('05/11/2026') < 0) throw Error('kicker has no real session date: ' + kicker);
     });
     check('the published session is 30 real words with British audio urls', () => {
       const sent = topics[stateTopic] || [];
       if (!sent.length) throw Error('no state payload');
       const posted = JSON.parse(sent[sent.length - 1]);
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
-      if (posted.session.no !== '4') throw Error('no ' + posted.session.no);
+      if (String(posted.session.no) !== NEXT_NO) throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
       /* v43: the shipped session words resolve to the committed same-origin
          ./audio/word-<slug>.mp3 pack; a custom word keeps the documented
@@ -193,19 +199,19 @@ function device(html, base) {
     });
 
     /* --- the student phone updates itself, live -------------------------- */
-    check('the student phone received Session 4 over the live stream without a reload', () => {
+    check('the student phone received Session 9 over the live stream without a reload', () => {
       const S = student.q, d = S.DB.data;
-      if (String(d.session.no) !== '4') throw Error('student session no ' + d.session.no);
+      if (String(d.session.no) !== NEXT_NO) throw Error('student session no ' + d.session.no);
       if (S.Lib.current().words.length !== 30) throw Error('student words ' + S.Lib.current().words.length);
       const kicker = student.w.document.getElementById('homeKicker').textContent;
-      if (!/^SESSION 4\b/i.test(kicker)) throw Error('student kicker: ' + kicker);
+      if (!/^SESSION 9\b/i.test(kicker)) throw Error('student kicker: ' + kicker);
     });
     check('the student outbox is empty (nothing stuck as "1 waiting")', () =>
       { if (student.q.DB.data.outbox.length) throw Error('outbox ' + student.q.DB.data.outbox.length); });
 
     /* --- a student finishes and the lecturer sees it live ---------------- */
     student.q.DB.data.results = [];
-    student.q.Cloud.postCompletion({ id: 'lab-res-1', ts: Date.now(), sessionNo: '4', wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: false, mode: 'paper' });
+    student.q.Cloud.postCompletion({ id: 'lab-res-1', ts: Date.now(), sessionNo: NEXT_NO, wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: false, mode: 'paper' });
     await waitUntil(() => (topics[commTopic] || []).length && lecturer.q.DB.data.results.some(r => r.id === 'lab-res-1'));
     check('a finished session is broadcast to the community topic', () =>
       { if (!(topics[commTopic] || []).length) throw Error('no comm post'); });

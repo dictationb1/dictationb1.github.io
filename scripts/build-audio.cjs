@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* Build the v44 same-origin studio pack. Requires Python and edge-tts:
+/* Build the v46 same-origin studio pack (Session 8 + archived Session 7). Requires Python and edge-tts:
  *   python -m pip install edge-tts
  *   node scripts/build-audio.cjs --force
  *   node scripts/build-audio.cjs --verify
@@ -50,7 +50,7 @@ function buildManifest() {
   add('welcome-type.mp3', "Welcome. Each word is read twice. Type your answer and press Enter. Click I'm ready to begin.", 'system');
   add('guide-en.mp3', GUIDE_EN, 'guide');
   add('guide-si.mp3', GUIDE_SI, 'guide', SI);
-  add('sound-check.mp3', 'Sound check. Number 1, bicycle.', 'system');
+  add('sound-check.mp3', 'Sound check. Number 1, afraid.', 'system');
   add('count-3.mp3', 'Three.', 'count');
   add('count-2.mp3', 'Two.', 'count');
   add('count-1.mp3', 'One.', 'count');
@@ -71,7 +71,9 @@ function buildManifest() {
     add('sent-' + slug + '.mp3', sentence, 'sentence');
     add('spell-' + slug + '.mp3', spelling(word), 'spelling');
   }
-  return {ver:44, engine:'Microsoft Edge neural TTS', englishVoice:EN, sinhalaVoice:SI, clips, words:allWords()};
+  return {ver:46, engine:'Microsoft Edge neural TTS', englishVoice:EN, sinhalaVoice:SI,
+    note:'Rendered with en-GB-SoniaNeural. scripts/render-offline.py is the offline espeak-ng fallback used when the neural endpoint is unreachable; re-run with --force to re-render the identical text in the neural voice.',
+    clips, words:allWords()};
 }
 function writeManifest(manifest) { fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n'); }
 function verify(manifest) {

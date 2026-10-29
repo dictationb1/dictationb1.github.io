@@ -11,6 +11,7 @@ function harness(seed,opts={}){
  const clock=FakeTimers.withGlobal(w).install({now:Date.UTC(2026,9,14,12),toFake:['Date','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
  w.scrollTo=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){}});w.HTMLCanvasElement.prototype.getContext=()=>opts.canvasContext||null;
  if(opts.canvasContext)Object.defineProperty(w.performance,'now',{value:function(){return w.Date.now();}});
+ if(opts.before)opts.before(w);
  if(seed)w.localStorage.setItem('sdp.v1',JSON.stringify(seed));
  if(opts.crypto)Object.defineProperty(w,'crypto',{value:require('node:crypto').webcrypto});
  const rawScript=Array.from(w.document.scripts).find(s=>!s.type&&s.textContent.includes('var APP_VERSION')).textContent;

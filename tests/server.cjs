@@ -2,7 +2,10 @@ const DEFAULT_PIN = require('./test-pin.cjs');
 'use strict';
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),acorn=require('acorn');
 const html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8');
-const source=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];
+/* v46: the Apps Script source lives next to the page (data/gas-source.txt) and
+   is fetched only when a lecturer unlocks admin, so the QA reads the file. */
+const inline=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];
+const source=inline.trim()?inline:fs.readFileSync(require('path').join(__dirname,'../data/gas-source.txt'),'utf8');
 const tables={},cache={},properties={ADMIN_PIN:DEFAULT_PIN};
 let now=Date.UTC(2026,9,13,12);
 function sheet(name){if(tables[name])return tables[name];const rows=[];
