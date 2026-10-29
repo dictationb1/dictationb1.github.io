@@ -340,6 +340,17 @@ test('data.html is the public, self-contained data spending sheet', () => {
   assert.ok(!/441,918|441,797/.test(page), 'no stale size is left behind');
 });
 
+test('the short link /data serves the sheet (a redirect alias to data.html)', () => {
+  const alias = path.join(root, 'data', 'index.html');
+  assert.ok(fs.existsSync(alias), 'data/index.html makes https://dictationb1.github.io/data resolve');
+  const page = fs.readFileSync(alias, 'utf8');
+  assert.match(page, /Official Verified Mobile Data Usage Sheet/);
+  assert.match(page, /http-equiv="refresh" content="0; url=\.\.\/data\.html"/, 'it forwards instantly');
+  assert.match(page, /location\.replace\(new URL\('\.\.\/data\.html'/, 'and again in script for browsers that ignore meta refresh');
+  assert.match(page, /rel="canonical" href="https:\/\/dictationb1\.github\.io\/data\.html"/);
+  assert.match(page, /<a href="\.\.\/data\.html">/, 'a manual link is always offered');
+});
+
 test('the in-app data sheet opens from the top bar and links the public page', () => {
   withApp(({ q, w, clock }) => {
     const button = w.document.querySelector('#btnDataSheet');
