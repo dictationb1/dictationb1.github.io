@@ -192,10 +192,9 @@ function device(html, base) {
       if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
       if (String(posted.session.no) !== NEXT_NO) throw Error('no ' + posted.session.no);
       if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      /* v43: the shipped session words resolve to the committed same-origin
-         ./audio/word-<slug>.mp3 pack; a custom word keeps the documented
-         remote fallback. A retired Oxford --_gb_1.mp3 clip is never used. */
-      if (!posted.lists[0].words.every(x => x.m && x.s && (/^\.\/audio\/word-[a-z0-9-]+\.mp3$/.test(x.audio) || /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=.*%20\.$/.test(x.audio)))) throw Error('a word has no B1 meaning/sentence/UK audio');
+      /* v48: every published single word carries its real Oxford UK studio URL;
+         custom phrases retain the documented Youdao remote fallback. */
+      if (!posted.lists[0].words.every(x => x.m && x.s && (/^https:\/\/ssl\.gstatic\.com\/dictionary\/static\/sounds\/20200429\/[a-z0-9-]+--_gb_1\.mp3$/.test(x.audio) || /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(x.audio)))) throw Error('a word has no B1 meaning/sentence/UK audio');
     });
 
     /* --- the student phone updates itself, live -------------------------- */

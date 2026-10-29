@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.4.0 (v48) — 2026-10-29 (real Oxford studio voice and the interactive Liquid Glass data report)
+
+- **Removed the generated voice pack.** Deleted `audio/`, its 264 MP3s, `scripts/build-audio.cjs`, the manifest, offline renderers and the audio-pack workflow. No synthetic waveform, formant, espeak or live-device `speechSynthesis` voice is used.
+- **Real remote human audio.** Single words use Oxford `ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3`, then Youdao UK. Numbers and phrases use Youdao UK, then Google `translate_tts` en-GB. Sinhala uses Google `tl=si` in chunks of at most 160 characters.
+- **One master, zero-download repeats.** `#ttsMasterAudio` keeps `preload="auto"`, `playsinline`, `referrerpolicy="no-referrer"` and no `crossOrigin`. Pass 1 speaks Number N and then the word after a 150 ms hand-off; Pass 2 rewinds the same element after 650 ms. Slower preserves pitch at 0.72×. Only current+next words are preloaded. Headless media errors complete after about 50 ms, and stale errors cannot cancel a replacement stream that already started.
+- **Interactive public report.** Rebuilt `data.html` and `data/index.html` as identical ES5 showcases with bunny video/toggle, Liquid Glass, animated Hansana credit, English/Sinhala UI and narration, a 1–30-session calculator, comparisons, all 30 playable Oxford rows, and copy/WhatsApp/print/audit/player actions. The in-app data summary now uses the same 1.95 MB / 0.48 MB / 0.005 MB estimates.
+- **Preserved class behavior.** Session 8 retains all 30 bilingual adjectives; Session 7 remains archived and practiceable. Both spelling pairs, the ready sheet, paper default, eight-digit admin PIN, bunny wallpaper, no-blur glass and cinema credit remain covered by tests.
+- **Metadata and size.** `ver`/`schema`/`settingsRev` are 48, `APP_VERSION` is 5.4.0 and storage is `sdp.v48_real_oxford_voice`. The app remains strict ES5 with no static external `<link>` and is below 430,000 bytes.
+- **Verification.** Rewrote the upgrade suite from scratch with `fs.writeFileSync`, migrated the legacy suites to remote-audio mocks and v48 storage, and made all nine release gates pass.
+
 ## 5.3.0 (v46) — 2026-10-29 (Session 8, the zero-waste data engine and the public data sheet)
 
 - **Session 8 is live.** `Session 8 - Personal Feelings, Opinions & Experiences (Adj)` — 29/10/2026, 30 adjectives (`afraid` … `hungry`) with UK IPA, a definition, a Sinhala meaning and an example sentence for every word. `Session 7 - Travel & Transport` moved into `CONFIG.pastSessions` / `DB.defaults().pastSessions` and is still practiceable from the Home screen. Metadata: `sessionCode`/`sessionId` `Session 8` (`Session 08 — 29/10/2026`), `sessionDate 2026-10-29`, `classInfo CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)`, `writeFixed 5`, `repeats 2`, `mode paper`, `voice Amy`, `adminPin 78987898`.
