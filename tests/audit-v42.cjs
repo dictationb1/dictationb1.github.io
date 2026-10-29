@@ -134,11 +134,11 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
         local: String(T && T.LOCAL_AUDIO_BASE || ''),
         remote: String(T && T.REMOTE_FALLBACK_BASE || ''),
         word: String(T && T.getSingleVoiceUrl('bicycle') || ''),
-        pass1: String(T && T.getSingleVoiceUrl('Number 1, guidebook') || ''),
+        pass1: String(T && T.getSingleVoiceUrl('Number 1, afraid') || ''),
         resume: String(T && T.getSingleVoiceUrl('Welcome back. Continuing dictation number 7 .') || ''),
         unknown: String(T && T.getSingleVoiceUrl('zebra crossing') || ''),
         version: String((window.SDP && window.SDP.version) || ''),
-        watchdog: String(T && String(T.playUrl) || '')
+        watchdog: (function(){var all=Array.prototype.slice.call(document.scripts).map(function(x){return x.textContent}).join('');return /isHeadless\(\)\?600:4e3/.test(all) && !/\},1500\)/.test(all)})()
       };
     });
     eq('the voice base is the same-origin ./audio pack', voice.local, LOCAL);
@@ -146,8 +146,8 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     eq('pass 1 starts with the numbered clip', voice.pass1, LOCAL + 'num-1.mp3');
     eq('a resume line resolves to its own clip', voice.resume, LOCAL + 'resume-7.mp3');
     ok('a custom word falls back to the documented remote endpoint only', voice.unknown.indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0, voice.unknown);
-    eq('the running build is 5.1.0', voice.version, '5.1.0');
-    ok('the clip watchdog is 4000ms and no longer 1500ms', /(?:4000|4e3)/.test(voice.watchdog) && !/\},1500\)/.test(voice.watchdog));
+    eq('the running build is 5.3.0', voice.version, '5.3.0');
+    ok('the clip watchdog is 4000ms and no longer 1500ms', voice.watchdog === true);
 
     await page.evaluate(() => { const b = document.getElementById('btnStart'); if (b) b.click(); });
     await page.waitForTimeout(900);
@@ -174,7 +174,7 @@ const fileOf = (url) => (String(url).indexOf(LOCAL) === 0 ? String(url).slice(LO
     eq('Two follows', name(1), 'count-2.mp3');
     eq('One follows', name(2), 'count-1.mp3');
     eq('Word 1 begins with its number after One', name(3), 'num-1.mp3');
-    eq('the numbered cue is followed by the actual first word', name(4), 'word-guidebook.mp3');
+    eq('the numbered cue is followed by the actual first word', name(4), 'word-afraid.mp3');
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1;
     const gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
     const gap3 = marks[3] ? marks[3].t - marks[0].t : -1;

@@ -160,7 +160,7 @@ test('1.4 flex fatal card uses scale-only animation; confirm keeps translate', (
 }));
 test('1.5 injected script removed, gas-source retained, 20 sections kept', () => {
  assert(!/__CF\$|cdn-cgi|challenge-platform/.test(current));
- const gas=s=>s.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];assert(gas(current).includes("function handlePost(e)")); assert(gas(current).includes("function adminOk(body)"));
+ const gas=fs.readFileSync(path.join(__dirname,'..','data','gas-source.txt'),'utf8');assert(/id="gas-source"><\/script>/.test(current),'the lazy gas-source holder is present');assert(gas.includes("function handlePost(e)")); assert(gas.includes("function adminOk(body)"));
  const sections=Array.from(current.matchAll(/SECTION (\d+) -/g)).map(m=>Number(m[1]));assert.deepEqual(sections,Array.from({length:20},(_,i)=>i+1));
 });
 test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=4 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
@@ -313,7 +313,7 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.spoken.some(s=>s.text==='Final word, number 30, windscreen .'),'v42: the last word is announced with its dictation number');assert(a.spoken.filter(s=>/^windscreen\s*\.?$/.test(s.text)).length>=1,'v44: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+, /.test(s.text)),'v42: every word announces its dictation number');
+ assert(a.spoken.some(s=>s.text==='Final word, number 30, hungry .'),'v42: the last word is announced with its dictation number');assert(a.spoken.filter(s=>/^hungry\s*\.?$/.test(s.text)).length>=1,'v44: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+, /.test(s.text)),'v42: every word announces its dictation number');
  assert(!a.spoken.some(s=>s.text.includes('Clean the car windscreen')));assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {

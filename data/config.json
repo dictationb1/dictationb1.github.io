@@ -2,26 +2,28 @@
   "appName": "Smart Dictation",
   "level": "B1",
   "classDays": [
+    "Tuesday",
     "Thursday"
   ],
   "session": {
-    "no": "7",
+    "no": "8",
     "day": "Thursday",
-    "date": "2026-10-22",
-    "title": "Session 7 - Travel & Transport",
-    "listId": "list_session_7_travel",
+    "date": "2026-10-29",
+    "display": "SESSION 8 · 29/10/2026 ● CCBE GALLE BRANCH",
+    "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
+    "listId": "list_session_8_feelings",
+    "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
     "branch": "CCBE Galle Branch",
-    "display": "SESSION 7 · 22/10/2026 · CCBE GALLE BRANCH",
     "mode": "paper",
+    "voice": "Amy",
+    "writeFixed": 5,
+    "repeats": 2,
+    "adminPin": "78987898",
     "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
     "activeMediaType": "video",
-    "videoPlaylistMode": "loop",
-    "videoDim": 18,
-    "lang": "en",
-    "guideLang": "en",
-    "voice": "Amy"
+    "videoPlaylistMode": "loop"
   },
-  "listId": "list_session_7_travel",
+  "listId": "list_session_8_feelings",
   "defaults": {
     "sentence": false,
     "repeats": 2,
@@ -43,11 +45,12 @@
     "lang": "en",
     "guideLang": "en",
     "voice": "Amy",
-    "adminPin": "78987898"
+    "adminPin": "78987898",
+    "liveSync": false
   },
-  "ver": 44,
-  "version": "5.1.0",
-  "buildDate": "2026-10-28",
+  "ver": 46,
+  "version": "5.3.0",
+  "buildDate": "2026-10-29",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -74,8 +77,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.1.0",
-  "settingsRev": 44,
+  "appVersion": "5.3.0",
+  "settingsRev": 46,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -97,9 +100,22 @@
     "audioReuse": true,
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
-    "ntfyPollWindow": "24h"
+    "ntfyPollWindow": "24h",
+    "engine": "zero-waste v46",
+    "bootAudioPreload": "none - the welcome clip is fetched only when Start dictation is tapped",
+    "rollingWindow": "current word + next word only (TTS.preloadRollingWindow)",
+    "persistentCache": "Cache API sdp-media-v46 + in-memory blob pinning",
+    "ntfyPolling": "off until Live Sync is enabled in Community",
+    "versionJsonCache": "ETag / 304 friendly (no cache:no-store)",
+    "measured": {
+      "firstRunWithVideo": "2.28 MB",
+      "firstRunAudioOnly": "0.82 MB",
+      "repeatSession": "0.005 MB"
+    },
+    "publicSheet": "https://dictationb1.github.io/data"
   },
-  "storageKey": "sdp.v44_apple_liquid_complete",
+  "key": "sdp.v46_session8_datasheet",
+  "storageKey": "sdp.v46_session8_datasheet",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -319,8 +335,23 @@
       "credit": "8s disappearing/reappearing cycle"
     }
   },
-  "updatedAt": "2026-10-28T00:00:00Z",
-  "updatedAtMs": 1793145600000,
+  "updatedAt": "2026-10-29T00:00:00Z",
+  "updatedAtMs": 1793491200000,
   "adminPin": "78987898",
-  "schema": 44
+  "schema": 46,
+  "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
+  "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
+  "sessionCode": "Session 8",
+  "sessionDate": "2026-10-29",
+  "pastSessions": [
+    {
+      "no": "7",
+      "day": "Thursday",
+      "date": "2026-10-22",
+      "title": "Session 7 - Travel & Transport",
+      "listId": "list_session_7_travel",
+      "wordCount": 30,
+      "archived": true
+    }
+  ]
 }

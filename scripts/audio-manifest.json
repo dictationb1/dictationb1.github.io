@@ -1,8 +1,9 @@
 {
-  "ver": 44,
+  "ver": 46,
   "engine": "Microsoft Edge neural TTS",
   "englishVoice": "en-GB-SoniaNeural",
   "sinhalaVoice": "si-LK-ThiliniNeural",
+  "note": "Rendered with en-GB-SoniaNeural. scripts/render-offline.py is the offline espeak-ng fallback used when the neural endpoint is unreachable; re-run with --force to re-render the identical text in the neural voice.",
   "clips": [
     {
       "file": "welcome-paper.mp3",
@@ -30,7 +31,7 @@
     },
     {
       "file": "sound-check.mp3",
-      "text": "Sound check. Number 1, bicycle.",
+      "text": "Sound check. Number 1, afraid.",
       "kind": "system",
       "voice": "en-GB-SoniaNeural"
     },
@@ -434,6 +435,546 @@
       "file": "resume-30.mp3",
       "text": "Welcome back. Continuing dictation number 30.",
       "kind": "resume",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-afraid.mp3",
+      "text": "afraid",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-afraid.mp3",
+      "text": "She was never afraid of speaking in front of a large audience.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-afraid.mp3",
+      "text": "A. F. R. A. I. D. afraid.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-amazed.mp3",
+      "text": "amazed",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-amazed.mp3",
+      "text": "We were amazed by how quickly the students learned the new words.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-amazed.mp3",
+      "text": "A. M. A. Z. E. D. amazed.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-amusing.mp3",
+      "text": "amusing",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-amusing.mp3",
+      "text": "The lecturer told an amusing story at the start of the lesson.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-amusing.mp3",
+      "text": "A. M. U. S. I. N. G. amusing.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-annoyed.mp3",
+      "text": "annoyed",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-annoyed.mp3",
+      "text": "He felt annoyed when he missed the morning bus by ten seconds.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-annoyed.mp3",
+      "text": "A. N. N. O. Y. E. D. annoyed.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-anxious.mp3",
+      "text": "anxious",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-anxious.mp3",
+      "text": "Many students feel anxious right before an important examination.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-anxious.mp3",
+      "text": "A. N. X. I. O. U. S. anxious.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-ashamed.mp3",
+      "text": "ashamed",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-ashamed.mp3",
+      "text": "He felt ashamed after forgetting his best friend's birthday.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-ashamed.mp3",
+      "text": "A. S. H. A. M. E. D. ashamed.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-awesome.mp3",
+      "text": "awesome",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-awesome.mp3",
+      "text": "The view from the top of the mountain was truly awesome.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-awesome.mp3",
+      "text": "A. W. E. S. O. M. E. awesome.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-boring.mp3",
+      "text": "boring",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-boring.mp3",
+      "text": "Sitting indoors all afternoon on a rainy day can feel boring.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-boring.mp3",
+      "text": "B. O. R. I. N. G. boring.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-brilliant.mp3",
+      "text": "brilliant",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-brilliant.mp3",
+      "text": "She came up with a brilliant idea for the science project.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-brilliant.mp3",
+      "text": "B. R. I. L. L. I. A. N. T. brilliant.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-challenging.mp3",
+      "text": "challenging",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-challenging.mp3",
+      "text": "Learning a new language is challenging but very rewarding.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-challenging.mp3",
+      "text": "C. H. A. L. L. E. N. G. I. N. G. challenging.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-charming.mp3",
+      "text": "charming",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-charming.mp3",
+      "text": "They stayed in a charming little cottage near the coast in Galle.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-charming.mp3",
+      "text": "C. H. A. R. M. I. N. G. charming.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-confident.mp3",
+      "text": "confident",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-confident.mp3",
+      "text": "Regular dictation practice makes students confident in their spelling.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-confident.mp3",
+      "text": "C. O. N. F. I. D. E. N. T. confident.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-confusing.mp3",
+      "text": "confusing",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-confusing.mp3",
+      "text": "The road signs at the busy junction were quite confusing.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-confusing.mp3",
+      "text": "C. O. N. F. U. S. I. N. G. confusing.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-cruel.mp3",
+      "text": "cruel",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-cruel.mp3",
+      "text": "It is cruel to keep wild birds locked inside a tiny cage.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-cruel.mp3",
+      "text": "C. R. U. E. L. cruel.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-curious.mp3",
+      "text": "curious",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-curious.mp3",
+      "text": "The curious child asked dozens of questions about the stars.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-curious.mp3",
+      "text": "C. U. R. I. O. U. S. curious.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-delighted.mp3",
+      "text": "delighted",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-delighted.mp3",
+      "text": "Her parents were delighted when she passed the exam with top marks.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-delighted.mp3",
+      "text": "D. E. L. I. G. H. T. E. D. delighted.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-depressed.mp3",
+      "text": "depressed",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-depressed.mp3",
+      "text": "He felt depressed after his team lost the final match.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-depressed.mp3",
+      "text": "D. E. P. R. E. S. S. E. D. depressed.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-disappointed.mp3",
+      "text": "disappointed",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-disappointed.mp3",
+      "text": "We were disappointed that the concert was cancelled due to rain.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-disappointed.mp3",
+      "text": "D. I. S. A. P. P. O. I. N. T. E. D. disappointed.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-embarrassing.mp3",
+      "text": "embarrassing",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-embarrassing.mp3",
+      "text": "Forgetting someone's name during an introduction can be embarrassing.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-embarrassing.mp3",
+      "text": "E. M. B. A. R. R. A. S. S. I. N. G. embarrassing.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-enjoyable.mp3",
+      "text": "enjoyable",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-enjoyable.mp3",
+      "text": "We spent a very enjoyable evening talking with our classmates.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-enjoyable.mp3",
+      "text": "E. N. J. O. Y. A. B. L. E. enjoyable.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-excellent.mp3",
+      "text": "excellent",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-excellent.mp3",
+      "text": "The restaurant near the harbour serves excellent seafood.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-excellent.mp3",
+      "text": "E. X. C. E. L. L. E. N. T. excellent.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-excited.mp3",
+      "text": "excited",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-excited.mp3",
+      "text": "The students were excited about the upcoming school trip.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-excited.mp3",
+      "text": "E. X. C. I. T. E. D. excited.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-fantastic.mp3",
+      "text": "fantastic",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-fantastic.mp3",
+      "text": "You did a fantastic job completing all thirty dictation words.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-fantastic.mp3",
+      "text": "F. A. N. T. A. S. T. I. C. fantastic.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-favourite.mp3",
+      "text": "favourite",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-favourite.mp3",
+      "text": "English is her favourite subject at the academy.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-favourite.mp3",
+      "text": "F. A. V. O. U. R. I. T. E. favourite.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-frightened.mp3",
+      "text": "frightened",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-frightened.mp3",
+      "text": "The little puppy was frightened by the loud thunder.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-frightened.mp3",
+      "text": "F. R. I. G. H. T. E. N. E. D. frightened.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-friendly.mp3",
+      "text": "friendly",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-friendly.mp3",
+      "text": "Everyone at the Galle branch gave the new student a friendly welcome.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-friendly.mp3",
+      "text": "F. R. I. E. N. D. L. Y. friendly.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-generous.mp3",
+      "text": "generous",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-generous.mp3",
+      "text": "It was very generous of her to share her notes with the whole class.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-generous.mp3",
+      "text": "G. E. N. E. R. O. U. S. generous.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-guilty.mp3",
+      "text": "guilty",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-guilty.mp3",
+      "text": "He felt guilty for not studying harder before the test.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-guilty.mp3",
+      "text": "G. U. I. L. T. Y. guilty.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-healthy.mp3",
+      "text": "healthy",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-healthy.mp3",
+      "text": "Eating fresh fruit and sleeping well keeps your mind healthy.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-healthy.mp3",
+      "text": "H. E. A. L. T. H. Y. healthy.",
+      "kind": "spelling",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "word-hungry.mp3",
+      "text": "hungry",
+      "kind": "word",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "sent-hungry.mp3",
+      "text": "After the two-hour lecture, everyone in the class was hungry.",
+      "kind": "sentence",
+      "voice": "en-GB-SoniaNeural"
+    },
+    {
+      "file": "spell-hungry.mp3",
+      "text": "H. U. N. G. R. Y. hungry.",
+      "kind": "spelling",
       "voice": "en-GB-SoniaNeural"
     },
     {
@@ -1050,6 +1591,36 @@
     }
   ],
   "words": [
+    "afraid",
+    "amazed",
+    "amusing",
+    "annoyed",
+    "anxious",
+    "ashamed",
+    "awesome",
+    "boring",
+    "brilliant",
+    "challenging",
+    "charming",
+    "confident",
+    "confusing",
+    "cruel",
+    "curious",
+    "delighted",
+    "depressed",
+    "disappointed",
+    "embarrassing",
+    "enjoyable",
+    "excellent",
+    "excited",
+    "fantastic",
+    "favourite",
+    "frightened",
+    "friendly",
+    "generous",
+    "guilty",
+    "healthy",
+    "hungry",
     "guidebook",
     "handlebars",
     "harbour",

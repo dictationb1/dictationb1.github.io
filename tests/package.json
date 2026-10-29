@@ -6,7 +6,8 @@
     "test:browser": "node browser.cjs",
     "test:e2e": "node e2e.cjs",
     "test:upgrade": "node check.cjs && node --test upgrade.test.cjs && node upgrade-browser.cjs",
-    "test:live": "node live-lab.cjs"
+    "test:live": "node live-lab.cjs",
+    "build": "node ../scripts/minify-inline.cjs"
   },
   "devDependencies": {
     "@sinonjs/fake-timers": "11.3.1",
@@ -14,6 +15,7 @@
     "acorn": "8.15.0",
     "axe-core": "4.10.3",
     "jsdom": "22.1.0",
-    "playwright-core": "1.56.0"
+    "playwright-core": "1.56.0",
+    "terser": "5.44.0"
   }
 }

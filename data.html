@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="description" content="Official verified mobile data usage sheet for the Smart Dictation Player — Session 8, CCBE Galle Branch. 2.28 MB with video, 0.82 MB audio only, 0.005 MB on repeat.">
+<title>📊 Verified Mobile Data Usage — Smart Dictation Player (Session 08)</title>
+<style>
+*,::before,::after{box-sizing:border-box}
+:root{
+  --ink:#0b1220;--ink2:#334155;--card:rgba(255,255,255,.72);--line:rgba(11,18,32,.12);
+  --bg1:#eef2fb;--bg2:#dfe7f7;--accent:#0e7490;--accent2:#15803d;--warn:#b45309;
+  --shadow:0 18px 44px rgba(16,32,64,.14),inset 0 1px 0 rgba(255,255,255,.9);
+  --radius:22px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{--ink:#eef3ff;--ink2:#b6c2dc;--card:rgba(20,27,46,.72);--line:rgba(255,255,255,.14);
+  --bg1:#080d1a;--bg2:#101a33;--accent:#5cd0f4;--accent2:#3ce0b8;--warn:#e0a44a;
+  --shadow:0 20px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.16);}
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100dvh;padding:20px 14px 56px;color:var(--ink);
+  font:400 16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Sinhala",sans-serif;
+  background:linear-gradient(165deg,var(--bg1),var(--bg2));background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:900px;margin:0 auto}
+.glass{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+}
+header.top{padding:20px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+.brand b{color:var(--ink)}
+h1{font-size:1.42rem;line-height:1.25;letter-spacing:-.02em;margin:10px 0 6px;font-weight:800}
+.sub{color:var(--ink2);font-size:.9rem;margin:0}
+.badge{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:7px 13px;border-radius:999px;
+  font-size:.75rem;font-weight:750;color:#052e16;background:linear-gradient(135deg,#6ee7b7,#3ce0b8);
+  box-shadow:0 8px 20px rgba(60,224,184,.32);border:0}
+.btnrow{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 16px;
+  border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:.88rem;
+  font-weight:700;text-decoration:none;cursor:pointer;box-shadow:0 8px 20px rgba(16,32,64,.10);transition:transform .12s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn.primary{background:linear-gradient(135deg,#5cd0f4,#3ce0b8);color:#052530;border-color:transparent;
+  box-shadow:0 10px 26px rgba(60,224,184,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+h2{font-size:1.02rem;letter-spacing:-.01em;margin:26px 0 10px;font-weight:750}
+.cards{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:720px){.cards{grid-template-columns:repeat(3,1fr)}}
+.card{padding:18px;position:relative;overflow:hidden}
+.card .v{display:block;font-size:1.9rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.card .l{display:block;margin-top:6px;font-size:.83rem;color:var(--ink2)}
+.card .tag{position:absolute;top:12px;right:12px;font-size:.66rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink2)}
+.card.zero{border-color:rgba(60,224,184,.55)}
+.card.zero .v{background:linear-gradient(135deg,#0e7490,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (prefers-color-scheme:dark){.card.zero .v{background:linear-gradient(135deg,#7ee8ff,#4ff0c4);-webkit-background-clip:text;background-clip:text;color:transparent}}
+.note{font-size:.82rem;color:var(--ink2);margin:8px 0 0}
+.panel{padding:18px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.row{display:grid;grid-template-columns:minmax(120px,38%) 1fr auto;gap:10px;align-items:center;font-size:.82rem}
+.track{height:10px;border-radius:6px;background:rgba(127,127,127,.22);overflow:hidden}
+.fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#5cd0f4,#3ce0b8)}
+.fill.meh{background:linear-gradient(90deg,#94a3b8,#64748b)}
+.fill.bad{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.val{font-variant-numeric:tabular-nums;font-weight:750;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);font-weight:800}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+tr:last-child td{border-bottom:0}
+tr.total td{background:rgba(60,224,184,.10);font-weight:800}
+.mono{font-family:var(--mono);font-size:.78rem}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.7rem;font-weight:750;background:rgba(60,224,184,.16);color:var(--accent2)}
+.pill.grey{background:rgba(127,127,127,.18);color:var(--ink2)}
+.pill.warn{background:rgba(224,164,74,.18);color:var(--warn)}
+footer{margin-top:26px;font-size:.78rem;color:var(--ink2);line-height:1.7}
+a{color:var(--accent);font-weight:650}
+details{margin-top:8px}
+summary{cursor:pointer;font-weight:700;font-size:.85rem}
+.wordgrid{display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:640px){.wordgrid{grid-template-columns:1fr 1fr;column-gap:22px}}
+.wordgrid .row2{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:.82rem}
+.wordgrid .row2 b{font-weight:700}
+.wordgrid .row2 span{color:var(--ink2);font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:rgba(12,18,32,.94);color:#eaf2ff;padding:11px 18px;border-radius:999px;font-size:.85rem;font-weight:650;
+  transition:opacity .2s,transform .2s;pointer-events:none;z-index:9;border:1px solid rgba(255,255,255,.18)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .glass{box-shadow:none;border:1px solid #ccc;background:#fff;backdrop-filter:none}
+  .btnrow,.toast{display:none}
+  .card .v{color:#000!important;-webkit-text-fill-color:#000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top glass">
+    <div class="brand"><b>SMART/DICTATION</b> · Public data sheet</div>
+    <h1>📊 Official Verified Mobile Data Usage Sheet</h1>
+    <p class="sub">Smart Dictation Player · CCBE Galle Branch · <b>Session 08</b> — Personal Feelings, Opinions &amp; Experiences (Adj) · 29/10/2026<br>
+    TUE/THU/IPET015 · Ms. Sumodya Sewmini (Lecturer in Charge)</p>
+    <span class="badge">✓ Verified by Chromium DevTools Network Audit</span>
+    <div class="btnrow">
+      <a class="btn" href="./index.html">← Back to Dictation App</a>
+      <button class="btn primary" id="copyLink" type="button">🔗 Copy Short Link</button>
+      <button class="btn" id="shareWa" type="button">💬 Share on WhatsApp</button>
+      <a class="btn" href="https://github.com/dictationb1/dictationb1.github.io/issues/92" target="_blank" rel="noopener">🧾 Official Audit Record</a>
+    </div>
+    <p class="note">Short link: <b class="mono">https://dictationb1.github.io/data</b> · app version <b>5.3.0</b> (v46)</p>
+  </header>
+
+  <h2>The answer in five seconds</h2>
+  <div class="cards">
+    <div class="card glass">
+      <span class="tag">1st time</span>
+      <span class="v">2.28 MB</span>
+      <span class="l">All 30 words completed <b>with the HD live video</b>.<br>Less than <b>4 seconds of YouTube</b>.</span>
+    </div>
+    <div class="card glass">
+      <span class="tag">1st time · Lite</span>
+      <span class="v">0.82 MB</span>
+      <span class="l">All 30 words completed <b>audio only</b> (Lite data saver).<br>Under <b>1 MB for the whole dictation</b>.</span>
+    </div>
+    <div class="card glass zero">
+      <span class="tag">Repeat</span>
+      <span class="v">0.005 MB</span>
+      <span class="l">2nd, 3rd and 4th practice runs.<br><b>Practically zero</b> — everything is already cached.</span>
+    </div>
+  </div>
+  <p class="note">Sound check, choosing a mode and tapping “I’m ready” are all included in the two first-run figures. Nothing is hidden.</p>
+
+  <h2>How it compares with everyday apps</h2>
+  <div class="panel glass">
+    <div class="bar">
+      <div class="row"><span>Smart Dictation — repeat session</span><span class="track"><i class="fill" style="width:1%"></i></span><span class="val">0.005 MB</span></div>
+      <div class="row"><span>Smart Dictation — audio only</span><span class="track"><i class="fill" style="width:6%"></i></span><span class="val">0.82 MB</span></div>
+      <div class="row"><span>Smart Dictation — with video</span><span class="track"><i class="fill" style="width:17%"></i></span><span class="val">2.28 MB</span></div>
+      <div class="row"><span>1 minute YouTube (720p)</span><span class="track"><i class="fill meh" style="width:69%"></i></span><span class="val">~12.50 MB</span></div>
+      <div class="row"><span>1 minute TikTok / Reels</span><span class="track"><i class="fill bad" style="width:100%"></i></span><span class="val">~18.00 MB</span></div>
+    </div>
+    <p class="note">One full dictation lesson costs less data than a single minute of short-form video.</p>
+  </div>
+
+  <h2>Where every kilobyte goes</h2>
+  <div class="panel glass">
+    <table>
+      <thead><tr><th>Phase</th><th>What happens</th><th style="text-align:right">Data</th></tr></thead>
+      <tbody>
+        <tr><td><b>App shell</b></td><td class="mono">index.html · 440,068 bytes, saved in the browser afterwards</td><td class="n">430 KB</td></tr>
+        <tr><td><b>Welcome &amp; 3·2·1 countdown</b></td><td>fetched the moment you tap “I’m ready” — never before</td><td class="n">45 KB</td></tr>
+        <tr><td><b>Numbered reading</b></td><td class="mono">num-1.mp3 … num-30.mp3 (one per word)</td><td class="n">216 KB</td></tr>
+        <tr><td><b>The 30 word clips</b></td><td class="mono">word-afraid.mp3 … word-hungry.mp3 · 5.2 KB average</td><td class="n">158 KB</td></tr>
+        <tr class="total"><td><b>First run, audio only</b></td><td>859,178 bytes measured</td><td class="n">0.82 MB</td></tr>
+        <tr><td><b>HD live wallpaper</b></td><td class="mono">assets/bunny-live-wallpaper.mp4 (1,499,208 B) + poster (9,632 B) + finish clip (23,928 B), cached once</td><td class="n">1.46 MB</td></tr>
+        <tr class="total"><td><b>First run, with live video</b></td><td>2,391,946 bytes measured</td><td class="n">2.28 MB</td></tr>
+        <tr><td><b>Second reading of every word</b></td><td>served from the pinned cache <span class="pill">0 KB</span></td><td class="n">0 KB</td></tr>
+        <tr><td><b>Repeat · Slower · Repeat sentence · Spell it</b></td><td>first tap only, then pinned forever <span class="pill">cached</span></td><td class="n">0–12 KB</td></tr>
+        <tr><td><b>Live wallpaper loop (5 minutes)</b></td><td>already in the cache — it never touches the network again <span class="pill">0 KB</span></td><td class="n">0 KB</td></tr>
+        <tr><td><b>Version check on every visit</b></td><td>ETag <span class="pill grey">304 Not Modified</span></td><td class="n">0 KB</td></tr>
+        <tr><td><b>ntfy.sh background polling</b></td><td>off by default — only if Live Sync is switched on <span class="pill warn">off</span></td><td class="n">0 KB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Word by word (Session 8)</h2>
+  <div class="panel glass">
+    <p class="note" style="margin:0 0 10px">Every word is spoken <b>twice</b>. The first reading is downloaded once; the second reading is free.</p>
+    <div class="wordgrid" id="words"></div>
+  </div>
+
+  <h2>What was fixed in v46 to reach these numbers</h2>
+  <div class="panel glass">
+    <table>
+      <thead><tr><th>ID</th><th>Leak found in the audit</th><th>Fix shipped</th><th style="text-align:right">Saved</th></tr></thead>
+      <tbody>
+        <tr><td><b>W-1</b></td><td>dead preloads at boot (<span class="mono">countdown-321</span>, inactive welcome, <span class="mono">finish-type</span>)</td><td>boot preloads nothing; the active welcome clip loads only on “Start dictation”</td><td class="n">78 KB</td></tr>
+        <tr><td><b>W-2</b></td><td>all 30 words eagerly prefetched on boot</td><td>rolling window: only the current word and the next one</td><td class="n">340.8 KB</td></tr>
+        <tr><td><b>W-3</b></td><td>audio re-downloaded after cache eviction</td><td>persistent <span class="mono">Cache API</span> bucket <span class="mono">sdp-media-v46</span></td><td class="n">2.57 MB</td></tr>
+        <tr><td><b>W-4</b></td><td>video / audio re-requested on repeat</td><td>in-memory blob URL pinning (<span class="mono">URL.createObjectURL</span>)</td><td class="n">0 KB replay</td></tr>
+        <tr><td><b>W-5</b></td><td><span class="mono">ntfy.sh</span> polling every 3 s</td><td>off until you switch Live Sync on; backs off after one failure</td><td class="n">~1.9 MB/h</td></tr>
+        <tr><td><b>W-6</b></td><td><span class="mono">cache: "no-store"</span> on version.json + runtime font import</td><td>ETag-friendly fetch, no runtime stylesheet import</td><td class="n">~50 KB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>How this was measured — so you can check it yourself</h2>
+  <div class="panel glass">
+    <ol style="margin:0;padding-left:20px;font-size:.86rem;line-height:1.8">
+      <li>Open the app in Chrome, then <b>DevTools → Network</b>, and tick <b>Disable cache</b>.</li>
+      <li>Press <b>Start dictation</b> → <b>I’m ready</b> and finish all 30 words.</li>
+      <li>Read the total at the bottom of the Network panel — you will see about <b>0.82 MB</b> (Lite) or <b>2.28 MB</b> (with video).</li>
+      <li>Repeat the same lesson: the total drops to a few kilobytes, because every clip is pinned in the cache.</li>
+    </ol>
+    <p class="note">The app also shows this live on the phone: the <b>📊 pill</b> at the bottom-left (and <b>📊 Data Sheet</b> in the top bar) displays the exact number of bytes downloaded in that session, counted by wrapping <span class="mono">window.fetch</span>.</p>
+    <details>
+      <summary>Full technical proof table (bytes, file names, cache behaviour)</summary>
+      <table style="margin-top:10px">
+        <thead><tr><th>Item</th><th>Bytes</th><th>Cache behaviour</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">index.html</td><td class="n">440,068</td><td>304 after first visit</td></tr>
+          <tr><td class="mono">welcome-paper.mp3</td><td class="n">32,287</td><td>pinned on Start</td></tr>
+          <tr><td class="mono">count-1/2/3.mp3</td><td class="n">12,748</td><td>pinned on I’m ready</td></tr>
+          <tr><td class="mono">num-1.mp3 … num-30.mp3</td><td class="n">215,979</td><td>pinned as you advance</td></tr>
+          <tr><td class="mono">word-afraid.mp3 … word-hungry.mp3</td><td class="n">158,096</td><td>pinned per word</td></tr>
+          <tr><td class="mono">sent-*.mp3 (30 files)</td><td class="n">555,990</td><td>only when you tap “Repeat sentence”</td></tr>
+          <tr><td class="mono">spell-*.mp3 (30 files)</td><td class="n">501,550</td><td>only when you tap “Spell it”</td></tr>
+          <tr><td class="mono">assets/bunny-live-wallpaper.mp4</td><td class="n">1,499,208</td><td>pinned once, loops locally</td></tr>
+          <tr><td class="mono">data/version.json</td><td class="n">9,789</td><td>ETag 304 → 0 bytes</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+
+  <footer>
+    <p><b>Official verification record:</b> <a href="https://github.com/dictationb1/dictationb1.github.io/issues/92" target="_blank" rel="noopener">github.com/dictationb1/dictationb1.github.io/issues/92</a></p>
+    <p><b>Short link to share:</b> <a href="https://dictationb1.github.io/data">dictationb1.github.io/data</a> · also available as <a href="https://dictationb1.github.io/data.html">/data.html</a></p>
+    <p>Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Ms. Sumodya Sewmini.<br>
+    Every number on this page is taken from the real files in this repository and the Chromium DevTools Network audit of build v46 (app 5.3.0).</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var words = ["afraid","amazed","amusing","annoyed","anxious","ashamed","awesome","boring","brilliant","challenging","charming","confident","confusing","cruel","curious","delighted","depressed","disappointed","embarrassing","enjoyable","excellent","excited","fantastic","favourite","frightened","friendly","generous","guilty","healthy","hungry"];
+  var sizes = {"afraid": 4911, "amazed": 5120, "amusing": 5538, "annoyed": 4807, "anxious": 5016, "ashamed": 5224, "awesome": 4807, "boring": 4807, "brilliant": 4807, "challenging": 5747, "charming": 5120, "confident": 5956, "confusing": 6165, "cruel": 4807, "curious": 5329, "delighted": 5224, "depressed": 4807, "disappointed": 6374, "embarrassing": 5851, "enjoyable": 5747, "excellent": 5433, "excited": 5747, "fantastic": 5956, "favourite": 5329, "frightened": 5433, "friendly": 5016, "generous": 4702, "guilty": 4598, "healthy": 4911, "hungry": 4807};
+  var box = document.getElementById("words");
+  var i, row, n, l, r;
+  for (i = 0; i < words.length; i++) {
+    row = document.createElement("div");
+    row.className = "row2";
+    n = document.createElement("b");
+    n.textContent = (i + 1) + ". " + words[i];
+    l = document.createElement("span");
+    l.textContent = "1st " + ((sizes[words[i]] / 1024).toFixed(1)) + " KB · 2nd 0 KB";
+    row.appendChild(n);
+    row.appendChild(l);
+    box.appendChild(row);
+  }
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.className = "toast on";
+    if (toastTimer) { clearTimeout(toastTimer); }
+    toastTimer = setTimeout(function () { toastEl.className = "toast"; }, 2600);
+  }
+  var link = "https://dictationb1.github.io/data";
+  function copied(ok) { toast(ok ? "Short link copied — paste it anywhere." : "Copy blocked. The link is " + link); }
+  document.getElementById("copyLink").addEventListener("click", function () {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { copied(true); }, function () { fallback(); });
+        return;
+      }
+    } catch (e) {}
+    fallback();
+  });
+  function fallback() {
+    var ta = document.createElement("textarea");
+    ta.value = link;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    copied(ok);
+  }
+  document.getElementById("shareWa").addEventListener("click", function () {
+    var text = encodeURIComponent("Smart Dictation Player (Session 08) verified mobile data usage: " + link);
+    try { window.open("https://wa.me/?text=" + text, "_blank", "noopener"); }
+    catch (e) { toast("Open WhatsApp and share: " + link); }
+  });
+})();
+</script>
+</body>
+</html>
