@@ -15,7 +15,7 @@
     "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
     "branch": "CCBE Galle Branch",
     "mode": "paper",
-    "voice": "Amy",
+    "voice": "Oxford GB Female",
     "writeFixed": 5,
     "repeats": 2,
     "adminPin": "78987898",
@@ -44,12 +44,12 @@
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
-    "voice": "Amy",
+    "voice": "Oxford GB Female",
     "adminPin": "78987898",
     "liveSync": false
   },
-  "ver": 46,
-  "version": "5.3.0",
+  "ver": 48,
+  "version": "5.4.0",
   "buildDate": "2026-10-29",
   "credits": {
     "createdBy": "Hansana",
@@ -59,26 +59,29 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "Microsoft Edge neural TTS, committed same-origin MP3 pack",
-    "englishVoice": "en-GB-SoniaNeural",
-    "sinhalaGuideVoice": "si-LK-ThiliniNeural",
-    "lockedVoice": "Amy",
-    "localBase": "./audio/",
+    "engine": "Real remote studio recordings; no generated local MP3 files",
+    "englishVoice": "Oxford British female studio recording",
+    "sinhalaGuideVoice": "Google si female sentence stream",
+    "lockedVoice": "Oxford GB Female",
+    "singleWordBase": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
+    "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
+    "fallbackBase": "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx",
     "element": "#ttsMasterAudio",
+    "referrerPolicy": "no-referrer",
+    "crossOrigin": false,
     "silenceBetweenRepeatsMs": 650,
-    "writeFixedSeconds": 5,
-    "repeats": 2,
+    "numberToWordBeatMs": 150,
     "slowPlaybackRate": 0.72,
-    "clips": "welcome, guide-en/si, sound-check, countdown, number, word, sentence, spelling, pause, resume and finish",
-    "fallback": "Custom content uses the existing remote speech fallback; bundled clips work offline."
+    "pass2": "currentTime=0 on the already loaded master element; 0 KB",
+    "headlessErrorDelayMs": 50
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.3.0",
-  "settingsRev": 46,
+  "appVersion": "5.4.0",
+  "settingsRev": 48,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -101,21 +104,21 @@
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h",
-    "engine": "zero-waste v46",
+    "engine": "zero-waste v48 real Oxford voice",
     "bootAudioPreload": "none - the welcome clip is fetched only when Start dictation is tapped",
     "rollingWindow": "current word + next word only (TTS.preloadRollingWindow)",
-    "persistentCache": "Cache API sdp-media-v46 + in-memory blob pinning",
+    "persistentCache": "Single in-memory #ttsMasterAudio replay plus rolling two-word audio preloads",
     "ntfyPolling": "off until Live Sync is enabled in Community",
     "versionJsonCache": "ETag / 304 friendly (no cache:no-store)",
     "measured": {
-      "firstRunWithVideo": "2.28 MB",
-      "firstRunAudioOnly": "0.82 MB",
-      "repeatSession": "0.005 MB"
+      "firstRunWithVideo": "~1.95 MB",
+      "firstRunAudioOnly": "~0.48 MB",
+      "repeatSession": "~0.005 MB"
     },
     "publicSheet": "https://dictationb1.github.io/data"
   },
-  "key": "sdp.v46_session8_datasheet",
-  "storageKey": "sdp.v46_session8_datasheet",
+  "key": "sdp.v48_real_oxford_voice",
+  "storageKey": "sdp.v48_real_oxford_voice",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -300,20 +303,21 @@
   ],
   "lang": "en",
   "guideLang": "en",
-  "voice": "Amy",
-  "lockedVoice": "Amy",
+  "voice": "Oxford GB Female",
+  "lockedVoice": "Oxford GB Female",
   "humanAudio": {
-    "voice": "en-GB-SoniaNeural",
-    "guideSinhala": "si-LK-ThiliniNeural",
+    "voice": "Oxford British female studio recording",
+    "singleWordBase": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/",
+    "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "lang": "en-GB",
-    "localBase": "./audio/",
     "referrerPolicy": "no-referrer",
-    "bundle": "v44 same-origin neural recordings"
+    "crossOrigin": false,
+    "bundle": "none - real remote recordings only"
   },
   "voiceProfile": {
-    "name": "Sonia neural studio voice",
-    "voice": "Amy",
-    "studioVoice": "en-GB-SoniaNeural",
+    "name": "Oxford British female studio voice",
+    "voice": "Oxford GB Female",
+    "studioVoice": "Oxford UK Female",
     "accentRequest": "en-GB",
     "silenceBetweenRepeatsMs": 650,
     "slowPlaybackRate": 0.72
@@ -336,9 +340,9 @@
     }
   },
   "updatedAt": "2026-10-29T00:00:00Z",
-  "updatedAtMs": 1793491200000,
+  "updatedAtMs": 1793232000000,
   "adminPin": "78987898",
-  "schema": 46,
+  "schema": 48,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",

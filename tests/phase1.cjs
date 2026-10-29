@@ -36,13 +36,20 @@ function test(name, fn) {
   catch (err) { results.push({test: name, status: 'FAIL', detail: err.stack}); }
 }
 function harness(html = current, opts = {}) {
-  const errors = [], requests = [], spoken = [];
+  const errors = [], requests = [], spoken = [], audio = [];
   const dom = new JSDOM(html, {url: 'https://example.test/' + (opts.hash || ''), runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: new VirtualConsole()});
   const w = dom.window;
   const clock = FakeTimers.withGlobal(w).install({now: Date.UTC(2026, 9, 13, 12), toFake: ['Date','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
   w.scrollTo = () => {};
   w.HTMLCanvasElement.prototype.getContext = () => null;
   w.matchMedia = () => ({matches: false, addEventListener() {}});
+  w.HTMLMediaElement.prototype.load = function () {};
+  w.HTMLMediaElement.prototype.pause = function () {};
+  w.HTMLMediaElement.prototype.play = function () {
+    const el = this;
+    if (el.id === 'ttsMasterAudio') audio.push({src: String(el.getAttribute('src') || ''), rate: el.playbackRate});
+    w.setTimeout(() => { if (el.onended) el.onended(); }, 1);
+  };
   w.XMLHttpRequest = class {
     open(method, url) { requests.push({method, url}); }
     setRequestHeader() {}
@@ -70,7 +77,7 @@ function harness(html = current, opts = {}) {
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
   clock.tick(100);
   if(w.__qa.DB.data) w.__qa.DB.data.tourSeen = true;
-  return {w, q:w.__qa, clock, errors, requests, spoken, crash:() => w.document.querySelector('#fatal').dataset.shown==='1', close() {clock.uninstall(); dom.window.close();}};
+  return {w, q:w.__qa, clock, errors, requests, spoken, audio, crash:() => w.document.querySelector('#fatal').dataset.shown==='1', close() {clock.uninstall(); dom.window.close();}};
 }
 function withApp(opts, fn, html) {const a=harness(html,opts);try{fn(a);}finally{a.close();}}
 /* v2.0.0: boot may only read the two cache-busted static files next to index.html.
@@ -276,20 +283,20 @@ test('3.5 sync time advances only after successful state reply', () => withApp({
  assert.equal(a.q.Cloud.updatedAt,0);a.q.Cloud.get=(params,cb)=>cb({ok:false});a.q.Cloud.pullState();assert.equal(a.q.Cloud.updatedAt,0);
  a.q.Cloud.get=(params,cb)=>cb({ok:true,ver:10});a.q.Cloud.pullState();assert(a.q.Cloud.updatedAt);a.q.UI.renderNet();assert(/Cloud Synced/i.test(a.w.document.querySelector('#chipNetText').textContent),a.w.document.querySelector('#chipNetText').textContent);assert(!/Local mode/i.test(a.w.document.querySelector('#chipNetText').textContent));
 }));
-test('4.1 a missing UK voice never blocks: any English voice speaks and no sheet is thrown up', () => withApp({voice:'en-US'}, a => {
- a.q.Speech.playAudio=(src,rate,ms,cb)=>cb(false);                   /* pretend no dictionary/TTS audio is reachable */
+test('4.1 remote studio audio needs no device voice and never throws a blocking sheet', () => withApp({voice:'en-US'}, a => {
  a.q.Speech.say(['Hello'],{},()=>{});a.clock.tick(500);
- assert.equal(a.spoken.length,1,'the phone speaks out loud instead of going silent');
- assert.equal(a.spoken[0].lang,'en-GB');
+ assert.equal(a.audio.length,1,'the remote human recording plays without speechSynthesis');
+ assert.match(a.audio[0].src,/hello--_gb_1\.mp3$/);
+ assert.equal(a.spoken.length,0,'device speech stays disabled');
  assert(!a.q.Speech.textOnly,'never silently dropped into Text mode');
  a.q.Eng.start({});
  assert(!a.w.document.querySelector('#sheets').textContent.includes('No UK English voice found on this device'),'the blocking modal is gone');
  clickText(a,"I'm ready");a.clock.tick(10000);
- assert(a.spoken.length>1);assert(a.q.Eng.st==='waiting'||a.q.Eng.st==='speaking');
+ assert(a.audio.length>1);assert(a.q.Eng.st==='waiting'||a.q.Eng.st==='speaking');
  assert(/NoVoice\s*=\s*\{/.test(current) && current.includes('No UK English voice found on this device'),'the guidance card still exists for Diagnostics');
 }));
-test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused', () => withApp({voice:'en-GB'}, a => {
- a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.spoken.length);assert(a.spoken.every(s=>s.lang==='en-GB'&&s.voice==='en-GB'));
+test('4.1 dictionary ranking stays UK while dictation uses the locked Oxford voice', () => withApp({voice:'en-GB'}, a => {
+ a.q.Speech.say(['Hello Britain'],{},()=>{});a.clock.tick(500);assert(a.audio.length);assert(a.audio.every(s=>/youdao|translate\.googleapis|ssl\.gstatic/.test(s.src)));assert.equal(a.spoken.length,0);
  const parsed=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/us.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);
  assert.equal(parsed.audio,'https://audio.example/us.mp3');assert.equal(parsed.ukSource,false);
  assert.equal(a.q.Speech.isBritishAudio('https://audio.example/us.mp3'),false);
@@ -302,7 +309,6 @@ test('4.1 UK ranking and utterances stay en-GB; no-UK dictionary audio refused',
  const uk=a.q.Dict.parse([{phonetics:[{text:'/us/',audio:'https://audio.example/word-us.mp3'},{text:'/uk/',audio:'https://audio.example/word-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'meaning'}]}]}]);assert.equal(uk.ipa,'uk');assert(uk.audio.endsWith('-uk.mp3'));
 }));
 test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, result saved', () => withApp({voice:'en-GB'}, a => {
- a.q.Speech.playAudio=(src,rate,ms,cb)=>cb(false);                    /* device voice path, as before tier 1 */
  a.q.DB.data.settings.mode='type';a.q.DB.data.settings.writeMode='fixed';a.q.DB.data.settings.writeFixed=3;
  a.q.Eng.start({});clickText(a,"I'm ready");let paused=false;
  for(let i=0;i<5000&&!a.q.DB.data.history.length;i++) {
@@ -313,8 +319,10 @@ test('4.2 full 30-word fake-timer dictation, instant marking, pause/resume, resu
   }
  }
  assert(paused);assert.equal(a.q.DB.data.history.length,1);assert.equal(a.q.DB.data.history[0].wordCount,30);assert.equal(a.q.DB.data.history[0].score,30);assert(JSON.parse(a.w.localStorage.getItem(STORE_KEY)).history.length);
- assert(a.spoken.some(s=>s.text==='Final word, number 30, hungry .'),'v42: the last word is announced with its dictation number');assert(a.spoken.filter(s=>/^hungry\s*\.?$/.test(s.text)).length>=1,'v44: pass 2 repeats the clean word');assert(a.spoken.some(s=>/^Number \d+, /.test(s.text)),'v42: every word announces its dictation number');
- assert(!a.spoken.some(s=>s.text.includes('Clean the car windscreen')));assert.equal(a.q.Errors.items.length,0);
+ assert(a.audio.some(s=>s.src.includes('Number%2030')),'v48: the last word is announced with its dictation number');
+ assert(a.audio.filter(s=>s.src.endsWith('/hungry--_gb_1.mp3')).length>=2,'v48: both Oxford passes replay the clean word');
+ assert(a.audio.some(s=>s.src.includes('Number%201')),'v48: every word announces its dictation number');
+ assert.equal(a.spoken.length,0);assert.equal(a.q.Errors.items.length,0);
 }));
 test('4.2 reload mid-session offers continuation with answers and same word', () => {
  let saved,index;withApp({voice:'en-GB'}, a=>{a.q.DB.data.settings.mode='type';a.q.Eng.start({});clickText(a,"I'm ready");a.clock.tick(4000);a.q.Eng.runItem(4);a.q.Eng.pause();index=a.q.Eng.idx;saved=a.w.localStorage.getItem(STORE_KEY);});
@@ -437,8 +445,8 @@ test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a =
  for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
  const btn=Array.from(a.w.document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Test sound');
  assert(btn, 'Test sound button');
- const before=a.spoken.length; btn.click(); a.clock.tick(500);
- assert(a.spoken.length>before); assert(a.spoken.some(s=>s.lang==='en-GB'));
+ const before=a.audio.length; btn.click(); a.clock.tick(500);
+ assert(a.audio.length>before); assert(a.audio.slice(before).every(s=>/youdao|translate\.googleapis|ssl\.gstatic/.test(s.src)));assert.equal(a.spoken.length,0);
 }));
 test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
  assert(current.includes('env(safe-area-inset-top, 0px)'));

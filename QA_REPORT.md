@@ -1,4 +1,4 @@
-> Historical report for v1.3.0. The current release is **v5.0.0 (v43, 2026-10-28)** — a 134-clip, single-voice British woman MP3 pack in `./audio/`, an atomic `pass1-N-<word>.mp3` first reading and a lockstep 3-2-1 session start; see `CHANGELOG.md` and `PHASE1_QA.md` for the current test results. The default PIN example was removed from this document; it is not a server secret.
+> Historical report for v1.3.0. The current release is **v5.4.0 (v48, 2026-10-29)**. It uses real remote Oxford/Youdao/Google human audio with same-element replay; the former local MP3 pack and generators have been removed. See `README.md`, `CHANGELOG.md` and the nine commands in `tests/README.md` for the current contract and verification. The detailed observations below describe the historical candidate, not v48.
 
 # Smart Dictation Player — repair and QA report
 

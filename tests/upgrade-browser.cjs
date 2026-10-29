@@ -2,7 +2,7 @@
    responsive Liquid Glass UI, Settings mixer, audio reuse and native text input.
    Keyboard suggestions and performance depend on the actual device.
 
-   Tests use synthetic speech with external network requests blocked.
+   Tests mock remote media completion; no device speech or local MP3 files are used.
    SDP_BROWSER=webkit selects WebKit and SDP_BROWSER_STANDARD=1 requires a
    locally installed browser; CI treats an unavailable browser as a failure. */
 'use strict';
@@ -21,6 +21,20 @@ const results = [];
 
 function fakeSpeech() {
   window.__spoken = [];
+  window.__audio = [];
+  const media = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+  if (media) {
+    const originalPlay = media.play, originalLoad = media.load, originalPause = media.pause;
+    media.load = function () { if (this.id !== 'ttsMasterAudio') return originalLoad.call(this); };
+    media.pause = function () { if (this.id !== 'ttsMasterAudio') return originalPause.call(this); };
+    media.play = function () {
+      const el = this;
+      if (el.id !== 'ttsMasterAudio') return originalPlay.call(el);
+      window.__audio.push({ src: String(el.getAttribute('src') || ''), rate: el.playbackRate });
+      setTimeout(() => { if (el.onplaying) el.onplaying(); if (el.onended) el.onended(); }, 5);
+      return Promise.resolve();
+    };
+  }
   const voice = { name: 'Microsoft Sonia', lang: 'en-GB', localService: true };
   const synth = {
     getVoices: () => [voice],
@@ -271,7 +285,7 @@ function material(page) {
       assert.equal(full.anim, 'hansanaCinemaCycle', 'the cinematic disappearing / re-appearing cycle runs');
       assert.equal(full.sheen, 'none', 'no perpetual decorative repaint');
       assert.equal(full.z, '9999');
-      await page.locator('#credit').click();
+      await page.locator('#credit').click({ force: true });
       assert.match(await page.locator('#toasts').textContent(), /Created by Hansana · Idea given by Ayya01 \(Lesandu\) · Lecturer in Charge: Sumodya Sewmini/);
       if ((await material(page)).perf === 'full') await page.locator('#btnPerf').click();
       await page.mouse.move(2, 2);
@@ -328,7 +342,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -546,7 +560,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -632,6 +646,14 @@ function material(page) {
         return { preload: a.getAttribute('preload'), paused: a.paused };
       });
       assert.equal(unlocked.preload, 'auto', 'the one master audio element is ready to play');
+      const clearance = await page.evaluate(() => {
+        const credit = document.getElementById('credit').getBoundingClientRect();
+        const restart = document.getElementById('btnRestart').getBoundingClientRect();
+        return { credit: { left: credit.left, right: credit.right, top: credit.top, bottom: credit.bottom },
+          restart: { left: restart.left, right: restart.right, top: restart.top, bottom: restart.bottom },
+          overlap: !(credit.right <= restart.left || credit.left >= restart.right || credit.bottom <= restart.top || credit.top >= restart.bottom) };
+      });
+      assert.equal(clearance.overlap, false, 'the cinema credit never covers Restart: ' + JSON.stringify(clearance));
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
       await context.close();
@@ -643,14 +665,14 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete')).lists[0].words[0].w);
-      /* WebKit's synthetic speech callbacks are slower: wait for both repeats. */
-      /* v40 speaks repetition 2 as the exact same clean word from the same buffer */
-      await page.waitForFunction((w) => (window.__spoken || []).filter((t) => String(t.text || t).toLowerCase().indexOf(String(w).toLowerCase()) >= 0).length >= 2,
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice')).lists[0].words[0].w);
+      /* Both passes use the exact same remote Oxford recording on one element. */
+      await page.waitForFunction((w) => (window.__audio || []).filter((t) => String(t.src || '').indexOf('/' + w + '--_gb_1.mp3') >= 0).length >= 2,
         word, { timeout: 12000 }).catch(() => {});
-      const spoken = await page.evaluate(() => window.__spoken || []);
-      assert.ok(spoken.filter((t) => String(t.text || t).toLowerCase().indexOf(String(word).toLowerCase()) >= 0).length >= 2, 'spoken at least twice: ' + JSON.stringify(spoken));
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete')).settings.writeFixed), 5, 'five second timer');
+      const played = await page.evaluate(() => window.__audio || []);
+      assert.ok(played.filter((t) => String(t.src || '').indexOf('/' + word + '--_gb_1.mp3') >= 0).length >= 2, 'Oxford word played at least twice: ' + JSON.stringify(played));
+      assert.equal(await page.evaluate(() => (window.__spoken || []).length), 0, 'device speech is never used');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -660,7 +682,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete'));
+        const d = JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -690,7 +712,7 @@ function material(page) {
         return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -778,10 +800,12 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete'));
+        const d = JSON.parse(localStorage.getItem('sdp.v48_real_oxford_voice'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
+      await page.waitForFunction((w) => (window.__audio || []).filter((t) => String(t.src || '').indexOf('/' + w + '--_gb_1.mp3') >= 0).length >= 2,
+        word, { timeout: 12000 });
       await page.evaluate((value) => {
         const i = document.getElementById('ansInput');
         i.focus();

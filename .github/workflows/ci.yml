@@ -45,7 +45,7 @@ jobs:
       - run: npm ci --prefix tests
       - name: Install the actual browser, not a UA-only substitute
         run: ./tests/node_modules/.bin/playwright-core install --with-deps ${{ matrix.browser }}
-      - name: Layout, paste, synthetic speech, migration and axe
+      - name: Layout, remote-audio mocks, migration and axe
         run: node tests/upgrade-browser.cjs
         env:
           SDP_BROWSER: ${{ matrix.browser }}
