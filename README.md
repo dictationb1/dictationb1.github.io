@@ -2,27 +2,31 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 5.8.0 — v52
+## Release 5.9.0 — v53
 
-ElevenLabs one-time studio voice vault, one-click admin word auto-completer, the Hooded Red Eyes default wallpaper and the complete 13-point audit fixes.
+A clean three-card **Professor Studio** in admin mode, a strict zero-drain credit lock, permanent cross-device GitHub sync and the complete 13-point audit fixes.
 
-### ElevenLabs one-time studio voice (protected free credits)
+### 1. Admin panel redesign (PIN `78987898`)
 
-- Admin mode (PIN `78987898`) → **🎙️ ElevenLabs Studio Voice Plugin & Credit Manager**: paste the API key, `💾 Save & Verify Key`, pick one British English woman professor voice (Alice `Xb7hH8MSUJpSbSDYk0k2` by default, with Charlotte, Lily, Dorothy and a custom Voice ID field) and a model (`eleven_flash_v2_5` at 0.5 credits/character by default, `eleven_multilingual_v2` at 1).
-- Every utterance in the app (User Guide, `Are you ready?`, Test sound, the 3–2–1 countdown, `Number 1..30`, both word passes, Repeat, Slower, Repeat sentence, Spell it, Pause, resume and Finish) goes through `Speech` → `ElevenVault` → the single locked studio voice.
-- Clips are generated **only once ever**, in this order: `data/elevenlabs-audio.json` (shared, 0 credits for every student) → IndexedDB `sdp_elevenlabs_vault_v1` + Cache API `sdp-elevenlabs-v52` + memory → live ElevenLabs request (only with a saved key, de-duplicated in flight) → the unified British Youdao stream as a fallback. `📥 Download data/elevenlabs-audio.json` exports the whole vault so it can be committed for every device.
-- `⚡ Generate Missing Session Clips Once (Skip Cached)` and `📦 Generate Full Pack` show the cached count, the estimated characters/credits and a live progress bar.
+- **Card 1 — the weekly word list.** Session title, session date, class/lecturer info, a big word box and a live counter. Type or paste only the words and press **🚀 Save Words, Auto-Complete Meanings & Publish to All Devices** once: IPA, English definition, Sinhala meaning and an example sentence are filled, the previous week is archived into `pastSessions`, the new session is published and only the *missing* voice clips are generated. A collapsible preview table shows `#1..#30`.
+- **Card 2 — the permanent voice vault.** `#elVaultList` lists every saved clip with preview and per-clip delete, shows the clip count, the missing-clip cost estimate and the remaining credit balance, and offers `⚡ Generate & Save Missing Clips to GitHub Now`, `📥 Download data/elevenlabs-audio.json`, `📤 Upload data/elevenlabs-audio.json` and `🗑️ Delete All`.
+- **Card 3 — the one-time keys.** ElevenLabs key + `💾 Save & Verify`, studio voice (Alice `Xb7hH8MSUJpSbSDYk0k2` by default), model (`eleven_flash_v2_5`, 0.5 credits/character), GitHub token + `🔗 Save & Test GitHub Sync`.
+- Everything technical (words & planner, session, announcements, comments, class stats, diagnostics) moved into one collapsed `<details class="admin-advanced">` panel.
 
-### One-click word auto-completer
+### 2. Zero-drain credit lock
 
-- Admin mode → **✨ Quick Dictation Words Input**: type or paste only the words. IPA, English definition, Sinhala meaning and an example sentence are filled from the built-in lexicon, `api.dictionaryapi.dev` and Google Translate (`sl=en&tl=si`), the previous session is archived into `pastSessions`, the new session is published and (with a key) its ElevenLabs clips are generated once.
+- `ElevenVault.strictAdminOnly = true`: `api.elevenlabs.io/v1/text-to-speech` is reachable from exactly one function, `ElevenVault.adminGenerateMissing()`, and only while an admin generation cycle is running. Saved clips are never regenerated; a missing clip reports `missing` and playback falls back to the British Youdao stream (`https://dict.youdao.com/dictvoice?type=1&audio=…`) at **0 credits**.
+
+### 3. Cross-device sync
+
+- `GitHubSync` / `Cloud.commitFiles` commit `data/session.json`, `data/version.json`, `data/config.json` and `data/elevenlabs-audio.json` to `dictationb1/dictationb1.github.io` on `main` through the GitHub Contents API (read the live `sha`, then `PUT` base64), with `Cloud.publish` / `Cloud.fetchRemote` for the class channel and `ElevenVault.loadSharedVault()` at boot so a new phone sees the same words and the same voice clips.
 
 ### Release facts
 
-- Default wallpaper `./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4`; all three `/assets/` videos in the gallery; true `blur(14px) saturate(1.6) brightness(1.03)` glass.
-- Storage key: `sdp.v52_elevenlabs_studio`
-- `APP_VERSION`: `5.8.0`; `ver`, `schema` and `settingsRev`: `52`
-- Single-file ES5 build; the byte budget in `tests/check.cjs` and `tests/phase1.cjs` is 456,000 bytes (the page is ~455 KB with the ElevenLabs engine and admin studio inlined).
+- Storage key: `sdp.v53_github_voice_sync` (a v52 device migrates without losing words, keys or the chosen performance mode).
+- `APP_VERSION`: `5.9.0`; `ver`, `schema` and `settingsRev`: `53`.
+- `index.html` is a single ES5 file of **431,069 bytes** with no external `<link>` and no paid endpoint (the studio is lazy-loaded from `data/studio.js`, 59.8 KB ES5). `tests/check.cjs` enforces the **448,000**-byte ceiling.
+- Tests: `check`, `phase1`, `server`, `upgrade.test` (18 gates), `live-lab` (16), `audit-v42` (42), `browser` (32), `e2e` (44) and `upgrade-browser` (20) all pass with 0 errors. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
 
 ## Release 5.7.0 — v51
 

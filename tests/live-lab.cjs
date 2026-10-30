@@ -229,17 +229,26 @@ function device(html, base) {
       C.Admin.unlocked = false;
     });
 
-    /* --- v52: the one-time ElevenLabs voice vault is served with the app --- */
-    check('the repository publishes an empty v52 ElevenLabs voice vault that every student can fetch', () => {
+    /* --- v53: the permanent ElevenLabs voice vault is served with the app --- */
+    check('the repository publishes the permanent v53 ElevenLabs voice vault that every student can fetch', () => {
       const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
-      if (vault.version !== 52) throw Error('version ' + vault.version);
+      if (vault.version !== 53) throw Error('version ' + vault.version);
+      if (vault.strictAdminOnly !== true) throw Error('credit lock missing');
       if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
-      if (Object.keys(vault.clips || {}).length !== 0) throw Error('unexpected clips');
+      if (typeof vault.clips !== 'object') throw Error('clips map missing');
     });
-    check('the student device exposes the one-time vault and never spends credits without a key', () => {
-      const S = student.q, V = student.w.ElevenVault;
+    check('the student device loads the studio, replays saved clips and never spends credits on playback', () => {
+      const S = student.q;
+      /* data/studio.js is fetched on boot, exactly like a real browser */
+      const studioSrc = fs.readFileSync(path.join(root, 'data', 'studio.js'), 'utf8');
+      if (typeof student.w.ElevenVault !== 'object') student.w.eval(studioSrc);
+      const V = student.w.ElevenVault;
       if (typeof V !== 'object') throw Error('no vault');
       if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_flash_v2_5') throw Error('voice/model');
+      if (V.strictAdminOnly !== true) throw Error('playback is not locked to admin generation');
+      let missing = null;
+      V.resolve('Number 1', (err) => { missing = err; });
+      if (missing !== 'missing') throw Error('resolve generated instead of reporting a missing clip');
       if (V.hasKey() || V.stats.generatedCount !== 0) throw Error('credits were spent without a key');
       if (!/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(V.keyFor('Number 1'))) throw Error('cache key');
       if (S.CONFIG.repoMedia.length !== 3) throw Error('repo media ' + S.CONFIG.repoMedia.length);

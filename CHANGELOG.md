@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.9.0 (v53) — 2026-10-30
+
+- Rebuild admin mode as the three-card **Professor Studio**: card 1 is the weekly word list (title, date, class info, big word box, live counter, collapsible completion preview) with one giant `Save Words, Auto-Complete Meanings & Publish to All Devices` button that fills IPA/definition/Sinhala/example, archives the previous session and publishes; card 2 is the permanent `#elVaultList` voice vault with per-clip delete, the cost estimator, generate-missing, JSON export/import and delete-all; card 3 holds the ElevenLabs key, voice (Alice `Xb7hH8MSUJpSbSDYk0k2`), model (`eleven_flash_v2_5`), GitHub token and both verify buttons. The old technical tabs move into one collapsed `details.admin-advanced`.
+- Enforce the zero-drain credit lock: `ElevenVault.strictAdminOnly = true`, `api.elevenlabs.io/v1/text-to-speech` is called only from `adminGenerateMissing()` inside an admin cycle, saved clips are never regenerated, and student playback falls back to the British Youdao stream with 0 credits spent.
+- Add permanent cross-device sync: `GitHubSync` / `Cloud.commitFiles` push `data/session.json`, `data/version.json`, `data/config.json` and `data/elevenlabs-audio.json` to `dictationb1/dictationb1.github.io` `main` through the Contents API (fetch `sha`, `PUT` base64), with `Cloud.publish`, `Cloud.fetchRemote`, `DB.syncRemote` and a boot-time `ElevenVault.loadSharedVault()`.
+- Keep all 13 audit fixes (Hooded Red Eyes default wallpaper and the three repository videos, real 14px Liquid Glass, letter names, helpers during writing, the 3-2-1 countdown, one static Pause, the single credit spotlight, `Incorrect PIN` feedback), bump `APP_VERSION` to `5.9.0` and the schema to 53, and migrate `sdp.v52_elevenlabs_studio` without losing learner data.
+- Move the studio out of the page: `index.html` is 431,069 bytes of ES5 and lazy-loads `data/studio.js`. Rewrite the release gates — `check`, `phase1`, `server`, the generated 18-gate `upgrade.test`, `live-lab` (16), `audit-v42` (42), `browser` (32), `e2e` (44) and `upgrade-browser` (20) — and migrate the storage-key and version assertions to v53. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
+
 ## 5.8.0 (v52) — 2026-10-30
 
 - Add the ElevenLabs one-time studio voice engine (`ElevenVault`): one locked British English woman professor voice (Alice `Xb7hH8MSUJpSbSDYk0k2`, plus Charlotte, Lily, Dorothy and a custom ID), `eleven_flash_v2_5` at 0.5 credits/character by default, `eleven_multilingual_v2` optional, and the documented request body/headers with `mp3_44100_64` output.

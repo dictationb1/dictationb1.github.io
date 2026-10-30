@@ -47,8 +47,8 @@
     "voice": "Amy",
     "liveSync": false
   },
-  "ver": 52,
-  "version": "5.8.0",
+  "ver": 53,
+  "version": "5.9.0",
   "buildDate": "2026-10-30",
   "credits": {
     "createdBy": "Hansana",
@@ -82,8 +82,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.8.0",
-  "settingsRev": 52,
+  "appVersion": "5.9.0",
+  "settingsRev": 53,
   "performance": {
     "mode": "paper",
     "lite": {
@@ -122,8 +122,8 @@
       "basis": "Illustrative only: assumes repeat audio and video remain cached. Actual usage varies."
     }
   },
-  "key": "sdp.v52_elevenlabs_studio",
-  "storageKey": "sdp.v52_elevenlabs_studio",
+  "key": "sdp.v53_github_voice_sync",
+  "storageKey": "sdp.v53_github_voice_sync",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -344,7 +344,7 @@
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+  "activeVideoSrc": "assets/wallpaper-hooded.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
     "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
@@ -418,7 +418,7 @@
   },
   "updatedAt": "2026-10-30T00:00:00Z",
   "updatedAtMs": 1793318400000,
-  "schema": 51,
+  "schema": 53,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",
@@ -622,5 +622,13 @@
     "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
     "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",
     "visual": "v52: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) Apple Liquid Glass with the Hooded Red Eyes 1080p loop as the default wallpaper."
-  }
+  },
+  "adminPin": "78987898",
+  "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+  "voiceModel": "eleven_flash_v2_5",
+  "creditLock": "student playback replays saved clips only",
+  "voiceName": "Alice",
+  "modelId": "eleven_flash_v2_5",
+  "repoOwner": "dictationb1",
+  "repoName": "dictationb1.github.io"
 }

@@ -15,7 +15,15 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     pressed when the pad is still open (a 5-8 digit PIN). Closing the sheet that is
     already gone used to hang this suite. */
  async function closeSheet(page){if(await page.locator('#sheets .shead button[aria-label="Close"]').count())await page.locator('#sheets .shead button[aria-label="Close"]').click();}
+ async function waitHome(page){
+  for(let i=0;i<24;i++){
+   if(await page.locator('#btnAdmin').isVisible().catch(()=>false))return true;
+   await closeSheet(page);await page.waitForTimeout(250);
+  }
+  return page.locator('#btnAdmin').isVisible().catch(()=>false);
+ }
  async function unlockPin(page){
+  await waitHome(page);
   await page.locator('#btnAdmin').click();
   for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();
   const go=page.locator('#pinSubmit');
@@ -47,7 +55,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v53_github_voice_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -198,8 +206,9 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await context.close();
  }
  // ---------------------------------------------------------------------------
- // v52 (5.8.0): ElevenLabs one-time studio voice vault + admin auto-completer.
- // Served over http so IndexedDB and the Cache API storage tier are real.
+ // v53 (5.9.0): 3-card Professor Studio, permanent GitHub voice vault and the
+ // zero-drain credit lock. Served over http so the lazy studio, IndexedDB and
+ // the storage tier are all real.
  // ---------------------------------------------------------------------------
  {
   const http=require('http');const mime={'.html':'text/html','.json':'application/json','.mp4':'video/mp4','.webp':'image/webp','.js':'text/javascript','.svg':'image/svg+xml'};
@@ -226,59 +235,66 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   });
   await page.route('https://api.dictionaryapi.dev/**',async route=>{
    dictCalls++;
-   route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify([{word:'zephyr',phonetics:[{text:'/ˈzef.ər/',audio:'https://api.dictionaryapi.dev/media/pronunciations/en/zephyr-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'A soft gentle breeze.',example:'A warm zephyr crossed the harbour.'}]}]}])});
+   route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify([{word:'zephyr',phonetic:'/ˈzef.ər/',phonetics:[{text:'/ˈzef.ər/',audio:'https://api.dictionaryapi.dev/media/pronunciations/en/zephyr-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'A soft gentle breeze.',example:'A warm zephyr crossed the harbour.'}]}]}])});
   });
   await page.route('https://translate.googleapis.com/**',async route=>{
    siCalls++;
    route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify([[['මෘදු සුළඟ']]])});
   });
   await page.goto(base+'/index.html');
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(()=>!!window.ElevenVault,{timeout:15000}).catch(()=>{});
+  await page.waitForTimeout(900);
   await closeSheet(page);
   await unlockPin(page);
-  const cards=await page.evaluate(()=>({studio:!!document.querySelector('#elStudioCard'),quick:!!document.querySelector('#elQuickWordsCard'),badge:(document.querySelector('#elCreditBadge')||{}).textContent||'',voice:(document.querySelector('#elVoiceSelect')||{}).value||'',model:(document.querySelector('#elModelSelect')||{}).value||''}));
-  results.push({test:'Chromium v52 admin panel shows the ElevenLabs Studio card and the quick-words card',status:cards.studio&&cards.quick&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'?'PASS':'FAIL',detail:cards});
-  await page.locator('#elApiKeyInput').fill('xi-test-key-52');
-  await page.locator('#btnElVerify').click();
-  await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elCreditBadge')||{}).textContent||''),{timeout:10000}).catch(()=>{});
-  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),badge:document.querySelector('#elCreditBadge').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||'{}').settings||{}).elevenLabsKey||''}));
-  results.push({test:'Chromium v52 Save & Verify stores the ElevenLabs key and shows the live credit badge',status:saved.key==='xi-test-key-52'&&saved.stored==='xi-test-key-52'&&/Tier: Free/.test(saved.badge)&&/9,750 \/ 10,000/.test(saved.badge)?'PASS':'FAIL',detail:saved});
-  const before=synthCalls;
-  const dedupe=await page.evaluate(()=>new Promise(resolve=>{
-   const got=[];const done=()=>{if(got.length===2)resolve(got);};
-   window.ElevenVault.generate('Number 1',(err,url)=>{got.push(!!url);done();});
-   window.ElevenVault.generate('Number 1',(err,url)=>{got.push(!!url);done();});
+  const cards=await page.evaluate(()=>({
+    title:!!document.querySelector('#profSessionTitle'),date:!!document.querySelector('#profSessionDate'),
+    info:!!document.querySelector('#profClassInfo'),words:!!document.querySelector('#adminQuickWordsInput'),
+    table:!!document.querySelector('#profWordsTable'),go:!!document.querySelector('#btnAdminAutoComplete'),
+    vault:!!document.querySelector('#elVaultList'),gen:!!document.querySelector('#btnElGenerateAll'),
+    exp:!!document.querySelector('#btnElExportJson'),imp:!!document.querySelector('#btnElImportJson'),
+    key:!!document.querySelector('#elApiKeyInput'),gh:!!document.querySelector('#ghTokenInput'),
+    voice:(document.querySelector('#elVoiceSelect')||{}).value||'',model:(document.querySelector('#elModelSelect')||{}).value||'',
+    lock:(document.querySelector('#elCreditLockBanner')||{}).textContent||'',
+    adv:document.querySelectorAll('details.admin-advanced').length
   }));
-  results.push({test:'Chromium v52 the same clip is generated only once (in-flight dedupe)',status:synthCalls-before===1&&dedupe.length===2&&dedupe[0]&&dedupe[1]?'PASS':'FAIL',detail:{calls:synthCalls-before,dedupe}});
+  const cardOk=Object.keys(cards).filter(k=>['voice','model','lock','adv'].indexOf(k)<0).every(k=>cards[k]);
+  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
+  await page.locator('#elApiKeyInput').fill('xi-test-key-53');
+  await page.locator('#btnElVerify').click();
+  await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
+  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v53_github_voice_sync')||'{}').settings||{}).elevenLabsKey||''}));
+  results.push({test:'Chromium v53 Save & Verify stores the ElevenLabs key and shows the live credit balance',status:saved.key==='xi-test-key-53'&&saved.stored==='xi-test-key-53'&&/Tier: Free/.test(saved.status)&&/9,750 \/ 10,000/.test(saved.status)&&/Remaining ElevenLabs Credits: 9,750 \/ 10,000/.test(saved.stats)?'PASS':'FAIL',detail:saved});
+  const beforePlay=synthCalls;
+  const playback=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.resolve('Number 1',(err,url)=>resolve({err:err,url:!!url}));}));
+  results.push({test:'Chromium v53 student playback of a missing clip never touches the paid endpoint',status:playback.err==='missing'&&!playback.url&&synthCalls===beforePlay?'PASS':'FAIL',detail:{playback,calls:synthCalls-beforePlay}});
+  const beforeGen=synthCalls;
+  const gen=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.generateBatch(['Number 1','Number 1','zephyr'],()=>{},resolve);}));
+  results.push({test:'Chromium v53 the admin Generate button creates each missing clip exactly once',status:gen.ok&&gen.generated===2&&synthCalls-beforeGen===2?'PASS':'FAIL',detail:{gen,calls:synthCalls-beforeGen}});
   const tiers=await page.evaluate(()=>new Promise(resolve=>{
    const key=window.ElevenVault.keyFor('Number 1');
-   window.ElevenVault.idbGet(key,data=>{
-    caches.open('sdp-elevenlabs-v52').then(c=>c.match(window.ElevenVault.cacheUrl(key))).then(hit=>resolve({key:key,idb:/^data:audio\/mpeg;base64,/.test(data||''),cache:!!hit,mem:/^data:audio\/mpeg;base64,/.test(window.ElevenVault.memMap[key]||''),count:window.ElevenVault.clipCount()}));
-   });
+   window.ElevenVault.idbGet(key,data=>resolve({key:key,idb:/^data:audio\/mpeg;base64,/.test(data||''),mem:/^data:audio\/mpeg;base64,/.test(window.ElevenVault.memMap[key]||''),count:window.ElevenVault.clipCount(),blocked:window.ElevenVault.stats.blocked}));
   }));
-  results.push({test:'Chromium v52 the generated clip is permanently stored in IndexedDB, the Cache API and memory',status:tiers.idb&&tiers.cache&&tiers.mem&&tiers.count>=1?'PASS':'FAIL',detail:tiers});
+  results.push({test:'Chromium v53 a generated clip is stored permanently in IndexedDB and memory',status:tiers.idb&&tiers.mem&&tiers.count>=2&&tiers.blocked>=1?'PASS':'FAIL',detail:tiers});
   const before2=synthCalls;
-  await page.reload();await page.waitForTimeout(1100);
-  const replay=await page.evaluate(()=>new Promise(resolve=>{
-   window.ElevenVault.resolve('Number 1',(err,url)=>resolve(!!url));
-  }));
-  results.push({test:'Chromium v52 a reloaded page replays the vault clip with zero ElevenLabs calls',status:replay&&synthCalls===before2?'PASS':'FAIL',detail:{replay:replay,calls:synthCalls-before2}});
+  await page.reload();await page.waitForFunction(()=>!!window.ElevenVault,{timeout:15000}).catch(()=>{});await page.waitForTimeout(500);
+  const replay=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.resolve('Number 1',(err,url)=>resolve(!!url));}));
+  results.push({test:'Chromium v53 a reloaded page replays the saved vault clip with zero ElevenLabs calls',status:replay&&synthCalls===before2?'PASS':'FAIL',detail:{replay:replay,calls:synthCalls-before2}});
   await closeSheet(page);
   await unlockPin(page);
   await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
-  await page.locator('#adminQuickSessionTitle').fill('Session 9 - Weather');
+  await page.locator('#profSessionTitle').fill('Session 9 - Weather');
   await page.locator('#btnAdminAutoComplete').click();
-  await page.waitForFunction(()=>/words completed/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:25000}).catch(()=>{});
+  await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:30000}).catch(()=>{});
   const quick=await page.evaluate(()=>{
-   const data=JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||'{}');
+   const data=JSON.parse(localStorage.getItem('sdp.v53_github_voice_sync')||'{}');
    const list=(data.lists||[])[(data.lists||[]).length-1]||{};
-   return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).no,past:(data.pastSessions||[]).length};
+   return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',rows:document.querySelectorAll('#profWordsTable .prof-row').length,name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).title,archived:(data.pastSessions||[]).length};
   });
   const complete=quick.words.length===2&&quick.words.every(w=>w.w&&w.p&&w.d&&w.m&&w.s);
-  results.push({test:'Chromium v52 typing only words auto-completes IPA, definition, Sinhala meaning, sentence and publishes the session',status:/words completed/.test(quick.status)&&complete&&quick.published&&quick.name==='Session 9 - Weather'&&dictCalls>0&&siCalls>0?'PASS':'FAIL',detail:quick});
-  const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter,errors:0};});
-  results.push({test:'Chromium v52 Apple Liquid Glass keeps the real backdrop-filter blur(14px)',status:/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
-  results.push({test:'Chromium v52 no page errors during the vault and auto-completer run',status:errors.length===0?'PASS':'FAIL',errors});
+  results.push({test:'Chromium v53 one click on the big button completes IPA, definition, Sinhala, sentence and publishes the session',status:/words saved/.test(quick.status)&&complete&&quick.published&&quick.name==='Session 9 - Weather'&&quick.session==='Session 9 - Weather'&&quick.rows===3&&dictCalls>0&&siCalls>0?'PASS':'FAIL',detail:quick});
+  const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter};});
+  results.push({test:'Chromium v53 Apple Liquid Glass keeps the real backdrop-filter blur(14px)',status:/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
+  results.push({test:'Chromium v53 no page errors during the studio, vault and auto-completer run',status:errors.length===0?'PASS':'FAIL',errors});
   await context.close();
   await new Promise(resolve=>server.close(resolve));
  }
