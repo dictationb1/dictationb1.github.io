@@ -18,8 +18,7 @@
     "voice": "Amy",
     "writeFixed": 5,
     "repeats": 2,
-    "adminPin": "78987898",
-    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
     "activeMediaType": "video",
     "videoPlaylistMode": "loop",
     "perf": "full"
@@ -39,19 +38,18 @@
     "perf": "full",
     "glassTint": 0,
     "wallpaperVideo": true,
-    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
     "videoPlaylistMode": "loop",
     "activeMediaType": "video",
     "videoDim": 18,
     "lang": "en",
     "guideLang": "en",
     "voice": "Amy",
-    "adminPin": "78987898",
     "liveSync": false
   },
-  "ver": 50,
-  "version": "5.6.0",
-  "buildDate": "2026-10-29",
+  "ver": 51,
+  "version": "5.7.0",
+  "buildDate": "2026-10-30",
   "credits": {
     "createdBy": "Hansana",
     "ideaBy": "Ayya01 (Lesandu)",
@@ -60,9 +58,9 @@
     "si": "නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Sumodya Sewmini"
   },
   "tts": {
-    "engine": "Direct Youdao UK dictionary requests, Google dictionary UK backup for single words, then device speech synthesis if needed",
-    "englishVoice": "UK dictionary recording where available; British device voice fallback",
-    "sinhalaGuideVoice": "Youdao Sinhala request; si-LK device voice or approximate romanisation fallback when unavailable",
+    "engine": "One Youdao en-GB stream for numbers, words and phrases; pinned British device voice on failure",
+    "englishVoice": "Youdao en-GB stream; pinned British female device voice when available",
+    "sinhalaGuideVoice": "Youdao Sinhala stream or si-LK device voice; no romanisation",
     "lockedVoice": "Amy",
     "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
@@ -71,27 +69,27 @@
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
     "silenceBetweenRepeatsMs": 650,
-    "numberToWordBeatMs": 120,
+    "numberToWordBeatMs": 180,
     "slowPlaybackRate": 0.72,
     "pass2": "Replay the identical loaded word URL using currentTime=0 when available",
-    "startTimeoutMs": 1600,
-    "fallback": "On media failure or timeout, prefer an available British female speechSynthesis voice; Sinhala falls back to si-LK or approximate romanisation",
-    "singleWordBackup": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3",
-    "sinhalaBase": "https://dict.youdao.com/dictvoice?type=1&le=si&audio="
+    "startTimeoutMs": 2800,
+    "fallback": "On media error or after 2800ms without playback, use a pinned British female device voice when available; Sinhala requires si-LK",
+    "sinhalaBase": "https://dict.youdao.com/dictvoice?type=1&le=si&audio=",
+    "preBuffer": "Four hidden audio elements preload the countdown, next numbers and a two-word rolling window"
   },
   "live": {
     "state": "https://ntfy.sh/sdp_dictationb1_state_v8",
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "5.6.0",
-  "settingsRev": 50,
+  "appVersion": "5.7.0",
+  "settingsRev": 51,
   "performance": {
     "mode": "paper",
     "lite": {
-      "gb": "8px",
-      "gs": 1.35,
-      "gbr": 1.02
+      "gb": "14px",
+      "gs": 1.6,
+      "gbr": 1.03
     },
     "full": {
       "gb": "14px",
@@ -99,30 +97,33 @@
       "gbr": 1.03
     },
     "probeMs": 1200,
-    "medianBudgetMs": 19,
-    "background": "GPU-isolated fixed video, with canvas RAF only while short-lived ripples/sparks exist"
+    "medianBudgetMs": 80,
+    "background": "GPU-isolated fixed video, with canvas RAF only while short-lived ripples/sparks exist",
+    "glass": "blur(14px) saturate(1.6) brightness(1.03)",
+    "minimumFrameSamples": 20
   },
   "dataSaving": {
-    "preload": "none (dictation audio only)",
+    "preload": "Four-element pool preloads countdown, next numbers and a rolling two-word window; actual network use varies.",
     "audioReuse": true,
     "dictionaryFromMemory": true,
     "versionPollOncePerBoot": true,
     "ntfyPollWindow": "24h",
-    "engine": "v50 direct dictionary playback",
-    "bootAudioPreload": "none - the welcome clip is fetched only when Start dictation is tapped",
-    "rollingWindow": "no audio prefetch",
+    "engine": "v51 single Youdao UK stream with pinned British device fallback",
+    "bootAudioPreload": "The first-run guide attempts autoplay; the welcome clip is requested when Start dictation is tapped.",
+    "rollingWindow": "Four-element prebuffer for the countdown, upcoming numbers, and two rolling words.",
     "persistentCache": "The current loaded audio element can be replayed; browser caching varies",
     "ntfyPolling": "off until Live Sync is enabled in Community",
     "versionJsonCache": "ETag / 304 friendly (no cache:no-store)",
-    "measured": {
-      "firstRunWithVideo": "~1.95 MB",
-      "firstRunAudioOnly": "~0.48 MB",
-      "repeatSession": "~0.005 MB"
-    },
-    "publicSheet": "https://dictationb1.github.io/data"
+    "publicSheet": "https://dictationb1.github.io/data",
+    "estimate": {
+      "firstRunWithVideo": "~11.81 MB",
+      "firstRunAudioOnly": "~1.25 MB",
+      "repeatSession": "~0.005 MB",
+      "basis": "Illustrative only: assumes repeat audio and video remain cached. Actual usage varies."
+    }
   },
-  "key": "sdp.v50_all_p0_p6_fixed",
-  "storageKey": "sdp.v50_all_p0_p6_fixed",
+  "key": "sdp.v51_hooded_liquid_glass",
+  "storageKey": "sdp.v51_hooded_liquid_glass",
   "keyboard": {
     "engine": "native system keyboard (Gboard, Samsung, Helakuru, SwiftKey, iOS)",
     "inputType": "text",
@@ -173,8 +174,8 @@
     "stage": "#bgLiveWrap",
     "video": "#bgLiveVideo",
     "canvas": "#bgLiveCanvas",
-    "defaultVideo": "./assets/bunny-live-wallpaper.mp4",
-    "poster": "./assets/bunny-poster.webp",
+    "defaultVideo": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+    "poster": "./assets/hooded-poster.webp",
     "preload": "auto",
     "modes": [
       "lite",
@@ -186,8 +187,8 @@
       "key": "custom_bg"
     },
     "defaultEnabled": true,
-    "framing": "Portrait on wide screens: contain + synchronized ambilight + horizontal edge feathering; portrait on mobile and universal landscape: cover",
-    "backdrop": "#bgLiveAmbilight",
+    "framing": "Portrait and landscape videos use object-fit: cover; portrait video on wide screens is positioned at center 28%, avoiding sidebars.",
+    "backdrop": "cover framing; photo ambilight for portrait photos",
     "ambilight": {
       "selector": "#bgLiveAmbilight",
       "blur": "34px",
@@ -207,13 +208,13 @@
     "localPicker": "#btnPickVideoFile",
     "repoVideos": [
       {
-        "id": "vid_bunny_live_wallpaper",
-        "title": "Bunny Live Wallpaper",
-        "src": "./assets/bunny-live-wallpaper.mp4",
-        "poster": "./assets/bunny-poster.webp"
-      }
-    ],
-    "repoMedia": [
+        "id": "media_hooded_red_eyes",
+        "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+        "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/hooded-poster.webp"
+      },
       {
         "id": "media_bunny_live_wallpaper",
         "title": "Bunny Live Wallpaper",
@@ -221,6 +222,40 @@
         "type": "video",
         "folder": "assets",
         "poster": "./assets/bunny-poster.webp"
+      },
+      {
+        "id": "media_wanderingpixels",
+        "title": "Wandering Pixels Loop",
+        "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/wanderingpixels-poster.webp"
+      }
+    ],
+    "repoMedia": [
+      {
+        "id": "media_hooded_red_eyes",
+        "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+        "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/hooded-poster.webp"
+      },
+      {
+        "id": "media_bunny_live_wallpaper",
+        "title": "Bunny Live Wallpaper",
+        "src": "./assets/bunny-live-wallpaper.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/bunny-poster.webp"
+      },
+      {
+        "id": "media_wanderingpixels",
+        "title": "Wandering Pixels Loop",
+        "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+        "type": "video",
+        "folder": "assets",
+        "poster": "./assets/wanderingpixels-poster.webp"
       }
     ],
     "repoFallbacks": [],
@@ -231,7 +266,9 @@
     "photoAmbilight": "#bgLivePhotoAmbilight",
     "dimmer": "#sVideoDim (--bg-dim)",
     "repoMediaPaths": [
-      "./assets/bunny-live-wallpaper.mp4"
+      "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "./assets/bunny-live-wallpaper.mp4",
+      "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4"
     ],
     "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
     "ghMediaCache": "sdp.gh_assets_v44",
@@ -256,15 +293,13 @@
   },
   "repoVideos": [
     {
-      "id": "media_bunny_live_wallpaper",
-      "title": "Bunny Live Wallpaper",
-      "src": "./assets/bunny-live-wallpaper.mp4",
-      "poster": "./assets/bunny-poster.webp",
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
       "type": "video",
-      "folder": "assets"
-    }
-  ],
-  "repoMedia": [
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
     {
       "id": "media_bunny_live_wallpaper",
       "title": "Bunny Live Wallpaper",
@@ -272,16 +307,54 @@
       "type": "video",
       "folder": "assets",
       "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    {
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
-    "./assets/bunny-live-wallpaper.mp4"
+    "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4"
   ],
   "repoPosters": {
-    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
+    "assets/hooded_red_eyes_live_wallpaper_1080p_loop": "./assets/hooded-poster.webp",
+    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp",
+    "assets/wanderingpixels_2025-12-26_7588160805032430870": "./assets/wanderingpixels-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
   "ghMediaCache": "sdp.gh_assets_v44",
@@ -310,14 +383,13 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "humanAudio": {
-    "voice": "British dictionary audio where available, with device speech fallback",
+    "voice": "One British English Youdao stream with pinned British device fallback",
     "singleWordBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "phraseBase": "https://dict.youdao.com/dictvoice?type=1&audio=",
     "lang": "en-GB",
     "referrerPolicy": "no-referrer",
     "crossOrigin": false,
-    "bundle": "none - remote dictionary requests and device fallback",
-    "singleWordBackup": "https://ssl.gstatic.com/dictionary/static/sounds/20200429/<word>--_gb_1.mp3"
+    "bundle": "none - remote dictionary requests and device fallback"
   },
   "voiceProfile": {
     "name": "British dictionary audio with device voice fallback",
@@ -333,7 +405,7 @@
     "sinhalaLineHeight": 1.72
   },
   "ui": {
-    "glass": "Layered optical glass with specular highlights and no backdrop blur",
+    "glass": "True backdrop blur(14px) saturate(1.6) brightness(1.03) with specular highlights",
     "radius": {
       "buttons": "12px",
       "cards": "18px"
@@ -341,13 +413,12 @@
     "motion": {
       "press": "0.04s",
       "release": "0.20s spring",
-      "credit": "7s disappearing/reappearing cycle, including reduced-motion preference"
+      "credit": "One 3.2s intro followed by one 8s spotlight cycle"
     }
   },
-  "updatedAt": "2026-10-29T00:00:00Z",
-  "updatedAtMs": 1793232000000,
-  "adminPin": "78987898",
-  "schema": 50,
+  "updatedAt": "2026-10-30T00:00:00Z",
+  "updatedAtMs": 1793318400000,
+  "schema": 51,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",
@@ -358,9 +429,192 @@
       "day": "Thursday",
       "date": "2026-10-22",
       "title": "Session 7 - Travel & Transport",
+      "listName": "Session 7 - Travel & Transport",
       "listId": "list_session_7_travel",
       "wordCount": 30,
-      "archived": true
+      "archived": true,
+      "words": [
+        {
+          "w": "guidebook",
+          "m": "a book that gives information for visitors about a place, such as a city or country",
+          "s": "We bought a guidebook to learn about the best museums in Rome.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=guidebook"
+        },
+        {
+          "w": "handlebars",
+          "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
+          "s": "Hold the handlebars with both hands when you ride down the hill.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=handlebars"
+        },
+        {
+          "w": "harbour",
+          "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
+          "s": "The fishing boats returned safely to the harbour before the storm.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=harbour"
+        },
+        {
+          "w": "helicopter",
+          "m": "a type of aircraft without wings that has large blades on top that go round",
+          "s": "The rescue helicopter flew over the mountains to find the hikers.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=helicopter"
+        },
+        {
+          "w": "hitchhike",
+          "m": "to travel for free by standing by the road and asking drivers for a ride",
+          "s": "It is not safe to hitchhike alone along a busy motorway at night.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hitchhike"
+        },
+        {
+          "w": "immigration",
+          "m": "the area at an airport or port where officials check the passports of people entering a country",
+          "s": "We showed our passports at immigration after landing in London.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=immigration"
+        },
+        {
+          "w": "journey",
+          "m": "the act of travelling from one place to another, especially in a vehicle",
+          "s": "The train journey from Galle to Colombo takes about two hours.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=journey"
+        },
+        {
+          "w": "luggage",
+          "m": "the bags, suitcases, and things that you take with you when you are travelling",
+          "s": "You are allowed one piece of hand luggage on the aircraft.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=luggage"
+        },
+        {
+          "w": "machine",
+          "m": "a piece of equipment with moving parts that uses power to do a particular job",
+          "s": "You can buy your train ticket from the machine at the station.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=machine"
+        },
+        {
+          "w": "mechanic",
+          "m": "someone whose job is repairing the engines of vehicles and other machines",
+          "s": "The mechanic repaired our car engine at the garage this morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mechanic"
+        },
+        {
+          "w": "nationality",
+          "m": "the official right to belong to a particular country",
+          "s": "Please write your full name and nationality on the arrival form.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=nationality"
+        },
+        {
+          "w": "on business",
+          "m": "travelling or staying somewhere as part of your work, not for a holiday",
+          "s": "Her father has gone to Singapore on business for three days.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20business"
+        },
+        {
+          "w": "on vacation",
+          "m": "away from work or school for a holiday",
+          "s": "The office is closed because the manager is away on vacation.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20vacation"
+        },
+        {
+          "w": "overnight",
+          "m": "for or during the night",
+          "s": "We took the overnight ferry and arrived early the next morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=overnight"
+        },
+        {
+          "w": "passenger",
+          "m": "a person who is travelling in a vehicle but is not driving it or working on it",
+          "s": "Every passenger must fasten their seatbelt before the plane takes off.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=passenger"
+        },
+        {
+          "w": "public transport",
+          "m": "buses, trains, and other vehicles that anyone can pay to use",
+          "s": "Using public transport helps to reduce traffic in the city centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=public%20transport"
+        },
+        {
+          "w": "reception",
+          "m": "the desk in a hotel or office building where visitors go when they first arrive",
+          "s": "Please leave your room key at reception when you check out.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reception"
+        },
+        {
+          "w": "reservation",
+          "m": "an arrangement in which something such as a seat or hotel room is kept for you",
+          "s": "I called the hotel to make a room reservation for two nights.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reservation"
+        },
+        {
+          "w": "road sign",
+          "m": "a notice at the side of a road that gives information or instructions to drivers",
+          "s": "The road sign warned drivers about a sharp bend ahead.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=road%20sign"
+        },
+        {
+          "w": "signpost",
+          "m": "a sign by the side of a road or path that shows the direction and distance to places",
+          "s": "We followed the wooden signpost pointing towards the village.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=signpost"
+        },
+        {
+          "w": "spaceship",
+          "m": "a vehicle that is able to travel in space",
+          "s": "The astronauts travelled to the moon inside a silver spaceship.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=spaceship"
+        },
+        {
+          "w": "suitcase",
+          "m": "a large flat box with a handle used for carrying clothes when you travel",
+          "s": "She packed her warm winter clothes into a large blue suitcase.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=suitcase"
+        },
+        {
+          "w": "tourist information centre",
+          "m": "an office that gives free maps, brochures, and advice to visitors",
+          "s": "We got a free city map from the tourist information centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tourist%20information%20centre"
+        },
+        {
+          "w": "traffic lights",
+          "m": "sets of red, amber, and green lights at road junctions that control traffic",
+          "s": "Walk across the pedestrian crossing when the traffic lights turn green.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=traffic%20lights"
+        },
+        {
+          "w": "tunnel",
+          "m": "a long passage built underground or through a hill for a road or railway",
+          "s": "The express train went through a long dark tunnel under the river.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tunnel"
+        },
+        {
+          "w": "tyre/tire",
+          "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
+          "s": "He had to stop by the road to change a flat tyre on his car.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tyre"
+        },
+        {
+          "w": "vehicle",
+          "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
+          "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=vehicle"
+        },
+        {
+          "w": "visa",
+          "m": "an official mark in your passport that allows you to enter or leave a country",
+          "s": "You need to apply for a tourist visa before travelling to that country.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=visa"
+        },
+        {
+          "w": "waiting room",
+          "m": "a room at a station, airport, or doctor's surgery where people can sit and wait",
+          "s": "The passengers sat in the warm waiting room until the train arrived.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=waiting%20room"
+        },
+        {
+          "w": "windscreen",
+          "m": "the large glass window at the front of a car, bus, or other vehicle",
+          "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=windscreen"
+        }
+      ]
     }
   ],
   "perf": "full"

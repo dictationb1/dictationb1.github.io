@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 50,
+  "ver": 51,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -14,8 +14,7 @@
     "voice": "Amy",
     "writeFixed": 5,
     "repeats": 2,
-    "adminPin": "78987898",
-    "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+    "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
     "activeMediaType": "video",
     "videoPlaylistMode": "loop",
     "perf": "full"
@@ -24,7 +23,7 @@
     {
       "id": "list_session_8_feelings",
       "name": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-      "version": "5.6.0",
+      "version": "5.7.0",
       "published": true,
       "session": "Session 8",
       "date": "2026-10-29",
@@ -305,7 +304,7 @@
     {
       "id": "list_session_7_travel",
       "name": "Session 7 - Travel & Transport",
-      "version": "5.6.0",
+      "version": "5.7.0",
       "published": true,
       "session": "Session 7",
       "date": "2026-10-22",
@@ -513,11 +512,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "5.6.0",
-  "updatedAt": "2026-10-29T00:00:00Z",
-  "version": "5.6.0",
-  "buildDate": "2026-10-29",
-  "settingsRev": 50,
+  "appVersion": "5.7.0",
+  "updatedAt": "2026-10-30T00:00:00Z",
+  "version": "5.7.0",
+  "buildDate": "2026-10-30",
+  "settingsRev": 51,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -525,18 +524,16 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v50_all_p0_p6_fixed",
+  "storageKey": "sdp.v51_hooded_liquid_glass",
   "repoVideos": [
     {
-      "id": "media_bunny_live_wallpaper",
-      "title": "Bunny Live Wallpaper",
-      "src": "./assets/bunny-live-wallpaper.mp4",
-      "poster": "./assets/bunny-poster.webp",
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
       "type": "video",
-      "folder": "assets"
-    }
-  ],
-  "repoMedia": [
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
     {
       "id": "media_bunny_live_wallpaper",
       "title": "Bunny Live Wallpaper",
@@ -544,16 +541,54 @@
       "type": "video",
       "folder": "assets",
       "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    {
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
-    "./assets/bunny-live-wallpaper.mp4"
+    "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4"
   ],
   "repoPosters": {
-    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
+    "assets/hooded_red_eyes_live_wallpaper_1080p_loop": "./assets/hooded-poster.webp",
+    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp",
+    "assets/wanderingpixels_2025-12-26_7588160805032430870": "./assets/wanderingpixels-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
   "ghMediaCache": "sdp.gh_assets_v44",
@@ -580,20 +615,202 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "updatedAtMs": 1793232000000,
-  "adminPin": "78987898",
-  "schema": 50,
+  "updatedAtMs": 1793318400000,
+  "schema": 51,
   "pastSessions": [
     {
       "no": "7",
       "day": "Thursday",
       "date": "2026-10-22",
       "title": "Session 7 - Travel & Transport",
+      "listName": "Session 7 - Travel & Transport",
       "listId": "list_session_7_travel",
       "wordCount": 30,
-      "archived": true
+      "archived": true,
+      "words": [
+        {
+          "w": "guidebook",
+          "m": "a book that gives information for visitors about a place, such as a city or country",
+          "s": "We bought a guidebook to learn about the best museums in Rome.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=guidebook"
+        },
+        {
+          "w": "handlebars",
+          "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
+          "s": "Hold the handlebars with both hands when you ride down the hill.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=handlebars"
+        },
+        {
+          "w": "harbour",
+          "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
+          "s": "The fishing boats returned safely to the harbour before the storm.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=harbour"
+        },
+        {
+          "w": "helicopter",
+          "m": "a type of aircraft without wings that has large blades on top that go round",
+          "s": "The rescue helicopter flew over the mountains to find the hikers.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=helicopter"
+        },
+        {
+          "w": "hitchhike",
+          "m": "to travel for free by standing by the road and asking drivers for a ride",
+          "s": "It is not safe to hitchhike alone along a busy motorway at night.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hitchhike"
+        },
+        {
+          "w": "immigration",
+          "m": "the area at an airport or port where officials check the passports of people entering a country",
+          "s": "We showed our passports at immigration after landing in London.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=immigration"
+        },
+        {
+          "w": "journey",
+          "m": "the act of travelling from one place to another, especially in a vehicle",
+          "s": "The train journey from Galle to Colombo takes about two hours.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=journey"
+        },
+        {
+          "w": "luggage",
+          "m": "the bags, suitcases, and things that you take with you when you are travelling",
+          "s": "You are allowed one piece of hand luggage on the aircraft.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=luggage"
+        },
+        {
+          "w": "machine",
+          "m": "a piece of equipment with moving parts that uses power to do a particular job",
+          "s": "You can buy your train ticket from the machine at the station.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=machine"
+        },
+        {
+          "w": "mechanic",
+          "m": "someone whose job is repairing the engines of vehicles and other machines",
+          "s": "The mechanic repaired our car engine at the garage this morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mechanic"
+        },
+        {
+          "w": "nationality",
+          "m": "the official right to belong to a particular country",
+          "s": "Please write your full name and nationality on the arrival form.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=nationality"
+        },
+        {
+          "w": "on business",
+          "m": "travelling or staying somewhere as part of your work, not for a holiday",
+          "s": "Her father has gone to Singapore on business for three days.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20business"
+        },
+        {
+          "w": "on vacation",
+          "m": "away from work or school for a holiday",
+          "s": "The office is closed because the manager is away on vacation.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20vacation"
+        },
+        {
+          "w": "overnight",
+          "m": "for or during the night",
+          "s": "We took the overnight ferry and arrived early the next morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=overnight"
+        },
+        {
+          "w": "passenger",
+          "m": "a person who is travelling in a vehicle but is not driving it or working on it",
+          "s": "Every passenger must fasten their seatbelt before the plane takes off.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=passenger"
+        },
+        {
+          "w": "public transport",
+          "m": "buses, trains, and other vehicles that anyone can pay to use",
+          "s": "Using public transport helps to reduce traffic in the city centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=public%20transport"
+        },
+        {
+          "w": "reception",
+          "m": "the desk in a hotel or office building where visitors go when they first arrive",
+          "s": "Please leave your room key at reception when you check out.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reception"
+        },
+        {
+          "w": "reservation",
+          "m": "an arrangement in which something such as a seat or hotel room is kept for you",
+          "s": "I called the hotel to make a room reservation for two nights.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reservation"
+        },
+        {
+          "w": "road sign",
+          "m": "a notice at the side of a road that gives information or instructions to drivers",
+          "s": "The road sign warned drivers about a sharp bend ahead.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=road%20sign"
+        },
+        {
+          "w": "signpost",
+          "m": "a sign by the side of a road or path that shows the direction and distance to places",
+          "s": "We followed the wooden signpost pointing towards the village.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=signpost"
+        },
+        {
+          "w": "spaceship",
+          "m": "a vehicle that is able to travel in space",
+          "s": "The astronauts travelled to the moon inside a silver spaceship.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=spaceship"
+        },
+        {
+          "w": "suitcase",
+          "m": "a large flat box with a handle used for carrying clothes when you travel",
+          "s": "She packed her warm winter clothes into a large blue suitcase.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=suitcase"
+        },
+        {
+          "w": "tourist information centre",
+          "m": "an office that gives free maps, brochures, and advice to visitors",
+          "s": "We got a free city map from the tourist information centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tourist%20information%20centre"
+        },
+        {
+          "w": "traffic lights",
+          "m": "sets of red, amber, and green lights at road junctions that control traffic",
+          "s": "Walk across the pedestrian crossing when the traffic lights turn green.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=traffic%20lights"
+        },
+        {
+          "w": "tunnel",
+          "m": "a long passage built underground or through a hill for a road or railway",
+          "s": "The express train went through a long dark tunnel under the river.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tunnel"
+        },
+        {
+          "w": "tyre/tire",
+          "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
+          "s": "He had to stop by the road to change a flat tyre on his car.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tyre"
+        },
+        {
+          "w": "vehicle",
+          "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
+          "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=vehicle"
+        },
+        {
+          "w": "visa",
+          "m": "an official mark in your passport that allows you to enter or leave a country",
+          "s": "You need to apply for a tourist visa before travelling to that country.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=visa"
+        },
+        {
+          "w": "waiting room",
+          "m": "a room at a station, airport, or doctor's surgery where people can sit and wait",
+          "s": "The passengers sat in the warm waiting room until the train arrived.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=waiting%20room"
+        },
+        {
+          "w": "windscreen",
+          "m": "the large glass window at the front of a car, bus, or other vehicle",
+          "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=windscreen"
+        }
+      ]
     }
   ],
-  "key": "sdp.v50_all_p0_p6_fixed",
+  "key": "sdp.v51_hooded_liquid_glass",
   "perf": "full"
 }

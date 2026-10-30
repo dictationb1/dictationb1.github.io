@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.7.0 (v51) — 2026-10-30
+
+- Set the muted Hooded Red Eyes loop as the cover-framed default, include all three videos in the gallery, add two WebP posters and make GitHub refresh perform a real request while retaining cached items on failure.
+- Route English speech through one Youdao UK endpoint with a pinned British synth fallback on error or after 2,800 ms; prebuffer cues and rolling words with four audio elements. Announce each number 180 ms before the word, replay it after 650 ms and use British letter names for spelling. Sinhala no longer falls back to romanised English.
+- Fade the welcome audio over 120 ms and run the 3–2–1 countdown on monotonic one-second beats. Keep static Test sound and Pause controls, preserve Slower's rate, allow helpers during playback and writing, and render the spoken finish summary.
+- Restore true 14px Liquid Glass in Full and Lite, prevent short frame samples forcing a downgrade, and run the credit intro and eight-second spotlight cycle once with dialogs above the credit.
+- Migrate prior storage without losing learner data or explicit performance choices, remove legacy cleartext PIN fields, keep the full Session 7 archive, and update both identical data pages and release metadata. The advertised data figures are illustrative rather than measured.
+- Verify the strict ES5/no-static-link and 430,000-byte release target, rewritten v51 unit suite, Chromium media/layout flows, end-to-end flows, server, live lab and audio audit. External provider voice availability and quality are not certified by the mocked tests.
+
 ## 5.6.0 (v50) — 2026-10-29
 
 - Request clean UK dictionary URLs for words, announce the number separately, and replay the same word recording; use the Google UK dictionary as a backup before device synthesis. Sinhala requests are chunked, with an installed Sinhala voice or approximate romanisation as fallback. External voice quality and host support are not guaranteed by the app.

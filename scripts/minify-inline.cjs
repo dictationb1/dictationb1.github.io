@@ -16,7 +16,7 @@ const FILE = path.join(__dirname, '..', 'index.html');
 const OPEN = '<script>';
 /* Names the QA harnesses reach into. Keep them readable so the test rigs can
    grab handles (and inject faults) by name after minification. */
-const KEEP = ['LiveWallpaper','isAssetsMedia','normalizeAssetPath','DEFAULT_WALLPAPER_SRC','APP_VERSION','BUILD_DATE',
+const KEEP = ['LiveWallpaper','isAssetsMedia','normalizeAssetPath','HOODED_WALLPAPER_SRC','BUNNY_WALLPAPER_SRC','WANDERING_SRC','DEFAULT_WALLPAPER_SRC','APP_VERSION','BUILD_DATE',
   'ASSET_MEDIA_RE','Errors','Admin','DB','Speech','UI','Eng','Lib','NoVoice','defaultData','Results','Cloud','Dict',
   'Store','CONFIG','ukMp3','SAMPLE_WORDS','IPA','SAMPLE_LIST_ID','U','Screens','WORD_BANK','publishCompletion',
   'wordRow','T','STRINGS_EN','STRINGS_SI','GUIDE','welcomeGuide','firstRunTour','DataTools','Diag','Comm','Links',

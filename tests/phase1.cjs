@@ -39,7 +39,7 @@ function harness(html = current, opts = {}) {
   const errors = [], requests = [], spoken = [], audio = [];
   const dom = new JSDOM(html, {url: 'https://example.test/' + (opts.hash || ''), runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: new VirtualConsole()});
   const w = dom.window;
-  const clock = FakeTimers.withGlobal(w).install({now: Date.UTC(2026, 9, 13, 12), toFake: ['Date','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
+  const clock = FakeTimers.withGlobal(w).install({now: Date.UTC(2026, 9, 13, 12), toFake: ['Date','performance','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
   w.scrollTo = () => {};
   w.HTMLCanvasElement.prototype.getContext = () => null;
   w.matchMedia = () => ({matches: false, addEventListener() {}});
@@ -240,7 +240,7 @@ test('2.2 cloud list update stays queued throughout active session', () => withA
 test('2.3 session typing/day chips update Home, player and comment metadata', () => withApp({voice:'en-GB'}, a => {
  enterPin(a,DEFAULT_PIN);a.q.Admin.tab='session';a.q.Admin.renderTab();const no=a.w.document.querySelector('[aria-label="Session number"]');no.value='42';no.dispatchEvent(new a.w.Event('input'));
  clickText(a,'Sun');assert.equal(a.q.DB.data.session.day,'Sunday');assert(a.w.document.querySelector('#homeKicker').textContent.includes('42'));assert(a.q.Comm.meta().includes('Sunday'));
- a.q.Eng.start({});assert.equal(a.q.Eng.layer,null);clickText(a,"I'm ready");assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
+ a.q.Eng.start({});assert.equal(a.q.Eng.layer,null);clickText(a,"I'm ready");a.clock.tick(120);assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
 }));
 test('2.4 private message is absent from public comments, visible only in unlocked inbox', () => withApp({}, a => {
  a.q.Comm.message();a.w.document.querySelector('#sheets textarea').value='Private QA message';clickText(a,'Send to lecturer');assert.equal(a.q.DB.data.inbox.length,1);assert.equal(a.q.DB.data.comments.length,0);assert(!a.w.document.querySelector('#commList').textContent.includes('Private QA message'));
@@ -367,7 +367,7 @@ test('4.4 v15 auto mode picks Lite on a weak device and Full on a strong one; ma
  /* a 1280px 8-core desktop measures 60 FPS: Full glass */
  Object.defineProperty(a.w.navigator,'hardwareConcurrency',{value:8,configurable:true,writable:true});Object.defineProperty(a.w.navigator,'deviceMemory',{value:8,configurable:true,writable:true});Object.defineProperty(a.w,'innerWidth',{value:1280,configurable:true,writable:true});a.w.matchMedia=()=>({matches:false,addEventListener(){}});a.q.UI.autoDowngraded=false;a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full');assert.equal(a.q.UI.autoPerf(),'full');
  if(nav)Object.defineProperty(a.w.navigator,'hardwareConcurrency',nav);
- a.q.UI.recordFrames([45,50,55]);assert.equal(a.q.UI.autoDowngraded,true);assert.equal(a.q.UI.perfMode,'lite','slow frames switch to Lite');
+ a.q.UI.recordFrames([45,50,55]);assert.equal(a.q.UI.autoDowngraded,false);assert.equal(a.q.UI.perfMode,'full','short samples must not force a downgrade');a.q.UI.recordFrames(Array(24).fill(90));assert.equal(a.q.UI.autoDowngraded,true);assert.equal(a.q.UI.perfMode,'lite','sustained slow frames switch to Lite');
  a.q.DB.data.settings.perf='full';a.q.UI.applyPerf();assert.equal(a.q.UI.perfMode,'full','a manual Full choice is honoured');assert.equal(a.q.UI.autoDowngraded,false);
  a.q.DB.data.settings.perf='lite';a.q.UI.applyPerf();assert.equal(a.w.document.body.getAttribute('data-perf'),'lite');assert.equal(a.w.document.querySelectorAll('#bg .blob').length,4);
 }));
@@ -443,14 +443,14 @@ test('4.5 greeting matches the ready button and no skip is offered', () => withA
 test('4.6 player offers a Test sound button', () => withApp({voice:'en-GB'}, a => {
  a.q.Eng.start({words:[{w:'apple',s:'I eat an apple.',m:'a fruit'}], listName:'QA'}); clickText(a,"I'm ready");
  for(let i=0;i<500&&a.q.Eng.st!=='waiting';i++) a.clock.tick(100);
- const btn=Array.from(a.w.document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Test sound');
+ const btn=a.w.document.querySelector('#btnTestVoicePlayer');
  assert(btn, 'Test sound button');
  const before=a.audio.length; btn.click(); a.clock.tick(500);
  assert(a.audio.length>before); assert(a.audio.slice(before).every(s=>/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(s.src)),'v49: Test sound streams the Youdao studio voice directly');assert.equal(a.spoken.length,0);
 }));
 test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
- assert(current.includes('env(safe-area-inset-top, 0px)'));
- assert(current.includes('env(safe-area-inset-bottom, 0px)'));
+ assert(/env\(safe-area-inset-top,\s*0px\)/.test(current));
+ assert(/env\(safe-area-inset-bottom,\s*0px\)/.test(current));
  assert(/--tap:\s*44px/.test(current));
  assert(current.includes('100dvh'));
 });

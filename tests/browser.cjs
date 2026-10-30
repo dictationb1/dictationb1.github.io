@@ -35,9 +35,9 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      contacted: publishing and completions wait for a real user action. */
   const live=/^https:\/\/ntfy\.sh\/sdp_dictationb1_(state|comm)_v[0-9]+\/json\?poll=1&since=24h$/;
   const sse=/^https:\/\/ntfy\.sh\/sdp_dictationb1_state_v[0-9]+,sdp_dictationb1_comm_v[0-9]+\/sse$/;
-  const staticOk=/(^|\/)data\/(session|version)\.json(\?v=\d+)?$/;const strays=requests.filter(u=>!staticOk.test(u)&&!live.test(u)&&!sse.test(u));
-  const otherHosts=requests.filter(u=>!staticOk.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u));
-  results.push({test:'Chromium '+width+'px boot and zero load network',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
+  const staticOk=/(^|\/)data\/(session|version)\.json(\?v=\d+)?$/;const guide=/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=Welcome%20to%20the%20Smart/;const strays=requests.filter(u=>!staticOk.test(u)&&!live.test(u)&&!sse.test(u)&&!guide.test(u));
+  const otherHosts=requests.filter(u=>!staticOk.test(u)&&!/^https:\/\/ntfy\.sh\//.test(u)&&!guide.test(u));
+  results.push({test:'Chromium '+width+'px boot uses only documented reads and first-run guide audio',status:errors.length===0&&strays.length===0&&otherHosts.length===0&&posts.length===0&&!await page.locator('#fatal').isVisible()?'PASS':'FAIL',errors,requests,posts});
   await closeSheet(page);
   await unlockPin(page);
   await page.waitForTimeout(300);results.push({test:'Chromium '+width+'px PIN unlock and no horizontal page overflow',status:await page.locator('#adminHost').isVisible() && await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)?'PASS':'FAIL'});
@@ -47,7 +47,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -63,7 +63,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -74,7 +74,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v50_all_p0_p6_fixed','{broken');localStorage.setItem('sdp.v44_apple_liquid_complete','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v51_hooded_liquid_glass','{broken');localStorage.setItem('sdp.v44_apple_liquid_complete','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -89,7 +89,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
   let base;
   try {
-    base=require('child_process').execFileSync('git',['show','7577968:index.html'],{cwd:root,maxBuffer:1000000}).toString();
+    base=require('child_process').execFileSync('git',['show','7577968:index.html'],{cwd:root,maxBuffer:1000000,stdio:['ignore','pipe','ignore']}).toString();
   } catch(e) {
     base=null;
   }
@@ -102,8 +102,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await context.close();
  }
  {
-  /* v33 gate: the bundled bunny MP4 really decodes and autoplays in Chromium,
-     and the zero-blur glass never hides it behind the Home hero. */
+  /* v51: the hooded MP4 really decodes and autoplays behind true glass. */
   const context=await browser.newContext({viewport:{width:390,height:844}});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -121,12 +120,12 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      scrim:getComputedStyle(document.getElementById('bgContrastScrim')).backgroundImage};});
    ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
     state.filter==='none'&&state.opacity==='1'&&
-    state.src==='./assets/bunny-live-wallpaper.mp4'&&state.wrap!=='none'&&
+    state.src==='./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'&&state.wrap!=='none'&&
     /linear-gradient/.test(state.heroImg)&&/8, 14, 28/.test(state.heroImg)&&
-    state.heroBlur==='none'&&
+    state.heroBlur==='blur(14px) saturate(1.6) brightness(1.03)'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v44 live bunny video decodes and autoplays behind optical glass',status:ok?'PASS':'FAIL',detail:state,errors});
+  results.push({test:'Chromium v51 hooded video decodes and autoplays behind liquid glass',status:ok?'PASS':'FAIL',detail:state,errors});
   await context.close();
  }
  {
@@ -155,19 +154,19 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    });
    const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
    ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
-      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='none')&&
+      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
     !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
     !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
     !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
     !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
     !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&v37.tabbar.blur==='none')&&
-    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='none')&&
+    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&v37.tabbar.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
+    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
     !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
     !!(gradient(v37.credit)&&v37.credit.radius==='18px'&&v37.credit.z==='9999'&&/255, 221, 139/.test(v37.credit.border))&&
     !!(v37.video&&v37.video.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
-  results.push({test:'Chromium v44 optical glass: gradients, specular shadows, rounded controls, readable text and no backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
+  results.push({test:'Chromium v51 liquid glass: gradients, specular shadows, rounded controls, readable text and true backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  for (const relative of ['data.html','data/index.html']) {
@@ -191,9 +190,9 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     video:video.getAttribute('src'),videoOff:document.getElementById('videoToggle').getAttribute('aria-pressed'),
     audio:audio.getAttribute('src'),cross:audio.hasAttribute('crossorigin'),referrer:audio.getAttribute('referrerpolicy')};
   });
-  const expectedSrc=relative==='data/index.html'?'../assets/bunny-live-wallpaper.mp4':'./assets/bunny-live-wallpaper.mp4';
-  const passed=errors.length===0&&report.rows===30&&report.total==='1.025 MB'&&report.saved==='25.38 MB'&&
-   report.z==='9999'&&report.animation==='hansanaCinemaCycle'&&report.blur==='none'&&report.overflow&&
+  const expectedSrc=relative==='data/index.html'?'../assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4':'./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
+  const passed=errors.length===0&&report.rows===30&&report.total==='1.395 MB'&&report.saved==='36.11 MB'&&
+   report.z==='9999'&&report.animation==='hansanaCinemaCycle'&&report.blur==='blur(14px) saturate(1.6) brightness(1.03)'&&report.overflow&&
    report.video===expectedSrc&&report.videoOff==='false'&&String(report.audio||'')==='https://dict.youdao.com/dictvoice?type=1&audio=afraid'&&!report.cross&&report.referrer==='no-referrer';
   results.push({test:'Chromium public interactive data report: '+relative,status:passed?'PASS':'FAIL',detail:report,errors});
   await context.close();
