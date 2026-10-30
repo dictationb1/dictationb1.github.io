@@ -20,7 +20,7 @@ node tests/audit-v42.cjs
 ```
 
 - `check.cjs` extracts and parses the app and both data-route scripts as ES5, rejects static `<link>` tags and enforces the byte budgets.
-- `upgrade.test.cjs` verifies v50 metadata, storage migration, clean dictionary URLs, 120/650 ms timing, same-element replay, 0.72× playback, cancellation, Sinhala chunks and fallbacks, helper timers, pause/resume and the data pages.
+- `upgrade.test.cjs` is the v55 (6.1.0) gate and is regenerated from scratch by `node scripts/write-upgrade-test.cjs` with a single `fs.writeFileSync` call (never with regular expressions). It verifies the < 600-byte CORS-simple keys relay (zero custom headers), the chunked word relay, the instant `api.github.com` read, the amber `#adminSyncWarningCard` + bilingual setup guide (English / Sinhala) and its emerald verified state, the pre-edit publish warning, two-device key + token + voice sync, the `playOrFetchOnce` dedupe, the credit locks, the migrations and every preserved v51–v54 feature.
 - `phase1.cjs` retains boot, recovery, PIN, editor, sharing, accessibility and fake-timer dictation regressions. Historical before/after cases skip if commit `7577968` is not present.
 - `browser.cjs` and `upgrade-browser.cjs` exercise real Chromium layout, wallpaper, Liquid Glass, credit, PIN, sharing, typing, results and media behavior.
 - `e2e.cjs` drives complete fresh/old-storage flows at phone and desktop sizes, including ordered remote audio, resume, comments and offline behavior. The v1.0.0 Git-object fixture and flow are explicitly skipped if historical commit `7577968` is unavailable; v49 migration is also covered by the v50 tests. `SDP_E2E_ONLY=old|offline|iphone|360|1280` selects a subset.
