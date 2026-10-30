@@ -342,7 +342,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -560,7 +560,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -666,7 +666,7 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')).lists[0].words[0].w);
       /* The mocked Youdao endpoint is requested on the shared media element. */
       await page.waitForFunction(() => (window.__audio || []).filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2,
         null, { timeout: 12000 }).catch(() => {});
@@ -676,7 +676,7 @@ function material(page) {
       // any pinned-voice fallback must correspond to a Youdao clip attempted.
       const fallback = await page.evaluate(() => window.__spoken || []);
       for (const text of fallback) assert.ok(played.some(t => decodeURIComponent(String(t.src).split('audio=')[1] || '') === text), 'fallback text was first requested from Youdao: ' + text);
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -686,7 +686,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -716,7 +716,7 @@ function material(page) {
         return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -804,7 +804,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass'));
+        const d = JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
@@ -868,6 +868,73 @@ function material(page) {
       }));
       assert.equal(after.layers, 0, 'the player closed');
       assert.equal(after.home, true, 'Home is back');
+      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
+    } finally {
+      await context.close();
+    }
+  });
+
+  /* --- v52: the one-time ElevenLabs vault and the admin auto-completer ---- */
+  await check('v52: ElevenLabs studio vault, admin studio card and quick-word auto-completer', async () => {
+    const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
+    try {
+      const page = await context.newPage();
+      const errors = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(fileURL);
+      await page.waitForTimeout(1000);
+      const state = await page.evaluate(() => {
+        const vault = window.ElevenVault;
+        return {
+          vault: typeof vault,
+          auto: typeof window.AdminAutoEnrich,
+          voice: vault && vault.voiceId(),
+          model: vault && vault.modelId(),
+          clips: vault && vault.clipCount(),
+          generated: vault && vault.stats.generatedCount,
+          key: vault && vault.hasKey(),
+          hash: typeof (window.TTS && window.TTS.hashText),
+          cacheKey: vault && vault.keyFor('Number 1'),
+          glass: (function () { const el = document.querySelector('.glass'); const cs = getComputedStyle(el); return cs.backdropFilter || cs.webkitBackdropFilter || ''; })()
+        };
+      });
+      assert.equal(state.vault, 'object', 'ElevenVault exposed');
+      assert.equal(state.auto, 'object', 'AdminAutoEnrich exposed');
+      assert.equal(state.voice, 'Xb7hH8MSUJpSbSDYk0k2', 'Alice is the default voice');
+      assert.equal(state.model, 'eleven_flash_v2_5', 'credit saver model');
+      assert.equal(state.clips, 0, 'empty vault on a fresh device');
+      assert.equal(state.generated, 0, 'no credits spent');
+      assert.equal(state.key, false, 'no API key by default');
+      assert.equal(state.hash, 'function', 'deterministic hash exposed');
+      assert.match(state.cacheKey, /^el_Xb7hH8MSUJpSbSDYk0k2_/);
+      assert.match(state.glass, /blur\(14px\)/, 'real Apple Liquid Glass: ' + state.glass);
+      /* unlock the admin panel with the eight digit PIN and type raw words */
+      const close = page.locator('#sheets .shead button[aria-label="Close"]');
+      if (await close.count()) await close.first().click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(300);
+      await page.locator('#btnAdmin').click();
+      await page.waitForTimeout(250);
+      for (const digit of require('./test-pin.cjs')) {
+        const key = page.locator('#pinPad [data-k="' + digit + '"]');
+        if (await key.count()) await key.click();
+      }
+      const submit = page.locator('#pinSubmit');
+      if (await submit.count()) await submit.click({ timeout: 1500 }).catch(() => {});
+      await page.locator('#adminHost').waitFor({ timeout: 6000 });
+      const cards = await page.evaluate(() => ({
+        studio: !!document.querySelector('#elStudioCard'),
+        quick: !!document.querySelector('#elQuickWordsCard'),
+        keyField: !!document.querySelector('#elApiKeyInput'),
+        verify: !!document.querySelector('#btnElVerify'),
+        generate: !!document.querySelector('#btnElGenerateAll'),
+        exportJson: !!document.querySelector('#btnElExportJson'),
+        words: !!document.querySelector('#adminQuickWordsInput'),
+        go: !!document.querySelector('#btnAdminAutoComplete')
+      }));
+      Object.keys(cards).forEach((name) => assert.ok(cards[name], 'admin control: ' + name));
+      await page.locator('#adminQuickWordsInput').fill('afraid, amazed, amusing');
+      const parsed = await page.evaluate(() => window.AdminAutoEnrich.parse(document.querySelector('#adminQuickWordsInput').value));
+      assert.deepEqual(parsed, ['afraid', 'amazed', 'amusing'], 'raw words parsed');
       assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
     } finally {
       await context.close();

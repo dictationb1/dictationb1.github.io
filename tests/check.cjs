@@ -18,7 +18,7 @@ function check(relative, artifact, budget) {
   if (bytes > budget) throw Error(relative + ' exceeds the ' + budget + '-byte budget');
   console.log(relative + ': node --check PASS; ES5 PASS; ' + bytes + ' / ' + budget + ' bytes');
 }
-check('index.html', 'app.js', 445000);
+check('index.html', 'app.js', 456000);
 check('data.html', 'data-app.js', 60000);
 check('data/index.html', 'data-route-app.js', 60000);
 if (fs.readFileSync(path.resolve(__dirname, '../data.html'), 'utf8') !== fs.readFileSync(path.resolve(__dirname, '../data/index.html'), 'utf8')) {

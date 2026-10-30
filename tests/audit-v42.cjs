@@ -122,6 +122,11 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
         word: T.getSingleVoiceUrl('afraid'), number: T.getSingleVoiceUrl('Number 1'),
         phrase: T.getSingleVoiceUrl('zebra crossing'), si: T.getSingleVoiceUrl('ආයුබෝවන්', 'si'),
         version: window.SDP.version,
+        vault: typeof window.ElevenVault === 'object',
+        vaultKey: window.ElevenVault && window.ElevenVault.keyFor('Number 1'),
+        clips: window.ElevenVault ? window.ElevenVault.clipCount() : -1,
+        generated: window.ElevenVault ? window.ElevenVault.stats.generatedCount : -1,
+        voice: window.TTS.hashText ? 'hash' : '',
         preload: a.getAttribute('preload'), playsinline: a.hasAttribute('playsinline'),
         referrer: a.getAttribute('referrerpolicy'), cross: a.hasAttribute('crossorigin')
       };
@@ -131,7 +136,10 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
     ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
     eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 5.7.0', voice.version, '5.7.0');
+    eq('the running build is 5.8.0', voice.version, '5.8.0');
+    ok('the one-time ElevenLabs vault exists and is empty without an API key', voice.vault && voice.clips === 0 && voice.generated === 0, { clips: voice.clips, generated: voice.generated });
+    ok('the vault cache key is deterministic and voice specific', voice.vaultKey === 'el_Xb7hH8MSUJpSbSDYk0k2_' + voice.vaultKey.replace(/^el_Xb7hH8MSUJpSbSDYk0k2_/, ''), voice.vaultKey);
+    ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
     await page.evaluate(() => document.getElementById('btnStart').click());

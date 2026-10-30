@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 51,
+  "ver": 52,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -512,11 +512,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "5.7.0",
+  "appVersion": "5.8.0",
   "updatedAt": "2026-10-30T00:00:00Z",
-  "version": "5.7.0",
+  "version": "5.8.0",
   "buildDate": "2026-10-30",
-  "settingsRev": 51,
+  "settingsRev": 52,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -524,7 +524,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v51_hooded_liquid_glass",
+  "storageKey": "sdp.v52_elevenlabs_studio",
   "repoVideos": [
     {
       "id": "media_hooded_red_eyes",
@@ -811,6 +811,11 @@
       ]
     }
   ],
-  "key": "sdp.v51_hooded_liquid_glass",
-  "perf": "full"
+  "key": "sdp.v52_elevenlabs_studio",
+  "perf": "full",
+  "features": {
+    "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
+    "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",
+    "visual": "v52: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) Apple Liquid Glass with the Hooded Red Eyes 1080p loop as the default wallpaper."
+  }
 }
