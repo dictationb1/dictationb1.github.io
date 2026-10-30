@@ -137,7 +137,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
     ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
     eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 5.9.0', voice.version, '5.9.0');
+    eq('the running build is 6.0.0', voice.version, '6.0.0');
     ok('the one-time ElevenLabs vault exists and is empty without an API key', voice.vault && voice.clips === 0 && voice.generated === 0, { clips: voice.clips, generated: voice.generated });
     ok('the vault cache key is deterministic and voice specific', voice.vaultKey === 'el_Xb7hH8MSUJpSbSDYk0k2_' + voice.vaultKey.replace(/^el_Xb7hH8MSUJpSbSDYk0k2_/, ''), voice.vaultKey);
     ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');

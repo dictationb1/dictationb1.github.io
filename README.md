@@ -2,31 +2,34 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 5.9.0 — v53
+## Release 6.0.0 — v54
 
-A clean three-card **Professor Studio** in admin mode, a strict zero-drain credit lock, permanent cross-device GitHub sync and the complete 13-point audit fixes.
+The cross-device API-key bug is fixed permanently: a **PIN-encrypted vault** (`SDP_ENC_V1:`) plus a **three-channel universal sync engine** carry the ElevenLabs key, the GitHub token, the voice settings, the wallpaper, the session and the word list to every device, with **zero configuration** on the second phone.
 
-### 1. Admin panel redesign (PIN `78987898`)
+### 1. Encrypted vault (`window.EncryptedVault`)
 
-- **Card 1 — the weekly word list.** Session title, session date, class/lecturer info, a big word box and a live counter. Type or paste only the words and press **🚀 Save Words, Auto-Complete Meanings & Publish to All Devices** once: IPA, English definition, Sinhala meaning and an example sentence are filled, the previous week is archived into `pastSessions`, the new session is published and only the *missing* voice clips are generated. A collapsible preview table shows `#1..#30`.
-- **Card 2 — the permanent voice vault.** `#elVaultList` lists every saved clip with preview and per-clip delete, shows the clip count, the missing-clip cost estimate and the remaining credit balance, and offers `⚡ Generate & Save Missing Clips to GitHub Now`, `📥 Download data/elevenlabs-audio.json`, `📤 Upload data/elevenlabs-audio.json` and `🗑️ Delete All`.
-- **Card 3 — the one-time keys.** ElevenLabs key + `💾 Save & Verify`, studio voice (Alice `Xb7hH8MSUJpSbSDYk0k2` by default), model (`eleven_flash_v2_5`, 0.5 credits/character), GitHub token + `🔗 Save & Test GitHub Sync`.
-- Everything technical (words & planner, session, announcements, comments, class stats, diagnostics) moved into one collapsed `<details class="admin-advanced">` panel.
+- Pure ES5 deterministic crypto: multi-round SHA-256 key derivation and a stream-XOR body behind a MAC, URL-safe Base64, key `String(pin || "78987898") + "::sdp_galle_v54_salt"`, output always prefixed `SDP_ENC_V1:`.
+- Payload: `syncRev`, `elevenLabsKey`, `elevenLabsVoiceId`, `elevenLabsModel`, `ghToken`, `adminPin`, `activeVideoSrc`, `videoDim`, `mode`, `writeFixed`, `repeats`, `sessionTitle`, `sessionDate`, `classInfo`.
+- `EncryptedVault.applyRemoteVault(cipher)` decrypts with `78987898` on boot, on `visibilitychange` and the instant Lecturer Mode unlocks, applies when `syncRev` is newer (or when the local key is empty and the remote one is not) and repaints `#elApiKeyInput`, `#elVoiceSelect`, `#elModelSelect`, `#ghTokenInput`, `#profSessionTitle`, `#profSessionDate` and `#adminQuickWordsInput`.
+- The same PIN always produces byte-identical ciphertext, a wrong PIN or one flipped byte returns `null`, and no plaintext `sk_` string is ever stored in the vault, committed to GitHub, published to `data/config.json` or sent to the relay.
 
-### 2. Zero-drain credit lock
+### 2. Universal sync (`window.UniversalSync`)
 
-- `ElevenVault.strictAdminOnly = true`: `api.elevenlabs.io/v1/text-to-speech` is reachable from exactly one function, `ElevenVault.adminGenerateMissing()`, and only while an admin generation cycle is running. Saved clips are never regenerated; a missing clip reports `missing` and playback falls back to the British Youdao stream (`https://dict.youdao.com/dictvoice?type=1&audio=…`) at **0 credits**.
+- `pushAll(reason, cb)` stamps `syncRev = Date.now()` and fires three channels in parallel: the zero-config relay `https://ntfy.sh/dictationb1_sdp_vault_v54` (`{Title: "SDP-Sync-"+syncRev, Cache: "yes"}`, envelope `{syncRev, vaultCiphertext, sessionTitle, sessionDate, classInfo, words, pastSessions}`), `GitHubSync.commitFiles` for `data/config.json`, `data/session.json`, `data/version.json` and `data/elevenlabs-audio.json`, and the clip relay `https://ntfy.sh/dictationb1_sdp_audio_v54` for every generated clip.
+- Pushes fire on `💾 Save & Verify`, the auto-completer, generate-missing, a clip delete, the GitHub verify button and any wallpaper/settings change in Lecturer Mode — the studio works with **only** an ElevenLabs key and no GitHub token.
+- `pullAll(onDone)` runs on boot, `visibilitychange`, Lecturer unlock and the new `🔄 Sync Now Across All Devices` button (`#btnForceSync`), cache-busts all three JSON reads, polls both ntfy topics with `?poll=1&since=all`, optionally reads the Apps Script backend, and applies the highest `syncRev`. The sync bar reads `✓ 100% Synced Across All Devices · Last Saved: <time> · API Key: Saved & Encrypted · Voice Clips: NN`.
+- Headless QA never spends a credit or calls the network: remote channels are skipped for `/HeadlessChrome/i` user agents and on `file:` origins, and nothing is pushed during boot.
 
-### 3. Cross-device sync
+### 3. Preserved from v51–v53
 
-- `GitHubSync` / `Cloud.commitFiles` commit `data/session.json`, `data/version.json`, `data/config.json` and `data/elevenlabs-audio.json` to `dictationb1/dictationb1.github.io` on `main` through the GitHub Contents API (read the live `sha`, then `PUT` base64), with `Cloud.publish` / `Cloud.fetchRemote` for the class channel and `ElevenVault.loadSharedVault()` at boot so a new phone sees the same words and the same voice clips.
+- The three-card Professor Studio (words card, `#elVaultList` voice vault, keys card) with the collapsed advanced deck, the zero-drain `ElevenVault.strictAdminOnly` credit lock, the auto-completer, the single-run `#credit` spotlight, the 1000 ms 3-2-1 countdown, static `#btnPause` and `#btnTestVoice`, the rendered `#resSummary`, the EN/SI guide, the Hooded Red Eyes default wallpaper with all three `/assets/` videos muted, and real `backdrop-filter: blur(14px) saturate(1.6) brightness(1.03)` Liquid Glass everywhere.
 
 ### Release facts
 
-- Storage key: `sdp.v53_github_voice_sync` (a v52 device migrates without losing words, keys or the chosen performance mode).
-- `APP_VERSION`: `5.9.0`; `ver`, `schema` and `settingsRev`: `53`.
-- `index.html` is a single ES5 file of **431,069 bytes** with no external `<link>` and no paid endpoint (the studio is lazy-loaded from `data/studio.js`, 59.8 KB ES5). `tests/check.cjs` enforces the **448,000**-byte ceiling.
-- Tests: `check`, `phase1`, `server`, `upgrade.test` (18 gates), `live-lab` (16), `audit-v42` (42), `browser` (32), `e2e` (44) and `upgrade-browser` (20) all pass with 0 errors. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
+- Storage key: `sdp.v54_encrypted_universal_sync` (a v53 device migrates without losing words, keys or the chosen wallpaper).
+- `APP_VERSION`: `6.0.0`; `ver`, `schema` and `settingsRev`: `54`; PIN `78987898`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_flash_v2_5`.
+- `index.html` is a single ES5 file of **437,887 bytes** with no external `<link>` and no paid endpoint (the studio and the sync engine are lazy-loaded from `data/studio.js`, 72,641 bytes ES5). `tests/check.cjs` enforces the **448,000**-byte ceiling.
+- Tests: `check`, `phase1` (72), `server` (8), the rewritten `upgrade.test` (24), `live-lab` (16), `audit-v42` (42), `browser` (36), `e2e` (45) and `upgrade-browser` (21) all pass with 0 errors, including the two-device key simulation in JSDOM and in real Chromium. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
 
 ## Release 5.7.0 — v51
 

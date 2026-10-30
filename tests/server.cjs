@@ -52,14 +52,14 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
-test('v53 release metadata and the permanent GitHub ElevenLabs voice vault ship together',()=>{
+test('v54 release metadata, the PIN-encrypted vault and the permanent ElevenLabs voice pack ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,53,f);assert.equal(d.appVersion,'5.9.0',f);assert.equal(d.key,'sdp.v53_github_voice_sync',f);}
- const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,53);assert.equal(vault.appVersion,'5.9.0');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
+ for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,54,f);assert.equal(d.appVersion,'6.0.0',f);assert.equal(d.key,'sdp.v54_encrypted_universal_sync',f);assert.equal(d.adminPin,'78987898',f);assert.equal(typeof d.syncRev,'number',f);assert.equal(d.vaultCiphertext.indexOf('SDP_ENC_V1:'),0,f+' encrypted vault');assert.equal(d.vaultCiphertext.indexOf('sk_'),-1,f+' no cleartext key');}
+ const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,54);assert.equal(vault.appVersion,'6.0.0');assert.equal(vault.vaultCiphertext.indexOf('SDP_ENC_V1:'),0);assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
  const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
- assert.ok(html.includes('sdp.v53_github_voice_sync'));assert.ok(html.includes('APP_VERSION="5.9.0"'));assert.ok(html.includes('data/studio.js?v=53'));
+ assert.ok(html.includes('sdp.v54_encrypted_universal_sync'));assert.ok(html.includes('APP_VERSION="6.0.0"'));assert.ok(html.includes('data/studio.js?v=54'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V1:'));
  assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));
- assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));
+ assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));assert.ok(studio.includes('window.UniversalSync'));assert.ok(studio.includes('window.StudioSync'));assert.ok(studio.includes('dictationb1_sdp_vault_v54'));assert.ok(studio.includes('dictationb1_sdp_audio_v54'));
  assert.ok(html.length < 448000, 'index.html stays under the published byte ceiling');
 });
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;

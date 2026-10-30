@@ -20,7 +20,7 @@ const KEEP = ['LiveWallpaper','isAssetsMedia','normalizeAssetPath','HOODED_WALLP
   'ASSET_MEDIA_RE','Errors','Admin','DB','Speech','UI','Eng','Lib','NoVoice','defaultData','Results','Cloud','Dict',
   'Store','CONFIG','ukMp3','SAMPLE_WORDS','IPA','SAMPLE_LIST_ID','U','Screens','WORD_BANK','publishCompletion',
   'wordRow','T','STRINGS_EN','STRINGS_SI','GUIDE','welcomeGuide','firstRunTour','DataTools','Diag','Comm','Links',
-  'Sha','fatalCard','boot','home','bootTraffic'];
+  'Sha','fatalCard','boot','home','bootTraffic','SDPCore'];
 const CLOSE = '</script>';
 
 async function main() {
