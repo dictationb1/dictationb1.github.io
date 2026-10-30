@@ -1,11 +1,11 @@
 {
-  "ver": 52,
-  "appVersion": "5.8.0",
-  "version": "5.8.0",
+  "ver": 53,
+  "appVersion": "5.9.0",
+  "version": "5.9.0",
   "buildDate": "2026-10-30",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "settingsRev": 52,
+  "settingsRev": 53,
   "updatedAt": "2026-10-30T00:00:00Z",
   "updatedAtMs": 1793318400000,
   "features": {
@@ -62,10 +62,13 @@
     "spelling": "favourite/favorite and tyre/tire are both accepted",
     "sinhalaGuideVoice": "Sinhala stream or si-LK speechSynthesis; if unavailable the written guide remains accessible.",
     "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
-    "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically."
+    "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",
+    "creditLock": "v53: student playback only replays clips saved in data/elevenlabs-audio.json, IndexedDB or Cloud. api.elevenlabs.io/v1/text-to-speech is called ONLY from the admin Generate button (ElevenVault.adminGenerateMissing) and never regenerates an existing clip.",
+    "crossDevice": "v53: the professor studio commits data/elevenlabs-audio.json, data/session.json, data/config.json and data/version.json to dictationb1/dictationb1.github.io (main) through the GitHub contents API, and Cloud.publish() pushes the same session + voice pack to every device.",
+    "studio": "v53: the admin panel is a 3-step studio (word list + auto-complete + publish, permanent voice vault, one-time keys) with all legacy tools inside a collapsed Advanced section."
   },
   "mode": "paper",
-  "storageKey": "sdp.v52_elevenlabs_studio",
+  "storageKey": "sdp.v53_github_voice_sync",
   "repoVideos": [
     {
       "id": "media_hooded_red_eyes",
@@ -119,7 +122,7 @@
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+  "activeVideoSrc": "assets/wallpaper-hooded.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
     "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
@@ -158,7 +161,7 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "schema": 51,
+  "schema": 53,
   "sessionCode": "Session 8",
   "sessionDate": "2026-10-29",
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
@@ -389,6 +392,13 @@
       ]
     }
   ],
-  "key": "sdp.v52_elevenlabs_studio",
-  "perf": "full"
+  "key": "sdp.v53_github_voice_sync",
+  "perf": "full",
+  "adminPin": "78987898",
+  "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+  "voiceName": "Alice",
+  "modelId": "eleven_flash_v2_5",
+  "creditLock": "student playback replays saved clips only",
+  "repoOwner": "dictationb1",
+  "repoName": "dictationb1.github.io"
 }

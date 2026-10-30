@@ -1,9 +1,23 @@
 {
-  "version": 52,
-  "appVersion": "5.8.0",
+  "version": 53,
+  "appVersion": "5.9.0",
   "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
   "modelId": "eleven_flash_v2_5",
   "voiceName": "Alice",
   "clips": {},
-  "note": "One-time ElevenLabs studio voice vault. Generated clips are committed here by the admin (Admin Panel -> Download data/elevenlabs-audio.json) so every student device replays them with 0 API calls and 0 credits."
+  "note": "Permanent ElevenLabs voice vault. Clips committed here play on every device with 0 API calls and 0 credits, and stay until the admin deletes them.",
+  "strictAdminOnly": true,
+  "creditLock": "student playback replays saved clips only",
+  "ver": 53,
+  "schema": 53,
+  "settingsRev": 53,
+  "key": "sdp.v53_github_voice_sync",
+  "storageKey": "sdp.v53_github_voice_sync",
+  "adminPin": "78987898",
+  "activeVideoSrc": "assets/wallpaper-hooded.mp4",
+  "activeMediaType": "video",
+  "videoPlaylistMode": "loop",
+  "repoOwner": "dictationb1",
+  "repoName": "dictationb1.github.io",
+  "generatedAt": "2026-10-30T00:00:00.000Z"
 }

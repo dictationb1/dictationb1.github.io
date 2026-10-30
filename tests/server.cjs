@@ -52,10 +52,14 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
-test('v52 release metadata and the empty shared ElevenLabs voice vault ship together',()=>{
+test('v53 release metadata and the permanent GitHub ElevenLabs voice vault ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,52,f);assert.equal(d.appVersion,'5.8.0',f);}
- const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,52);assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.deepEqual(Object.keys(vault.clips),[]);
- assert.ok(html.includes('sdp.v52_elevenlabs_studio'));assert.ok(html.includes('sdp_elevenlabs_vault_v1'));assert.ok(html.includes('APP_VERSION="5.8.0"'));
+ for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,53,f);assert.equal(d.appVersion,'5.9.0',f);assert.equal(d.key,'sdp.v53_github_voice_sync',f);}
+ const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,53);assert.equal(vault.appVersion,'5.9.0');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
+ const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
+ assert.ok(html.includes('sdp.v53_github_voice_sync'));assert.ok(html.includes('APP_VERSION="5.9.0"'));assert.ok(html.includes('data/studio.js?v=53'));
+ assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));
+ assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));
+ assert.ok(html.length < 448000, 'index.html stays under the published byte ceiling');
 });
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;

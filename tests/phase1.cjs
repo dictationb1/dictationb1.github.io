@@ -455,40 +455,52 @@ test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
  assert(current.includes('100dvh'));
 });
 
-test('5.1 v52: the one-time ElevenLabs studio voice vault is shipped and credit safe', () => withApp({}, a => {
+test('5.1 v53: the permanent ElevenLabs vault is shipped, admin-only and credit safe', () => withApp({}, a => {
+ const studio = require('node:fs').readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
+ a.w.eval(studio);
  const v = a.w.ElevenVault;
  assert.equal(typeof v, 'object', 'ElevenVault exposed');
+ assert.equal(v.strictAdminOnly, true, 'playback can never reach the paid endpoint');
  assert.equal(v.voiceId(), 'Xb7hH8MSUJpSbSDYk0k2');
  assert.equal(v.modelId(), 'eleven_flash_v2_5');
- assert.equal(v.creditRate(), 0.5, 'flash v2.5 is the half-credit saver');
+ assert.equal(v.rate(), 0.5, 'flash v2.5 is the half-credit saver');
  assert.equal(v.keyFor(' Number  1 '), v.keyFor('Number 1'), 'normalised text shares one cache key');
  assert.ok(/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(v.keyFor('Number 1')));
- assert.equal(v.clipCount(), 0);
- assert.equal(v.stats.generatedCount, 0);
+ assert.equal(v.count(), 0);
  assert.equal(v.hasKey(), false, 'no key means no API traffic');
- assert.equal(typeof v.generate, 'function');
- assert.equal(typeof v.resolve, 'function');
- assert.equal(typeof v.speakText, 'function');
- assert.equal(typeof v.exportJson, 'function');
- assert.equal(typeof v.importPayload, 'function');
- assert.equal(typeof a.w.TTS.hashText, 'function');
+ ['generate','adminGenerateMissing','resolve','speak','exportJson','importPayload','del','delAll','push','texts','plan'].forEach(k => assert.equal(typeof v[k], 'function', k + ' shipped'));
+ let out = null;
+ v.resolve('Number 1', (err) => { out = err; });
+ assert.equal(out, 'missing', 'a missing clip is reported, never generated');
+ assert.equal((studio.match(/C\.tts|\.tts/g) || []).length >= 1, true, 'the paid endpoint is only reached through the admin generator');
+ assert.equal((studio.match(/api\.elevenlabs\.io\/v1\/text-to-speech/g) || []).length, 2, 'declared once (code + comment)');
+ const resolveBody = studio.slice(studio.indexOf('resolve: function'), studio.indexOf('play: function'));
+ assert.ok(!/gen\(/.test(resolveBody), 'resolve() never generates');
+ const speakBody = studio.slice(studio.indexOf('speak: function'), studio.indexOf('spell: function'));
+ assert.ok(!/gen\(|generate/.test(speakBody), 'speak() never generates');
 }));
-test('5.2 v52: admin auto-completer parses typed words and keeps the admin PIN', () => withApp({}, a => {
+test('5.2 v53: admin auto-completer parses typed words and keeps the admin PIN', () => withApp({}, a => {
+ const studio = require('node:fs').readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
+ a.w.eval(studio);
  const e = a.w.AdminAutoEnrich;
  assert.deepEqual(e.parse('afraid, amazed\nannoyed; 3) anxious'), ['afraid','amazed','annoyed','anxious']);
  assert.deepEqual(e.parse('Afraid, afraid'), ['afraid'], 'duplicates removed');
  assert.equal(typeof e.run, 'function');
  assert.equal(typeof e.publish, 'function');
- assert.ok(current.indexOf('adminPin:"78987898"') > -1, 'eight digit admin PIN shipped');
+ assert.ok(current.indexOf('adminPin: \"78987898\"') > -1 || current.indexOf('adminPin:"78987898"') > -1, 'eight digit admin PIN shipped');
+ assert.equal(a.w.SDPCore.CONFIG.adminPin, '78987898');
 }));
-test('5.3 v52: hooded default wallpaper, three repo videos and real 14px liquid glass', () => {
- assert.ok(current.includes('APP_VERSION="5.8.0"'));
+test('5.3 v53: hooded default wallpaper, three repo videos and real 14px liquid glass', () => {
+ const fs = require('node:fs');
+ const studio = fs.readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
+ assert.ok(current.includes('APP_VERSION="5.9.0"'));
  assert.ok(current.includes('./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'));
  assert.ok(current.includes('--bd:blur(14px)saturate(1.6)brightness(1.03)'));
  assert.ok(current.includes('.glass,#homeHero,.card,.sheet,.modal,.wordcard,.topbar,#tabbar,.btn,.tile,.wrow{backdrop-filter:var(--bd)!important}'));
  assert.ok(!/\*\s*\{[^}]*backdrop-filter:none!important/.test(current), 'no global glass killer');
- assert.ok(current.includes('elCreditBadge') && current.includes('adminQuickWordsInput') && current.includes('btnAdminAutoComplete'));
- assert.ok(current.includes('sdp_elevenlabs_vault_v1') && current.includes('sdp-elevenlabs-v52'));
+ assert.ok(studio.includes('elCreditBadge') && studio.includes('adminQuickWordsInput') && studio.includes('btnAdminAutoComplete'));
+ assert.ok(studio.includes('sdp_elevenlabs_vault_v1'), 'IndexedDB clip store');
+ assert.ok(current.includes('sdp.v53_github_voice_sync'), 'v53 storage key');
 });
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;

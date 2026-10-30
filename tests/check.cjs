@@ -18,9 +18,18 @@ function check(relative, artifact, budget) {
   if (bytes > budget) throw Error(relative + ' exceeds the ' + budget + '-byte budget');
   console.log(relative + ': node --check PASS; ES5 PASS; ' + bytes + ' / ' + budget + ' bytes');
 }
-check('index.html', 'app.js', 456000);
+check('index.html', 'app.js', 448000);
 check('data.html', 'data-app.js', 60000);
 check('data/index.html', 'data-route-app.js', 60000);
 if (fs.readFileSync(path.resolve(__dirname, '../data.html'), 'utf8') !== fs.readFileSync(path.resolve(__dirname, '../data/index.html'), 'utf8')) {
   throw Error('data.html and data/index.html must remain identical');
 }
+/* v53: the professor studio + permanent voice vault ship as data/studio.js */
+const studio = fs.readFileSync(path.resolve(__dirname, '../data/studio.js'), 'utf8');
+const studioFile = path.join(dir, 'studio.js');
+fs.writeFileSync(studioFile, studio);
+cp.execFileSync(process.execPath, ['--check', studioFile], { stdio: 'inherit' });
+acorn.parse(studio, { ecmaVersion: 5 });
+if (!/window\.ElevenVault\s*=/.test(studio)) throw Error('data/studio.js must expose window.ElevenVault');
+if (!/adminGenerateMissing/.test(studio)) throw Error('data/studio.js must expose the admin-only generator');
+console.log('data/studio.js: node --check PASS; ES5 PASS; ' + Buffer.byteLength(studio) + ' bytes');

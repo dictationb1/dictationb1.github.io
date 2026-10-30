@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 52,
+  "ver": 53,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -512,11 +512,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "5.8.0",
+  "appVersion": "5.9.0",
   "updatedAt": "2026-10-30T00:00:00Z",
-  "version": "5.8.0",
+  "version": "5.9.0",
   "buildDate": "2026-10-30",
-  "settingsRev": 52,
+  "settingsRev": 53,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -524,7 +524,7 @@
     "spellcheck": "false"
   },
   "mode": "paper",
-  "storageKey": "sdp.v52_elevenlabs_studio",
+  "storageKey": "sdp.v53_github_voice_sync",
   "repoVideos": [
     {
       "id": "media_hooded_red_eyes",
@@ -578,7 +578,7 @@
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+  "activeVideoSrc": "assets/wallpaper-hooded.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
     "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
@@ -616,7 +616,7 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "updatedAtMs": 1793318400000,
-  "schema": 51,
+  "schema": 53,
   "pastSessions": [
     {
       "no": "7",
@@ -811,11 +811,19 @@
       ]
     }
   ],
-  "key": "sdp.v52_elevenlabs_studio",
+  "key": "sdp.v53_github_voice_sync",
   "perf": "full",
   "features": {
     "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
     "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",
     "visual": "v52: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) Apple Liquid Glass with the Hooded Red Eyes 1080p loop as the default wallpaper."
-  }
+  },
+  "adminPin": "78987898",
+  "creditLock": "student playback replays saved clips only",
+  "voicePackUrl": "./data/elevenlabs-audio.json",
+  "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+  "voiceName": "Alice",
+  "modelId": "eleven_flash_v2_5",
+  "repoOwner": "dictationb1",
+  "repoName": "dictationb1.github.io"
 }
