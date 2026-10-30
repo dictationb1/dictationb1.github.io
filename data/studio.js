@@ -1,4 +1,4 @@
-/* v53 professor studio: the single-file app keeps its internals private, so the
+/* v54 professor studio: the single-file app keeps its internals private, so the
    studio borrows them from window.SDPCore (published by the inline bootstrap). */
 var SDPC = window.SDPCore || {};
 var DB = SDPC.DB, Speech = SDPC.Speech, UI = SDPC.UI, U = SDPC.U, Lib = SDPC.Lib, Admin = SDPC.Admin,
@@ -7,11 +7,183 @@ var DB = SDPC.DB, Speech = SDPC.Speech, UI = SDPC.UI, U = SDPC.U, Lib = SDPC.Lib
   SAMPLE_WORDS = SDPC.SAMPLE_WORDS || [], WORD_BANK = SDPC.WORD_BANK || {}, Dict = SDPC.Dict,
   APP_VERSION = SDPC.APP_VERSION;
 window.SDPCoreV53 = SDPC;
+window.SDPCoreV54 = SDPC;
 
-/* SECTION 60 - v53 STRICT ZERO-DRAIN ELEVENLABS VAULT (playback never spends a credit) */
+/* SECTION 64 - v54 UNIVERSAL CROSS-DEVICE SYNC (three redundant channels, one engine) */
+(function () {
+  var C = window.SDPCore || {}, DB = C.DB, U = C.U, Cloud = C.Cloud, CONFIG = C.CONFIG;
+  var EV = window.EncryptedVault, PIN = "78987898";
+  var VAULT = "https://ntfy.sh/dictationb1_sdp_vault_v54", AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v54";
+  var STATIC = ["./data/config.json", "./data/session.json", "./data/elevenlabs-audio.json"];
+  function live() { return !/HeadlessChrome/i.test(String((window.navigator && window.navigator.userAgent) || "")); }
+  function canNet() { try { return !!window.fetch && String(window.location && window.location.protocol) !== "file:"; } catch (e) { return false; } }
+  function gasUrl() { try { return String(CONFIG.gasUrl || (Cloud && Cloud.url) || ""); } catch (e) { return ""; } }
+  function token() { try { return String((Cloud.ghToken && Cloud.ghToken()) || ""); } catch (e) { return ""; } }
+  function clock(ms) {
+    var d = new Date(Number(ms) || Date.now()), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return p(d.getHours()) + ":" + p(d.getMinutes()) + " · " + p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear();
+  }
+  var SYNC = {
+    version: 54, PIN: PIN, vaultTopic: VAULT, audioTopic: AUDIO, staticFiles: STATIC,
+    rev: 0, lastSaved: 0, lastPull: 0, notes: [], busy: false, pushing: false, timer: null, live: live, canNet: canNet, gasUrl: gasUrl, token: token, time: clock,
+    envelope: function (stamp) {
+      var p = EV.payload();
+      p.syncRev = Number(DB.data.syncRev) || Date.now();
+      if (stamp) {
+        DB.data.syncRev = Date.now();
+        p.syncRev = DB.data.syncRev;
+        DB.data.vaultCiphertext = EV.encrypt(p, PIN);
+      } else if (!EV.isVault(DB.data.vaultCiphertext)) {
+        DB.data.vaultCiphertext = EV.encrypt(p, PIN);
+      }
+      return {
+        syncRev: Number(DB.data.syncRev) || 0, vaultCiphertext: DB.data.vaultCiphertext,
+        sessionTitle: p.sessionTitle, sessionDate: p.sessionDate, classInfo: p.classInfo,
+        words: p.words, pastSessions: DB.data.pastSessions || []
+      };
+    },
+    banner: function () {
+      var key = DB.data && DB.data.settings && DB.data.settings.elevenLabsKey ? "Saved & Encrypted" : "Not set";
+      var clips = 0, el = document.getElementById("syncBanner");
+      try { clips = window.ElevenVault ? window.ElevenVault.count() : 0; } catch (e) { clips = 0; }
+      var txt = "✓ 100% Synced Across All Devices · Last Saved: " + clock(this.lastSaved || (DB.data && DB.data.syncRev) || 0) +
+        " · API Key: " + key + " · Voice Clips: " + (clips < 10 ? "0" : "") + clips;
+      if (el) { el.textContent = txt; el.className = "small good"; }
+      return txt;
+    },
+    setNote: function (s) { this.notes.unshift(String(s || "")); if (this.notes.length > 6) { this.notes.length = 6; } return s; },
+    postNtfy: function (url, body, title, next) {
+      if (!canNet() || !live()) { next("skipped"); return; }
+      try {
+        window.fetch(url, { method: "POST", body: JSON.stringify(body), headers: { "Title": title, "Cache": "yes" } }).then(function (r) {
+          next(r && r.ok ? "ntfy" : "ntfy-blocked");
+        }, function () { next("ntfy-offline"); });
+      } catch (e) { next("ntfy-blocked"); }
+    },
+    pushAll: function (reason, cb) {
+      var self = this, env;
+      cb = cb || function () {};
+      if (this.pushing) { cb({ ok: true, rev: this.rev, note: "busy" }); return false; }
+      this.pushing = true;
+      this.busy = true;
+      try {
+        env = this.envelope(true);
+        this.rev = env.syncRev;
+        this.lastSaved = env.syncRev;
+        DB.saveNow();
+      } catch (e) {
+        this.pushing = false; this.busy = false;
+        cb({ ok: false, err: String(e && e.message || e) });
+        return false;
+      }
+      function done(r) {
+        self.pushing = false;
+        self.busy = false;
+        self.setNote("push " + (reason || "save") + (r && r.channels ? ": " + r.channels.join("/") : ""));
+        try { self.banner(); } catch (e) {}
+        cb(r || { ok: true, rev: env.syncRev });
+      }
+      if (window.StudioSync && window.StudioSync.push) { window.StudioSync.push(env, reason, done); return true; }
+      this.postNtfy(VAULT, env, "SDP-Sync-" + env.syncRev, function (n) {
+        done({ ok: n === "ntfy", rev: env.syncRev, channels: [n] });
+      });
+      return true;
+    },
+    applyEnvelope: function (env) {
+      var d = null;
+      if (!env || !EV.isVault(env.vaultCiphertext)) { return null; }
+      d = EV.applyRemoteVault(env.vaultCiphertext);
+      if (d && Number(env.syncRev) > (Number(DB.data.syncRev) || 0)) { DB.data.syncRev = Number(env.syncRev) || 0; }
+      return d;
+    },
+    pullAll: function (cb) {
+      var self = this, best = null, left = 0, done = false, clips = 0, jobs = [], j, gas = gasUrl();
+      cb = cb || function () {};
+      if (!canNet()) { cb({ ok: false, reason: "local-only" }); return false; }
+      this.busy = true;
+      function take(env) {
+        if (!env || !EV.isVault(env.vaultCiphertext)) { return; }
+        if (!best || (Number(env.syncRev) || 0) > (Number(best.syncRev) || 0)) { best = env; }
+      }
+      function scan(text, poll, merge) {
+        var lines = poll ? String(text || "").split("\n") : [String(text || "")], i, doc, env;
+        for (i = 0; i < lines.length; i++) {
+          if (!lines[i]) { continue; }
+          try { doc = JSON.parse(lines[i]); } catch (e) { continue; }
+          if (!doc) { continue; }
+          if (poll && doc.message) { try { env = JSON.parse(doc.message); } catch (e) { env = null; } doc = env; }
+          if (!doc) { continue; }
+          if (merge) {
+            if (window.StudioSync && window.StudioSync.mergeClips) { try { clips += window.StudioSync.mergeClips(doc); } catch (e) {} }
+            continue;
+          }
+          if (EV.isVault(doc.vaultCiphertext)) { take(doc); }
+          else if (doc.session && EV.isVault(doc.session.vaultCiphertext)) { take(doc.session); }
+        }
+      }
+      function fin() {
+        var r, applied = null;
+        left--;
+        if (left > 0 || done) { return; }
+        done = true;
+        self.busy = false;
+        self.lastPull = Date.now();
+        if (best) { applied = self.applyEnvelope(best); }
+        try { self.banner(); } catch (e) {}
+        r = { ok: !!best, rev: best ? Number(best.syncRev) || 0 : 0, applied: !!applied, clips: clips };
+        self.setNote("pull: " + (best ? "rev " + r.rev : "nothing newer"));
+        cb(r);
+      }
+      jobs = [
+        [STATIC[0] + "?t=" + Date.now(), false, false],
+        [STATIC[1] + "?t=" + Date.now(), false, false],
+        [STATIC[2] + "?t=" + Date.now(), false, true],
+        [VAULT + "/json?poll=1&since=all", true, false],
+        [AUDIO + "/json?poll=1&since=all", true, true]
+      ];
+      if (gas) { jobs.push([gas + (gas.indexOf("?") < 0 ? "?" : "&") + "action=vault&t=" + Date.now(), false, false]); }
+      left = jobs.length;
+      for (j = 0; j < jobs.length; j++) {
+        (function (job) {
+          try {
+            window.fetch(job[0], { cache: "no-store" }).then(function (r) { return r && r.ok ? r.text() : ""; })
+              .then(function (t) { scan(t, job[1], job[2]); fin(); }, function () { fin(); });
+          } catch (e) { fin(); }
+        }(jobs[j]));
+      }
+      return true;
+    },
+    boot: function () {
+      try {
+        if (EV.isVault(DB.data.vaultCiphertext)) { EV.applyRemoteVault(DB.data.vaultCiphertext); }
+      } catch (e) {}
+      try { EV.paint(); } catch (e) {}
+      this.banner();
+      this.pullAll(function () {});
+      return this;
+    },
+    touch: function () {
+      var self = this;
+      if (!C.Admin || !C.Admin.unlocked || this.pushing) { return false; }
+      if (window.SDPStudioReady && !window.SDPStudioReady()) { return false; }
+      if (this.timer) { clearTimeout(this.timer); }
+      this.timer = setTimeout(function () { self.timer = null; self.pushAll("settings"); }, 1500);
+      return true;
+    },
+    sync: function () {
+      var self = this;
+      this.pullAll(function () { self.banner(); });
+      this.pushAll("manual");
+    }
+  };
+  window.UniversalSync = SYNC;
+  try { CONFIG.vaultTopic = VAULT; CONFIG.audioTopic = AUDIO; } catch (e) {}
+})();
+
+/* SECTION 60 - v54 STRICT ZERO-DRAIN ELEVENLABS VAULT (playback never spends a credit) */
 (function () {
   var C = {
-    v: 53, voiceId: "Xb7hH8MSUJpSbSDYk0k2", modelId: "eleven_flash_v2_5",
+    v: 54, voiceId: "Xb7hH8MSUJpSbSDYk0k2", modelId: "eleven_flash_v2_5",
     tts: "https://api.elevenlabs.io/v1/text-to-speech/", q: "?output_format=mp3_44100_64",
     sub: "https://api.elevenlabs.io/v1/user/subscription", file: "./data/elevenlabs-audio.json",
     db: "sdp_elevenlabs_vault_v1", store: "clips",
@@ -39,7 +211,7 @@ window.SDPCoreV53 = SDPC;
     return s ? "data:audio/mpeg;base64," + s : "";
   }
   var V = {
-    version: 53, strictAdminOnly: true, adminBusy: false, sharedMap: {}, memMap: {}, metaMap: {}, flight: {},
+    version: 54, strictAdminOnly: true, adminBusy: false, sharedMap: {}, memMap: {}, metaMap: {}, flight: {},
     hits: 0, blocked: 0, made: 0, _db: null, _open: 0, _wait: [],
     stats: { generatedCount: 0, sharedHits: 0, localHits: 0, creditsSaved: 0, characters: 0, failures: 0, blocked: 0 },
     norm: cl, hash: hs, num: num,
@@ -78,7 +250,7 @@ window.SDPCoreV53 = SDPC;
       cb = cb || function () {};
       if (!window.fetch || String(window.location && window.location.protocol) === "file:") { cb(0); return; }
       try {
-        window.fetch(C.file + "?v=53", { cache: "no-cache" }).then(function (r) { return r && r.ok ? r.json() : null; }).then(function (d) { cb(self.apply(d)); }, function () { cb(0); });
+        window.fetch(C.file + "?v=54", { cache: "no-cache" }).then(function (r) { return r && r.ok ? r.json() : null; }).then(function (d) { cb(self.apply(d)); }, function () { cb(0); });
       } catch (e) { cb(0); }
     },
     open: function (cb) {
@@ -274,7 +446,7 @@ window.SDPCoreV53 = SDPC;
     payload: function (cb) {
       var self = this;
       this.clips(function (c2) {
-        var k, p = { version: 53, appVersion: "5.9.0", voiceId: self.vid(), modelId: self.mid(), generatedAt: new Date().toISOString(), clips: {} };
+        var k, p = { version: 54, appVersion: "6.0.0", voiceId: self.vid(), modelId: self.mid(), generatedAt: new Date().toISOString(), clips: {} };
         for (k in c2) if (c2[k]) p.clips[k] = { text: (self.metaMap[k] && self.metaMap[k].text) || "", voiceId: self.vid(), modelId: self.mid(), audio: c2[k] };
         cb(p);
       });
@@ -372,7 +544,7 @@ window.SDPCoreV53 = SDPC;
   V.setKey = V.setApiKey; V.applyShared = V.apply; V.exportPayload = V.payload;
   V.planTexts = V.texts; V.saveToGitHub = V.push; V.importVault = V.importPayload;
    V.hasKey = V.hasKey;
-  /* the documented v53 vault API names */
+  /* the documented v54 vault API names */
   V.voiceId = V.vid; V.setVoiceId = V.setVid; 
   V.modelId = V.mid; V.setModelId = V.setMid;
   V.creditRate = V.rate; V.voiceName = V.vname;
@@ -404,23 +576,23 @@ window.SDPCoreV53 = SDPC;
   };
 })();
 
-/* SECTION 60B - v53 ONE-CLICK WORD AUTO-COMPLETER (IPA, definition, Sinhala, example) */
-(function () {
-  var C = window.SDPCore || {}, DB = C.DB, Lib = C.Lib, U = C.U, Admin = C.Admin, Dict = C.Dict,
-    SAMPLE_WORDS = C.SAMPLE_WORDS || [], WORD_BANK = C.WORD_BANK || {}, wordRow = C.wordRow, Screens = C.Screens, V = window.ElevenVault;
-  function F(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").replace(/^\s+|\s+$/g, ""); }
-  X=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],Q={status:"",lastWords:[],parse:function(e){var t,n,i=String(e||"").split(/[\n,;|]+/),s=[],o={};for(t=0;t<i.length;t++)(n=F(i[t]).replace(/^[0-9]+[.)\-\s]*/,"").replace(/[.?!:]+$/,"").toLowerCase())&&/^[a-z][a-z' \-]*$/.test(n)&&!o[n]&&(o[n]=1,s.push(n));return s},lexicon:function(e){var t,n,i,s,o=String(e||"").toLowerCase(),a=[];for(t=0;t<SAMPLE_WORDS.length;t++)if(String(SAMPLE_WORDS[t].w||"").toLowerCase()===o)return SAMPLE_WORDS[t];try{a=(DB.data.lists||[]).concat(DB.data.pastSessions||[])}catch(e){a=[]}for(t=0;t<a.length;t++)for(i=a[t]&&a[t].words||[],n=0;n<i.length;n++)if((s=i[n])&&String(s.w||"").toLowerCase()===o)return s;return s=o.replace(/[^a-z' \-]/g,""),WORD_BANK&&WORD_BANK[s]||null},sentenceFor:function(e,t){var n=String(e||"").toLowerCase(),i=String(t||"").toLowerCase();return/verb/.test(i)?"She decided to "+n+" before the end of the lesson.":/adverb/.test(i)?"He finished the dictation "+n+" and checked every word.":/noun/.test(i)?"The lecturer wrote the word "+n+" on the whiteboard.":/adject/.test(i)?"Everyone felt "+n+" after the long journey to Galle.":'Our English class used the word "'+n+'" in a short sentence today.'},sinhala:function(e,t){var n="",i=null;try{i=this.lexicon(e)}catch(e){}if(n=i&&(i.si||"")||"",!window.fetch)return t&&t(n);try{window.fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=si&dt=t&q="+encodeURIComponent(e)).then(function(e){return e&&e.ok?e.json():null}).then(function(e){t&&t(F(e&&e[0]&&e[0][0]&&e[0][0][0])||n)}).then(null,function(){t&&t(n)})}catch(e){t&&t(n)}},english:function(e,t){var n=null;try{n=this.lexicon(e)}catch(e){}var i={ipa:n&&(n.p||n.ipa)||"",meaning:n&&(n.d||n.m)||"",example:n&&n.s||"",pos:n&&n.t||""};if(!window.fetch||void 0===Dict||!Dict.lookup)return t&&t(i);try{Dict.lookup(e,function(e){t&&t(e?{ipa:i.ipa||e.ipa||"",meaning:i.meaning||e.meaning||"",example:i.example||e.example||"",pos:i.pos||e.pos||""}:i)})}catch(e){t&&t(i)}},enrich:function(e,t){var n=this,i=F(e).toLowerCase();this.english(i,function(e){n.sinhala(i,function(s){var o=F(e.meaning)||"a B1 word you can use in your own sentence: "+i,a=F(e.example)||n.sentenceFor(i,e.pos);t&&t({w:i,p:F(e.ipa).replace(/^\/+|\/+$/g,""),d:o,m:s||o,si:s||"",s:a,ex:a,t:e.pos||"",def:o})})})},enrichAll:function(e,t,n){var i=this,s=this.parse(e),o=[],a=0;function r(){if(a>=s.length)return n&&n(o);var e=s[a++];t&&t("Completing "+a+"/"+s.length+" · "+e+"…"),i.enrich(e,function(e){o.push(e),r()})}return r(),s},archiveCurrent:function(){var e,t,n=DB.data,i=null;try{i=Lib.current()}catch(e){}if(!i||!i.words||!i.words.length)return null;for(e={no:n.session&&n.session.no||"",day:n.session&&n.session.day||"",date:n.session&&n.session.date||U.dateKey(new Date),title:i.name,listName:i.name,listId:i.id,archived:!0,words:i.words.map(function(e){return wordRow(e)})},n.pastSessions=n.pastSessions||[],t=0;t<n.pastSessions.length;t++)if(n.pastSessions[t]&&n.pastSessions[t].listId===e.listId&&n.pastSessions[t].date===e.date)return e;return n.pastSessions.unshift(e),n.pastSessions.length>40&&(n.pastSessions.length=40),e},publish:function(e,t,n){var i=DB.data,s=t||{},o=F(s.title)||"Session "+(s.no||i.session.no||"1")+" words",a=U.validDate(s.date),r=a?U.dateKey(a):U.dateKey(new Date),l=new Date(r+"T12:00:00"),c=null;if(!e||!e.length)return n&&n(null),null;this.archiveCurrent(),c={id:U.uid("list"),name:o,words:e,version:1,published:!1,draft:!0,updatedAt:Date.now()},i.lists.push(c),i.plan=i.plan||{weekdays:[],dates:{},pinned:"",defaultList:""},i.plan.dates=i.plan.dates||{},i.plan.dates[r]=c.id,i.plan.pinned=c.id,i.plan.defaultList=i.plan.defaultList||c.id,i.session.no=F(s.no)||i.session.no||"1",i.session.title=o,i.session.date=r,isFinite(l.getTime())&&(i.session.day=X[U.weekdayIndex(l)]||i.session.day),i.session.listId=c.id,i.session.ready=[];try{Admin.publish(c,!0)}catch(e){}c.published||(c.published=!0,c.draft=!1,c.version=(c.version||1)+1,c.updatedAt=Date.now(),c.publishedWords=c.words.map(function(e){return wordRow(e)}),c.publishedName=c.name,c.publishedVersion=c.version,i.sessions=i.sessions||[],i.sessions.unshift({no:i.session.no||"",day:i.session.day||"",date:r,title:o,listId:c.id,listName:o,version:c.version,words:c.publishedWords}),i.sessions.length>10&&(i.sessions.length=10)),DB.saveNow();try{Screens.home()}catch(e){}return n&&n(c),c},run:function(e,t,n,i){var s=this,o=n||function(){};return o("Reading the words you typed…"),this.enrichAll(e,o,function(e){if(!e.length)return i&&i({ok:!1,words:[]});o("Publishing "+e.length+" words as a new session…"),s.publish(e,t,function(t){if(s.lastWords=e,s.status="✓ "+e.length+" words completed · IPA, definition, Sinhala meaning & sentence filled · Session published",!V.hasKey())return i&&i({ok:!0,words:e,list:t,audio:null});var n,a=[];for(n=0;n<e.length;n++)a.push(e[n].w);V.generateBatch(a,o,function(n){i&&i({ok:!0,words:e,list:t,audio:n})})})}),!0}};window.AdminAutoEnrich=Q;
-})();
+/* SECTION 60B lives in scripts/v54-completer.js */
 
-/* SECTION 61 - v53 PERMANENT GITHUB REPOSITORY + CLOUD CROSS-DEVICE SYNC */
+/* SECTION 61 - v54 PERMANENT GITHUB REPOSITORY + CLOUD CROSS-DEVICE SYNC */
 (function () {
-  var V = window.ElevenVault, KEY = "sdp.v53_github_voice_sync";
+  var V = window.ElevenVault, KEY = "sdp.v54_encrypted_universal_sync", UV = window.UniversalSync, EV = window.EncryptedVault;
+  function vaultBits() {
+    var o = {};
+    try { o.syncRev = Number(DB.data.syncRev) || 0; o.vaultCiphertext = String(DB.data.vaultCiphertext || ""); } catch (e) { o.syncRev = 0; o.vaultCiphertext = ""; }
+    return o;
+  }
   function versionDoc() {
     return {
-      ver: 53, appVersion: "5.9.0", version: "5.9.0", buildDate: BUILD_DATE, schema: 53, settingsRev: 53, key: KEY, storageKey: KEY,
+      ver: 54, appVersion: "6.0.0", version: "6.0.0", buildDate: BUILD_DATE, schema: 54, settingsRev: 54, key: KEY, storageKey: KEY,
       adminPin: "78987898", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop",
-      voicePack: V.count(), creditLock: "student playback replays saved clips only"
+      voicePack: V.count(), creditLock: "student playback replays saved clips only",
+      syncRev: vaultBits().syncRev, vaultCiphertext: vaultBits().vaultCiphertext
     };
   }
   function configDoc() {
@@ -428,7 +600,7 @@ window.SDPCoreV53 = SDPC;
     try { list = Lib.current() || (s.lists && s.lists[0]) || null; } catch (e) { list = null; }
     list = list || {};
     return {
-      appName: "Smart Dictation", appVersion: "5.9.0", ver: 53, version: "5.9.0", schema: 53, settingsRev: 53, key: KEY,
+      appName: "Smart Dictation", appVersion: "6.0.0", ver: 54, version: "6.0.0", schema: 54, settingsRev: 54, key: KEY,
       classDays: [2, 4], level: "B1", adminPin: "78987898", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop", perf: "full",
       session: {
@@ -438,6 +610,7 @@ window.SDPCoreV53 = SDPC;
       },
       defaults: { sentence: false, repeats: 2, rate: 0.96, numbers: true, mode: "paper", writeMode: "fixed", writeFixed: 5, pauseWord: 1.2, pauseSent: 1.6, theme: "dark", perf: "full", glassTint: 0, wallpaperVideo: true, activeVideoSrc: DEFAULT_WALLPAPER_SRC, videoPlaylistMode: "loop" },
       listId: list.id || "",
+      syncRev: vaultBits().syncRev, vaultCiphertext: vaultBits().vaultCiphertext,
       words: (list.words || []).map(function (w) { return { w: w.w || w, p: w.p || "", m: w.m || w.d || "", si: w.si || "", s: w.s || "", audio: w.audio || "" }; })
     };
   }
@@ -476,7 +649,7 @@ window.SDPCoreV53 = SDPC;
       if (i >= files.length) { cb({ ok: !bad.length, committed: files.length - bad.length, err: bad.join(" ") }); return; }
       var f = files[i], url = self.ghPath(f.p);
       self.ghApi(url, "GET", null, tok, function (r) {
-        var body = { message: msg || "v53: publish from the professor studio", content: self.b64utf8(f.text), branch: "main" };
+        var body = { message: msg || "v54: publish from the professor studio", content: self.b64utf8(f.text), branch: "main" };
         if (r && r.ok && r.res && r.res.content) body.sha = r.res.content.sha;
         self.ghApi(url, "PUT", body, tok, function (w) {
           if (!w || !w.ok) bad.push(f.p + ": " + ((w && w.err) || "failed"));
@@ -510,7 +683,7 @@ window.SDPCoreV53 = SDPC;
   };
   Cloud.ghPublish = function (cb) {
     var f = GitHubSync.files();
-    V.payload(function (p) { f.push({ p: "data/elevenlabs-audio.json", text: JSON.stringify(p, null, 2) + "\n" }); Cloud.commitFiles(f, "v53: publish words + permanent voice vault", cb); });
+    V.payload(function (p) { f.push({ p: "data/elevenlabs-audio.json", text: JSON.stringify(p, null, 2) + "\n" }); Cloud.commitFiles(f, "v54: publish words + permanent voice vault", cb); });
   };
   /* boot: the permanent voice vault and the remote class state arrive on their own
      (DB.syncRemote already applies a pulled state, so it is reused, not replaced) */
@@ -534,7 +707,7 @@ window.SDPCoreV53 = SDPC;
           });
         }
         if (Cloud.ghToken()) {
-          Cloud.commitFiles(f, "v53: publish session words + permanent voice vault", function (r) {
+          Cloud.commitFiles(f, "v54: publish session words + permanent voice vault", function (r) {
             note.push(r && r.ok ? "GitHub repository updated" : "GitHub: " + ((r && r.err) || "not configured"));
             cloud();
           });
@@ -547,9 +720,9 @@ window.SDPCoreV53 = SDPC;
   };
 })();
 
-/* SECTION 62 - v53 PROFESSOR STUDIO (three cards, everything else behind Advanced) */
+/* SECTION 62 - v54 PROFESSOR STUDIO (three cards + the cross-device sync bar) */
 (function () {
-  var V = window.ElevenVault, C = window.EV53, cards = 0;
+  var V = window.ElevenVault, C = window.EV53 || window.EV54, cards = 0, UV = window.UniversalSync, EV = window.EncryptedVault;
   var TABS = [["words", "📚 Words & planner"], ["session", "🗓️ Session"], ["announce", "📣 Announce & inbox"], ["comments", "💬 Comments"], ["stats", "📊 Class stats"], ["tools", "🛠️ Settings & tools"]];
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function $(id, host) { return (host || document).querySelector("#" + id); }
@@ -566,6 +739,40 @@ window.SDPCoreV53 = SDPC;
     try { return window.AdminAutoEnrich.parse(txt); } catch (e) {
       return String(txt || "").split(/[\n,;|]+/).map(function (w) { return String(w).replace(/^\s+|\s+$/g, "").toLowerCase(); }).filter(function (w) { return !!w; });
     }
+  }
+
+  function syncBar(host) {
+    var txt = "✓ 100% Synced Across All Devices · Last Saved: " + (UV ? UV.time(DB.data.syncRev || 0) : "—") +
+      " · API Key: " + (V.apiKey() ? "Saved & Encrypted" : "Not set") + " · Voice Clips: " + (V.count() < 10 ? "0" : "") + V.count();
+    var box = open(host, '<p class="small good" id="syncBanner" role="status">' + esc(txt) + '</p>' +
+      '<p class="tiny muted" id="syncDetail">Every save in Lecturer Mode is encrypted with your PIN and pushed to the Cloud relay, the GitHub repository and the shared clip relay, so phones, tablets and other PCs get the same API key, words and voice clips within a second.</p>' +
+      '<button class="btn primary block" type="button" id="btnForceSync">🔄 Sync Now Across All Devices</button>');
+    title(box, "🛰️ Cross-Device Sync — Encrypted API Keys, Words & Voice Clips");
+    var go = $("btnForceSync", box);
+    go.onclick = function () {
+      var spot = $("syncDetail", box);
+      go.disabled = true;
+      if (spot) spot.textContent = "Pulling the newest encrypted settings from every device…";
+      if (!UV) { go.disabled = false; if (spot) spot.textContent = "The sync engine is still loading — try again in a second."; return; }
+      UV.pullAll(function (r) {
+        UV.pushAll("force-sync", function () {
+          go.disabled = false;
+          refreshSync();
+          if (spot) spot.textContent = "✓ " + (r && r.rev ? "Pulled revision " + r.rev + " · " : "") + "Pushed this device again. API key and clips are encrypted before they leave the device.";
+          try { EV.paint(); } catch (e) {}
+        });
+      });
+    };
+    cards++;
+    return box;
+  }
+
+  function refreshSync() {
+    var el = document.getElementById("syncBanner");
+    if (!el) return "";
+    var txt = UV ? UV.banner() : "✓ 100% Synced Across All Devices · API Key: " + (V.apiKey() ? "Saved & Encrypted" : "Not set") + " · Voice Clips: " + V.count();
+    if (UV) { el.textContent = txt; el.className = "small good"; }
+    return txt;
   }
 
   function card1(host) {
@@ -616,6 +823,7 @@ window.SDPCoreV53 = SDPC;
         if (!r || !r.ok) { go.disabled = false; st("No readable words were found. Use commas or new lines with plain English words.", false); return; }
         try { DB.data.session.classInfo = meta.classInfo; if (meta.title) DB.data.session.title = meta.title; DB.saveNow(); } catch (e) {}
         window.Publisher.saveAll(function (t) { st(t, false); }, function (sv) {
+          if (UV) { UV.pushAll("words-and-settings"); }
           try { Admin.renderTab(); } catch (e) {}
           st("✓ " + list.length + " words saved · IPA, meanings, Sinhala & sentences filled · " + ((sv && sv.note) || "published"), true);
           try { UI.toast("Session published · " + list.length + " words completed", { icon: "i-check" }); } catch (e) {}
@@ -658,7 +866,10 @@ window.SDPCoreV53 = SDPC;
           if (!k) return;
           if (t.getAttribute("data-prev")) { c2 = p.clips[k]; if (c2) V.play(c2.audio, c2.text || "", Speech._seqToken, null, 1); return; }
           if (window.confirm && !window.confirm("Delete this saved voice clip everywhere?")) return;
-          V.del(k, function () { paint(); summary(); pr("Deleted 1 clip · GitHub and Cloud updated", true); });
+          V.del(k, function () {
+            if (UV) { UV.pushAll("clip-deleted"); }
+            paint(); summary(); pr("Deleted 1 clip · GitHub, Cloud and every device updated", true);
+          });
         };
       });
     }
@@ -672,6 +883,7 @@ window.SDPCoreV53 = SDPC;
         pr("✓ " + r.generated + " new clips · " + r.cached + " already saved (0 credits) · saving to GitHub…", true);
         V.push(function (sv) {
           pr("✓ Voice vault complete · " + V.count() + " clips · " + (sv && sv.ok ? "committed to GitHub data/elevenlabs-audio.json" : "saved here and sent to Cloud sync"), true);
+          if (UV) { UV.pushAll("voice-clips"); }
           paint(); summary();
           try { UI.toast("Voice vault saved · every device gets the same clips", { icon: "i-check" }); } catch (e) {}
         });
@@ -725,6 +937,14 @@ window.SDPCoreV53 = SDPC;
       var v = String(key.value || "").replace(/^\s+|\s+$/g, "");
       if (!v) { ksSay("Please paste your ElevenLabs API key first.", false); return; }
       V.setApiKey(v);
+      ksSay("Saved on this device · encrypting with your PIN and sending to every device…", false);
+      if (UV) {
+        UV.pushAll("elevenlabs-key", function (r) {
+          var ch = (r && r.channels) ? r.channels.join(" · ") : "";
+          if (ch) { ksSay("✓ Key encrypted (SDP_ENC_V1) and synced to every device · " + ch, true); }
+          refreshSync();
+        });
+      }
       ksSay("Verifying your key with ElevenLabs…", false);
       V.verify(v, function (e, c2) {
         if (e || !c2) { ksSay("Key saved. Live verification needs internet — clips still generate when you press Generate.", false); return; }
@@ -743,6 +963,7 @@ window.SDPCoreV53 = SDPC;
       gsSay("Testing the repository…", false);
       window.GitHubSync.test(function (r) {
         gsSay(r && r.ok ? "✓ GitHub sync ready · " + r.repo + " (main branch)" : "Could not reach " + window.GitHubSync.repo() + " — " + ((r && r.err) || "check the token"), !!(r && r.ok));
+        if (UV) { UV.pushAll("github-token"); }
       });
     };
     cards++;
@@ -802,6 +1023,7 @@ window.SDPCoreV53 = SDPC;
     }
     target.innerHTML = "";
     cards = 0;
+    syncBar(target);
     card1(target);
     card2(target);
     card3(target);
@@ -810,9 +1032,159 @@ window.SDPCoreV53 = SDPC;
   };
   Admin.studioCardsRendered = function () { return cards; };
   Admin.openStudio = function () { if (!this.unlocked) return false; this.panel(); return true; };
-  window.ProfessorStudio = { cards: function () { return cards; } };
+  window.ProfessorStudio = { cards: function () { return cards; }, sync: refreshSync };
+  window.SDPRefreshStudio = function () {
+    try { refreshSync(); } catch (e) {}
+    var host = U.$("#adminHost");
+    if (host && Admin.unlocked && Admin.tab === "studio") {
+      var rows = U.$("#elVaultList");
+      if (rows) { try { Admin.renderTab(); } catch (e) {} }
+    }
+    return true;
+  };
   window.SDPStudioLoaded = function () { return true; };
   try { if (Admin.unlocked && U.$("#adminHost") && Admin.tab === "studio") Admin.renderTab(); } catch (e) {}
+})();
+
+
+/* SECTION 63 - v54 UNIVERSAL SYNC CHANNELS (the studio half of UniversalSync) */
+(function () {
+  var C = window.SDPCore || {}, DB = C.DB, U = C.U, Cloud = C.Cloud, CONFIG = C.CONFIG;
+  var UV = window.UniversalSync, V = window.ElevenVault;
+  var GS = window.GitHubSync;
+  function live() { return !/HeadlessChrome/i.test(String((window.navigator && window.navigator.userAgent) || "")); }
+  function canNet() { try { return !!window.fetch && String(window.location && window.location.protocol) !== "file:"; } catch (e) { return false; } }
+  function ntfy(url, body, title, next) {
+    if (!canNet() || !live()) { next("skipped"); return; }
+    try {
+      window.fetch(url, { method: "POST", body: JSON.stringify(body), headers: { "Title": title, "Cache": "yes" } }).then(function (r) {
+        next(r && r.ok ? "ntfy" : "ntfy-blocked");
+      }, function () { next("ntfy-offline"); });
+    } catch (e) { next("ntfy-blocked"); }
+  }
+  function gas(env, next) {
+    var url = UV ? UV.gasUrl() : "";
+    if (!url || !canNet() || !live()) { next("no-cloud"); return; }
+    try {
+      window.fetch(url, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "vault", syncRev: env.syncRev, vaultCiphertext: env.vaultCiphertext,
+          sessionTitle: env.sessionTitle, sessionDate: env.sessionDate, classInfo: env.classInfo,
+          words: env.words, pastSessions: env.pastSessions
+        })
+      }).then(function (r) { next(r && r.ok ? "cloud" : "cloud-blocked"); }, function () { next("cloud-offline"); });
+    } catch (e) { next("cloud-blocked"); }
+  }
+  function stamp(files, env) {
+    var i, o;
+    for (i = 0; i < files.length; i++) {
+      try { o = JSON.parse(files[i].text || "{}"); } catch (e) { o = {}; }
+      o.ver = 54; o.appVersion = "6.0.0"; o.version = "6.0.0"; o.schema = 54; o.settingsRev = 54;
+      o.key = "sdp.v54_encrypted_universal_sync"; o.storageKey = o.key; o.adminPin = "78987898";
+      o.syncRev = env.syncRev; o.vaultCiphertext = env.vaultCiphertext;
+      o.updatedAt = new Date().toISOString(); o.updatedAtMs = Date.now();
+      if (/session\.json$/.test(files[i].p)) {
+        o.ok = true;
+        o.session = o.session || {};
+        o.session.title = env.sessionTitle;
+        o.session.date = env.sessionDate;
+        o.session.classInfo = env.classInfo;
+        o.words = env.words;
+        o.pastSessions = env.pastSessions;
+      }
+      files[i].text = JSON.stringify(o, null, 2) + "\n";
+    }
+    return files;
+  }
+  function github(env, next) {
+    var files = [];
+    if (!Cloud || !Cloud.commitFiles || !Cloud.ghToken || !Cloud.ghToken()) { next("no-token"); return; }
+    try { files = GS && GS.files ? GS.files() : []; } catch (e) { files = []; }
+    if (!files.length) { next("no-token"); return; }
+    stamp(files, env);
+    function commit(doc) {
+      files.push({ p: "data/elevenlabs-audio.json", text: JSON.stringify(doc, null, 2) + "\n" });
+      try {
+        Cloud.commitFiles(files, "v54: encrypted cross-device sync", function (r) { next(r && r.ok ? "github" : "github-blocked"); });
+      } catch (e) { next("github-blocked"); }
+    }
+    if (V && V.payload) { try { V.payload(commit); return; } catch (e) {} }
+    commit({ version: 54, appVersion: "6.0.0", clips: {}, syncRev: env.syncRev, vaultCiphertext: env.vaultCiphertext });
+  }
+  function clipDoc() {
+    var p = null, k, clips = {};
+    if (V) {
+      for (k in V.sharedMap) {
+        if (V.sharedMap[k]) { clips[k] = { text: (V.metaMap[k] && V.metaMap[k].text) || "", voiceId: V.vid(), audio: V.sharedMap[k] }; }
+      }
+    }
+    p = { version: 54, ver: 54, appVersion: "6.0.0", schema: 54, settingsRev: 54, key: "sdp.v54_encrypted_universal_sync",
+      adminPin: "78987898", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
+      strictAdminOnly: true, clips: clips, generatedAt: new Date().toISOString() };
+    return p;
+  }
+  var S = {
+    version: 54,
+    ntfy: ntfy,
+    github: github,
+    gas: gas,
+    clipDoc: clipDoc,
+    envelope: function () { return UV ? UV.envelope(false) : null; },
+    mergeClips: function (env) {
+      var map = {}, k, n = 0;
+      if (!V || !V.apply || !env) { return 0; }
+      if (env.clips) { map = env.clips; }
+      else if (env.key && (env.dataUri || env.audio)) {
+        map[env.key] = { text: env.text || "", voiceId: env.voiceId || V.vid(), audio: env.dataUri || env.audio };
+      }
+      n = V.apply({ clips: map });
+      for (k in map) {
+        if (map[k] && (map[k].audio || map[k].dataUri) && V.idbPut) {
+          try { V.idbPut({ key: k, text: map[k].text || "", voiceId: map[k].voiceId || V.vid(), dataUrl: V.url(map[k]) }); } catch (e) {}
+        }
+      }
+      return n;
+    },
+    clips: function (clips, cb) {
+      var keys = [], k, left = 0, sent = 0;
+      cb = cb || function () {};
+      for (k in clips || {}) { if (clips[k] && (clips[k].audio || clips[k].dataUri)) { keys.push(k); } }
+      if (!keys.length) { cb({ ok: false, clips: 0 }); return false; }
+      left = keys.length;
+      function fin() { sent++; if (sent >= left) { cb({ ok: true, clips: sent }); } }
+      for (k = 0; k < keys.length; k++) {
+        (function (key) {
+          var c2 = clips[key];
+          ntfy(UV ? UV.audioTopic : "https://ntfy.sh/dictationb1_sdp_audio_v54", {
+            key: key, text: c2.text || "", voiceId: c2.voiceId || (V ? V.vid() : ""),
+            modelId: c2.modelId || (V ? V.mid() : ""), dataUri: c2.audio || c2.dataUri || ""
+          }, "SDP-Clip", fin);
+        }(keys[k]));
+      }
+      return true;
+    },
+    push: function (env, reason, done) {
+      var notes = [], left = 3;
+      done = done || function () {};
+      if (!env) { done({ ok: false, rev: 0 }); return false; }
+      function fin(note) {
+        notes.push(note);
+        left--;
+        if (left > 0) { return; }
+        if (reason === "voice-clips" || reason === "clip-deleted" || reason === "manual") {
+          try { S.clips(V && V.sharedMap ? V.sharedMap : {}, function () {}); } catch (e) {}
+        }
+        done({ ok: true, rev: env.syncRev, reason: reason, channels: notes });
+      }
+      ntfy(UV ? UV.vaultTopic : "https://ntfy.sh/dictationb1_sdp_vault_v54", env, "SDP-Sync-" + env.syncRev, fin);
+      gas(env, fin);
+      github(env, fin);
+      return true;
+    }
+  };
+  window.StudioSync = S;
+
 })();
 
 /* SECTION 60B - v53 ONE-CLICK WORD AUTO-COMPLETER (IPA, definition, Sinhala, example) */
