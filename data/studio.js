@@ -23,9 +23,9 @@ window.SDPCoreV54 = SDPC;
 (function () {
   var C = window.SDPCore || {}, DB = C.DB, U = C.U, Cloud = C.Cloud, CONFIG = C.CONFIG;
   var EV = window.EncryptedVault, PIN = "78987898";
-  var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v55";
-  var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v55";
-  var AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v55";
+  var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v56";
+  var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v56";
+  var AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v56";
   var STATIC = ["./data/config.json", "./data/session.json", "./data/elevenlabs-audio.json"];
   var REPO = "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/";
   var MAX_KEY_BYTES = 1000, MAX_WORD_CHUNK = 3500;
@@ -60,7 +60,7 @@ window.SDPCoreV54 = SDPC;
     return out;
   }
   var SYNC = {
-    version: 55, PIN: PIN, keysTopic: KEYS, wordsTopic: WORDS, audioTopic: AUDIO, vaultTopic: KEYS,
+    version: 56, PIN: PIN, keysTopic: KEYS, wordsTopic: WORDS, audioTopic: AUDIO, vaultTopic: KEYS,
     staticFiles: STATIC, repoApi: REPO, maxKeyBytes: MAX_KEY_BYTES, maxWordChunk: MAX_WORD_CHUNK,
     rev: 0, lastSaved: 0, lastPull: 0, lastKeyBytes: 0, lastChannels: [], lastKeyBody: "",
     notes: [], busy: false, pushing: false, timer: null, audioTimer: null, live: live, canNet: canNet, gasUrl: gasUrl, token: token, time: clock, bytes: bytes,
@@ -76,14 +76,14 @@ window.SDPCoreV54 = SDPC;
       return true;
     },
     keyBody: function (stamp) {
-      var env = EV.keyEnvelope(stamp !== false);
+      var pub = EV.publicPayload ? EV.publicPayload() : { syncRev: Number(DB.data.syncRev) || 0, sessionTitle: "", sessionDate: "" };
+      if (stamp !== false) { DB.data.syncRev = Date.now(); pub.syncRev = Number(DB.data.syncRev) || 0; }
       var body = JSON.stringify({
-        syncRev: env.syncRev, vaultCiphertext: env.vaultCiphertext,
-        sessionTitle: env.sessionTitle, sessionDate: env.sessionDate
+        syncRev: pub.syncRev, sessionTitle: pub.sessionTitle, sessionDate: pub.sessionDate
       });
       this.lastKeyBody = body;
       this.lastKeyBytes = bytes(body);
-      this.rev = env.syncRev;
+      this.rev = pub.syncRev;
       return body;
     },
     wordBodies: function (rev) {
@@ -306,8 +306,8 @@ window.SDPCoreV54 = SDPC;
 /* SECTION 60 - v55 STRICT ZERO-DRAIN ELEVENLABS VAULT (playback never spends a credit) */
 (function () {
   var C = {
-    v: 55, voiceId: "Xb7hH8MSUJpSbSDYk0k2", modelId: "eleven_flash_v2_5",
-    tts: "https://api.elevenlabs.io/v1/text-to-speech/", q: "?output_format=mp3_44100_64",
+    v: 55, voiceId: "Xb7hH8MSUJpSbSDYk0k2", modelId: "eleven_multilingual_v2",
+    tts: "https://api.elevenlabs.io/v1/text-to-speech/", q: "?output_format=mp3_44100_128",
     sub: "https://api.elevenlabs.io/v1/user/subscription", file: "./data/elevenlabs-audio.json",
     db: "sdp_elevenlabs_vault_v1", store: "clips",
     cost: { eleven_flash_v2_5: 0.5, eleven_multilingual_v2: 1 },
@@ -316,9 +316,12 @@ window.SDPCoreV54 = SDPC;
       { id: "Xb7hH8MSUJpSbSDYk0k2", name: "Alice", label: "Alice · British RP Professional Educator Woman (default)" },
       { id: "XB0fDUnXU5powFXDhCwa", name: "Charlotte", label: "Charlotte · British Expressive Studio Woman" },
       { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily", label: "Lily · British RP Warm Narrator Woman" },
+      { id: "EXAVITQu4vr4xnSDxMaL", name: "Daniel", label: "Daniel · British RP Male Educator" },
+      { id: "bIHbvDHMWzoRXdEyNcxw", name: "George", label: "George · British Male Narrator" },
       { id: "ThT5KcBeYPX3keUQqHPh", name: "Dorothy", label: "Dorothy · British Pleasant Studio Woman" }
     ],
-    models: [{ id: "eleven_flash_v2_5", name: "eleven_flash_v2_5 (0.5x Credit Saver)" }, { id: "eleven_multilingual_v2", name: "eleven_multilingual_v2 (1x HD Studio)" }]
+    models: [{ id: "eleven_multilingual_v2", name: "eleven_multilingual_v2 (1x HD Studio, default)" }, { id: "eleven_flash_v2_5", name: "eleven_flash_v2_5 (0.5x Credit Saver)" }],
+    formats: [{ id: "mp3_44100_128", name: "128 kbps Studio" }, { id: "mp3_44100_192", name: "192 kbps HD" }, { id: "mp3_44100_64", name: "64 kbps Saver" }]
   };
   function cl(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").replace(/^\s+|\s+$/g, ""); }
   function hs(s) {
@@ -398,6 +401,8 @@ window.SDPCoreV54 = SDPC;
     setVid: function (v) { this.cfg().elevenLabsVoiceId = cl(v) || C.voiceId; DB.saveNow(); return this.vid(); },
     mid: function () { return String(this.cfg().elevenLabsModelId || C.modelId); },
     setMid: function (v) { this.cfg().elevenLabsModelId = cl(v) || C.modelId; DB.saveNow(); return this.mid(); },
+    fmt: function () { return String(this.cfg().elevenLabsFormat || C.formats[0].id); },
+    setFmt: function (v) { this.cfg().elevenLabsFormat = cl(v) || C.formats[0].id; DB.saveNow(); return this.fmt(); },
     rate: function () { return C.cost[this.mid()] || 1; },
     vname: function () { var i, id = this.vid(); for (i = 0; i < C.voices.length; i++) if (C.voices[i].id === id) return C.voices[i].name; return "Custom"; },
     keyFor: function (t) { return "el_" + this.vid() + "_" + hs(cl(t)); },
@@ -538,7 +543,7 @@ window.SDPCoreV54 = SDPC;
         for (i = 0; i < w.length; i++) { try { w[i](e, u); } catch (x) {} }
       }
       try {
-        window.fetch(C.tts + this.vid() + C.q, {
+        window.fetch(C.tts + this.vid() + "?output_format=" + this.fmt(), {
           method: "POST",
           headers: { "xi-api-key": tok, "Content-Type": "application/json", Accept: "audio/mpeg" },
           body: JSON.stringify({ text: p, model_id: this.mid(), voice_settings: C.set })
@@ -632,7 +637,7 @@ window.SDPCoreV54 = SDPC;
       this.flight[k] = [cb];
       if (!window.fetch) { fin("nofetch", ""); return false; }
       try {
-        window.fetch(C.tts + this.vid() + C.q, {
+        window.fetch(C.tts + this.vid() + "?output_format=" + this.fmt(), {
           method: "POST",
           headers: { "xi-api-key": tok, "Content-Type": "application/json", Accept: "audio/mpeg" },
           body: JSON.stringify({ text: p, model_id: this.mid(), voice_settings: C.set })
@@ -1512,9 +1517,9 @@ window.SDPCoreV54 = SDPC;
 (function () {
   var C = window.SDPCore || {}, DB = C.DB, Cloud = C.Cloud, CONFIG = C.CONFIG;
   var UV = window.UniversalSync, V = window.ElevenVault, GS = window.GitHubSync, EV = window.EncryptedVault;
-  var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v55";
-  var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v55";
-  var AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v55";
+  var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v56";
+  var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v56";
+  var AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v56";
   function live() { return !/HeadlessChrome|PhantomJS/i.test(String((window.navigator && window.navigator.userAgent) || "")); }
   function canNet() { try { return !!window.fetch && String(window.location && window.location.protocol) !== "file:"; } catch (e) { return false; } }
   /* CORS-SIMPLE POST: method + body only. No Title, no Cache, no Priority, no Content-Type. */
@@ -1593,13 +1598,13 @@ window.SDPCoreV54 = SDPC;
     return {
       version: 55, ver: 55, appVersion: "6.1.0", schema: 55, settingsRev: 55,
       key: "sdp.v55_guaranteed_device_sync", storageKey: "sdp.v55_guaranteed_device_sync",
-      adminPin: "78987898", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
+      adminPin: "78987898", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_multilingual_v2",
       strictAdminOnly: true, clips: clips, generatedAt: new Date().toISOString(),
       note: "Permanent ElevenLabs voice vault: every device replays these clips with 0 credits."
     };
   }
   var S = {
-    version: 55, keysTopic: KEYS, wordsTopic: WORDS, audioTopic: AUDIO,
+    version: 56, keysTopic: KEYS, wordsTopic: WORDS, audioTopic: AUDIO,
     post: simple, gas: gas, github: github, clipDoc: clipDoc,
     _wordBuf: {},
     /* the exact < 600 byte CORS-simple keys packet */

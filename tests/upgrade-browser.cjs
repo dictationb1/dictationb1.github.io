@@ -342,7 +342,7 @@ function material(page) {
         bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
         shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
         morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.glassTint,
+        saved: JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.glassTint,
         indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
       }));
       assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
@@ -560,7 +560,7 @@ function material(page) {
         open.onsuccess = () => {
           const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
           get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.wallpaperVideo }); };
+            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.wallpaperVideo }); };
           get.onerror = () => reject(get.error);
         };
       }));
@@ -666,7 +666,7 @@ function material(page) {
     try {
       await page.locator('#btnStart').click();
       await clickText(page, "I'm ready");
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).lists[0].words[0].w);
+      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).lists[0].words[0].w);
       /* The mocked Youdao endpoint is requested on the shared media element. */
       await page.waitForFunction(() => (window.__audio || []).filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2,
         null, { timeout: 12000 }).catch(() => {});
@@ -676,7 +676,7 @@ function material(page) {
       // any pinned-voice fallback must correspond to a Youdao clip attempted.
       const fallback = await page.evaluate(() => window.__spoken || []);
       for (const text of fallback) assert.ok(played.some(t => decodeURIComponent(String(t.src).split('audio=')[1] || '') === text), 'fallback text was first requested from Youdao: ' + text);
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.writeFixed), 5, 'five second timer');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.writeFixed), 5, 'five second timer');
 
       assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
       assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
@@ -686,7 +686,7 @@ function material(page) {
       for (let i = 0; i < 3; i++) await marks.nth(i).click();
       await page.waitForTimeout(600);
       const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
+        const d = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
         const rec = (d.history || [])[0] || {};
         return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
       });
@@ -716,7 +716,7 @@ function material(page) {
         return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
       }, null, { timeout: 10000 });
       const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
+        const saved = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
         return {
           home: !document.getElementById('screen-home').classList.contains('hidden'),
           ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
@@ -804,7 +804,7 @@ function material(page) {
 
       /* type on the native keyboard: the mirror must show plain letters */
       const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
+        const d = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
         const l = d.lists[0];
         return l.words[0].w.split('/')[0];
       });
@@ -901,7 +901,7 @@ function material(page) {
       assert.equal(state.vault, 'object', 'ElevenVault exposed');
       assert.equal(state.auto, 'object', 'AdminAutoEnrich exposed');
       assert.equal(state.voice, 'Xb7hH8MSUJpSbSDYk0k2', 'Alice is the default voice');
-      assert.equal(state.model, 'eleven_flash_v2_5', 'credit saver model');
+      assert.equal(state.model, 'eleven_multilingual_v2', 'credit saver model');
       assert.equal(state.clips, 0, 'empty vault on a fresh device');
       assert.equal(state.generated, 0, 'no credits spent');
       assert.equal(state.key, false, 'no API key by default');
@@ -943,7 +943,7 @@ function material(page) {
 
   /* --- v55: the PIN vault carries the lecturer key from PC to phone in a <600 byte packet --- */
   await check('v55: one saved API key reaches a second device and opens Lecturer Mode', async () => {
-    const KEY = 'sdp.v55_guaranteed_device_sync';
+    const KEY = 'sdp.v56_audit_verified';
     const PIN = '78987898';
     const LECTURER_KEY = 'sk_test_lecturer_key_12345';
     async function openLecturer(page) {
@@ -983,7 +983,7 @@ function material(page) {
       }, LECTURER_KEY, { timeout: 10000 });
       await page.waitForTimeout(400);
       deviceOne = await page.evaluate((k) => {
-        const data = JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync') || '{}');
+        const data = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync') || '{}');
         const env = window.UniversalSync.envelope(false);
         return {
           stored: (data.settings || {}).elevenLabsKey || '',
@@ -1017,9 +1017,9 @@ function material(page) {
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.addInitScript((payload) => {
-        localStorage.setItem('sdp.v55_guaranteed_device_sync', JSON.stringify(payload));
+        localStorage.setItem('sdp.v56_audit_verified', JSON.stringify(payload));
       }, { v: 55, settingsRev: 55, syncRev: deviceOne.rev, vaultCiphertext: deviceOne.cipher,
-           settings: { elevenLabsKey: '', elevenLabsVoiceId: 'Xb7hH8MSUJpSbSDYk0k2', elevenLabsModelId: 'eleven_flash_v2_5' },
+           settings: { elevenLabsKey: '', elevenLabsVoiceId: 'Xb7hH8MSUJpSbSDYk0k2', elevenLabsModelId: 'eleven_multilingual_v2' },
            lists: [{ id: 'list_session_8_feelings', name: 'Session 8', published: true,
                      words: [{ w: 'afraid', s: 'She was never afraid.', m: 'Feeling fear.' }] }] });
       await page.goto(fileURL);

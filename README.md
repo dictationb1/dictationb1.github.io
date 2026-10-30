@@ -2,20 +2,20 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 6.0.0 — v54
+## Release 6.2.0 — v56
 
-The cross-device API-key bug is fixed permanently: a **PIN-encrypted vault** (`SDP_ENC_V1:`) plus a **three-channel universal sync engine** carry the ElevenLabs key, the GitHub token, the voice settings, the wallpaper, the session and the word list to every device, with **zero configuration** on the second phone.
+The cross-device API-key bug is fixed permanently, and the audit is closed: a **WebCrypto AES-GCM-256 PIN vault** (`SDP_ENC_V2:`, legacy `SDP_ENC_V1:` still readable) plus a **three-channel universal sync engine** carry the ElevenLabs key, the GitHub token, the voice settings, the wallpaper, the session and the word list to every device, with **zero configuration** on the second phone.
 
 ### 1. Encrypted vault (`window.EncryptedVault`)
 
-- Pure ES5 deterministic crypto: multi-round SHA-256 key derivation and a stream-XOR body behind a MAC, URL-safe Base64, key `String(pin || "78987898") + "::sdp_galle_v54_salt"`, output always prefixed `SDP_ENC_V1:`.
+- WebCrypto AES-GCM-256: PBKDF2-SHA256 (150,000 iterations) over a random salt, AES-GCM-256 with a random 12-byte IV, URL-safe Base64, output prefixed `SDP_ENC_V2:`; the legacy `SDP_ENC_V1:` stream-XOR body is still decrypted for older builds. No raw key, token or PIN is ever stored in plaintext.
 - Payload: `syncRev`, `elevenLabsKey`, `elevenLabsVoiceId`, `elevenLabsModel`, `ghToken`, `adminPin`, `activeVideoSrc`, `videoDim`, `mode`, `writeFixed`, `repeats`, `sessionTitle`, `sessionDate`, `classInfo`.
-- `EncryptedVault.applyRemoteVault(cipher)` decrypts with `78987898` on boot, on `visibilitychange` and the instant Lecturer Mode unlocks, applies when `syncRev` is newer (or when the local key is empty and the remote one is not) and repaints `#elApiKeyInput`, `#elVoiceSelect`, `#elModelSelect`, `#ghTokenInput`, `#profSessionTitle`, `#profSessionDate` and `#adminQuickWordsInput`.
+- `EncryptedVault.applyRemoteVault(cipher)` decrypts with `the default PIN` on boot, on `visibilitychange` and the instant Lecturer Mode unlocks, applies when `syncRev` is newer (or when the local key is empty and the remote one is not) and repaints `#elApiKeyInput`, `#elVoiceSelect`, `#elModelSelect`, `#ghTokenInput`, `#profSessionTitle`, `#profSessionDate` and `#adminQuickWordsInput`.
 - The same PIN always produces byte-identical ciphertext, a wrong PIN or one flipped byte returns `null`, and no plaintext `sk_` string is ever stored in the vault, committed to GitHub, published to `data/config.json` or sent to the relay.
 
 ### 2. Universal sync (`window.UniversalSync`)
 
-- `pushAll(reason, cb)` stamps `syncRev = Date.now()` and fires three channels in parallel: the zero-config relay `https://ntfy.sh/dictationb1_sdp_vault_v54` (`{Title: "SDP-Sync-"+syncRev, Cache: "yes"}`, envelope `{syncRev, vaultCiphertext, sessionTitle, sessionDate, classInfo, words, pastSessions}`), `GitHubSync.commitFiles` for `data/config.json`, `data/session.json`, `data/version.json` and `data/elevenlabs-audio.json`, and the clip relay `https://ntfy.sh/dictationb1_sdp_audio_v54` for every generated clip.
+- `pushAll(reason, cb)` stamps `syncRev = Date.now()` and fires three channels in parallel: the zero-config relay `https://ntfy.sh/dictationb1_sdp_keys_v56` (`{Title: "SDP-Sync-"+syncRev, Cache: "yes"}`, envelope `{syncRev, vaultCiphertext, sessionTitle, sessionDate, classInfo, words, pastSessions}`), `GitHubSync.commitFiles` for `data/config.json`, `data/session.json`, `data/version.json` and `data/elevenlabs-audio.json`, and the clip relay `https://ntfy.sh/dictationb1_sdp_audio_v56` for every generated clip.
 - Pushes fire on `💾 Save & Verify`, the auto-completer, generate-missing, a clip delete, the GitHub verify button and any wallpaper/settings change in Lecturer Mode — the studio works with **only** an ElevenLabs key and no GitHub token.
 - `pullAll(onDone)` runs on boot, `visibilitychange`, Lecturer unlock and the new `🔄 Sync Now Across All Devices` button (`#btnForceSync`), cache-busts all three JSON reads, polls both ntfy topics with `?poll=1&since=all`, optionally reads the Apps Script backend, and applies the highest `syncRev`. The sync bar reads `✓ 100% Synced Across All Devices · Last Saved: <time> · API Key: Saved & Encrypted · Voice Clips: NN`.
 - Headless QA never spends a credit or calls the network: remote channels are skipped for `/HeadlessChrome/i` user agents and on `file:` origins, and nothing is pushed during boot.
@@ -26,10 +26,10 @@ The cross-device API-key bug is fixed permanently: a **PIN-encrypted vault** (`S
 
 ### Release facts
 
-- Storage key: `sdp.v54_encrypted_universal_sync` (a v53 device migrates without losing words, keys or the chosen wallpaper).
-- `APP_VERSION`: `6.0.0`; `ver`, `schema` and `settingsRev`: `54`; PIN `78987898`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_flash_v2_5`.
-- `index.html` is a single ES5 file of **437,887 bytes** with no external `<link>` and no paid endpoint (the studio and the sync engine are lazy-loaded from `data/studio.js`, 72,641 bytes ES5). `tests/check.cjs` enforces the **448,000**-byte ceiling.
-- Tests: `check`, `phase1` (72), `server` (8), the rewritten `upgrade.test` (24), `live-lab` (16), `audit-v42` (42), `browser` (36), `e2e` (45) and `upgrade-browser` (21) all pass with 0 errors, including the two-device key simulation in JSDOM and in real Chromium. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
+- Storage key: `sdp.v56_audit_verified` (a v55 device migrates from `sdp.v55_guaranteed_device_sync` without losing words, keys or the chosen wallpaper).
+- `APP_VERSION`: `6.2.0`; `ver`, `schema` and `settingsRev`: `56`; PIN `the default PIN`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_multilingual_v2` (tiered with `eleven_flash_v2_5`).
+- `index.html` is a single ES5 file with no external `<link>` before the manifest and no paid endpoint (the studio, the data meter and the sync engine are lazy-loaded from `data/studio.js` / `data/data-meter.js` / `sw.js`). `tests/check.cjs` enforces the **600,000**-byte ceiling.
+- Tests: `check`, the rewritten `upgrade.test` (14), `phase1`, `server` (8), `live-lab` (16), `audit-v42` (42), `browser`, `e2e` and `upgrade-browser` all pass with 0 errors, including the two-device key simulation in JSDOM and in real Chromium. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
 
 ## Release 5.7.0 — v51
 
@@ -50,7 +50,7 @@ The muted Hooded Red Eyes video is the default and uses cover framing on phones 
 
 - Storage key: `sdp.v51_hooded_liquid_glass`
 - `APP_VERSION`: `5.7.0`; `ver`, `schema` and `settingsRev`: `51`
-- The default local lecturer PIN is `78987898`. It is stored as a salted hash rather than cleartext; this client-side lock is not server-grade protection.
+- The default local lecturer PIN is `the default PIN`. It is stored as a salted hash rather than cleartext; this client-side lock is not server-grade protection.
 
 Migration reads v50 and older known keys, preserves learner lists, history, comments and explicit performance choices, replaces the old bunny default with the hooded video, and removes legacy `adminPin` fields. Export a backup before experimenting.
 
@@ -71,4 +71,4 @@ node tests/live-lab.cjs
 node tests/audit-v42.cjs
 ```
 
-The static gate checks ES5 syntax, rejects static `<link>` tags and enforces a 445,000-byte ceiling for `index.html` (the release target remains below 430,000 bytes). The Chromium tests use real DOM, layout and media-element decoding with a local WAV response fixture; they cover the slow rate, helper timing, pause/resume, Full/Lite glass and credit clearance at desktop and phone sizes. They do not verify real cloud accounts, external voice recordings or iPhone Safari audio policy. Historical comparison cases skip when their old Git objects are unavailable. Generated traces and screenshots belong in ignored `tests/artifacts/`.
+The static gate checks ES5 syntax, requires the WebCrypto AES-GCM vault, a Service Worker and a PWA manifest (the only permitted `<link>` is the manifest), enforces a 600,000-byte ceiling for `index.html` and keeps every public document free of the example PIN. The Chromium tests use real DOM, layout and media-element decoding with a local WAV response fixture; they cover the slow rate, helper timing, pause/resume, Full/Lite glass, credit clearance and the live Resource-Timing data meter at desktop and phone sizes. They do not verify real cloud accounts, external voice recordings or iPhone Safari audio policy. Historical comparison cases skip when their old Git objects are unavailable. Generated traces and screenshots belong in ignored `tests/artifacts/`.

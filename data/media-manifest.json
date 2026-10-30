@@ -1,0 +1,52 @@
+{
+  "ver": 56,
+  "appVersion": "6.2.0",
+  "updatedAt": "2026-10-30",
+  "assets": [
+    {
+      "id": "hooded",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "file": "hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "bytes": 10555152,
+      "mb": 10.55,
+      "width": 1920,
+      "height": 1080,
+      "poster": "./assets/hooded-poster.webp",
+      "label": "Full HD Hooded Red Eyes",
+      "dataSaver": false
+    },
+    {
+      "id": "wanderingpixels",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "file": "wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "bytes": 899985,
+      "mb": 0.90,
+      "width": 1280,
+      "height": 720,
+      "poster": "./assets/wanderingpixels-poster.webp",
+      "label": "Lite Wandering Pixels",
+      "dataSaver": false
+    },
+    {
+      "id": "bunny",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "file": "bunny-live-wallpaper.mp4",
+      "bytes": 1499208,
+      "mb": 1.50,
+      "width": 1280,
+      "height": 720,
+      "poster": "./assets/bunny-poster.webp",
+      "label": "Bunny Live Wallpaper",
+      "dataSaver": false
+    },
+    {
+      "id": "static",
+      "src": "",
+      "file": "",
+      "bytes": 0,
+      "mb": 0.00,
+      "label": "Static Liquid Aurora Gradient (Data Saver)",
+      "dataSaver": true
+    }
+  ]
+}

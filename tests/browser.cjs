@@ -62,7 +62,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -265,11 +265,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     adv:document.querySelectorAll('details.admin-advanced').length
   }));
   const cardOk=Object.keys(cards).filter(k=>['voice','model','lock','adv'].indexOf(k)<0).every(k=>cards[k]);
-  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
+  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_multilingual_v2'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
   await page.locator('#elApiKeyInput').fill('xi-test-key-53');
   await page.locator('#btnElVerify').click();
   await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
-  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||''}));
+  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||''}));
   results.push({test:'Chromium v53 Save & Verify stores the ElevenLabs key and shows the live credit balance',status:saved.key==='xi-test-key-53'&&saved.stored==='xi-test-key-53'&&/Tier: Free/.test(saved.status)&&/9,750 \/ 10,000/.test(saved.status)&&/Remaining ElevenLabs Credits: 9,750 \/ 10,000/.test(saved.stats)?'PASS':'FAIL',detail:saved});
   const beforePlay=synthCalls;
   const playback=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.resolve('Number 1',(err,url)=>resolve({err:err,url:!!url}));}));
@@ -301,7 +301,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   }
   await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:30000}).catch(()=>{});
   const quick=await page.evaluate(()=>{
-   const data=JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
+   const data=JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
    const list=(data.lists||[])[(data.lists||[]).length-1]||{};
    return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',rows:document.querySelectorAll('#profWordsTable .prof-row').length,name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).title,archived:(data.pastSessions||[]).length};
   });
@@ -332,7 +332,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const base2='http://127.0.0.1:'+server2.address().port;
   const DESKTOP='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
   const LECTURER_KEY='sk_test_lecturer_key_12345';
-  const VTOPIC='https://ntfy.sh/dictationb1_sdp_keys_v55', WTOPIC='https://ntfy.sh/dictationb1_sdp_words_v55', ATOPIC='https://ntfy.sh/dictationb1_sdp_audio_v55';
+  const VTOPIC='https://ntfy.sh/dictationb1_sdp_keys_v56', WTOPIC='https://ntfy.sh/dictationb1_sdp_words_v56', ATOPIC='https://ntfy.sh/dictationb1_sdp_audio_v56';
   const relayed=[];
   const CORS2={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
   function ntfyRoutes(page2){
@@ -363,7 +363,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await pageA.waitForTimeout(600);
   const deviceA=await pageA.evaluate((k)=>{
    const env=window.UniversalSync.envelope(false);
-   return {key:(window.DB.data.settings||{}).elevenLabsKey||'',stored:(JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||'',
+   return {key:(window.DB.data.settings||{}).elevenLabsKey||'',stored:(JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||'',
     cipher:String(window.DB.data.vaultCiphertext||''),rev:env.syncRev,input:(document.getElementById('elApiKeyInput')||{}).value||'',
     banner:(document.getElementById('syncBanner')||{}).textContent||'',leak:String(env.vaultCiphertext).indexOf(k)>=0,force:!!document.getElementById('btnForceSync'),
     warnCard:!!document.getElementById('adminSyncWarningCard'),state:(document.getElementById('adminSyncWarningCard')||{getAttribute:function(){return ''}}).getAttribute('data-state'),
