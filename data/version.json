@@ -1,11 +1,11 @@
 {
-  "ver": 51,
-  "appVersion": "5.7.0",
-  "version": "5.7.0",
+  "ver": 52,
+  "appVersion": "5.8.0",
+  "version": "5.8.0",
   "buildDate": "2026-10-30",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "settingsRev": 51,
+  "settingsRev": 52,
   "updatedAt": "2026-10-30T00:00:00Z",
   "updatedAtMs": 1793318400000,
   "features": {
@@ -13,7 +13,7 @@
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
     "ready": "A clean preparation sheet shows the exact Click I'm ready to begin instruction; the player opens only after confirmation.",
     "feedback": "animated tick, streak breakdown and false-answer correction flow",
-    "visual": "v51: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) with layered liquid glass.",
+    "visual": "v52: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) Apple Liquid Glass with the Hooded Red Eyes 1080p loop as the default wallpaper.",
     "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 8, Session 7 (past session), my words and mistakes",
@@ -60,10 +60,12 @@
     "dataSheet": "Interactive bilingual data report at /data and /data.html with a calculator and 30 playable rows. Byte figures are illustrative; actual browser and network usage varies.",
     "zeroWaste": "A four-element prebuffer prepares countdown cues and a rolling word window; actual network costs vary.",
     "spelling": "favourite/favorite and tyre/tire are both accepted",
-    "sinhalaGuideVoice": "Sinhala stream or si-LK speechSynthesis; if unavailable the written guide remains accessible."
+    "sinhalaGuideVoice": "Sinhala stream or si-LK speechSynthesis; if unavailable the written guide remains accessible.",
+    "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
+    "adminAutoComplete": "v52: Admin PIN 78987898 -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically."
   },
   "mode": "paper",
-  "storageKey": "sdp.v51_hooded_liquid_glass",
+  "storageKey": "sdp.v52_elevenlabs_studio",
   "repoVideos": [
     {
       "id": "media_hooded_red_eyes",
@@ -387,6 +389,6 @@
       ]
     }
   ],
-  "key": "sdp.v51_hooded_liquid_glass",
+  "key": "sdp.v52_elevenlabs_studio",
   "perf": "full"
 }

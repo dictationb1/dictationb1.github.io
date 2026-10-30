@@ -47,7 +47,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -63,7 +63,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium native CompressionStream creates shorter links and retains original fallback',status:compressed.length===originals.length&&compressed.some(l=>l.includes('#list=z.'))&&compressed.join('').length<originals.join('').length?'PASS':'FAIL'});
   for(const link of compressed) {await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href+'#'+link.split('#')[1]);await page.getByRole('button',{name:'Add',exact:true}).click();}
   const words=await page.evaluate(()=>{
-    const d=JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
+    const d=JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||localStorage.getItem('sdp.v4_tue20')||localStorage.getItem('sdp.v1')||'null')||(window.DB&&window.DB.data);
     if(!d||!d.lists) return -1;
     const l=d.lists.find(x=>x.id===(d.plan&&d.plan.pinned))||d.lists.find(x=>x.id===(d.session&&d.session.listId))||d.lists[0];
     return l?l.words.length:-1;
@@ -74,7 +74,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(); const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
-   if(scenario==='corrupt'){localStorage.setItem('sdp.v51_hooded_liquid_glass','{broken');localStorage.setItem('sdp.v44_apple_liquid_complete','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
+   if(scenario==='corrupt'){localStorage.setItem('sdp.v52_elevenlabs_studio','{broken');localStorage.setItem('sdp.v44_apple_liquid_complete','{broken');localStorage.setItem('sdp.v21_guide_start','{broken');localStorage.setItem('sdp.v4_tue20','{broken');localStorage.setItem('sdp.v1','{broken');}
    if(scenario==='blocked')Object.defineProperty(window,'localStorage',{get(){throw Error('Blocked storage');}});
    if(scenario==='offline')Object.defineProperty(navigator,'onLine',{get(){return false;}});
    if(scenario==='unreachable')localStorage.setItem('sdp.cloudurl','https://script.google.com/macros/s/unreachable/exec');
@@ -196,6 +196,91 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    report.video===expectedSrc&&report.videoOff==='false'&&String(report.audio||'')==='https://dict.youdao.com/dictvoice?type=1&audio=afraid'&&!report.cross&&report.referrer==='no-referrer';
   results.push({test:'Chromium public interactive data report: '+relative,status:passed?'PASS':'FAIL',detail:report,errors});
   await context.close();
+ }
+ // ---------------------------------------------------------------------------
+ // v52 (5.8.0): ElevenLabs one-time studio voice vault + admin auto-completer.
+ // Served over http so IndexedDB and the Cache API storage tier are real.
+ // ---------------------------------------------------------------------------
+ {
+  const http=require('http');const mime={'.html':'text/html','.json':'application/json','.mp4':'video/mp4','.webp':'image/webp','.js':'text/javascript','.svg':'image/svg+xml'};
+  const server=http.createServer((req,res)=>{
+   const rel=decodeURIComponent(String(req.url||'/').split('?')[0]).replace(/^\/+/,'')||'index.html';
+   const file=path.join(root,rel);
+   if(!file.startsWith(root)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.statusCode=404;return res.end('nope');}
+   res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
+   res.end(fs.readFileSync(file));
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base='http://127.0.0.1:'+server.address().port;
+  const context=await browser.newContext({viewport:{width:1024,height:900}});
+  const page=await context.newPage();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  let synthCalls=0, dictCalls=0, siCalls=0;
+  const CORS={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-expose-headers':'*'};
+  await page.route('https://api.elevenlabs.io/**',async route=>{
+   const req=route.request();
+   if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:CORS});
+   if(/user\/subscription/.test(req.url()))return route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify({tier:'free',character_count:250,character_limit:10000})});
+   synthCalls++;
+   return route.fulfill({status:200,headers:Object.assign({'content-type':'audio/mpeg'},CORS),body:Buffer.from('ID3\x04\x00\x00\x00\x00\x00\x00fake-mp3-bytes','binary')});
+  });
+  await page.route('https://api.dictionaryapi.dev/**',async route=>{
+   dictCalls++;
+   route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify([{word:'zephyr',phonetics:[{text:'/ˈzef.ər/',audio:'https://api.dictionaryapi.dev/media/pronunciations/en/zephyr-uk.mp3'}],meanings:[{partOfSpeech:'noun',definitions:[{definition:'A soft gentle breeze.',example:'A warm zephyr crossed the harbour.'}]}]}])});
+  });
+  await page.route('https://translate.googleapis.com/**',async route=>{
+   siCalls++;
+   route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS),body:JSON.stringify([[['මෘදු සුළඟ']]])});
+  });
+  await page.goto(base+'/index.html');
+  await page.waitForTimeout(1200);
+  await closeSheet(page);
+  await unlockPin(page);
+  const cards=await page.evaluate(()=>({studio:!!document.querySelector('#elStudioCard'),quick:!!document.querySelector('#elQuickWordsCard'),badge:(document.querySelector('#elCreditBadge')||{}).textContent||'',voice:(document.querySelector('#elVoiceSelect')||{}).value||'',model:(document.querySelector('#elModelSelect')||{}).value||''}));
+  results.push({test:'Chromium v52 admin panel shows the ElevenLabs Studio card and the quick-words card',status:cards.studio&&cards.quick&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'?'PASS':'FAIL',detail:cards});
+  await page.locator('#elApiKeyInput').fill('xi-test-key-52');
+  await page.locator('#btnElVerify').click();
+  await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elCreditBadge')||{}).textContent||''),{timeout:10000}).catch(()=>{});
+  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),badge:document.querySelector('#elCreditBadge').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||'{}').settings||{}).elevenLabsKey||''}));
+  results.push({test:'Chromium v52 Save & Verify stores the ElevenLabs key and shows the live credit badge',status:saved.key==='xi-test-key-52'&&saved.stored==='xi-test-key-52'&&/Tier: Free/.test(saved.badge)&&/9,750 \/ 10,000/.test(saved.badge)?'PASS':'FAIL',detail:saved});
+  const before=synthCalls;
+  const dedupe=await page.evaluate(()=>new Promise(resolve=>{
+   const got=[];const done=()=>{if(got.length===2)resolve(got);};
+   window.ElevenVault.generate('Number 1',(err,url)=>{got.push(!!url);done();});
+   window.ElevenVault.generate('Number 1',(err,url)=>{got.push(!!url);done();});
+  }));
+  results.push({test:'Chromium v52 the same clip is generated only once (in-flight dedupe)',status:synthCalls-before===1&&dedupe.length===2&&dedupe[0]&&dedupe[1]?'PASS':'FAIL',detail:{calls:synthCalls-before,dedupe}});
+  const tiers=await page.evaluate(()=>new Promise(resolve=>{
+   const key=window.ElevenVault.keyFor('Number 1');
+   window.ElevenVault.idbGet(key,data=>{
+    caches.open('sdp-elevenlabs-v52').then(c=>c.match(window.ElevenVault.cacheUrl(key))).then(hit=>resolve({key:key,idb:/^data:audio\/mpeg;base64,/.test(data||''),cache:!!hit,mem:/^data:audio\/mpeg;base64,/.test(window.ElevenVault.memMap[key]||''),count:window.ElevenVault.clipCount()}));
+   });
+  }));
+  results.push({test:'Chromium v52 the generated clip is permanently stored in IndexedDB, the Cache API and memory',status:tiers.idb&&tiers.cache&&tiers.mem&&tiers.count>=1?'PASS':'FAIL',detail:tiers});
+  const before2=synthCalls;
+  await page.reload();await page.waitForTimeout(1100);
+  const replay=await page.evaluate(()=>new Promise(resolve=>{
+   window.ElevenVault.resolve('Number 1',(err,url)=>resolve(!!url));
+  }));
+  results.push({test:'Chromium v52 a reloaded page replays the vault clip with zero ElevenLabs calls',status:replay&&synthCalls===before2?'PASS':'FAIL',detail:{replay:replay,calls:synthCalls-before2}});
+  await closeSheet(page);
+  await unlockPin(page);
+  await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
+  await page.locator('#adminQuickSessionTitle').fill('Session 9 - Weather');
+  await page.locator('#btnAdminAutoComplete').click();
+  await page.waitForFunction(()=>/words completed/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:25000}).catch(()=>{});
+  const quick=await page.evaluate(()=>{
+   const data=JSON.parse(localStorage.getItem('sdp.v52_elevenlabs_studio')||'{}');
+   const list=(data.lists||[])[(data.lists||[]).length-1]||{};
+   return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).no,past:(data.pastSessions||[]).length};
+  });
+  const complete=quick.words.length===2&&quick.words.every(w=>w.w&&w.p&&w.d&&w.m&&w.s);
+  results.push({test:'Chromium v52 typing only words auto-completes IPA, definition, Sinhala meaning, sentence and publishes the session',status:/words completed/.test(quick.status)&&complete&&quick.published&&quick.name==='Session 9 - Weather'&&dictCalls>0&&siCalls>0?'PASS':'FAIL',detail:quick});
+  const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter,errors:0};});
+  results.push({test:'Chromium v52 Apple Liquid Glass keeps the real backdrop-filter blur(14px)',status:/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
+  results.push({test:'Chromium v52 no page errors during the vault and auto-completer run',status:errors.length===0?'PASS':'FAIL',errors});
+  await context.close();
+  await new Promise(resolve=>server.close(resolve));
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();

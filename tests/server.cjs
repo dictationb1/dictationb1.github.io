@@ -52,4 +52,10 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
+test('v52 release metadata and the empty shared ElevenLabs voice vault ship together',()=>{
+ const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
+ for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,52,f);assert.equal(d.appVersion,'5.8.0',f);}
+ const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,52);assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.deepEqual(Object.keys(vault.clips),[]);
+ assert.ok(html.includes('sdp.v52_elevenlabs_studio'));assert.ok(html.includes('sdp_elevenlabs_vault_v1'));assert.ok(html.includes('APP_VERSION="5.8.0"'));
+});
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;

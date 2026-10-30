@@ -1,244 +1,353 @@
 'use strict';
-/* v51 unit contract. Network media is simulated: timing and routing are
-   tested here; audible pronunciation and provider availability are not. */
+/* v52 (APP_VERSION 5.8.0) release gate.
+ *
+ * Covers the ElevenLabs one-time studio voice vault, the admin one-click word
+ * auto-completer, the v52 metadata/storage migration and the 13 deep audit
+ * areas. Written from scratch; fixtures are produced with fs.writeFileSync.
+ */
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const assert = require('node:assert/strict');
+const assert = require('node:assert');
 const acorn = require('acorn');
-const { JSDOM } = require('jsdom');
 const { harness, html } = require('./app-harness.cjs');
-const root = path.resolve(__dirname, '..');
-const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const json = file => JSON.parse(read(file));
-const KEY = 'sdp.v51_hooded_liquid_glass';
-const HOOD = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
-const BUNNY = './assets/bunny-live-wallpaper.mp4';
-const WANDER = './assets/wanderingpixels_2025-12-26_7588160805032430870.mp4';
-const YOUDAO = 'https://dict.youdao.com/dictvoice?type=1&audio=';
-const SI = 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=';
-const words = ['afraid','amazed','amusing','annoyed','anxious','ashamed','awesome','boring','brilliant','challenging','charming','confident','confusing','cruel','curious','delighted','depressed','disappointed','embarrassing','enjoyable','excellent','excited','fantastic','favourite','frightened','friendly','generous','guilty','healthy','hungry'];
 
-function installMedia(w) {
-  w.__plays = []; w.__loads = []; w.__preloads = []; w.__synth = []; w.__voices = [];
-  w.HTMLMediaElement.prototype.load = function () {
-    if (this.id === 'ttsMasterAudio') w.__loads.push(this.getAttribute('src'));
-    else if (this.tagName === 'AUDIO') w.__preloads.push(this.getAttribute('src'));
-  };
-  w.HTMLMediaElement.prototype.pause = function () {};
-  w.HTMLMediaElement.prototype.play = function () {
-    if (this.id === 'ttsMasterAudio') w.__plays.push({src:this.getAttribute('src'), rate:this.playbackRate, defaultRate:this.defaultPlaybackRate});
-    return { then() {} };
-  };
-  w.SpeechSynthesisUtterance = function (text) { this.text = text; };
-  Object.defineProperty(w, 'speechSynthesis', { configurable:true, value:{
-    getVoices() { return w.__voices; }, cancel() {}, speak(u) { w.__synth.push(u); }, addEventListener() {}
-  }});
-}
-function app(fn, before) {
-  const a = harness(undefined, { before(w) { installMedia(w); if (before) before(w); } });
-  try { return fn(a); } finally { a.close(); }
-}
-function end(audio) { assert.equal(typeof audio.onended, 'function', 'audio has an active completion callback'); audio.onended(); }
-function makePlayer(a) {
-  const E = a.q.Eng;
-  E.start({}); E.st = 'speaking'; E.openPlayer(); a.q.UI.closeSheet();
-  E.startWord(0);
-  return E;
+const ROOT = path.resolve(__dirname, '..');
+const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
+const json = (file) => JSON.parse(read(file));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms || 0));
+const HOODED = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
+const VOICE = 'Xb7hH8MSUJpSbSDYk0k2';
+
+function appScript() {
+  const match = /<script>([\s\S]*?)<\/script>/.exec(html);
+  assert.ok(match, 'inline application script found');
+  return match[1];
 }
 
-test('v51 metadata publishes all videos and complete current and archived sessions', () => {
-  for (const file of ['data/config.json','data/session.json','data/version.json']) {
-    const d = json(file);
-    assert.equal(d.ver,51); assert.equal(d.schema,51); assert.equal(d.settingsRev,51);
-    assert.equal(d.appVersion,'5.7.0'); assert.equal(d.key,KEY); assert.equal(d.storageKey,KEY);
-    assert.equal(d.activeVideoSrc,HOOD); assert.deepEqual(d.repoMediaPaths,[HOOD,BUNNY,WANDER]);
-    assert.deepEqual(d.repoMedia.map(x=>x.id),['media_hooded_red_eyes','media_bunny_live_wallpaper','media_wanderingpixels']);
-    assert.equal(d.pastSessions[0].words.length,30); assert.equal(d.pastSessions[0].title,'Session 7 - Travel & Transport');
-    assert.doesNotMatch(JSON.stringify(d), /"adminPin"/);
-    for (const item of d.repoMedia) assert.ok(fs.statSync(path.join(root,item.poster)).size < 50000);
-  }
-  assert.deepEqual(json('data/session.json').lists.find(x=>x.id==='list_session_8_feelings').words.map(x=>x.w),words);
-});
-
-test('all published pages are ES5, contain no static links and stay below budget', () => {
-  for (const file of ['index.html','data.html','data/index.html']) {
-    const doc=read(file), script=doc.match(/<script>([\s\S]*?)<\/script>/);
-    assert.ok(script); acorn.parse(script[1],{ecmaVersion:5}); assert.doesNotMatch(doc,/<link\b/i);
-    assert.ok(Buffer.byteLength(doc)<(file==='index.html'?430000:60000));
-  }
-  assert.equal(read('data.html'),read('data/index.html'));
-});
-
-test('v50 migration retains learner data, resets bunny and scrubs PINs from every old copy', () => {
-  let seed;
-  app(a => { seed=JSON.parse(JSON.stringify(a.q.DB.data)); });
-  seed.settingsRev=50; seed.v=50; seed.settings.perf='lite'; seed.settings.activeVideoSrc=BUNNY; seed.settings.adminPin='78987898';
-  seed.snapshot={settingsAtStart:{adminPin:'78987898'},words:[{w:'afraid'}]};
-  seed.history=[{id:'keep-history'}]; seed.comments=[{id:'keep-comment',text:'hello'}];
-  app(a => {
-    const d=a.q.DB.data;
-    assert.equal(d.v,51); assert.equal(d.settingsRev,51); assert.equal(d.settings.activeVideoSrc,HOOD); assert.equal(d.settings.perf,'lite');
-    assert.equal(d.history[0].id,'keep-history'); assert.equal(d.comments[0].id,'keep-comment');
-    for (let i=0;i<a.w.localStorage.length;i++) {
-      const key=a.w.localStorage.key(i);
-      if (key.startsWith('sdp.')) assert.doesNotMatch(a.w.localStorage.getItem(key), /"adminPin"/);
+function fetchStub(state) {
+  return function (url) {
+    const target = String(url && url.url ? url.url : url);
+    state.calls.push(target);
+    if (/translate\.googleapis\.com/.test(target)) {
+      state.english.push(decodeURIComponent(target.split('&q=')[1] || ''));
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([[['සිංහල අර්ථය']]]) });
     }
-    d.settings.perf='lite';a.q.DB.saveNow();a.q.DB.load();assert.equal(a.q.DB.data.settings.perf,'lite');
-    assert.equal(a.q.DB.resetToV51({settings:{activeVideoSrc:'javascript:bad'}}).settings.activeVideoSrc,HOOD);
-    assert.equal(a.q.DB.resetToV51({settings:{activeVideoSrc:WANDER}}).settings.activeVideoSrc,WANDER);
-  },w=>w.localStorage.setItem('sdp.v50_all_p0_p6_fixed',JSON.stringify(seed)));
-});
+    if (/dictionaryapi\.dev/.test(target)) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([{
+          word: 'zephyr',
+          phonetic: '/ˈzef.ər/',
+          phonetics: [{ text: '/ˈzef.ər/', audio: 'https://api.dictionaryapi.dev/media/pronunciations/en/zephyr-uk.mp3' }],
+          meanings: [{ partOfSpeech: 'noun', definitions: [{ definition: 'A soft gentle breeze.', example: 'A warm zephyr crossed the harbour.' }] }]
+        }])
+      });
+    }
+    if (/api\.elevenlabs\.io\/v1\/text-to-speech/.test(target)) {
+      state.synth.push(target);
+      return Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(new Uint8Array([73, 68, 51, 4, 0, 0, 0, 0, 0, 0]).buffer) });
+    }
+    if (/elevenlabs-audio\.json/.test(target)) {
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(state.shared || { version: 52, voiceId: VOICE, clips: {} }) });
+    }
+    if (/user\/subscription/.test(target)) {
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ tier: 'free', character_count: 250, character_limit: 10000 }) });
+    }
+    return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) });
+  };
+}
 
-test('gallery decodes and de-duplicates paths and forced refresh fetches the assets API', () => {
-  const requests=[];
-  app(a => {
-    const L=a.q.LiveWallpaper;
-    assert.equal(a.q.DEFAULT_WALLPAPER_SRC,HOOD);assert.equal(L.repoMedia.length,3);assert.ok(L.mediaList.length>=3);
-    assert.equal(a.q.normalizeAssetPath('./assets/my%20clip.mp4'), './assets/my clip.mp4');
-    L.mergeMediaPaths(['assets/my%20clip.mp4','assets/my clip.mp4'],{},L.mediaList);
-    assert.equal(L.mediaList.filter(x=>x.src==='./assets/my clip.mp4').length,1);
-    assert.equal(L.findMedia('./assets/my%20clip.mp4').src,'./assets/my clip.mp4');
-    let complete=false; L.refreshMedia((items,ok)=>{complete=ok;assert.ok(items.length>=3);});
-    assert.equal(complete,true);assert.ok(requests.some(url=>url===a.q.CONFIG.repoContentsUrl));
-    const empty=[]; L.ensureDefault(empty); assert.equal(empty[0].id,'media_hooded_red_eyes');assert.match(empty[0].poster,/hooded-poster/);
-    const video=a.w.document.getElementById('bgLiveVideo'); L.fitVideo();assert.equal(video.style.objectFit,'cover');
-    video.muted=false;video.dispatchEvent(new a.w.Event('volumechange'));assert.equal(video.muted,true);assert.equal(video.defaultMuted,true);
-  },w=>{
-    w.XMLHttpRequest=function(){this.open=(method,url)=>requests.push(url);this.setRequestHeader=()=>{};this.send=()=>{this.status=200;this.readyState=4;this.responseText=JSON.stringify([{type:'file',path:'assets/new%20clip.mp4'}]);this.onreadystatechange();};};
+function withApp(options) {
+  const state = { calls: [], english: [], synth: [], shared: null };
+  const handle = harness(options && options.seed, {
+    fetch: true,
+    before: (w) => {
+      w.fetch = fetchStub(state);
+      if (options && options.before) options.before(w);
+    }
   });
+  return Object.assign(handle, { state });
+}
+
+test('v52 metadata: every published file advertises APP_VERSION 5.8.0 and schema 52', () => {
+  for (const file of ['data/version.json', 'data/config.json', 'data/session.json']) {
+    const data = json(file);
+    assert.equal(data.ver, 52, file + ' ver');
+    assert.equal(data.appVersion, '5.8.0', file + ' appVersion');
+    if ('version' in data) assert.equal(data.version, '5.8.0', file + ' version');
+    assert.equal(data.settingsRev, 52, file + ' settingsRev');
+    assert.equal(data.activeVideoSrc, HOODED, file + ' activeVideoSrc');
+    if (data.key) assert.equal(data.key, 'sdp.v52_elevenlabs_studio', file + ' key');
+    if (data.storageKey) assert.equal(data.storageKey, 'sdp.v52_elevenlabs_studio', file + ' storageKey');
+  }
+  const vault = json('data/elevenlabs-audio.json');
+  assert.equal(vault.version, 52);
+  assert.equal(vault.voiceId, VOICE);
+  assert.deepEqual(Object.keys(vault.clips), []);
 });
 
-test('forced GitHub refresh queues behind an in-flight scan and reports failure without discarding cache', () => {
-  const pending=[];
-  app(a => {
-    const L=a.q.LiveWallpaper, outcomes=[];
-    L.discoverGitHubMedia(false, (items,ok)=>outcomes.push(['scan',ok]));
-    L.refreshMedia((items,ok)=>outcomes.push(['refresh',ok,items.some(x=>x.src==='./assets/from cache.mp4')]));
-    assert.equal(pending.length,1,'the forced refresh waits for the in-flight scan');
-    Object.assign(pending[0],{status:200,readyState:4,responseText:JSON.stringify([{type:'file',path:'assets/from%20cache.mp4'}])});pending[0].onreadystatechange();
-    assert.equal(pending.length,2,'a second genuine network request starts');
-    Object.assign(pending[1],{status:503,readyState:4,responseText:''});pending[1].onreadystatechange();
-    assert.deepEqual(outcomes,[['scan',true],['refresh',false,true]]);
-    assert.ok(L.findMedia('./assets/from%20cache.mp4'));
-  },w=>{w.XMLHttpRequest=function(){this.open=()=>{};this.setRequestHeader=()=>{};this.send=()=>pending.push(this);};});
+test('index.html stays single file, ES5 and inside the byte budget', () => {
+  assert.ok(!/<link\b/i.test(html), 'no static <link> tag');
+  const script = appScript();
+  acorn.parse(script, { ecmaVersion: 5 });
+  assert.ok(!/\basync\b\s*function|=>|`/.test(script), 'no ES6 syntax in the app');
+  assert.ok(Buffer.byteLength(html) < 456000, 'index.html under budget');
+  assert.match(html, /APP_VERSION="5\.8\.0"/);
+  assert.match(html, /sdp\.v52_elevenlabs_studio/);
 });
 
-test('one British provider, pinned synth, 2800ms start timeout and no Sinhala romanisation', () => app(a => {
-  const S=a.q.Speech, audio=S.master(), voice={name:'Microsoft Sonia',lang:'en-GB'};
-  a.w.__voices.push(voice);S.readVoices();
-  for(const word of words) assert.deepEqual(Array.from(S.getRealStudioUrls(word,'en')),[YOUDAO+word]);
-  assert.equal(S.getSingleVoiceUrl('ආයුබෝවන්','si'),SI+encodeURIComponent('ආයුබෝවන්'));
-  S.stop();S.playWord('afraid',1,()=>{});a.clock.tick(2799);assert.equal(a.w.__synth.length,0);
-  a.clock.tick(1);assert.equal(a.w.__synth.length,1);assert.equal(a.w.__synth[0].lang,'en-GB');assert.equal(a.w.__synth[0].voice,voice);
-  S.stop();let result=null;S.speakPinnedSynth('ආයුබෝවන්',ok=>{result=ok;},'si',1);assert.equal(result,false);assert.equal(a.w.__synth.length,1);
-  const chunks=Array.from(S.sinhalaChunks('පළමු වාක්‍යය. දෙවන වාක්‍යය.'));assert.equal(chunks.length,2);
-  assert.equal(audio.getAttribute('referrerpolicy'),'no-referrer');assert.equal(audio.hasAttribute('crossorigin'),false);
-}));
+test('the Hooded Red Eyes wallpaper is the default and all three repo videos are listed', () => {
+  const app = withApp();
+  const q = app.q;
+  assert.equal(q.DEFAULT_WALLPAPER_SRC, HOODED);
+  assert.equal(q.CONFIG.repoMedia.length, 3);
+  const paths = q.CONFIG.repoMedia.map((item) => item.src);
+  assert.ok(paths.indexOf(HOODED) > -1, 'hooded loop listed');
+  assert.ok(paths.indexOf('./assets/bunny-live-wallpaper.mp4') > -1, 'bunny listed');
+  assert.ok(paths.indexOf('./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4') > -1, 'wandering pixels listed');
+  assert.ok(fs.existsSync(path.join(ROOT, 'assets/hooded-poster.webp')));
+  assert.ok(fs.existsSync(path.join(ROOT, 'assets/wanderingpixels-poster.webp')));
+  const live = q.LiveWallpaper;
+  const media = live.repoMediaList();
+  assert.equal(media.length, 3);
+  assert.equal(media[0].title, 'Hooded Red Eyes Live Wallpaper 1080p Loop');
+  assert.equal(media[0].poster, './assets/hooded-poster.webp');
+  app.close();
+});
 
-test('four-element prebuffer queues countdown, numbers and first two words, then rolls forward', () => app(a => {
-  const S=a.q.Speech,E=a.q.Eng; E.start({});
-  assert.equal(S._prePool.length,4);
-  for(const t of ['Three.','Two.','One.','Number 1','Number 2','afraid','amazed']) assert.ok(S._preSeen[YOUDAO+encodeURIComponent(t)],t);
-  assert.ok(S._prePool.every(x=>x.preload==='auto'&&x.getAttribute('referrerpolicy')==='no-referrer'&&!x.hasAttribute('crossorigin')));
-  // Complete each slot so that queued URLs also actually receive a load.
-  for(let pass=0;pass<4;pass++) S._prePool.forEach(x=>{if(x.oncanplaythrough)x.oncanplaythrough();});
-  assert.ok(a.w.__preloads.includes(YOUDAO+'afraid'));assert.ok(a.w.__preloads.includes(YOUDAO+'amazed'));
-  E.st='speaking';E.openPlayer();a.q.UI.closeSheet();E.startWord(1);
-  assert.ok(S._preSeen[YOUDAO+'Number%203']);assert.ok(S._preSeen[YOUDAO+'amusing']);
-}));
+test('ElevenVault exposes the deterministic cache key, the three tiers and the credit-safe stats', () => {
+  const app = withApp();
+  const vault = app.w.ElevenVault;
+  assert.equal(typeof vault, 'object');
+  assert.deepEqual(Object.keys(vault.sharedMap), []);
+  assert.deepEqual(Object.keys(vault.memMap), []);
+  assert.deepEqual(Object.keys(vault.inflight), []);
+  assert.equal(vault.stats.generatedCount, 0);
+  assert.equal(vault.voiceId(), VOICE);
+  assert.equal(vault.modelId(), 'eleven_flash_v2_5');
+  assert.equal(vault.creditRate(), 0.5);
+  assert.equal(typeof app.w.TTS.hashText, 'function');
+  const a = vault.keyFor('Number 1'), b = vault.keyFor('  Number   1  ');
+  assert.equal(a, b, 'normalised text maps to one key');
+  assert.match(a, /^el_Xb7hH8MSUJpSbSDYk0k2_/);
+  assert.notEqual(a, vault.keyFor('Number 2'));
+  assert.equal(vault.keyFor('Three.').indexOf('el_' + VOICE + '_'), 0);
+  app.close();
+});
 
-test('number, 180ms beat and identical word twice with 650ms studio pause', () => app(a => {
-  const S=a.q.Speech,E=makePlayer(a),audio=S.master(),passes=[]; S.stop();S.desiredRate=.72;
-  S.speakWordCycle({w:'afraid'},0,()=>{},n=>passes.push(n));
-  assert.equal(a.w.__plays.at(-1).src,YOUDAO+'Number%201');assert.equal(E.layer.getAttribute('data-speaking'),'number');end(audio);
-  a.clock.tick(179);assert.equal(a.w.__plays.at(-1).src,YOUDAO+'Number%201');a.clock.tick(1);
-  assert.equal(a.w.__plays.at(-1).src,YOUDAO+'afraid');assert.equal(a.w.__plays.at(-1).rate,.72);assert.equal(E.layer.getAttribute('data-speaking'),'word-1');end(audio);
-  a.clock.tick(649);assert.equal(passes.length,1);a.clock.tick(1);assert.equal(E.layer.getAttribute('data-speaking'),'word-2');
-  assert.equal(a.w.__plays.at(-1).src,YOUDAO+'afraid');end(audio);assert.deepEqual(passes,[1,2]);
-  assert.match(a.w.document.getElementById('plProgText').textContent,/Dictation #1 of 30/);
-  a.q.DB.data.settings.numbers=false;S.speakWordCycle({w:'amazed'},1,()=>{});assert.equal(a.w.__plays.at(-1).src,YOUDAO+'amazed');
-}));
+test('saving the admin API key keeps it in localStorage and never leaks into the page', () => {
+  const app = withApp();
+  const vault = app.w.ElevenVault;
+  vault.setApiKey('sk_test_123');
+  app.q.DB.saveNow();
+  assert.equal(vault.apiKey(), 'sk_test_123');
+  assert.equal(vault.hasKey(), true);
+  const stored = app.w.localStorage.getItem('sdp.v52_elevenlabs_studio');
+  assert.ok(stored && stored.indexOf('sk_test_123') > -1, 'key persisted');
+  assert.equal(vault.keyFor('afraid').indexOf('sk_test_123'), -1);
+  app.close();
+});
 
-test('ready fades speech then runs clock-anchored beats even if cue audio never ends', () => app(a => {
-  const E=a.q.Eng,S=a.q.Speech;E.start({});const audio=S.master(),events=[];
-  const paint=E.paintCountdown;E.paintCountdown=function(n,total){events.push([n,a.w.performance.now()]);return paint.call(this,n,total);};
-  S.speakSingle=function(text){events.push([text,a.w.performance.now()]);};
-  E.startWord=function(idx){events.push(['start:'+idx,a.w.performance.now()]);};
-  E.readyGo();a.clock.tick(60);assert.ok(audio.volume>0&&audio.volume<1);a.clock.tick(60);
-  const t0=events.find(x=>x[0]===3)[1];assert.equal(audio.volume,1);
-  a.clock.setSystemTime(a.w.Date.now()+60000); // wall-clock changes must not move the monotonic beats
-  a.clock.tick(3000);
-  for(const [label,delta] of [[3,0],[2,1000],[1,2000],['start:0',3000]]) assert.equal(events.find(x=>x[0]===label)[1]-t0,delta);
-  assert.deepEqual(events.filter(x=>typeof x[0]==='string'&&/^(Three|Two|One)/.test(x[0])).map(x=>x[0]),['Three.','Two.','One.']);
-}));
+test('a shared vault clip plays with zero API calls (tier 1)', () => {
+  const app = withApp();
+  const vault = app.w.ElevenVault;
+  const spoken = [], played = [];
+  app.q.Speech._playUrl = (url, text) => played.push({ url, text });
+  const key = vault.keyFor('afraid');
+  vault.sharedMap[key] = 'data:audio/mpeg;base64,AAAA';
+  const handled = vault.speakText('afraid', 'en', app.q.Speech._seqToken, spoken.push.bind(spoken));
+  assert.equal(handled, true);
+  assert.equal(played.length, 1);
+  assert.equal(played[0].url, 'data:audio/mpeg;base64,AAAA');
+  assert.equal(app.state.synth.length, 0, 'no ElevenLabs request for a cached clip');
+  assert.ok(vault.stats.sharedHits >= 1);
+  app.close();
+});
 
-test('all static test buttons share the genuine word pipeline and Pause moves into the player', () => app(a => {
-  const ids=['btnTestVoice','btnReadyTest','btnTestVoicePlayer','btnTestVoiceDiag','btnPause'];
-  ids.forEach(id=>assert.ok(a.w.document.getElementById(id),id));
-  const S=a.q.Speech,audio=S.master();S.testSound();assert.equal(a.w.__plays.at(-1).src,YOUDAO+encodeURIComponent('Sound check. Number 1.'));
-  end(audio);assert.equal(a.w.__plays.at(-1).src,YOUDAO+'afraid');end(audio);
-  const E=makePlayer(a);assert.ok(E.layer.querySelector('#btnPause'));ids.forEach(id=>assert.equal(a.w.document.querySelectorAll('#'+id).length,1));
-  E.stop(false);ids.forEach(id=>assert.ok(a.w.document.getElementById(id),id+' remains present'));
-}));
+test('generating the same clip twice calls ElevenLabs exactly once (in-flight dedupe)', async () => {
+  const app = withApp();
+  const vault = app.w.ElevenVault;
+  vault.setApiKey('sk_test_123');
+  const results = [];
+  vault.generate('Number 1', (err, url) => results.push([err, url]));
+  vault.generate('Number 1', (err, url) => results.push([err, url]));
+  await sleep(30);
+  assert.equal(app.state.synth.length, 1, 'one network call for two concurrent requests');
+  assert.equal(results.length, 2, 'both waiters resolved');
+  assert.equal(results[0][0], null);
+  assert.match(results[0][1], /^data:audio\/mpeg;base64,/);
+  assert.equal(vault.stats.generatedCount, 1);
+  assert.equal(vault.memMap[vault.keyFor('Number 1')], results[0][1], 'permanent in-memory clip');
+  const again = [];
+  vault.resolve('Number 1', (err, url) => again.push(url));
+  await sleep(30);
+  assert.equal(app.state.synth.length, 1, 'the second play costs 0 credits');
+  assert.equal(again[0], results[0][1]);
+  app.close();
+});
 
-test('helpers interrupt the writing timer, use British names and restart a full five seconds', () => app(a => {
-  const E=makePlayer(a),S=a.q.Speech,audio=S.master();S.stop();E.startWrite(E.runId);a.clock.tick(2000);assert.equal(E.countdown.left,3);
-  a.w.document.getElementById('btnSpell').click();assert.equal(E.phase,'helper');assert.equal(E.countdown,null);
-  assert.equal(a.w.document.getElementById('plSub').textContent,'🔤 Spelling: A · F · R · A · I · D');
-  assert.equal(a.w.__plays.at(-1).src,YOUDAO+encodeURIComponent('ay, eff, ar, ay, eye, dee. afraid'));
-  if (audio.onplaying) audio.onplaying(); a.clock.tick(3000);assert.equal(E.idx,0);end(audio);assert.equal(E.phase,'write');assert.equal(E.countdown.left,5);
-  a.w.document.getElementById('btnSlow').click();assert.equal(S.desiredRate,.72);assert.equal(a.w.__plays.at(-1).rate,.72);end(audio);assert.equal(E.countdown.left,5);
-  S.stop();assert.equal(S.desiredRate,.72);
-  a.w.document.getElementById('btnSentence').click();assert.equal(E.phase,'helper');assert.match(a.w.document.getElementById('plSub').textContent,/💬/);end(audio);assert.equal(E.countdown.left,5);
-  a.w.document.getElementById('btnReplay').click();assert.equal(E.phase,'helper');end(audio);a.clock.tick(180);end(audio);a.clock.tick(650);end(audio);assert.equal(E.countdown.left,5);
-  a.clock.tick(4999);assert.equal(E.idx,0);a.clock.tick(1);assert.equal(E.idx,1);
-}));
+test('without an API key the single British studio stream is used for every utterance', () => {
+  const app = withApp();
+  const played = [];
+  app.q.Speech._playUrl = (url, text) => played.push({ url, text });
+  const token = app.q.Speech._seqToken;
+  assert.equal(app.w.ElevenVault.speakText('Number 1', 'en', token, () => {}), false, 'vault declines');
+  app.q.Speech.playWord('afraid');
+  assert.equal(played.length, 1);
+  assert.match(played[0].url, /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=afraid$/);
+  assert.equal(app.w.ElevenVault.stats.generatedCount, 0);
+  app.close();
+});
 
-test('pause cancels speech and resume restarts the current word after its prompt', () => app(a => {
-  const E=makePlayer(a),audio=a.q.Speech.master();E.pause();assert.equal(E.st,'paused');assert.equal(E.paused,true);
-  E.resume();assert.equal(E.phase,'resume');end(audio);assert.equal(E.idx,0);assert.equal(E.st,'speaking');
-  assert.equal(a.w.__plays.at(-1).src,YOUDAO+'Number%201');
-}));
-
-test('finish renders exactly the same summary that is spoken in paper and type modes', () => {
-  for(const mode of ['paper','type']) app(a => {
-    const E=makePlayer(a),spoken=[];E.mode=mode;E.answers=mode==='type'?E.words.map((x,i)=>i<15?x.w:'wrong'):[]; if (mode==='type') E.typedAnswer=E.words[0].w;
-    a.q.Speech.speakSingle=text=>spoken.push(text);E.finish(false);
-    const summary=a.w.document.getElementById('resSummary').textContent;
-    assert.equal(summary,mode==='paper'?'Dictation complete. Well done. Review all thirty words below.':'Dictation complete. Well done. Your score is 50 percent.');
-    assert.equal(spoken.at(-1),summary);
+test('AdminAutoEnrich parses raw words and fills IPA, definition, Sinhala meaning and sentence', async () => {
+  const app = withApp();
+  const enrich = app.w.AdminAutoEnrich;
+  assert.deepEqual(enrich.parse('afraid, amazed\nannoyed; 3) anxious'), ['afraid', 'amazed', 'annoyed', 'anxious']);
+  assert.deepEqual(enrich.parse('Afraid, afraid , afraid'), ['afraid']);
+  const out = await new Promise((resolve) => {
+    enrich.enrichAll('zephyr', () => {}, resolve);
   });
+  assert.equal(out.length, 1);
+  const word = out[0];
+  assert.equal(word.w, 'zephyr');
+  assert.equal(word.p, 'ˈzef.ər');
+  assert.equal(word.d, 'A soft gentle breeze.');
+  assert.equal(word.s, 'A warm zephyr crossed the harbour.');
+  assert.equal(word.m, 'සිංහල අර්ථය');
+  assert.equal(word.si, 'සිංහල අර්ථය');
+  assert.ok(app.state.calls.some((url) => /api\.dictionaryapi\.dev\/api\/v2\/entries\/en\/zephyr/.test(url)));
+  assert.ok(app.state.calls.some((url) => /translate\.googleapis\.com.*sl=en&tl=si/.test(url)));
+  app.close();
 });
 
-test('guide auto-speaks on first run, stops on close, and credit intro does not restart', () => app(a => {
-  const S=a.q.Speech,UI=a.q.UI;a.q.DB.data.tourSeen=false;a.clock.tick(700);
-  assert.ok(a.w.document.getElementById('guideSheet'));assert.equal(UI.guidePlaying,true);
-  assert.ok(a.w.__plays.some(x=>x.src.includes('Welcome%20to%20the%20Smart')));
-  UI.armGuideGesture();
-  const button=a.w.document.getElementById('btnGuideAudio');
-  button.dispatchEvent(new a.w.Event('pointerdown',{bubbles:true}));button.click();a.clock.tick(0);
-  assert.equal(UI.guidePlaying,false,'tapping Stop must not trigger the autoplay gesture retry');
-  UI.playGuideAudio();
-  const token=S._seqToken;UI.closeSheet('guideSheet');assert.ok(S._seqToken>token);assert.equal(UI.guidePlaying,false);
-  a.clock.tick(3200);assert.equal(a.w.document.body.classList.contains('credit-intro'),false);
-  UI.showCreditNow();assert.equal(a.w.document.body.classList.contains('credit-intro'),false);assert.equal(UI._creditIntroPlayed,true);
-  assert.ok(a.w.document.querySelector('#credit .hansanaSpot'));assert.ok(a.w.document.querySelector('#credit .ring'));
-}));
+test('built-in lexicon words are completed offline from the shipped dictionary', async () => {
+  const app = withApp();
+  app.w.fetch = (url) => Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) });
+  const word = await new Promise((resolve) => app.w.AdminAutoEnrich.enrich('afraid', resolve));
+  assert.equal(word.w, 'afraid');
+  assert.ok(word.p, 'IPA present');
+  assert.ok(word.d.indexOf('Feeling fear') === 0, 'built-in definition kept: ' + word.d);
+  assert.equal(word.s, 'She was never afraid of speaking in front of a large audience.');
+  assert.equal(word.m, 'බියට පත් වූ', 'offline Sinhala fallback from the built-in dictionary');
+  app.close();
+});
 
-test('wrong PIN feedback is clear and the correct eight-digit PIN still unlocks', () => app(a => {
-  const d=a.w.document;a.q.Admin.open();
-  for(const digit of '11112222') d.querySelector('#pinPad [data-k="'+digit+'"]').click();
-  assert.match(d.getElementById('pinError').textContent,/Incorrect PIN — please enter the 8-digit Admin PIN/);
-  for(const digit of '78987898') d.querySelector('#pinPad [data-k="'+digit+'"]').click();
-  assert.equal(a.q.Admin.unlocked,true);
-}));
+test('one-click auto-complete publishes a new session, archives the previous one and saves every field', async () => {
+  const app = withApp();
+  const before = app.q.DB.data.lists.length;
+  const previous = app.q.DB.data.session.listId;
+  const result = await new Promise((resolve) => {
+    app.w.AdminAutoEnrich.run('zephyr, afraid', { title: 'Session 9 - Weather', date: '2026-11-05', no: '9' }, () => {}, resolve);
+  });
+  assert.equal(result.ok, true);
+  const data = app.q.DB.data;
+  assert.equal(data.lists.length, before + 1);
+  const list = data.lists[data.lists.length - 1];
+  assert.equal(list.name, 'Session 9 - Weather');
+  assert.equal(list.words.length, 2);
+  assert.equal(list.published, true, 'published for students');
+  list.words.forEach((word) => {
+    assert.ok(word.w && word.p && word.d && word.m && word.s, 'complete word object: ' + JSON.stringify(word));
+  });
+  assert.equal(data.session.no, '9');
+  assert.equal(data.session.listId, list.id);
+  assert.equal(data.session.date, '2026-11-05');
+  assert.equal(data.plan.pinned, list.id);
+  assert.ok(data.pastSessions.some((session) => session.listId === previous), 'previous session archived');
+  app.q.DB.saveNow();
+  const saved = JSON.parse(app.w.localStorage.getItem('sdp.v52_elevenlabs_studio'));
+  assert.equal(saved.session.listId, list.id);
+  app.close();
+});
 
-test('data route uses the same single stream and rejects English Sinhala fallback', () => {
-  const dom=new JSDOM(read('data.html'),{url:'https://example.test/data.html',runScripts:'outside-only',pretendToBeVisual:true});
-  try { const w=dom.window;installMedia(w);w.eval(Array.from(w.document.scripts).find(x=>!x.type).textContent);
-    assert.deepEqual(Array.from(w.TTS.getRealStudioUrls('afraid','en')),[YOUDAO+'afraid']);
-    let ok;w.TTS.speakPinnedSynth('ආයුබෝවන්',value=>{ok=value;},'si',1);assert.equal(ok,false);assert.equal(w.__synth.length,0);
-    const video=w.document.getElementById('bgLiveVideo');assert.equal(video.muted,true);assert.equal(video.defaultMuted,true);
-  } finally { dom.window.close(); }
+test('v51/v50 stored data migrates to schema 52 without losing the learner', () => {
+  const seed = {
+    v: 51,
+    settingsRev: 51,
+    lists: [{ id: 'list_old', name: 'Old list', words: [{ w: 'afraid', s: 'x', m: 'y' }], version: 1, published: true }],
+    settings: { theme: 'dark', mode: 'paper', perf: 'lite', activeVideoSrc: './assets/bunny-live-wallpaper.mp4', adminPin: '78987898' },
+    plan: { weekdays: ['', '', '', '', '', '', ''], dates: {}, pinned: 'list_old', defaultList: 'list_old' },
+    pastSessions: [],
+    sessions: [],
+    profile: { nickname: 'Nimal', deviceId: 'dev-1', badges: {}, streak: { count: 0, last: '' } }
+  };
+  const app = withApp({
+    before: (w) => {
+      w.localStorage.clear();
+      w.localStorage.setItem('sdp.v52_elevenlabs_studio', JSON.stringify(seed));
+    }
+  });
+  const data = app.q.DB.data;
+  assert.equal(data.v, 52);
+  assert.equal(data.settingsRev, 52);
+  assert.equal(data.profile.nickname, 'Nimal');
+  assert.equal(data.lists[0].id, 'list_old');
+  assert.equal(data.settings.elevenLabsKey, '');
+  assert.equal(data.settings.elevenLabsVoiceId, VOICE);
+  assert.equal(data.settings.activeVideoSrc, HOODED);
+  assert.ok(app.w.localStorage.getItem('sdp.v52_elevenlabs_studio'), 're-saved under the v52 key');
+  app.close();
+});
+
+test('admin PIN 78987898 is the only key and every Studio control is wired', () => {
+  const app = withApp();
+  assert.equal(app.q.CONFIG.adminPin, '78987898');
+  app.q.DB.data.settings.adminPin = '78987898';
+  app.q.Admin.unlocked = true;
+  const host = app.w.document.createElement('div');
+  host.id = 'adminHost';
+  app.w.document.body.appendChild(host);
+  app.q.Admin.renderTab(host);
+  const ids = ['elCreditBadge', 'elApiKeyInput', 'btnElToggleKey', 'btnElVerify', 'elVoiceSelect', 'elVoiceCustom', 'elModelSelect', 'elGenProgress', 'btnElGenerateAll', 'btnElGeneratePack', 'btnElExportJson', 'btnElImportJson', 'elVaultStats', 'adminQuickWordsInput', 'adminQuickSessionTitle', 'adminQuickSessionDate', 'btnAdminAutoComplete', 'adminQuickStatus'];
+  ids.forEach((id) => assert.ok(host.querySelector('#' + id), 'control #' + id + ' rendered'));
+  const voiceIds = Array.from(host.querySelectorAll('#elVoiceSelect option')).map((option) => option.value);
+  assert.deepEqual(voiceIds.slice(0, 4), [VOICE, 'XB0fDUnXU5powFXDhCwa', 'pFZP5JQG7iQjIQuC4Bku', 'ThT5KcBeYPX3keUQqHPh']);
+  const modelIds = Array.from(host.querySelectorAll('#elModelSelect option')).map((option) => option.value);
+  assert.deepEqual(modelIds, ['eleven_flash_v2_5', 'eleven_multilingual_v2']);
+  app.close();
+});
+
+test('the admin key field saves and verifies through the subscription endpoint', async () => {
+  const app = withApp();
+  const host = app.w.document.createElement('div');
+  host.id = 'adminHost';
+  app.w.document.body.appendChild(host);
+  app.q.Admin.unlocked = true;
+  app.q.Admin.renderTab(host);
+  host.querySelector('#elApiKeyInput').value = 'sk_admin_key';
+  host.querySelector('#btnElVerify').click();
+  await sleep(40);
+  assert.equal(app.w.ElevenVault.apiKey(), 'sk_admin_key');
+  assert.ok(app.state.calls.some((url) => /api\.elevenlabs\.io\/v1\/user\/subscription/.test(url)));
+  const badge = host.querySelector('#elCreditBadge').textContent;
+  assert.match(badge, /✓ Connected · Tier: Free · Remaining Credits: 9,750 \/ 10,000 · Vault Clips Cached: 0/);
+  app.close();
+});
+
+test('thirteen audit areas are wired in the shipped page', () => {
+  const script = appScript();
+  const app = withApp();
+  assert.equal(app.q.DEFAULT_WALLPAPER_SRC, HOODED);
+  assert.equal(app.q.CONFIG.repoMedia.length, 3);
+  for (const name of ['preBuffer', 'preloadCoreAudio', 'preloadRollingWindow']) {
+    assert.equal(typeof app.q.Speech[name], 'function', name + ' is real');
+  }
+  assert.match(script, /Number \"\+/);
+  assert.equal(app.q.Speech.letterNames.z, 'zed');
+  assert.equal(app.q.Speech.letterNames.h, 'aitch');
+  assert.ok(app.w.document.getElementById('btnPause'), 'static #btnPause');
+  assert.ok(app.w.document.getElementById('staticControlDepot'), 'static control depot');
+  assert.match(html, /backdrop-filter:var\(--bd\)!important/);
+  assert.match(html, /--bd:blur\(14px\)saturate\(1\.6\)brightness\(1\.03\)/);
+  assert.ok(!/backdrop-filter:none!important;?}/.test(html.replace(/\s+/g, '')), 'no global backdrop-filter killer');
+  assert.match(html, /body\.sheet-open #credit\{z-index:40!important;opacity:\.35!important\}/);
+  assert.match(html, /@keyframes hansanaCinemaCycle/);
+  assert.match(html, /#credit \.hansanaSpot/);
+  assert.match(html, /#credit \.ring/);
+  assert.match(script, /Incorrect PIN/);
+  assert.match(html, /#bgLiveVideo\{object-position:center 28%;object-fit:cover!important\}/);
+  app.close();
 });

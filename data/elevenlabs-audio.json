@@ -1,0 +1,9 @@
+{
+  "version": 52,
+  "appVersion": "5.8.0",
+  "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+  "modelId": "eleven_flash_v2_5",
+  "voiceName": "Alice",
+  "clips": {},
+  "note": "One-time ElevenLabs studio voice vault. Generated clips are committed here by the admin (Admin Panel -> Download data/elevenlabs-audio.json) so every student device replays them with 0 API calls and 0 credits."
+}

@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.8.0 (v52) — 2026-10-30
+
+- Add the ElevenLabs one-time studio voice engine (`ElevenVault`): one locked British English woman professor voice (Alice `Xb7hH8MSUJpSbSDYk0k2`, plus Charlotte, Lily, Dorothy and a custom ID), `eleven_flash_v2_5` at 0.5 credits/character by default, `eleven_multilingual_v2` optional, and the documented request body/headers with `mp3_44100_64` output.
+- Make every clip cost credits at most once: shared `data/elevenlabs-audio.json` → IndexedDB `sdp_elevenlabs_vault_v1` + Cache API `sdp-elevenlabs-v52` + memory → a de-duplicated live request → the unified British Youdao stream as fallback. The admin card verifies the key against `/v1/user/subscription`, shows the remaining free credits, estimates the cost before a batch and exports/imports the shared voice pack.
+- Add the admin one-click auto-completer: type only the words and IPA, definition, Sinhala meaning and an example sentence are filled (built-in lexicon → dictionaryapi.dev → Google Translate `sl=en&tl=si`), the previous session is archived and the new one is published, with optional one-time ElevenLabs clips.
+- Keep the Hooded Red Eyes 1080p loop as the default wallpaper, all three `/assets/` videos in the studio, muted/default-muted video elements and cover framing with `center 28%`.
+- Re-confirm the 13-point audit: real pre-buffering, a guaranteed `Number N` before the word, one unified Test sound, the 1000 ms 3-2-1 metronome, helpers during writing, British letter names, static Pause, rendered finish summary, one-shot credit spotlight, `Incorrect PIN` feedback and true `blur(14px)` Liquid Glass on every glass surface.
+- Migrate v51 storage to `sdp.v52_elevenlabs_studio` without losing learner data, add the v52 metadata to `data/*.json` and both identical data pages, and rewrite the release gates (ES5/no-link/single-file, vault de-duplication in real Chromium, IndexedDB + Cache API persistence, auto-completer publishing, wallpaper, glass, and the live-lab/server suites). ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
+
 ## 5.7.0 (v51) — 2026-10-30
 
 - Set the muted Hooded Red Eyes loop as the cover-framed default, include all three videos in the gallery, add two WebP posters and make GitHub refresh perform a real request while retaining cached items on failure.

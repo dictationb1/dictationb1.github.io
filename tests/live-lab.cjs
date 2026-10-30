@@ -229,6 +229,23 @@ function device(html, base) {
       C.Admin.unlocked = false;
     });
 
+    /* --- v52: the one-time ElevenLabs voice vault is served with the app --- */
+    check('the repository publishes an empty v52 ElevenLabs voice vault that every student can fetch', () => {
+      const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
+      if (vault.version !== 52) throw Error('version ' + vault.version);
+      if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
+      if (Object.keys(vault.clips || {}).length !== 0) throw Error('unexpected clips');
+    });
+    check('the student device exposes the one-time vault and never spends credits without a key', () => {
+      const S = student.q, V = student.w.ElevenVault;
+      if (typeof V !== 'object') throw Error('no vault');
+      if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_flash_v2_5') throw Error('voice/model');
+      if (V.hasKey() || V.stats.generatedCount !== 0) throw Error('credits were spent without a key');
+      if (!/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(V.keyFor('Number 1'))) throw Error('cache key');
+      if (S.CONFIG.repoMedia.length !== 3) throw Error('repo media ' + S.CONFIG.repoMedia.length);
+      if (student.w.AdminAutoEnrich.parse('afraid, amazed').length !== 2) throw Error('auto-completer');
+    });
+
     /* --- offline behaviour is honest, never a fake Online badge ---------- */
     check('an offline device says so instead of showing a fake Online badge', () => {
       const S = student.q;

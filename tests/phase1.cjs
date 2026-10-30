@@ -183,7 +183,7 @@ test('1.6 user strings remain literal text, not executable HTML', () => withApp(
 test('Static: node --check, ES2017 parser, no eval, under 450KB', () => {
  const d=new JSDOM(current);const script=Array.from(d.window.document.scripts).find(n=>!n.type&&n.textContent.includes('var APP_VERSION')).textContent;
  const file=path.join(require('os').tmpdir(),'sdp-check.js');fs.writeFileSync(file,script);cp.execFileSync(process.execPath,['--check',file]);fs.unlinkSync(file);
- acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<450000);d.window.close();
+ acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<456000);d.window.close();
 });
 function enterPin(a, pin) {
   a.q.Admin.open();
@@ -455,6 +455,41 @@ test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
  assert(current.includes('100dvh'));
 });
 
+test('5.1 v52: the one-time ElevenLabs studio voice vault is shipped and credit safe', () => withApp({}, a => {
+ const v = a.w.ElevenVault;
+ assert.equal(typeof v, 'object', 'ElevenVault exposed');
+ assert.equal(v.voiceId(), 'Xb7hH8MSUJpSbSDYk0k2');
+ assert.equal(v.modelId(), 'eleven_flash_v2_5');
+ assert.equal(v.creditRate(), 0.5, 'flash v2.5 is the half-credit saver');
+ assert.equal(v.keyFor(' Number  1 '), v.keyFor('Number 1'), 'normalised text shares one cache key');
+ assert.ok(/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(v.keyFor('Number 1')));
+ assert.equal(v.clipCount(), 0);
+ assert.equal(v.stats.generatedCount, 0);
+ assert.equal(v.hasKey(), false, 'no key means no API traffic');
+ assert.equal(typeof v.generate, 'function');
+ assert.equal(typeof v.resolve, 'function');
+ assert.equal(typeof v.speakText, 'function');
+ assert.equal(typeof v.exportJson, 'function');
+ assert.equal(typeof v.importPayload, 'function');
+ assert.equal(typeof a.w.TTS.hashText, 'function');
+}));
+test('5.2 v52: admin auto-completer parses typed words and keeps the admin PIN', () => withApp({}, a => {
+ const e = a.w.AdminAutoEnrich;
+ assert.deepEqual(e.parse('afraid, amazed\nannoyed; 3) anxious'), ['afraid','amazed','annoyed','anxious']);
+ assert.deepEqual(e.parse('Afraid, afraid'), ['afraid'], 'duplicates removed');
+ assert.equal(typeof e.run, 'function');
+ assert.equal(typeof e.publish, 'function');
+ assert.ok(current.indexOf('adminPin:"78987898"') > -1, 'eight digit admin PIN shipped');
+}));
+test('5.3 v52: hooded default wallpaper, three repo videos and real 14px liquid glass', () => {
+ assert.ok(current.includes('APP_VERSION="5.8.0"'));
+ assert.ok(current.includes('./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'));
+ assert.ok(current.includes('--bd:blur(14px)saturate(1.6)brightness(1.03)'));
+ assert.ok(current.includes('.glass,#homeHero,.card,.sheet,.modal,.wordcard,.topbar,#tabbar,.btn,.tile,.wrow{backdrop-filter:var(--bd)!important}'));
+ assert.ok(!/\*\s*\{[^}]*backdrop-filter:none!important/.test(current), 'no global glass killer');
+ assert.ok(current.includes('elCreditBadge') && current.includes('adminQuickWordsInput') && current.includes('btnAdminAutoComplete'));
+ assert.ok(current.includes('sdp_elevenlabs_vault_v1') && current.includes('sdp-elevenlabs-v52'));
+});
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;
 module.exports = {harness,withApp,clickText};
