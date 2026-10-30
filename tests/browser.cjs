@@ -62,7 +62,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -269,7 +269,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#elApiKeyInput').fill('xi-test-key-53');
   await page.locator('#btnElVerify').click();
   await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
-  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v54_encrypted_universal_sync')||'{}').settings||{}).elevenLabsKey||''}));
+  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||''}));
   results.push({test:'Chromium v53 Save & Verify stores the ElevenLabs key and shows the live credit balance',status:saved.key==='xi-test-key-53'&&saved.stored==='xi-test-key-53'&&/Tier: Free/.test(saved.status)&&/9,750 \/ 10,000/.test(saved.status)&&/Remaining ElevenLabs Credits: 9,750 \/ 10,000/.test(saved.stats)?'PASS':'FAIL',detail:saved});
   const beforePlay=synthCalls;
   const playback=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.resolve('Number 1',(err,url)=>resolve({err:err,url:!!url}));}));
@@ -291,9 +291,17 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
   await page.locator('#profSessionTitle').fill('Session 9 - Weather');
   await page.locator('#btnAdminAutoComplete').click();
+  /* v55: the pre-edit sync warning appears first when the keys are not connected yet;
+     the lecturer can jump to the setup guide or continue without permanent sync. */
+  const warnCard=page.locator('#adminSyncWarningCard');
+  results.push({test:'Chromium v55 the pre-edit sync warning card is present above the word editor',status:await warnCard.count()?'PASS':'FAIL',detail:{state:await warnCard.getAttribute('data-state').catch(()=>'')}});
+  if(await page.locator('#btnPreEditWarnContinue').count()){
+   results.push({test:'Chromium v55 publishing without the keys shows the confirm-before-edit warning',status:(await page.locator('#syncPreEditWarn').count())?'PASS':'FAIL',detail:{text:((await page.locator('#syncPreEditWarnText').textContent().catch(()=>''))||'').slice(0,120)}});
+   await page.locator('#btnPreEditWarnContinue').click();
+  }
   await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:30000}).catch(()=>{});
   const quick=await page.evaluate(()=>{
-   const data=JSON.parse(localStorage.getItem('sdp.v54_encrypted_universal_sync')||'{}');
+   const data=JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
    const list=(data.lists||[])[(data.lists||[]).length-1]||{};
    return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',rows:document.querySelectorAll('#profWordsTable .prof-row').length,name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).title,archived:(data.pastSessions||[]).length};
   });
@@ -306,7 +314,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await new Promise(resolve=>server.close(resolve));
  }
  // ---------------------------------------------------------------------------
- // v54 (6.0.0): the PIN-encrypted API key crosses devices. Device #1 is the
+ // v55 (6.1.0): the PIN-encrypted API key crosses devices on a <600 byte CORS-simple relay. Device #1 is the
  // lecturer's PC (normal desktop user agent, so the zero-config relay is live);
  // device #2 is a brand-new phone browser with empty storage that only reads
  // the relayed envelope from the same ntfy.sh topic.
@@ -324,7 +332,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const base2='http://127.0.0.1:'+server2.address().port;
   const DESKTOP='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
   const LECTURER_KEY='sk_test_lecturer_key_12345';
-  const VTOPIC='https://ntfy.sh/dictationb1_sdp_vault_v54', ATOPIC='https://ntfy.sh/dictationb1_sdp_audio_v54';
+  const VTOPIC='https://ntfy.sh/dictationb1_sdp_keys_v55', WTOPIC='https://ntfy.sh/dictationb1_sdp_words_v55', ATOPIC='https://ntfy.sh/dictationb1_sdp_audio_v55';
   const relayed=[];
   const CORS2={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
   function ntfyRoutes(page2){
@@ -348,18 +356,22 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await closeSheet(pageA);
   await unlockPin(pageA);
   await pageA.locator('#elApiKeyInput').fill(LECTURER_KEY);
+  await pageA.locator('#ghTokenInput').fill('ghp_test_github_token_9876');
+  await pageA.evaluate(()=>{try{window.Cloud.ghToken('ghp_test_github_token_9876')}catch(e){}});
   await pageA.locator('#btnElVerify').click();
   await pageA.waitForFunction((k)=>{try{return window.DB.data.settings.elevenLabsKey===k}catch(e){return false}},LECTURER_KEY,{timeout:10000}).catch(()=>{});
   await pageA.waitForTimeout(600);
   const deviceA=await pageA.evaluate((k)=>{
    const env=window.UniversalSync.envelope(false);
-   return {key:(window.DB.data.settings||{}).elevenLabsKey||'',stored:(JSON.parse(localStorage.getItem('sdp.v54_encrypted_universal_sync')||'{}').settings||{}).elevenLabsKey||'',
+   return {key:(window.DB.data.settings||{}).elevenLabsKey||'',stored:(JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||'',
     cipher:String(window.DB.data.vaultCiphertext||''),rev:env.syncRev,input:(document.getElementById('elApiKeyInput')||{}).value||'',
-    banner:(document.getElementById('syncBanner')||{}).textContent||'',leak:String(env.vaultCiphertext).indexOf(k)>=0,force:!!document.getElementById('btnForceSync')};
+    banner:(document.getElementById('syncBanner')||{}).textContent||'',leak:String(env.vaultCiphertext).indexOf(k)>=0,force:!!document.getElementById('btnForceSync'),
+    warnCard:!!document.getElementById('adminSyncWarningCard'),state:(document.getElementById('adminSyncWarningCard')||{getAttribute:function(){return ''}}).getAttribute('data-state'),
+    guide:!!document.getElementById('lnkGhToken')};
   },LECTURER_KEY);
-  results.push({test:'Chromium v54 device #1 saves the ElevenLabs key, encrypts it and keeps it in Lecturer Mode',status:deviceA.key===LECTURER_KEY&&deviceA.stored===LECTURER_KEY&&deviceA.input===LECTURER_KEY&&deviceA.cipher.indexOf('SDP_ENC_V1:')===0&&deviceA.leak===false&&deviceA.force&&/API Key: Saved & Encrypted/.test(deviceA.banner)&&errorsA.length===0?'PASS':'FAIL',detail:deviceA,errors:errorsA});
+  results.push({test:'Chromium v55 device #1 saves the ElevenLabs key, encrypts it and keeps it in Lecturer Mode',status:deviceA.key===LECTURER_KEY&&deviceA.stored===LECTURER_KEY&&deviceA.input===LECTURER_KEY&&deviceA.cipher.indexOf('SDP_ENC_V1:')===0&&deviceA.leak===false&&deviceA.force&&deviceA.warnCard&&deviceA.guide&&/API Key: Saved & Encrypted/.test(deviceA.banner)&&errorsA.length===0?'PASS':'FAIL',detail:deviceA,errors:errorsA});
   const posted=relayed.filter(m=>m.indexOf(LECTURER_KEY)<0&&m.indexOf('SDP_ENC_V1:')>-1);
-  results.push({test:'Chromium v54 the zero-config relay receives only the encrypted envelope (no plaintext key)',status:posted.length>0? 'PASS':'FAIL',detail:{posts:relayed.length,encrypted:posted.length}});
+  results.push({test:'Chromium v55 the CORS-simple keys relay receives only the <600 byte encrypted packet (no plaintext key)',status:posted.length>0? 'PASS':'FAIL',detail:{posts:relayed.length,encrypted:posted.length}});
   await ctxA.close();
   /* device #2: a phone with completely empty storage */
   const envelope=posted.length?posted[posted.length-1]:JSON.stringify({syncRev:Date.now(),vaultCiphertext:deviceA.cipher});
@@ -385,9 +397,12 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    banner:(document.getElementById('syncBanner')||{}).textContent||'',
    words:(document.getElementById('adminQuickWordsInput')||{}).value||'',
    force:!!document.getElementById('btnForceSync'),
+   warnCard:!!document.getElementById('adminSyncWarningCard'),
+   guideLang:!!document.getElementById('btnSyncGuideLang'),
+   state:(document.getElementById('adminSyncWarningCard')||{getAttribute:function(){return ''}}).getAttribute('data-state'),
    cipher:String(window.DB.data.vaultCiphertext||'')
   }));
-  results.push({test:'Chromium v54 a brand-new phone with empty storage shows the synced API key in Lecturer Mode',status:deviceB.key===LECTURER_KEY&&deviceB.input===LECTURER_KEY&&deviceB.cipher.indexOf('SDP_ENC_V1:')===0&&deviceB.words.split('\n').filter(Boolean).length>0&&deviceB.force&&errorsB.length===0?'PASS':'FAIL',detail:{key:deviceB.key,input:deviceB.input,banner:deviceB.banner,words:deviceB.words.split('\n').filter(Boolean).length,force:deviceB.force},errors:errorsB});
+  results.push({test:'Chromium v55 a brand-new phone with empty storage shows the synced API key in Lecturer Mode',status:deviceB.key===LECTURER_KEY&&deviceB.input===LECTURER_KEY&&deviceB.cipher.indexOf('SDP_ENC_V1:')===0&&deviceB.words.split('\n').filter(Boolean).length>0&&deviceB.force&&deviceB.warnCard&&deviceB.guideLang&&deviceB.state==='verified'&&errorsB.length===0?'PASS':'FAIL',detail:{key:deviceB.key,input:deviceB.input,banner:deviceB.banner,words:deviceB.words.split('\n').filter(Boolean).length,force:deviceB.force,state:deviceB.state},errors:errorsB});
   await ctxB.close();
   await new Promise(resolve=>server2.close(resolve));
  }

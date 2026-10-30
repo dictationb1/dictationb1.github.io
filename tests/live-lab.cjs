@@ -230,9 +230,9 @@ function device(html, base) {
     });
 
     /* --- v53: the permanent ElevenLabs voice vault is served with the app --- */
-    check('the repository publishes the permanent v54 ElevenLabs voice vault that every student can fetch', () => {
+    check('the repository publishes the permanent v55 ElevenLabs voice vault that every student can fetch', () => {
       const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
-      if (vault.version !== 54) throw Error('version ' + vault.version);
+      if (vault.version !== 55) throw Error('version ' + vault.version);
       if (String(vault.vaultCiphertext || '').indexOf('SDP_ENC_V1:') !== 0) throw Error('encrypted settings envelope missing');
       if (vault.strictAdminOnly !== true) throw Error('credit lock missing');
       if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
