@@ -1,5 +1,5 @@
 'use strict';
-/* v50 real-Chromium audio audit (the historical filename is retained).
+/* v51 real-Chromium audio audit (the historical filename is retained).
    The real app and DOM run with remote media recorded instead of downloaded.
    No local audio pack, synthetic waveform or device speech is involved. */
 const path = require('node:path');
@@ -10,8 +10,6 @@ require('./chromium-env.cjs').ensureChromiumLibs();
 const root = path.resolve(__dirname, '..');
 const indexFile = path.join(root, 'index.html');
 const YOUDAO_BASE = 'https://dict.youdao.com/dictvoice?type=1&audio=';
-const OXFORD = 'https://ssl.gstatic.com/dictionary/static/sounds/20200429/';
-const YOUDAO = 'https://dict.youdao.com/dictvoice?type=1&audio=';
 /* A real 120 ms silent WAV so the master element never errors while the
    network stays offline: only the Youdao clip route is fulfilled locally. */
 const SILENT_WAV = Buffer.from('UklGRqQHAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', 'base64');
@@ -27,7 +25,6 @@ function eq(name, actual, expected) { rec(name, actual === expected, { actual, e
 function ok(name, value, detail) { rec(name, !!value, detail); }
 function textOf(url) {
   const value = String(url || '');
-  if (value.indexOf(OXFORD) === 0) return value.slice(OXFORD.length).split('--_gb_1')[0];
   try {
     const u = new URL(value);
     return String(u.searchParams.get('audio') || u.searchParams.get('q') || value).replace(/\s*\.\s*$/, '');
@@ -134,7 +131,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
     ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
     eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 5.6.0', voice.version, '5.6.0');
+    eq('the running build is 5.7.0', voice.version, '5.7.0');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
     await page.evaluate(() => document.getElementById('btnStart').click());
@@ -149,7 +146,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
 
     const startIndex = clips.length;
     await clickReady(page);
-    // The number and word are separate clips in v50. Wait for both word passes
+    // The number and word are separate clips in v51. Wait for both word passes
     // and the completed writing-phase transition rather than racing a fixed sleep.
     await page.waitForFunction((start) => window.__clips.length >= start + 6, startIndex, { timeout: 12000 });
     await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 5000 });
@@ -169,7 +166,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
       return /^https:\/\/dict\.youdao\.com\//.test(src) && !/^blob:/.test(src) && typeof T.pinBlob === 'function';
     }));
     const gap1 = marks[1] ? marks[1].t - marks[0].t : -1, gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
-    ok('the spoken countdown holds each number for at least 500ms', gap1 >= 480 && gap1 <= 1200 && gap2 >= 480 && gap2 <= 1200, { gap1, gap2 });
+    ok('the countdown starts each cue on one-second beats', gap1 >= 900 && gap1 <= 1100 && gap2 >= 900 && gap2 <= 1100, { gap1, gap2 });
     const wordGap = marks[5] && marks[4] ? marks[5].t - marks[4].t : -1;
     ok('Pass 2 follows the first reading after about 650ms', wordGap >= 630 && wordGap <= 1200, wordGap);
 
@@ -235,6 +232,6 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
   }
 
   await browser.close();
-  console.log('\n' + (results.length - failures) + '/' + results.length + ' v50 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
+  console.log('\n' + (results.length - failures) + '/' + results.length + ' v51 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
   if (failures) process.exitCode = 1;
 })().catch((err) => { console.error('audit crashed: ' + (err && err.stack || err)); process.exit(1); });

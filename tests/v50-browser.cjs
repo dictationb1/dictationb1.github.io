@@ -1,5 +1,5 @@
 'use strict';
-/* v50 uses real Chromium HTMLMediaElement decoding and event delivery. The
+/* v51 uses real Chromium HTMLMediaElement decoding and event delivery. The
    network is intercepted with a silent WAV fixture, so this verifies media
    mechanics and layout, not the sound or availability of external providers. */
 const assert = require('node:assert/strict');
@@ -22,7 +22,7 @@ async function pageWithAudio(browser, fileURL, viewport, reducedMotion) {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.route('https://**/*', (route) => {
     const url = route.request().url();
-    if (/^https:\/\/dict\.youdao\.com\/dictvoice/.test(url) || /^https:\/\/ssl\.gstatic\.com\/dictionary\//.test(url)) {
+    if (/^https:\/\/dict\.youdao\.com\/dictvoice/.test(url)) {
       return route.fulfill({status:200, contentType:'audio/wav', body:fixture});
     }
     return route.abort();
@@ -36,8 +36,8 @@ async function pageWithAudio(browser, fileURL, viewport, reducedMotion) {
 async function begin(page) {
   await page.locator('#btnStart').click();
   await page.locator('#btnReadyGo').click();
-  await page.waitForSelector('#btnPause');
-  await page.evaluate(() => window.Eng.startWord(0));
+  await page.waitForFunction(() => window.Eng && window.Eng.phase === 'listen', null, {timeout:10000});
+  await page.locator('#btnPause').waitFor({state:'visible'});
 }
 async function playStarted(page) {
   await page.waitForFunction(() => {
@@ -51,8 +51,8 @@ async function finishCurrentClip(page, timeout = 15000) {
   await page.waitForFunction(() => window.Eng.phase === 'write', null, {timeout});
 }
 
-module.exports = async function runV50(browser, check, fileURL) {
-  await check('v50 real Chromium media rate, helper timer and pause lifecycle', async () => {
+module.exports = async function runV51(browser, check, fileURL) {
+  await check('v51 real Chromium media rate, helper timer and pause lifecycle', async () => {
     const {context, page, errors} = await pageWithAudio(browser, fileURL, {width:393,height:851}, false);
     try {
       assert.equal(await page.evaluate(() => document.body.getAttribute('data-perf')), 'full');
@@ -112,11 +112,11 @@ module.exports = async function runV50(browser, check, fileURL) {
     } finally { await context.close(); }
   });
 
-  await check('v50 Chromium migrates v49 once without losing personal data', async () => {
+  await check('v51 Chromium migrates v50 once without losing personal data', async () => {
     const initial = await pageWithAudio(browser, fileURL, {width:393,height:851}, false);
-    const seed = await initial.page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')));
+    const seed = await initial.page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')));
     await initial.context.close();
-    seed.v = 49; seed.settingsRev = 49; seed.settings.perf = 'lite';
+    seed.v = 50; seed.settingsRev = 50; seed.settings.perf = 'lite'; seed.settings.activeVideoSrc = './assets/bunny-live-wallpaper.mp4'; seed.settings.adminPin = '78987898';
     seed.history = [{id:'migration-history', wordCount:30}];
     seed.comments = [{id:'migration-comment', text:'keep this comment'}];
     seed.lists.push({id:'migration-personal', name:'Personal', words:[{w:'treasure', s:'A treasure is precious.', m:'Something valuable.'}]});
@@ -127,34 +127,36 @@ module.exports = async function runV50(browser, check, fileURL) {
     try {
       await page.addInitScript((oldData) => {
         if (!sessionStorage.getItem('migration-seeded')) {
-          localStorage.removeItem('sdp.v50_all_p0_p6_fixed');
-          localStorage.setItem('sdp.v49_working_sound_system', JSON.stringify(oldData));
+          localStorage.removeItem('sdp.v51_hooded_liquid_glass');
+          localStorage.setItem('sdp.v50_all_p0_p6_fixed', JSON.stringify(oldData));
           sessionStorage.setItem('migration-seeded', '1');
         }
       }, seed);
       await page.route('https://**/*', (route) => route.abort());
       await page.goto(fileURL);
-      await page.waitForFunction(() => window.SDP && localStorage.getItem('sdp.v50_all_p0_p6_fixed'));
+      await page.waitForFunction(() => window.SDP && localStorage.getItem('sdp.v51_hooded_liquid_glass'));
       const migrated = await page.evaluate(() => {
-        const data = JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed'));
-        return {v:data.v, rev:data.settingsRev, perf:data.settings.perf, rendered:document.body.getAttribute('data-perf'),
+        const data = JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass'));
+        return {v:data.v, rev:data.settingsRev, perf:data.settings.perf, rendered:document.body.getAttribute('data-perf'), src:data.settings.activeVideoSrc, clearPin:JSON.stringify(localStorage).includes('78987898'),
           history:data.history[0].id, comment:data.comments[0].text, pin:data.admin.pinHash,
           personal:data.lists.some((list) => list.id === 'migration-personal' && list.words[0].w === 'treasure')};
       });
-      assert.deepEqual(migrated, {v:50, rev:50, perf:'full', rendered:'full', history:'migration-history',
+      assert.deepEqual(migrated, {v:51, rev:51, perf:'lite', rendered:'lite', src:'./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4', clearPin:false, history:'migration-history',
         comment:'keep this comment', pin:originalPinHash, personal:true});
       await page.evaluate(() => document.getElementById('btnPerf').click());
-      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).settings.perf === 'lite');
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.perf === 'full');
+      await page.evaluate(() => document.getElementById('btnPerf').click());
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.perf === 'lite');
       await page.reload();
       await page.waitForFunction(() => window.SDP && document.body.getAttribute('data-perf') === 'lite');
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v50_all_p0_p6_fixed')).settings.perf), 'lite');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v51_hooded_liquid_glass')).settings.perf), 'lite');
       assert.deepEqual(errors, []);
     } finally { await context.close(); }
   });
 
   for (const viewport of [{width:1366,height:768}, {width:393,height:851}]) {
     for (const reduced of [false, true]) {
-      await check('v50 credit clearance and glass at ' + viewport.width + 'px' + (reduced ? ' reduced motion' : ''), async () => {
+      await check('v51 credit clearance and glass at ' + viewport.width + 'px' + (reduced ? ' reduced motion' : ''), async () => {
         const {context, page, errors} = await pageWithAudio(browser, fileURL, viewport, reduced);
         try {
           assert.equal(await page.evaluate(() => document.body.classList.contains('credit-intro')), true, 'closing guide retriggers the entrance');
@@ -173,12 +175,24 @@ module.exports = async function runV50(browser, check, fileURL) {
           const lite = await page.evaluate(() => ({perf:document.body.getAttribute('data-perf'), display:getComputedStyle(document.getElementById('homeHero'), '::before').display, shadow:getComputedStyle(document.getElementById('homeHero')).boxShadow}));
           assert.equal(lite.perf, 'lite'); assert.notEqual(lite.display, 'none'); assert.match(lite.shadow, /inset/);
           await begin(page);
-          assert.equal(await page.evaluate(() => document.body.classList.contains('credit-intro')), true, 'closing Ready retriggers the entrance');
+          assert.equal(await page.evaluate(() => document.body.classList.contains('credit-intro')), false, 'closing Ready never retriggers the entrance');
           const visual = await page.evaluate(() => {
             const card = document.querySelector('.wordcard');
             return {display:getComputedStyle(card, '::before').display, shadow:getComputedStyle(card).boxShadow};
           });
           assert.notEqual(visual.display, 'none'); assert.match(visual.shadow, /inset/);
+          const spot = await page.evaluate(() => {
+            const element = document.querySelector('#credit .hansanaSpot');
+            const style = getComputedStyle(element);
+            return {display:style.display, background:style.backgroundImage, width:element.getBoundingClientRect().width};
+          });
+          assert.notEqual(spot.display, 'none'); assert.match(spot.background, /radial-gradient/); assert.ok(spot.width > 0);
+          await page.locator('#btnFinishEarly').click();
+          const stack = await page.evaluate(() => ({credit:Number(getComputedStyle(document.getElementById('credit')).zIndex),
+            scrim:Number(getComputedStyle(document.querySelector('#modals .scrim')).zIndex),
+            modal:Number(getComputedStyle(document.querySelector('#modals .modal')).zIndex)}));
+          assert.ok(stack.scrim > stack.credit && stack.modal > stack.scrim, 'modal and scrim cover the credit: '+JSON.stringify(stack));
+          await page.locator('#modals .modal button').first().click();
           const samples = await page.evaluate(async () => {
             const credit = document.getElementById('credit');
             document.body.classList.remove('credit-intro');
@@ -189,7 +203,7 @@ module.exports = async function runV50(browser, check, fileURL) {
             animation.pause();
             const overlaps = (a,b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
             const rows = [];
-            for (const time of [0,700,1750,3500,4400,5250,6020,6990]) {
+            for (const time of [0,800,2000,4000,5600,6500,7200,7990]) {
               animation.currentTime = time;
               const bounds = credit.getBoundingClientRect();
               const targets = ['#btnRestart','#btnFinishEarly','#btnPause','.layer .lhead h2'];
@@ -199,9 +213,9 @@ module.exports = async function runV50(browser, check, fileURL) {
             return {name:cs.animationName,duration:cs.animationDuration,iteration:cs.animationIterationCount,rows};
           });
           assert.equal(samples.name, 'hansanaCinemaCycle', JSON.stringify(samples));
-          assert.equal(samples.duration, '7s'); assert.equal(samples.iteration, 'infinite');
-          assert.ok(samples.rows.find((r) => r.time === 4400).opacity < 0.1, JSON.stringify(samples));
-          assert.ok(samples.rows.find((r) => r.time === 6020).opacity > 0.9, JSON.stringify(samples));
+          assert.equal(samples.duration, '8s'); assert.equal(samples.iteration, '1');
+          assert.ok(samples.rows.find((r) => r.time === 5600).opacity < 0.2, JSON.stringify(samples));
+          assert.ok(samples.rows.find((r) => r.time === 7200).opacity > 0.9, JSON.stringify(samples));
           for (const row of samples.rows) assert.deepEqual(row.collisions, [], JSON.stringify(row));
           assert.deepEqual(errors, []);
         } finally { await context.close(); }

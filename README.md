@@ -2,31 +2,28 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 5.6.0 — v50
+## Release 5.7.0 — v51
 
-The Session 8 lesson contains 30 adjectives with UK IPA, Sinhala meanings and examples. Session 7 remains available for practice. Paper mode, two readings and a five-second writing period are the defaults.
+Session 8 contains 30 adjectives with UK IPA, Sinhala meanings and examples; the complete 30-word Session 7 remains available for practice. Paper mode, two readings and a five-second writing period are the defaults.
 
 ### Audio and player controls
 
-- A word cycle plays `Number N`, waits 120 ms, plays the clean word, waits 650 ms and plays the **same word URL** again. The last item is introduced as “Final word, number N”.
-- Single English words request `dict.youdao.com/dictvoice?type=1&audio=<word>` without added punctuation. If that fails, the player tries the Google dictionary UK URL. Phrases use the direct Youdao URL. Requests go straight to a single `<audio>` element, without a JavaScript audio fetch or Blob cache.
-- If remote audio fails, an available British female device voice is preferred. Voice selection is refreshed when the browser announces newly loaded voices. `Slower` sets both `defaultPlaybackRate` and `playbackRate` to `0.72` after the media loads and uses that rate for the device fallback too.
-- Sinhala guide audio requests the specified Youdao Sinhala URL in chunks of at most 180 characters. If it fails, the app tries an installed `si-LK` voice or an **approximate romanised** reading with the device voice. If no audio engine is available, the guide remains readable and shows a message.
-- Repeat, Slower, Repeat sentence and Spell it cancel the current timer. The five-second writing period starts only after the helper audio finishes. Pause cancels speech and timers; Resume waits for its welcome-back prompt before restarting the current word.
+- English numbers, words and phrases use the same Youdao UK endpoint. A failed stream or a 2,800 ms start timeout falls back to one pinned British device voice when available. There is no per-word Google dictionary fallback.
+- Each word cycle announces `Number N`, waits 180 ms, plays the word, waits 650 ms and replays the same URL. The countdown uses monotonic one-second beats; a playing welcome instruction fades for 120 ms first. Four hidden audio elements prebuffer countdown cues and a rolling two-word window.
+- Repeat, Slower, Repeat sentence and Spell it interrupt speech or writing and restart the full writing period after the helper completes. Spell it uses British letter names; Slower persists at `0.72`. Pause cancels speech and timers, and Resume restarts the current word after its prompt. The completion summary is both shown and spoken.
+- The first-run guide attempts to play automatically and can retry after a user gesture. Sinhala guide text uses chunked Youdao Sinhala audio or a supported `si-LK` device voice, never English romanisation. Closing the guide stops it.
 
-Remote providers and installed voices vary by device and network. The code requests UK dictionary recordings, but it cannot guarantee a particular speaker, accent, pronunciation, Sinhala support or uninterrupted service. The automated tests intercept remote audio and **do not certify the audio content or provider availability**. Browser caching and mobile data usage also vary; the report's figures are estimates.
+Remote providers and installed voices vary by device and network. A single endpoint does not guarantee a particular speaker or pronunciation. The automated tests intercept remote audio and **do not certify audio content or provider availability**. The data report's usage figures are illustrative estimates, not measured guarantees.
 
-### Appearance and accessibility
+### Appearance and saved data
 
-Full performance is the default, while Lite remains selectable. Both retain the Liquid Glass sheen and inset highlights. The Hansana credit has a seven-second disappearing/reappearing animation and reserved clearance above player controls. At the requested design's direction, this particular animation also runs when the system requests reduced motion; other reduced-motion rules continue to apply.
+The muted Hooded Red Eyes video is the default and uses cover framing on phones and desktops. The gallery includes all three bundled videos and can refresh the assets list from GitHub. Both Full and Lite retain true `blur(14px) saturate(1.6) brightness(1.03)` glass. The Hansana credit has a one-time intro followed by one eight-second spotlight cycle; modal dialogs remain above it.
 
-### Saved data
+- Storage key: `sdp.v51_hooded_liquid_glass`
+- `APP_VERSION`: `5.7.0`; `ver`, `schema` and `settingsRev`: `51`
+- The default local lecturer PIN is `78987898`. It is stored as a salted hash rather than cleartext; this client-side lock is not server-grade protection.
 
-- Storage key: `sdp.v50_all_p0_p6_fixed`
-- `APP_VERSION`: `5.6.0`; `ver`, `schema` and `settingsRev`: `50`
-- The default local lecturer PIN is `78987898`.
-
-The migration reads the v49 key and older known keys, preserving learner lists, history and comments. It sets Full as the upgrade default, but a subsequent manual Lite selection is retained. The PIN is a local convenience lock, not server-grade protection. Export a backup before experimenting and do not store credentials in the app.
+Migration reads v50 and older known keys, preserves learner lists, history, comments and explicit performance choices, replaces the old bunny default with the hooded video, and removes legacy `adminPin` fields. Export a backup before experimenting.
 
 ## Development verification
 

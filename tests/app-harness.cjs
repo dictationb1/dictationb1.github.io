@@ -8,7 +8,7 @@ function harness(seed,opts={}){
  vc.on('jsdomError',function(e){consoleErrors.push(e&&e.message?e.message:String(e));});
  const dom=new JSDOM(html,{url:'https://example.test/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
  const w=dom.window;
- const clock=FakeTimers.withGlobal(w).install({now:Date.UTC(2026,9,14,12),toFake:['Date','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
+ const clock=FakeTimers.withGlobal(w).install({now:Date.UTC(2026,9,14,12),toFake:['Date','performance','setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame','cancelAnimationFrame']});
  w.scrollTo=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){}});w.HTMLCanvasElement.prototype.getContext=()=>opts.canvasContext||null;
  if(opts.canvasContext)Object.defineProperty(w.performance,'now',{value:function(){return w.Date.now();}});
  if(opts.before)opts.before(w);

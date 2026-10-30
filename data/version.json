@@ -1,41 +1,41 @@
 {
-  "ver": 50,
-  "appVersion": "5.6.0",
-  "version": "5.6.0",
-  "buildDate": "2026-10-29",
+  "ver": 51,
+  "appVersion": "5.7.0",
+  "version": "5.7.0",
+  "buildDate": "2026-10-30",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "settingsRev": 50,
-  "updatedAt": "2026-10-29T00:00:00Z",
-  "updatedAtMs": 1793232000000,
+  "settingsRev": 51,
+  "updatedAt": "2026-10-30T00:00:00Z",
+  "updatedAtMs": 1793318400000,
   "features": {
     "passwordPopup": "none - #ansInput is type=text with autocomplete=off, never a password field",
     "keyboard": "native system keyboard only (text input + single-space IME buffer reset + plain-text mirror)",
     "ready": "A clean preparation sheet shows the exact Click I'm ready to begin instruction; the player opens only after confirmation.",
     "feedback": "animated tick, streak breakdown and false-answer correction flow",
-    "visual": "v50: layered liquid glass in Full and Lite modes, with inset specular highlights and no backdrop blur.",
+    "visual": "v51: true backdrop-filter blur(14px) saturate(1.6) brightness(1.03) with layered liquid glass.",
     "guideStart": "Start practising closes the guide, unlocks speech, opens Home and launches Eng.start({})",
     "defaultMode": "paper",
     "search": "Lib.searchIndex caches tokens across Session 8, Session 7 (past session), my words and mistakes",
     "ambient": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
-    "liveWallpaper": "bunny-live-wallpaper.mp4 is the 100% default active video on the single #bgLiveVideo hardware overlay (filter:none, translateZ(0), poster frame); it plays behind the Home screen, every tab, the .layer Dictation Player, the Are you ready? sheet and the Results screen",
-    "githubVideos": "CONFIG.repoMedia lists only ./assets/bunny-live-wallpaper.mp4; runtime discovery is cached for fifteen minutes in sdp.gh_assets_v44 and every older gh_assets cache is purged on boot",
+    "liveWallpaper": "Hooded Red Eyes portrait video is the default, muted and cover-framed with no black sidebars.",
+    "githubVideos": "The three committed assets videos are listed; Refresh from GitHub fetches the assets contents API.",
     "ambilight": "v34: #bgLiveAmbilight is permanently inert (display:none, no src, never loaded); #bgLivePhotoAmbilight still supports portrait photos",
     "gallery": "Lazy gallery: no gallery DOM on boot; inactive cards use preload=none videos or lazy poster images. Bytes may load when Preview or Apply is used.",
     "wallpaper": "Hardware video wallpaper in Lite and Full; neon canvas sleeps when interactions finish",
     "githubMedia": "discoverGitHubMedia reads only the GitHub contents API for assets/ and normalises download_url, origin prefixes, /assets/, ?v= and #t= suffixes to ./assets/<file>",
     "readability": "#bgContrastScrim adaptive radial scrim, --bg-dim live slider (#sVideoDim) 0-75, 18% default, crisp 0 1px 2px text shadows in dark and light themes",
     "photoWallpaper": "#bgLivePhoto + #bgLivePhotoAmbilight with 12s auto-cycle for photos and ended-driven cycling for videos",
-    "crystalGlass": "Layered optical glass gradients, bright meniscus highlights and inset refraction; no backdrop-filter.",
+    "crystalGlass": "True backdrop-filter blur(14px) saturate(1.6) brightness(1.03), plus specular highlights.",
     "playback": "The video element avoids redundant reloads and has muted autoplay and stall recovery; playback still depends on browser policy, media availability and the device.",
-    "storage": "v50 migrates v49 and older storage, retaining learner data; full performance is the migration default.",
+    "storage": "v51 migrates earlier storage while preserving learner data and removes cleartext adminPin fields.",
     "highlightedUi": "High-contrast gradient primary actions and layered glass controls, cards and navigation.",
     "rainbowLiquidGlass": "v37: fully retired - no rainbow stripes, no neon glows, no glowing text shadows",
     "springPhysics": "v37: GPU-composited transform/opacity spring curves drive press, dock glide and screen/sheet morphs at 60-120fps",
     "lowEnd": "v37: single hardware video overlay, sleeping canvas, contain:layout style and transform-only transitions keep low-end phones smooth",
     "instantResponse": "v37: 0.04s press recognition, 0.16s cubic-bezier(0.22, 1, 0.36, 1) spring release, 0.22s screen and sheet glide, GPU transform/opacity only, a 60ms debounced DB.save() and a canvas that ignores UI taps",
     "typography": "v37: Inter + Apple system stack for English, Noto Sans Sinhala / Sinhala Sangam MN / Nirmala UI for Sinhala at line-height 1.72, loaded from a runtime style tag (never a static <link>)",
-    "creditSpotlight": "A seven-second disappearance, shimmer and reappearance runs even with reduced motion; the header reserves space.",
+    "creditSpotlight": "The intro plays once; one eight-second spotlight cycle follows. Dialogs appear above the credit.",
     "englishDefault": "English (lang \"en\", guideLang \"en\") remains the default, with an optional Sinhala switch inside the User Guide.",
     "humanVoice": "Single English words request a UK dictionary recording; the provider or device fallback determines the actual voice.",
     "sessionFlow": "Ready instruction, visual and spoken countdown, number + word, 650ms pause, same word again, five-second writing timer.",
@@ -44,37 +44,35 @@
     "noDeviceVoice": "A device voice is used as a safety net when remote audio is unavailable.",
     "voiceLifecycle": "Starting, pausing, replaying, navigating or leaving cancels the audio element, the synth utterance and every timer.",
     "testSound": "Sound check streams the real Youdao studio audio without a debug pill.",
-    "numberedWords": "Pass 1 announces the number, waits 120 ms, then plays the word recording; pass 2 reuses that same recording after 650 ms.",
+    "numberedWords": "Number N, a 180ms pause, the word, a 650ms pause, then the same word again.",
     "pauseResume": "Pause cancels the current timers and audio; resume waits for its spoken prompt before restarting the current word.",
-    "finishSummary": "The completion summary requests the Youdao stream and preserves paper/type result behaviour.",
-    "tts": "Youdao UK streams, Google dictionary UK backup for single words, then speechSynthesis fallback.",
+    "finishSummary": "The spoken completion summary is also rendered in the results screen.",
+    "tts": "One Youdao en-GB stream with pinned British device voice fallback if media fails.",
     "voice": "British dictionary audio with preferred British female device voice fallback.",
-    "fallback": "Media errors, play rejection or the 1600 ms start timeout try the alternative word recording and then a device voice.",
+    "fallback": "Playback errors or a 2800ms start timeout fall back to a pinned device voice; availability varies.",
     "dictationNumber": "One Dictation #N progress label plus progress dots; duplicate word-card badges are removed.",
     "bundledAudio": "Removed: no generated or bundled MP3 pack; no synthetic formant, waveform or espeak audio.",
-    "countdown": "Three, two and one each remain visible at least 500ms; the next cue waits for the prior recording to finish.",
-    "voiceFallback": "Word playback retries the Google UK dictionary URL before the device voice. Browser and remote-host availability varies.",
-    "guideAudio": "Guide audio uses the Sinhala stream when selected, with a si-LK or approximate romanised device fallback.",
-    "helpers": "Repeat, slower, masked sentence and spelling stop the timer and restart the five-second writing period only after audio ends.",
+    "countdown": "Three, two, one on clock-anchored 1000ms beats; the first word starts at 3000ms.",
+    "voiceFallback": "The same pinned British device voice is used for fallback where available.",
+    "guideAudio": "Sinhala uses a sentence-chunked Sinhala stream or si-LK synthesis; no English romanisation.",
+    "helpers": "Repeat, Slower, Repeat sentence and British letter names work during speaking and the writing window; the full five-second timer restarts.",
     "session8": "Session 8 - Personal Feelings, Opinions & Experiences (Adj), 29/10/2026, 30 adjectives with UK IPA, Sinhala meaning and example sentence",
     "dataSheet": "Interactive bilingual data report at /data and /data.html with a calculator and 30 playable rows. Byte figures are illustrative; actual browser and network usage varies.",
-    "zeroWaste": "No boot audio prefetch; the second reading replays the loaded word when available. Actual network costs vary.",
+    "zeroWaste": "A four-element prebuffer prepares countdown cues and a rolling word window; actual network costs vary.",
     "spelling": "favourite/favorite and tyre/tire are both accepted",
-    "sinhalaGuideVoice": "Sinhala stream request with si-LK speechSynthesis or an approximate romanised default voice fallback."
+    "sinhalaGuideVoice": "Sinhala stream or si-LK speechSynthesis; if unavailable the written guide remains accessible."
   },
   "mode": "paper",
-  "storageKey": "sdp.v50_all_p0_p6_fixed",
+  "storageKey": "sdp.v51_hooded_liquid_glass",
   "repoVideos": [
     {
-      "id": "media_bunny_live_wallpaper",
-      "title": "Bunny Live Wallpaper",
-      "src": "./assets/bunny-live-wallpaper.mp4",
-      "poster": "./assets/bunny-poster.webp",
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
       "type": "video",
-      "folder": "assets"
-    }
-  ],
-  "repoMedia": [
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
     {
       "id": "media_bunny_live_wallpaper",
       "title": "Bunny Live Wallpaper",
@@ -82,23 +80,61 @@
       "type": "video",
       "folder": "assets",
       "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
+    }
+  ],
+  "repoMedia": [
+    {
+      "id": "media_hooded_red_eyes",
+      "title": "Hooded Red Eyes Live Wallpaper 1080p Loop",
+      "src": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/hooded-poster.webp"
+    },
+    {
+      "id": "media_bunny_live_wallpaper",
+      "title": "Bunny Live Wallpaper",
+      "src": "./assets/bunny-live-wallpaper.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/bunny-poster.webp"
+    },
+    {
+      "id": "media_wanderingpixels",
+      "title": "Wandering Pixels Loop",
+      "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
+      "type": "video",
+      "folder": "assets",
+      "poster": "./assets/wanderingpixels-poster.webp"
     }
   ],
   "repoFallbacks": [],
-  "activeVideoSrc": "./assets/bunny-live-wallpaper.mp4",
+  "activeVideoSrc": "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
   "videoPlaylistMode": "loop",
   "repoMediaPaths": [
-    "./assets/bunny-live-wallpaper.mp4"
+    "./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4",
+    "./assets/bunny-live-wallpaper.mp4",
+    "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4"
   ],
   "repoPosters": {
-    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp"
+    "assets/hooded_red_eyes_live_wallpaper_1080p_loop": "./assets/hooded-poster.webp",
+    "assets/bunny-live-wallpaper": "./assets/bunny-poster.webp",
+    "assets/wanderingpixels_2025-12-26_7588160805032430870": "./assets/wanderingpixels-poster.webp"
   },
   "repoContentsUrl": "https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/assets",
   "ghMediaCache": "sdp.gh_assets_v44",
   "ghMediaTtl": 900000,
   "activeMediaType": "video",
   "videoDim": 18,
-  "repoVideoPoster": "./assets/bunny-poster.webp",
+  "repoVideoPoster": "./assets/hooded-poster.webp",
   "legacyMediaCaches": [
     "sdp.gh_assets_v43",
     "sdp.gh_assets_v42",
@@ -120,8 +156,7 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "adminPin": "78987898",
-  "schema": 50,
+  "schema": 51,
   "sessionCode": "Session 8",
   "sessionDate": "2026-10-29",
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
@@ -164,11 +199,194 @@
       "day": "Thursday",
       "date": "2026-10-22",
       "title": "Session 7 - Travel & Transport",
+      "listName": "Session 7 - Travel & Transport",
       "listId": "list_session_7_travel",
       "wordCount": 30,
-      "archived": true
+      "archived": true,
+      "words": [
+        {
+          "w": "guidebook",
+          "m": "a book that gives information for visitors about a place, such as a city or country",
+          "s": "We bought a guidebook to learn about the best museums in Rome.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=guidebook"
+        },
+        {
+          "w": "handlebars",
+          "m": "the metal bar with handles at the front of a bicycle or motorcycle that you use for steering",
+          "s": "Hold the handlebars with both hands when you ride down the hill.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=handlebars"
+        },
+        {
+          "w": "harbour",
+          "m": "an area of water next to the coast, often protected by walls, where ships and boats can shelter",
+          "s": "The fishing boats returned safely to the harbour before the storm.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=harbour"
+        },
+        {
+          "w": "helicopter",
+          "m": "a type of aircraft without wings that has large blades on top that go round",
+          "s": "The rescue helicopter flew over the mountains to find the hikers.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=helicopter"
+        },
+        {
+          "w": "hitchhike",
+          "m": "to travel for free by standing by the road and asking drivers for a ride",
+          "s": "It is not safe to hitchhike alone along a busy motorway at night.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hitchhike"
+        },
+        {
+          "w": "immigration",
+          "m": "the area at an airport or port where officials check the passports of people entering a country",
+          "s": "We showed our passports at immigration after landing in London.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=immigration"
+        },
+        {
+          "w": "journey",
+          "m": "the act of travelling from one place to another, especially in a vehicle",
+          "s": "The train journey from Galle to Colombo takes about two hours.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=journey"
+        },
+        {
+          "w": "luggage",
+          "m": "the bags, suitcases, and things that you take with you when you are travelling",
+          "s": "You are allowed one piece of hand luggage on the aircraft.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=luggage"
+        },
+        {
+          "w": "machine",
+          "m": "a piece of equipment with moving parts that uses power to do a particular job",
+          "s": "You can buy your train ticket from the machine at the station.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=machine"
+        },
+        {
+          "w": "mechanic",
+          "m": "someone whose job is repairing the engines of vehicles and other machines",
+          "s": "The mechanic repaired our car engine at the garage this morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mechanic"
+        },
+        {
+          "w": "nationality",
+          "m": "the official right to belong to a particular country",
+          "s": "Please write your full name and nationality on the arrival form.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=nationality"
+        },
+        {
+          "w": "on business",
+          "m": "travelling or staying somewhere as part of your work, not for a holiday",
+          "s": "Her father has gone to Singapore on business for three days.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20business"
+        },
+        {
+          "w": "on vacation",
+          "m": "away from work or school for a holiday",
+          "s": "The office is closed because the manager is away on vacation.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=on%20vacation"
+        },
+        {
+          "w": "overnight",
+          "m": "for or during the night",
+          "s": "We took the overnight ferry and arrived early the next morning.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=overnight"
+        },
+        {
+          "w": "passenger",
+          "m": "a person who is travelling in a vehicle but is not driving it or working on it",
+          "s": "Every passenger must fasten their seatbelt before the plane takes off.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=passenger"
+        },
+        {
+          "w": "public transport",
+          "m": "buses, trains, and other vehicles that anyone can pay to use",
+          "s": "Using public transport helps to reduce traffic in the city centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=public%20transport"
+        },
+        {
+          "w": "reception",
+          "m": "the desk in a hotel or office building where visitors go when they first arrive",
+          "s": "Please leave your room key at reception when you check out.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reception"
+        },
+        {
+          "w": "reservation",
+          "m": "an arrangement in which something such as a seat or hotel room is kept for you",
+          "s": "I called the hotel to make a room reservation for two nights.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=reservation"
+        },
+        {
+          "w": "road sign",
+          "m": "a notice at the side of a road that gives information or instructions to drivers",
+          "s": "The road sign warned drivers about a sharp bend ahead.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=road%20sign"
+        },
+        {
+          "w": "signpost",
+          "m": "a sign by the side of a road or path that shows the direction and distance to places",
+          "s": "We followed the wooden signpost pointing towards the village.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=signpost"
+        },
+        {
+          "w": "spaceship",
+          "m": "a vehicle that is able to travel in space",
+          "s": "The astronauts travelled to the moon inside a silver spaceship.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=spaceship"
+        },
+        {
+          "w": "suitcase",
+          "m": "a large flat box with a handle used for carrying clothes when you travel",
+          "s": "She packed her warm winter clothes into a large blue suitcase.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=suitcase"
+        },
+        {
+          "w": "tourist information centre",
+          "m": "an office that gives free maps, brochures, and advice to visitors",
+          "s": "We got a free city map from the tourist information centre.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tourist%20information%20centre"
+        },
+        {
+          "w": "traffic lights",
+          "m": "sets of red, amber, and green lights at road junctions that control traffic",
+          "s": "Walk across the pedestrian crossing when the traffic lights turn green.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=traffic%20lights"
+        },
+        {
+          "w": "tunnel",
+          "m": "a long passage built underground or through a hill for a road or railway",
+          "s": "The express train went through a long dark tunnel under the river.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tunnel"
+        },
+        {
+          "w": "tyre/tire",
+          "m": "a thick rubber ring that fits around the outside of a wheel on a car or bicycle",
+          "s": "He had to stop by the road to change a flat tyre on his car.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=tyre"
+        },
+        {
+          "w": "vehicle",
+          "m": "a machine, usually with wheels and an engine, used for transporting people or goods",
+          "s": "No motor vehicle is allowed to enter the pedestrian shopping street.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=vehicle"
+        },
+        {
+          "w": "visa",
+          "m": "an official mark in your passport that allows you to enter or leave a country",
+          "s": "You need to apply for a tourist visa before travelling to that country.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=visa"
+        },
+        {
+          "w": "waiting room",
+          "m": "a room at a station, airport, or doctor's surgery where people can sit and wait",
+          "s": "The passengers sat in the warm waiting room until the train arrived.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=waiting%20room"
+        },
+        {
+          "w": "windscreen",
+          "m": "the large glass window at the front of a car, bus, or other vehicle",
+          "s": "Clean the car windscreen carefully so you can see clearly in the rain.",
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=windscreen"
+        }
+      ]
     }
   ],
-  "key": "sdp.v50_all_p0_p6_fixed",
+  "key": "sdp.v51_hooded_liquid_glass",
   "perf": "full"
 }
