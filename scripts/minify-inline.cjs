@@ -2,7 +2,7 @@
 /*
  * Keeps the single-file app small: re-minifies the one inline <script> of
  * index.html with terser (ES5 target) so the published page stays far below
- * the 450,000 byte ceiling. Run after any edit of the inline script:
+ * the 600,000 byte ceiling. Run after any edit of the inline script:
  *
  *   node scripts/minify-inline.cjs            # rewrite index.html in place
  *   node scripts/minify-inline.cjs --check    # report the byte delta only
@@ -20,7 +20,8 @@ const KEEP = ['LiveWallpaper','isAssetsMedia','normalizeAssetPath','HOODED_WALLP
   'ASSET_MEDIA_RE','Errors','Admin','DB','Speech','UI','Eng','Lib','NoVoice','defaultData','Results','Cloud','Dict',
   'Store','CONFIG','ukMp3','SAMPLE_WORDS','IPA','SAMPLE_LIST_ID','U','Screens','WORD_BANK','publishCompletion',
   'wordRow','T','STRINGS_EN','STRINGS_SI','GUIDE','welcomeGuide','firstRunTour','DataTools','Diag','Comm','Links',
-  'Sha','fatalCard','boot','home','bootTraffic','SDPCore'];
+  'Sha','fatalCard','boot','home','bootTraffic','SDPCore',
+  'EncryptedVault','SDPDataMeter','SDP_DATA_METER','EV55','EV54','CFG','dataSheetLiveHost','topDataBadge','sdpV56'];
 const CLOSE = '</script>';
 
 async function main() {

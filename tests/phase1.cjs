@@ -462,8 +462,8 @@ test('5.1 v53: the permanent ElevenLabs vault is shipped, admin-only and credit 
  assert.equal(typeof v, 'object', 'ElevenVault exposed');
  assert.equal(v.strictAdminOnly, true, 'playback can never reach the paid endpoint');
  assert.equal(v.voiceId(), 'Xb7hH8MSUJpSbSDYk0k2');
- assert.equal(v.modelId(), 'eleven_flash_v2_5');
- assert.equal(v.rate(), 0.5, 'flash v2.5 is the half-credit saver');
+ assert.equal(v.modelId(), 'eleven_multilingual_v2');
+ assert.equal(v.rate(), 1, 'multilingual v2 is the full-credit premium model');
  assert.equal(v.keyFor(' Number  1 '), v.keyFor('Number 1'), 'normalised text shares one cache key');
  assert.ok(/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(v.keyFor('Number 1')));
  assert.equal(v.count(), 0);
@@ -493,7 +493,7 @@ test('5.2 v53: admin auto-completer parses typed words and keeps the admin PIN',
 test('5.3 v55: hooded default wallpaper, three repo videos and real 14px liquid glass', () => {
  const fs = require('node:fs');
  const studio = fs.readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
- assert.ok(current.includes('APP_VERSION="6.1.0"'));
+ assert.ok(current.includes('APP_VERSION="6.2.0"'));
  assert.ok(current.includes('./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'));
  assert.ok(current.includes('--bd:blur(14px)saturate(1.6)brightness(1.03)'));
  assert.ok(current.includes('.glass,#homeHero,.card,.sheet,.modal,.wordcard,.topbar,#tabbar,.btn,.tile,.wrow{backdrop-filter:var(--bd)!important}'));
@@ -502,7 +502,7 @@ test('5.3 v55: hooded default wallpaper, three repo videos and real 14px liquid 
  assert.ok(studio.includes('sdp_elevenlabs_vault_v1'), 'IndexedDB clip store');
  assert.ok(current.includes('sdp.v55_guaranteed_device_sync'), 'v55 storage key');
  assert.ok(current.includes('SDP_ENC_V1:'), 'v55 PIN-encrypted vault');
- assert.ok(current.includes('dictationb1_sdp_keys_v55'), 'v55 CORS-simple keys relay');
+ assert.ok(current.includes('dictationb1_sdp_keys_v56'), 'v56 CORS-simple keys relay');
  assert.ok(current.includes('window.EncryptedVault'), 'v55 EncryptedVault ships inline');
 });
 test('5.4 v55: the PIN vault encrypts the API key and the sync engine is shipped', () => withApp({}, a => {
@@ -516,7 +516,7 @@ test('5.4 v55: the PIN vault encrypts the API key and the sync engine is shipped
  const UV = a.w.UniversalSync;
  assert.equal(typeof UV, 'object', 'UniversalSync exposed');
  ['pushAll','pullAll','envelope','banner','boot','touch'].forEach(k => assert.equal(typeof UV[k], 'function', k));
- assert.ok(/dictationb1_sdp_keys_v55/.test(UV.keysTopic) && /dictationb1_sdp_words_v55/.test(UV.wordsTopic) && /dictationb1_sdp_audio_v55/.test(UV.audioTopic), 'v55 relays');
+ assert.ok(/dictationb1_sdp_keys_v56/.test(UV.keysTopic) && /dictationb1_sdp_words_v56/.test(UV.wordsTopic) && /dictationb1_sdp_audio_v56/.test(UV.audioTopic), 'v56 relays');
  assert.ok(studio.includes('adminSyncWarningCard') && studio.includes('btnSaveAndSyncAll') && studio.includes('playOrFetchOnce'), 'v55 pre-edit warning + play-once voice');
  assert.ok(studio.includes('window.UniversalSync') && studio.includes('window.StudioSync'));
 }));

@@ -114,7 +114,7 @@ module.exports = async function runV51(browser, check, fileURL) {
 
   await check('v51 Chromium migrates v50 once without losing personal data', async () => {
     const initial = await pageWithAudio(browser, fileURL, {width:393,height:851}, false);
-    const seed = await initial.page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')));
+    const seed = await initial.page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')));
     await initial.context.close();
     seed.v = 50; seed.settingsRev = 50; seed.settings.perf = 'lite'; seed.settings.activeVideoSrc = './assets/bunny-live-wallpaper.mp4'; seed.settings.adminPin = '78987898';
     seed.history = [{id:'migration-history', wordCount:30}];
@@ -127,29 +127,29 @@ module.exports = async function runV51(browser, check, fileURL) {
     try {
       await page.addInitScript((oldData) => {
         if (!sessionStorage.getItem('migration-seeded')) {
-          (localStorage.removeItem('sdp.v55_guaranteed_device_sync'),localStorage.removeItem('sdp.v54_encrypted_universal_sync'),localStorage.removeItem('sdp.v52_elevenlabs_studio'));
+          (localStorage.removeItem('sdp.v56_audit_verified'),localStorage.removeItem('sdp.v55_guaranteed_device_sync'),localStorage.removeItem('sdp.v54_encrypted_universal_sync'),localStorage.removeItem('sdp.v52_elevenlabs_studio'));
           localStorage.setItem('sdp.v50_all_p0_p6_fixed', JSON.stringify(oldData));
           sessionStorage.setItem('migration-seeded', '1');
         }
       }, seed);
       await page.route('https://**/*', (route) => route.abort());
       await page.goto(fileURL);
-      await page.waitForFunction(() => window.SDP && localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
+      await page.waitForFunction(() => window.SDP && localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
       const migrated = await page.evaluate(() => {
-        const data = JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
+        const data = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
         return {v:data.v, rev:data.settingsRev, perf:data.settings.perf, rendered:document.body.getAttribute('data-perf'), src:data.settings.activeVideoSrc, clearPin:JSON.stringify(localStorage).includes('78987898'),
           history:data.history[0].id, comment:data.comments[0].text, pin:data.admin.pinHash,
           personal:data.lists.some((list) => list.id === 'migration-personal' && list.words[0].w === 'treasure')};
       });
-      assert.deepEqual(migrated, {v:55, rev:55, perf:'lite', rendered:'lite', src:'./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4', clearPin:false, history:'migration-history',
+      assert.deepEqual(migrated, {v:56, rev:56, perf:'lite', rendered:'lite', src:'./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4', clearPin:false, history:'migration-history',
         comment:'keep this comment', pin:originalPinHash, personal:true});
       await page.evaluate(() => document.getElementById('btnPerf').click());
-      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf === 'full');
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf === 'full');
       await page.evaluate(() => document.getElementById('btnPerf').click());
-      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf === 'lite');
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf === 'lite');
       await page.reload();
       await page.waitForFunction(() => window.SDP && document.body.getAttribute('data-perf') === 'lite');
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf), 'lite');
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.perf), 'lite');
       assert.deepEqual(errors, []);
     } finally { await context.close(); }
   });
