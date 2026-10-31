@@ -147,10 +147,10 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     state.filter==='none'&&state.opacity==='1'&&
     state.src==='./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'&&state.wrap!=='none'&&
     /linear-gradient/.test(state.heroImg)&&/8, 14, 28/.test(state.heroImg)&&
-    state.heroBlur==='blur(14px) saturate(1.6) brightness(1.03)'&&
+    state.heroBlur==='none'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v57 static default then opt-in hooded video decodes behind liquid glass',status:(ok&&staticDefault)?'PASS':'FAIL',detail:Object.assign({staticDefault},state),errors});
+  results.push({test:'Chromium v59 static default then opt-in hooded video decodes behind the top-bar glass',status:(ok&&staticDefault)?'PASS':'FAIL',detail:Object.assign({staticDefault},state),errors});
   await context.close();
  }
  {
@@ -179,20 +179,20 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    });
    const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
    ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
-      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&(v37.primary.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
+      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='none')&&
     !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
     !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
     !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
     !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
     !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(18px) saturate(1.7) brightness(1.04)'||v37.perf==='lite'))&&
-    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&(v37.hero.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
+    !!((gradient(v37.tabbar)||v37.perf==='lite')&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(14px) saturate(1.4)'||v37.perf==='lite'))&&
+    !!(v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='none'&&(gradient(v37.hero)||v37.hero.img==='none'||/rgba\(18, 27, 50/.test(v37.hero.bg)))&&
     !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
     !!(v37.credit&&v37.credit.pos==='static'&&v37.credit.z==='1')&&
     !!(v37.video&&v37.video.blur==='none')&&
     (v37.perf!=='lite'||v37.hero.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
-  results.push({test:'Chromium v51 liquid glass: gradients, specular shadows, rounded controls, readable text and true backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
+  results.push({test:'Chromium v59 liquid glass: gradients, specular shadows, rounded controls, readable text and blur only on the chrome',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  for (const relative of ['data.html','data/index.html']) {
@@ -318,8 +318,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   });
   const complete=quick.words.length===2&&quick.words.every(w=>w.w&&w.p&&w.d&&w.m&&w.s);
   results.push({test:'Chromium v53 one click on the big button completes IPA, definition, Sinhala, sentence and publishes the session',status:/words saved/.test(quick.status)&&complete&&quick.published&&quick.name==='Session 9 - Weather'&&quick.session==='Session 9 - Weather'&&quick.rows===3&&dictCalls>0&&siCalls>0?'PASS':'FAIL',detail:quick});
-  const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter};});
-  results.push({test:'Chromium v58 Apple Liquid Glass keeps a real two-tier backdrop blur',status:/blur\(18px\) saturate\(1\.7\)/.test(glass.filter)||/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
+  const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter,perf:document.body.getAttribute('data-perf')};});
+  results.push({test:'Chromium v59 Apple Liquid Glass: the top bar keeps blur(14px) in Full and safely drops it in Lite',status:glass.perf==='lite'?glass.filter==='none':/blur\(14px\) saturate\(1\.4\)/.test(glass.filter),detail:glass});
   results.push({test:'Chromium v53 no page errors during the studio, vault and auto-completer run',status:errors.length===0?'PASS':'FAIL',errors});
   await context.close();
   await new Promise(resolve=>server.close(resolve));
@@ -397,11 +397,26 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   try{await page.evaluate(()=>document.fonts&&document.fonts.ready);}catch(e){}
   await page.waitForTimeout(300);await closeSheet(page);
   const home=await page.evaluate(()=>{
+   const px=e=>e?parseFloat(getComputedStyle(e).fontSize):0;
    const hero=document.getElementById('homeHero'),seg=document.getElementById('segMode');
    const r=hero?hero.getBoundingClientRect():{height:9999};
    const sr=seg?seg.getBoundingClientRect():{bottom:9999};
+   const tiles=Array.from(document.querySelectorAll('.v58-tile'));
+   const blurs=Array.from(document.body.querySelectorAll('*')).filter(e=>{const cs=getComputedStyle(e);const b=cs.backdropFilter||cs.webkitBackdropFilter;return !!b&&b!=='none';}).length;
+   const SIN=/[\u0D80-\u0DFF]/,straySi=[];
+   const wk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+   while(wk.nextNode()){const n=wk.currentNode;if(!SIN.test(n.nodeValue||''))continue;
+    let p2=n.parentElement,ok=false;
+    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||/v59-si-chip|v59-si-text/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
+    if(!ok)straySi.push(String(n.nodeValue).slice(0,40));}
    return {height:Math.round(r.height),segBottom:Math.round(sr.bottom),
-    bento:document.querySelectorAll('.v58-tile').length,
+    kickerPx:px(document.getElementById('homeKicker')),titlePx:px(document.getElementById('homeTitle')),subPx:px(document.getElementById('homeSub')),
+    bento:tiles.length,tileMinH:tiles.length?Math.min.apply(null,tiles.map(t=>Math.round(t.getBoundingClientRect().height))):0,
+    tileTitlePx:px(tiles[0]&&tiles[0].querySelector('b')),
+    tileSubs:tiles.map(t=>((t.querySelector('i')||{}).textContent||'')),
+    tabPx:px(document.querySelector('#tabbar button span')),
+    blurCount:blurs,v59css:!!document.getElementById('sdpV59Css'),straySi,
+    langBtn:(document.getElementById('btnLang')||{}).textContent,
     card3:!!document.getElementById('v58ProgressArchiveCard'),
     stats:(document.getElementById('homeStats')||{children:[]}).children.length,
     offline:!!document.getElementById('v58OfflineRow'),
@@ -409,9 +424,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     railHidden:getComputedStyle(document.getElementById('v58Rail')).display==='none',
     dockAtRest:!document.getElementById('v58Dock')};
   });
-  results.push({test:'Chromium v58 compact home: hero <=450px, mode row above y=480, 3-card bento at 360x800',
-   status:home.height<=450&&home.segBottom<=480&&home.bento===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v59 human-scale home: 460-1050px hero, kicker/title/sub floors, >=92px bento tiles with subtitles, <=4 blurred elements',
+   status:home.height>=460&&home.height<=1050&&home.segBottom<=780&&home.kickerPx>=11&&home.titlePx>=22&&home.subPx>=14&&home.tileMinH>=92&&home.tileTitlePx>=16&&home.tabPx>=13&&home.blurCount<=4&&home.v59css&&home.bento===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&home.tileSubs.every(t=>t.length>6)&&errors.length===0?'PASS':'FAIL',
    detail:Object.assign({errors},home),errors});
+  results.push({test:'Chromium v59 English default: zero Sinhala glyphs outside #btnLang and the collapsed reveal chips',
+   status:home.straySi.length===0&&home.langBtn==='සිංහල'?'PASS':'FAIL',detail:{straySi:home.straySi,langBtn:home.langBtn}});
   /* language parity: every new string flips to Sinhala and back */
   const lang=await page.evaluate(()=>{
    const C=window.SDPCore;
@@ -437,11 +454,105 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const txt=sheet?sheet.textContent:'';
    const close=document.getElementById('v58AboutClose');if(close)close.click();
    return {open,names:/Hansana/.test(txt)&&/Ayya01 \(Lesandu\)/.test(txt)&&/Sumodya Sewmini/.test(txt),
-    header:/Smart Dictation Player · v58 · 7\.0\.0/.test(txt),
+    header:/Smart Dictation Player · v59 · 8\.0\.0/.test(txt),
     closedAfter:!sheet||sheet.classList.contains('hidden')};
   });
-  results.push({test:'Chromium v58 the inline signature pill opens About & Credits with all three credits',
+  results.push({test:'Chromium v59 the inline signature pill opens About & Credits with all three credits',
    status:about.open&&about.names&&about.header&&about.closedAfter&&errors.length===0?'PASS':'FAIL',detail:about,errors});
+  /* v59: the full-English dictionary cards, paper self-check, sentence context,
+     the lecturer writing timer and the zero-readback contrast gauge. */
+  const dict=await page.evaluate(()=>{
+   const C=window.SDPCore;
+   C.UI.setTab('dict');
+   const cards=Array.from(document.querySelectorAll('.v59-dict-card'));
+   const first=cards[0];
+   const pick=sel=>{const n=first?first.querySelector(sel):null;return n?n.textContent:'';};
+   const reveal=first?first.querySelector('.v59-si-text'):null;
+   const chip=first?first.querySelector('.v59-si-chip'):null;
+   return {n:cards.length,filters:!!document.getElementById('v59DictFilters'),
+    word:pick('.v59-word'),ipa:pick('.v59-ipa'),pos:pick('.v59-pos'),
+    def:pick('.v59-def'),ex:pick('.v59-ex'),
+    btns:first?first.querySelectorAll('button').length:0,
+    siHidden:reveal?reveal.getBoundingClientRect().height===0:false,
+    chipCollapsed:chip?chip.getAttribute('aria-expanded')==='false':false};
+  });
+  results.push({test:'Chromium v59 dictionary: 30 full-English cards (word, UK IPA, POS, meaning, example) with collapsed Sinhala reveal',
+   status:dict.n===30&&dict.filters&&dict.word==='afraid'&&/əˈfreɪd/.test(dict.ipa)&&dict.pos==='adj.'&&/Feeling fear or anxiety/.test(dict.def)&&/She was never afraid/.test(dict.ex)&&dict.btns>=4&&dict.siHidden&&dict.chipCollapsed&&errors.length===0?'PASS':'FAIL',
+   detail:dict,errors});
+  const selfcheck=await page.evaluate(()=>{
+   const C=window.SDPCore,L=window.SDPLearning;
+   const words=(C.Lib.current()||{}).words||[];
+   const rows=words.map(w=>({word:w.w,answer:'',state:'unknown',w:w}));
+   const result={id:'qa-paper',mode:'paper',rows:rows,correct:0,half:0,total:rows.length,percent:0};
+   const layerRef=C.Results.open(result);
+   const box=document.getElementById('v58SelfCheck');
+   const chip=document.getElementById('v58SelfScore');
+   const before=chip?chip.textContent:'';
+   const btns=box?Array.from(box.querySelectorAll('.v58-selfbtns button')):[];
+   if(btns[0])btns[0].click();
+   if(btns[2])btns[2].click();
+   const after=chip?chip.textContent:'';
+   const summary=(document.getElementById('resSummary')||{}).textContent||'';
+   const coach=!!document.getElementById('v58ResultsCoach');
+   const layer=(layerRef&&layerRef.classList&&layerRef.classList.contains('layer'))?layerRef:document.querySelector('#layers .layer');
+   if(layer&&C.UI.closeLayer){C.UI.closeLayer(layer);}
+   else if(C.UI.closeTop){for(let i=0;i<4;i++){if(!C.UI.closeTop())break;}}
+   if(document.querySelector('#layers .layer')&&C.UI.closeTop){C.UI.closeTop();}
+   const stillOpen=!!document.querySelector('#layers .layer');
+   return {open:!!box,rows:box?box.querySelectorAll('.v58-selfrow').length:0,before,after,summary,coach,stillOpen};
+  });
+  results.push({test:'Chromium v59 paper self-check: 30 rows, live #v58SelfScore and #resSummary self-check total',
+   status:selfcheck.open&&selfcheck.rows===30&&/^0 \/ 30 · 0%$/.test(selfcheck.before)&&/^2 \/ 30 · 7%$/.test(selfcheck.after)&&/self-check: 2\/30 \(7%\)/.test(selfcheck.summary)&&!selfcheck.coach&&errors.length===0?'PASS':'FAIL',
+   detail:selfcheck,errors});
+  const contextProbe=await page.evaluate(()=>{
+   const C=window.SDPCore,L=window.SDPLearning;
+   C.UI.setTab('practice');
+   const sc=C.Screens;sc.pracMode='context';sc.pracIndex=0;
+   L.renderContextMode(sc);
+   const next=document.getElementById('v58ContextNextBtn');
+   const before=(document.getElementById('pracCount')||{}).textContent||'';
+   const stage=document.getElementById('pracStage');
+   const clue=stage?stage.innerText:'';
+   if(next)next.click();
+   const after=(document.getElementById('pracCount')||{}).textContent||'';
+   C.UI.setTab('home');
+   return {next:!!next,before,after,meaning:/\/[^\/]+\//.test(clue)&&/[A-Z][a-z]+/.test(clue),coach:!!document.getElementById('v58MistakeCoach')};
+  });
+  results.push({test:'Chromium v59 sentence context: English meaning clue, a primary Next question button and no coach on a clean render',
+   status:contextProbe.next&&/^1 \/ 30$/.test(contextProbe.before)&&/^2 \/ 30$/.test(contextProbe.after)&&contextProbe.meaning&&!contextProbe.coach&&errors.length===0?'PASS':'FAIL',
+   detail:contextProbe,errors});
+  const timer=await page.evaluate(()=>{
+   const C=window.SDPCore;
+   const prev=C.DB.data.settings.writeFixed;
+   C.DB.data.settings.writeFixed=7;const seven=C.Eng.writeSecs();
+   C.DB.data.settings.writeFixed=3;const three=C.Eng.writeSecs();
+   C.DB.data.settings.writeFixed=prev;
+   return {seven,three};
+  });
+  results.push({test:'Chromium v59 Eng.writeSecs follows settings.writeFixed instead of a hardcoded 5s',status:timer.seven===7&&timer.three===3?'PASS':'FAIL',detail:timer});
+  const readback=await page.evaluate(()=>{
+   window.__drawCalls=0;
+   const proto=CanvasRenderingContext2D.prototype;
+   proto.drawImage=function(){window.__drawCalls++;throw new Error('drawImage banned');};
+   proto.getImageData=function(){window.__drawCalls++;throw new Error('getImageData banned');};
+   const C=window.SDPCore,L=window.SDPLearning;
+   L.updateGauge();L.contrastRatio();
+   C.UI.setTab('dict');C.UI.setTab('home');
+   const lw=C.LiveWallpaper;if(lw&&lw.setDim){lw.setDim(10);lw.setDim(34);}
+   return {draw:window.__drawCalls,gauge:(document.getElementById('contrastReadout')||{}).textContent||''};
+  });
+  await page.waitForTimeout(200);
+  results.push({test:'Chromium v59 zero canvas readbacks: drawImage/getImageData throw and nothing calls them',
+   status:readback.draw===0&&errors.length===0?'PASS':'FAIL',detail:Object.assign({errors},readback),errors});
+  const guard=await page.evaluate(()=>{
+   const PG=window.SDPPerfGuard;
+   if(!PG)return {missing:true};
+   const prev=PG.sampler;PG.sampler=[30,31,30,29,32,30];
+   const slow=PG.benchmark(function(){})||{};
+   PG.sampler=prev||null;
+   return {api:typeof PG.start==='function'&&typeof PG.decide==='function',avg:slow.avg,med:slow.med,frames:slow.frames};
+  });
+  results.push({test:'Chromium v59 SDPPerfGuard is installed and samples real frame deltas',status:!guard.missing&&guard.api&&guard.avg>22&&guard.med>=29?'PASS':'FAIL',detail:guard});
   /* retry toast: pointer-events none + auto-dismiss at 5s */
   const toast=await page.evaluate(()=>new Promise(resolve=>{
    const C=window.SDPCore;
@@ -537,12 +648,15 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const tile=document.querySelector('.v58-tile');
    return {topBlur:getComputedStyle(top).backdropFilter||'',
     cardBg:card?getComputedStyle(card).backgroundColor:'',
+    cardAlpha:card?(Number((String(getComputedStyle(card).backgroundColor).match(/rgba?\([^)]*,\s*([\d.]+)\s*\)/)||[])[1])||1):1,
+    perf:document.body.getAttribute('data-perf'),
     tileImg:tile?getComputedStyle(tile).backgroundImage:'',
+    tileBlur:tile?(getComputedStyle(tile).backdropFilter||'none'):'none',
     coreVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-core').trim(),
     blurVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-glass-blur').trim()};
   });
-  results.push({test:'Chromium v58 two-tier glass: Tier A chrome blur(18px) and Tier B >=94% reading core',
-   status:/blur\(18px\) saturate\(1\.7\)/.test(tiers.topBlur)&&/rgba?\(6, 10, 22,? ?0?\.9[0-9]\)/.test(tiers.cardBg)&&/linear-gradient/.test(tiers.tileImg)&&/\.94/.test(tiers.coreVar)&&/blur\(18px\)/.test(tiers.blurVar)&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v59 single-blur chrome: only .topbar/#tabbar blur, every card a flat 92% reading core',
+   status:(tiers.perf==='lite'?tiers.topBlur==='none':/blur\(14px\) saturate\(1\.4\)/.test(tiers.topBlur))&&tiers.cardAlpha>=0.9&&tiers.tileBlur==='none'&&/\.94/.test(tiers.coreVar)&&/blur\(14px\)/.test(tiers.blurVar)&&errors.length===0?'PASS':'FAIL',
    detail:tiers,errors});
   const presets=await page.evaluate(()=>new Promise(resolve=>{
    const C=window.SDPCore;

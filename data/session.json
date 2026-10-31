@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 58,
+  "ver": 59,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -513,11 +513,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "7.0.0",
-  "updatedAt": "2026-10-31T00:00:00.000Z",
-  "version": "7.0.0",
+  "appVersion": "8.0.0",
+  "updatedAt": "2026-10-31T12:00:00.000Z",
+  "version": "8.0.0",
   "buildDate": "2026-10-31",
-  "settingsRev": 58,
+  "settingsRev": 59,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -616,8 +616,8 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "updatedAtMs": 1793318400000,
-  "schema": 58,
+  "updatedAtMs": 1793448000000,
+  "schema": 59,
   "pastSessions": [
     {
       "no": "7",
@@ -813,7 +813,7 @@
     }
   ],
   "key": "sdp.v56_audit_verified",
-  "perf": "full",
+  "perf": "auto",
   "features": {
     "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
     "adminAutoComplete": "v52: Admin PIN  -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",

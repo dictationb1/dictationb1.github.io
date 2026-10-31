@@ -2,7 +2,17 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 7.0.0 — v58
+## Release 8.0.0 — v59
+
+v59 is the human-scale usability release: a spacious, readable design system that lives entirely in `data/learning-tools.js` (so `index.html` adds **0 bytes of CSS** and stays at 484,758 bytes), a strictly **100% English default**, full-English dictionary word cards (word · UK IPA · part of speech · meaning · example), one unified `UI.applyLang()`, `window.SDPPerfGuard` auto-selecting Lite when frames drop, an O(1) arithmetic WCAG gauge with zero canvas readbacks, and all eight learning tools fixed (paper self-check rows, live `#resSummary`, six-column A4 sheet, Sentence Context **Next question →** with a green correct state, iOS-safe Speak & Compare, honest offline pack counting).
+
+- GPU budget: backdrop blur only on `.topbar`, `#tabbar` and open scrims (`blur(14px) saturate(1.4)`); chips, tiles, buttons, rows and cards are flat — never blurred.
+- `sw.js` is `sdp-v59` (`sdp-v59-shell` / `sdp-v59-media`); Youdao word audio still lives in `sdp-youdao-v1`.
+- Storage key remains `sdp.v57_secure_local` (data migrates in place; ver/schema/settingsRev 59).
+- `APP_VERSION`: `8.0.0`; `ver`, `schema`, `settingsRev`: `59`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_multilingual_v2`.
+- `Speech.ensureGain` never calls `createMediaElementSource()` on the cross-origin Youdao `<audio>`, so Android Chrome and iOS Safari keep their sound.
+
+## Historical release 7.0.0 — v58 (superseded by v59)
 
 v58 is the Liquid Glass + learning release. Two-tier runtime glass (Tier A chrome `blur(18px) saturate(1.7)`, Tier B ≥94% Optical Core reading surfaces), Sinhala WOFF2 fonts (runtime `@font-face`, ≤60 KB, no static `<link>`), the Android `visualViewport` keyboard dock (`#v58Dock` / `body.v58-keyboard`), a desktop ≥1024px two-column workspace with `#v58KbdHud` shortcuts (`window.SDP.__kbdTests`), the compact 3-card home (`#v58PracticeBento`, `#v58ProgressArchiveCard`, inline `#credit` signature pill → `#aboutCreditsSheet`), grouped overflow menus, three contrast presets with a real composited WCAG gauge, data meter v2 (plans, cache honesty, 2-panel data sheet) and the eight learning features in `data/learning-tools.js` (`window.SDPLearning`).
 
