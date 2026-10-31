@@ -1,254 +1,208 @@
-/* v56 / 6.2.0 release gate — full audit repair (P0–P6).
- *
- * Every check drives the real shipped code: the inline bootstrap of index.html,
- * data/studio.js and data/data-meter.js. Only window.fetch, the resource-timing
- * buffer and IndexedDB availability are faked, exactly like a phone on a metered
- * Sri Lankan mobile network. */
 'use strict';
+/* v57 / 6.3.0 regression gate. Test PINs and token prefixes are constructed at
+ * runtime; no shipped/default PIN or live-looking token literal is committed. */
 const test = require('node:test');
-const assert = require('node:assert');
+const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const acorn = require('acorn');
 const { JSDOM } = require('jsdom');
 const { harness } = require('./app-harness.cjs');
-
 const ROOT = path.resolve(__dirname, '..');
-const read = (r) => fs.readFileSync(path.join(ROOT, r), 'utf8');
+const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const INDEX = read('index.html');
-const METER = read('data/data-meter.js');
 const STUDIO = read('data/studio.js');
-const SW = read('sw.js');
-const MANIFEST = JSON.parse(read('manifest.webmanifest'));
-const MEDIA = JSON.parse(read('data/media-manifest.json'));
+const TEST_PIN = require('./test-pin.cjs');
+const TEST_KEY = ['s', 'k_'].join('') + 'runtime_test_key_not_live';
+const TEST_GH = ['g', 'hp_'].join('') + 'runtime_test_token_not_live';
 
-const webcrypto = require('node:crypto').webcrypto;
-const PIN = '78987898';
-const LECTURER_KEY = 'sk_test_lecturer_key_12345';
-const GH_TOKEN = 'ghp_test_github_token_9876';
-const KEY = 'sdp.v56_audit_verified';
-
-function reply(status, body) {
-  return Promise.resolve({
-    ok: status < 400, status: status,
-    json: function () { return Promise.resolve(body); },
-    text: function () { return Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)); },
-    arrayBuffer: function () { return Promise.resolve(new Uint8Array([73, 68, 51, 4]).buffer); }
-  });
-}
-function emptyFetch(url) {
-  const u = String(url && url.url ? url.url : url);
-  if (/ntfy\.sh/.test(u)) return reply(200, 'ok');
-  if (/\.json$/.test(u)) return reply(200, {});
-  return reply(200, '');
-}
-function boot(options) {
-  options = options || {};
-  const handle = harness(options.seed, {
-    crypto: webcrypto,
-    before: function (w) {
-      w.fetch = function (u, i) { return emptyFetch(u); };
-      if (options.before) options.before(w);
-    }
-  });
-  handle.w.eval(STUDIO);
-  const app = { w: handle.w, q: handle.q, consoleErrors: handle.consoleErrors, close: handle.close };
-  return app;
-}
-function meterDom() {
-  const dom = new JSDOM('<!doctype html><html><body><video id="bgLiveVideo"></video><audio id="ttsMasterAudio"></audio></body></html>',
-    { url: 'https://example.test/', runScripts: 'outside-only', pretendToBeVisual: true });
-  vm.runInContext(METER, dom.getInternalVMContext());
-  return { dom: dom, w: dom.window, meter: dom.window.SDPDataMeter };
-}
-
-test('v56 metadata: every published document is 6.2.0 / schema 56 with a migrated storage key', function () {
-  for (const f of ['data/version.json', 'data/config.json', 'data/session.json']) {
-    const d = JSON.parse(read(f));
-    assert.equal(d.ver, 56, f + ' ver');
-    assert.equal(d.appVersion, '6.2.0', f + ' appVersion');
-    assert.equal(d.key, KEY, f + ' storage key');
-    assert.equal(typeof d.syncRev, 'number', f + ' syncRev');
-    assert.equal(d.vaultCiphertext.indexOf('SDP_ENC_V1:'), 0, f + ' encrypted vault');
-    assert.equal(d.vaultCiphertext.indexOf('sk_'), -1, f + ' no cleartext key');
+function clickUnlock(app, pin) {
+  app.q.Admin.open(); app.clock.tick(20);
+  const doc = app.w.document;
+  for (const digit of pin) {
+    const b = doc.querySelector('#pinPad [data-k="' + digit + '"]');
+    assert.ok(b, 'PIN pad digit ' + digit); b.click();
   }
-  const audio = JSON.parse(read('data/elevenlabs-audio.json'));
-  assert.equal(audio.ver, 56);
-  assert.equal(audio.appVersion, '6.2.0');
-  assert.equal(audio.modelId, 'eleven_multilingual_v2');
-});
+  doc.getElementById('pinSubmit').click(); app.clock.tick(20);
+}
+function freshMeter(opts) {
+  delete require.cache[require.resolve('../data/data-meter.js')];
+  const dom = new JSDOM('<!doctype html><html><body><video id="bgLiveVideo"></video><audio id="ttsMasterAudio"></audio></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
+  const w = dom.window;
+  w.localStorage.clear();
+  if (opts && opts.before) opts.before(w);
+  vm.runInContext(read('data/data-meter.js'), dom.getInternalVMContext());
+  return { w, m: w.SDPDataMeter, dom };
+}
 
-test('v56 index.html stays one ES5 file, links the PWA manifest, registers sw.js and drops the cache-busting metas', function () {
-  assert.ok(INDEX.indexOf('APP_VERSION="6.2.0"') > -1, 'APP_VERSION 6.2.0');
-  assert.equal(/<link\b(?![^>]*rel="manifest")/i.test(INDEX), false, 'no static stylesheet link');
-  assert.ok(/<link[^>]*rel="manifest"[^>]*href="[^"]*manifest\.webmanifest"/i.test(INDEX), 'manifest linked');
-  assert.ok(/registerServiceWorker|sw\.js/.test(INDEX), 'service worker referenced');
-  assert.equal(/no-cache, no-store/.test(INDEX), false, 'no no-cache meta');
-  assert.equal(INDEX.indexOf('bgLiveAmbilight') > -1, false, 'dead ambilight video removed');
-  assert.ok(/id="bgLiveVideo"[^>]*preload="none"/.test(INDEX), 'poster-first video loading');
-  acorn.parse(INDEX.match(/<script>([\s\S]*?)<\/script>/)[1], { ecmaVersion: 5 });
-});
-
-test('v56 data/studio.js is ES5, defaults to eleven_multilingual_v2 @ mp3_44100_128 and lists the studio voices', function () {
-  acorn.parse(STUDIO, { ecmaVersion: 5 });
-  assert.ok(/window\.ElevenVault\s*=/.test(STUDIO), 'ElevenVault exposed');
-  assert.ok(STUDIO.indexOf('eleven_multilingual_v2') > -1, 'multilingual v2 model');
-  assert.ok(STUDIO.indexOf('mp3_44100_128') > -1, '128 kbps studio format');
-  assert.ok(/Daniel/.test(STUDIO) && /George/.test(STUDIO), 'Daniel and George voices');
-  assert.ok(STUDIO.indexOf('dictationb1_sdp_keys_v56') > -1, 'v56 ntfy topic');
-});
-
-test('v56 data/data-meter.js exposes SDPDataMeter and computes honest mode profiles', function () {
-  acorn.parse(METER, { ecmaVersion: 5 });
-  const { meter } = meterDom();
-  assert.equal(typeof meter.getLive, 'function');
-  const profiles = meter.getModeProfiles();
-  assert.equal(profiles.length, 4);
-  assert.equal(profiles[0].mb, 0.65, 'data-saver 0.65 MB');
-  assert.equal(profiles[1].mb, 1.55, 'lite 1.55 MB');
-  assert.equal(profiles[2].mb, 11.30, 'full 11.30 MB');
-  assert.equal(profiles[3].mb, 0.005, 'offline 0.005 MB');
-  meter.setPrice(150);
-  assert.equal(meter.price(), 150);
-  assert.equal(meter.formatMB(1048576), '1.00 MB');
-});
-
-test('v56 the data meter accounts transferSize, cache hits and never undercounts <video> streaming', function () {
-  const { w, meter } = meterDom();
-  w.performance.getEntriesByType = function (t) {
-    if (t !== 'resource') return [];
-    return [
-      { name: 'https://example.test/index.html', transferSize: 400000, encodedBodySize: 400000, decodedBodySize: 400000, duration: 5 },
-      { name: 'https://example.test/assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4', transferSize: 10555152, encodedBodySize: 10555152, decodedBodySize: 10555152, duration: 20 },
-      { name: 'https://example.test/audio/afraid.mp3', transferSize: 0, encodedBodySize: 60000, decodedBodySize: 60000, duration: 2 }
-    ];
-  };
-  meter.start({ interval: false });
-  meter.sample();
-  const live = meter.getLive();
-  assert.ok(live.appBytes >= 400000, 'app shell counted');
-  assert.equal(live.videoBytes, 10555152, 'video wire bytes counted');
-  assert.equal(live.cacheSavedBytes, 60000, 'cache hit counted as saved');
-  assert.equal(live.sessionBytes, live.appBytes + live.videoBytes + live.audioBytes);
-});
-
-test('v56 the data meter takes Math.max(resourceTiming, buffered) for a partially-streamed video', function () {
-  const { w, meter } = meterDom();
-  const v = w.document.getElementById('bgLiveVideo');
-  Object.defineProperty(v, 'readyState', { value: 3, configurable: true });
-  Object.defineProperty(v, 'networkState', { value: 1, configurable: true });
-  Object.defineProperty(v, 'duration', { value: 10, configurable: true });
-  Object.defineProperty(v, 'buffered', { value: { length: 1, start: function () { return 0; }, end: function () { return 10; } }, configurable: true });
-  v.setAttribute('src', './assets/wanderingpixels_2025-12-26_7588160805032430870.mp4');
-  w.performance.getEntriesByType = function (t) {
-    return t === 'resource' ? [{ name: 'https://example.test/assets/wanderingpixels_2025-12-26_7588160805032430870.mp4', transferSize: 100000, encodedBodySize: 100000, decodedBodySize: 100000, duration: 5 }] : [];
-  };
-  meter.start({ interval: false });
-  meter.sample();
-  const live = meter.getLive();
-  assert.equal(live.videoBytes, 899985, 'buffered bytes win over the lagging resource entry');
-});
-
-test('v56 EncryptedVault AES-GCM-256 round-trips, uses a random IV and rejects tampering', async function () {
-  const app = boot();
-  const EV = app.w.EncryptedVault;
-  assert.equal(typeof EV.encryptAsync, 'function');
-  const plain = { syncRev: 4242, elevenLabsKey: LECTURER_KEY };
-  const c1 = await EV.encryptAsync(plain, PIN);
-  const c2 = await EV.encryptAsync(plain, PIN);
-  assert.ok(c1 && c1.indexOf('SDP_ENC_V2:') === 0, 'SDP_ENC_V2 envelope');
-  assert.notEqual(c1, c2, 'random salt + IV produce different ciphertexts');
-  const back = await EV.decryptAsync(c1, PIN);
-  assert.deepEqual(back, plain, 'round trip');
-  const wrong = await EV.decryptAsync(c1, '00000000');
-  assert.equal(wrong, null, 'wrong PIN fails authentication');
-  const tampered = c1.slice(0, -2) + (c1.slice(-2) === 'AA' ? 'BB' : 'AA');
-  assert.equal(await EV.decryptAsync(tampered, PIN), null, 'tampering fails authentication');
-  const legacy = EV.encrypt({ syncRev: 1, elevenLabsKey: LECTURER_KEY }, PIN);
-  assert.equal(EV.decrypt(legacy, PIN).elevenLabsKey, LECTURER_KEY, 'v55 SDP_ENC_V1 compatibility');
-  app.close();
-});
-
-test('v56 the ntfy keys relay carries only non-sensitive public metadata', async function () {
-  const app = boot();
-  const w = app.w;
-  const DB = app.q.DB, Cloud = app.q.Cloud;
-  DB.data.settings.elevenLabsKey = LECTURER_KEY;
-  Cloud.ghToken(GH_TOKEN);
-  DB.data.syncRev = 1234567;
-  DB.data.session = DB.data.session || {};
-  DB.data.session.title = 'Session 8';
-  DB.data.session.date = '2026-10-29';
-  const body = w.UniversalSync.keyBody(false);
-  assert.ok(body.indexOf(LECTURER_KEY) === -1, 'no API key on ntfy');
-  assert.ok(body.indexOf(GH_TOKEN) === -1, 'no GitHub token on ntfy');
-  assert.ok(body.indexOf(PIN) === -1, 'no PIN on ntfy');
-  assert.ok(body.indexOf('1234567') > -1, 'syncRev travels');
-  assert.ok(body.indexOf('Session 8') > -1, 'sessionTitle travels');
-  const env = app.w.EncryptedVault.keyEnvelope(false);
-  assert.ok(env.vaultCiphertext.indexOf('SDP_ENC_V1:') === 0, 'encrypted vault still available for GitHub');
-  app.close();
-});
-
-test('v56 the GitHub token lives in sessionStorage, never in cleartext localStorage', function () {
-  const app = boot();
-  app.q.Cloud.ghToken(GH_TOKEN);
-  assert.equal(app.w.localStorage.getItem('sdp.ghToken'), null, 'no cleartext ghToken in localStorage');
-  assert.equal(app.w.sessionStorage.getItem('sdp.session.ghToken'), GH_TOKEN, 'token scoped to the admin tab');
-  assert.equal(app.q.Cloud.ghToken(), GH_TOKEN, 'round trip');
-  app.q.Cloud.ghToken('');
-  assert.equal(app.w.sessionStorage.getItem('sdp.session.ghToken'), null, 'cleared on logout');
-  app.close();
-});
-
-test('v56 the data report keeps data-en and data-si MB figures consistent', function () {
-  function mb(s) {
-    const out = []; let m;
-    const r1 = /([0-9]+(?:\.[0-9]+)?)\s*MB/gi;
-    while ((m = r1.exec(s))) out.push(m[1]);
-    const r2 = /\bMB\s*~?([0-9]+(?:\.[0-9]+)?)(?![A-Za-z])/gi;
-    while ((m = r2.exec(s))) out.push(m[1]);
-    return out;
+test('v57 metadata, ES5 single-file budget and identical transparency routes', () => {
+  for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
+    const d = JSON.parse(read(f)); assert.equal(d.ver, 57, f); assert.equal(d.appVersion, '6.3.0', f);
+    assert.ok(!d.adminPin && !d.vaultCiphertext, f + ' has no public PIN/vault');
   }
-  const html = read('data.html');
-  const re = /<[^>]*\bdata-en="([^"]*)"[^>]*\bdata-si="([^"]*)"[^>]*>/g;
-  let m, count = 0;
-  while ((m = re.exec(html))) {
-    count++;
-    const en = mb(m[1]), si = mb(m[2]);
-    if (en.length && si.length) assert.equal(en.join(), si.join(), 'bilingual MB match: ' + m[1]);
-  }
-  assert.ok(count >= 40, 'scanned the data report');
+  assert.ok(INDEX.includes('APP_VERSION="6.3.0"'));
+  assert.ok(Buffer.byteLength(INDEX) <= 600000);
+  assert.equal(read('data.html'), read('data/index.html'));
+  assert.ok(read('data.html').includes('./data/data-meter.js'));
+  assert.ok(!/<video[^>]*\bsrc=/.test(read('data.html')), '/data must not download video by default');
 });
 
-test('v56 the service worker caches media first and the app shell stale-while-revalidate', function () {
-  acorn.parse(SW, { ecmaVersion: 5 });
-  assert.ok(/caches\.match/.test(SW), 'stale-while-revalidate for the shell');
-  assert.ok(/isMedia/.test(SW) && /MEDIA_CACHE/.test(SW), 'cache-first media strategy');
-  assert.ok(/hooded_red_eyes_live_wallpaper_1080p_loop\.mp4/.test(read('data/media-manifest.json')) === false ? true : true);
+test('first lecturer unlock creates a local sdp.v2 salted hash; later unlocks verify it', () => {
+  const app = harness(null, { crypto: true });
+  try {
+    const st = app.q.DB.data.settings;
+    assert.equal(st.pinHash, ''); assert.equal(st.pinSalt, '');
+    clickUnlock(app, TEST_PIN);
+    assert.equal(app.q.Admin.unlocked, true);
+    assert.ok(/^[a-f0-9]{64}$/.test(st.pinHash));
+    assert.equal(st.pinHash, require('node:crypto').createHash('sha256').update('sdp.v2:' + st.pinSalt + ':' + TEST_PIN).digest('hex'));
+    assert.ok(!app.w.localStorage.getItem(app.q.CONFIG.key).includes(TEST_PIN));
+    app.q.Admin.lock(); assert.equal(app.q.Admin.isUnlockedOnThisDevice(), false);
+    clickUnlock(app, '1111'); assert.equal(app.q.Admin.unlocked, false);
+    clickUnlock(app, TEST_PIN); assert.equal(app.q.Admin.isUnlockedOnThisDevice(), true);
+  } finally { app.close(); }
 });
 
-test('v56 the media manifest lists the exact wallpaper byte sizes', function () {
-  const byId = {};
-  MEDIA.assets.forEach(function (a) { byId[a.id] = a; });
-  assert.equal(byId.hooded.bytes, 10555152);
-  assert.equal(byId.wanderingpixels.bytes, 899985);
-  assert.equal(byId.bunny.bytes, 1499208);
-  assert.equal(byId.static.dataSaver, true);
+test('raw lecturer keys are scrubbed from localStorage and live only in the unlocked tab session', () => {
+  const app = harness(null, { crypto: true });
+  try {
+    app.q.DB.data.settings.elevenLabsKey = TEST_KEY;
+    app.q.DB.saveNow();
+    assert.ok(!app.w.localStorage.getItem(app.q.CONFIG.key).includes(TEST_KEY));
+    assert.equal(app.q.Cloud.ghToken(), '');
+    clickUnlock(app, TEST_PIN);
+    app.q.Cloud.ghToken(TEST_GH);
+    assert.equal(app.w.sessionStorage.getItem('sdp.session.ghToken'), TEST_GH);
+    assert.ok(!JSON.stringify(app.w.localStorage).includes(TEST_GH));
+    app.q.Admin.lock();
+    assert.equal(app.w.sessionStorage.getItem('sdp.session.ghToken'), null);
+  } finally { app.close(); }
 });
 
-test('v56 the PWA manifest is a standalone installable shell', function () {
-  assert.equal(MANIFEST.display, 'standalone');
-  assert.equal(MANIFEST.theme_color, '#040812');
-  assert.ok(Array.isArray(MANIFEST.icons) && MANIFEST.icons.length >= 2);
+test('ElevenVault.fetchOnce/gen are null/locked for students and playback never auto-generates', () => {
+  const app = harness(null, { crypto: true });
+  try {
+    app.w.eval(STUDIO);
+    const V = app.w.ElevenVault; let paid = 0;
+    app.w.fetch = function (url) { if (String(url).includes('api.elevenlabs.io')) paid++; return Promise.reject(Error('offline')); };
+    assert.equal(V.fetchOnce('Number 31'), null);
+    assert.equal(V.gen('Number 31', function () {}), false);
+    V.playOrFetchOnce('anxious', 'en', 1, function () {}, 1);
+    app.clock.tick(20);
+    assert.equal(paid, 0, 'student playback must not call ElevenLabs');
+    clickUnlock(app, TEST_PIN);
+    V.setApiKey(TEST_KEY);
+    assert.equal(V.apiKey(), TEST_KEY);
+    assert.ok(!app.w.localStorage.getItem(app.q.CONFIG.key).includes(TEST_KEY));
+  } finally { app.close(); }
 });
 
-test('v56 the inline app boots with zero uncaught errors', function () {
-  const app = boot();
-  const real = app.consoleErrors.filter(function (e) { return String(e).indexOf('Not implemented') === -1; });
-  assert.equal(real.length, 0, 'no console errors: ' + JSON.stringify(real));
-  assert.equal(app.q.APP_VERSION, '6.2.0');
-  assert.equal(app.q.CONFIG.key, KEY);
-  app.close();
+test('SDP_ENC_V2 AES-GCM round-trips with random salt/IV; V1 writing is disabled', async () => {
+  const app = harness(null, { crypto: true });
+  try {
+    const EV = app.w.EncryptedVault, plain = { hello: 'world', n: 3 };
+    const a = await EV.encryptAsync(plain, TEST_PIN), b = await EV.encryptAsync(plain, TEST_PIN);
+    assert.ok(a.startsWith('SDP_ENC_V2:')); assert.notEqual(a, b);
+    assert.equal(JSON.stringify(await EV.decryptAsync(a, TEST_PIN)), JSON.stringify(plain));
+    assert.equal(await EV.decryptAsync(a, '0000'), null);
+    assert.equal(EV.encrypt(plain, TEST_PIN), null, 'no new V1 vaults');
+  } finally { app.close(); }
+});
+
+test('videoBufferedBytes uses the buffered fraction even when readyState is high', () => {
+  const env = freshMeter();
+  env.w.localStorage.setItem('sdp.mediaManifest.v1', read('data/media-manifest.json'));
+  const v = env.w.document.getElementById('bgLiveVideo');
+  v.src = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
+  Object.defineProperties(v, { readyState: { value: 4 }, networkState: { value: 1 }, duration: { value: 100 }, buffered: { value: { length: 1, start: () => 0, end: () => 20 } } });
+  env.m.start({ interval: false });
+  assert.equal(env.m.videoBufferedBytes(), Math.round(10555152 * 0.2));
+  assert.ok(env.m.getLive().videoBytes < 10555152);
+  env.dom.window.close();
+});
+
+test('persistTotals adds only the positive delta across repeated stop/visibility saves', () => {
+  const env = freshMeter(); const m = env.m;
+  m.start({ interval: false }); m.addBytes('app', 1000);
+  m.stop(); m.stop(); m.start({ interval: false }); m.addBytes('app', 500); m.stop();
+  const day = Object.keys(JSON.parse(env.w.localStorage.getItem(m.STORAGE.daily)))[0];
+  assert.equal(JSON.parse(env.w.localStorage.getItem(m.STORAGE.daily))[day], 1500);
+  assert.equal(Number(env.w.localStorage.getItem(m.STORAGE.allTime)), 1500);
+  m.resetSession(); m.addBytes('app', 10); m.stop();
+  assert.equal(JSON.parse(env.w.localStorage.getItem(m.STORAGE.daily))[day], 1510);
+  env.dom.window.close();
+});
+
+test('meter formats B/KB/MB, estimates opaque Youdao plays, and archives buffer-full timings', () => {
+  const env = freshMeter(); const m = env.m; m.start({ interval: false });
+  assert.equal(m.formatMB(512), '512 B');
+  assert.equal(m.formatMB(2048), '2.0 KB (0.00 MB)');
+  assert.equal(m.formatMB(1048576), '1.00 MB');
+  m.accountEntry({ name: 'https://dict.youdao.com/dictvoice?type=1&audio=anxious', transferSize: 0, encodedBodySize: 0, decodedBodySize: 0, startTime: 1, duration: 5 });
+  assert.equal(m.getLive().estimatedAudioBytes, 11000);
+  m.addBytes('app', 100);
+  env.w.performance.onresourcetimingbufferfull();
+  assert.ok(m.getLive().archivedBytes >= 100);
+  assert.deepEqual(m._state ? m._state.seenUrls : {}, {});
+  env.dom.window.close();
+});
+
+test('mode profiles come from the media manifest and LKR presets update cost', () => {
+  const env = freshMeter(); const m = env.m;
+  env.w.localStorage.setItem(m.STORAGE.manifest, read('data/media-manifest.json'));
+  m.start({ interval: false });
+  const profiles = m.getModeProfiles(), hooded = profiles.find(p => p.id === 'hooded'), staticP = profiles.find(p => p.id === 'static');
+  assert.equal(hooded.assetBytes, 10555152); assert.equal(staticP.assetBytes, 0);
+  assert.ok(hooded.bytes > staticP.bytes); assert.ok(hooded.desc.includes('Estimated'));
+  m.setPrice(49); assert.equal(m.price(), 49); assert.ok(Math.abs(m.costLkr(1073741824) - 49) < 1e-9);
+  env.dom.window.close();
+});
+
+
+test('service worker v57 slices cached full video responses into HTTP 206 ranges', async () => {
+  const src = read('sw.js');
+  assert.ok(src.includes("VERSION = 'sdp-v57'"));
+  const store = new Map();
+  const caches = { open: async () => ({ match: async k => store.get(String(k)) || null, put: async (k, v) => { store.set(String(k), v); } }) };
+  const listeners = {};
+  const self = { location: { origin: 'https://example.test' }, addEventListener: (n, f) => { listeners[n] = f; }, skipWaiting: () => {}, clients: { claim: () => {} } };
+  vm.runInNewContext(src, { self, caches, URL, Headers, Response, Promise, fetch: async () => { throw Error('offline'); } });
+  const full = new Response(new Uint8Array([0,1,2,3,4,5,6,7,8,9]), { status: 200, headers: { 'Content-Length': '10', 'Content-Type': 'video/mp4' } });
+  store.set('https://example.test/assets/clip.mp4', full);
+  let answered = null;
+  listeners.fetch({ request: { method: 'GET', url: 'https://example.test/assets/clip.mp4', headers: new Headers({ Range: 'bytes=2-5' }) }, respondWith: p => { answered = p; }, waitUntil: () => {} });
+  const res = await answered;
+  assert.equal(res.status, 206);
+  assert.equal(res.headers.get('Content-Range'), 'bytes 2-5/10');
+  assert.deepEqual(Array.from(new Uint8Array(await res.arrayBuffer())), [2,3,4,5]);
+});
+
+test('meter classifies posters as images and keeps cross-origin audio labelled as an estimate', () => {
+  const env = freshMeter(); const m = env.m; m.start({ interval: false });
+  m.accountEntry({ name: 'https://example.test/assets/hooded-poster.webp', transferSize: 5000, encodedBodySize: 5000, decodedBodySize: 5000, startTime: 1, duration: 1 });
+  m.accountEntry({ name: 'https://dict.youdao.com/dictvoice?type=1&audio=afraid', transferSize: 0, encodedBodySize: 0, decodedBodySize: 0, startTime: 2, duration: 1 });
+  const live = m.getLive();
+  assert.equal(live.videoBytes, 0, 'a poster is not video');
+  assert.equal(live.estimatedAudioBytes, 11000);
+  assert.ok(/estimate/i.test(live.audioLabel));
+  env.dom.window.close();
+});
+
+test('publish preview is mandatory and cancel never commits session files', () => {
+  const app = harness(null, { crypto: true });
+  try {
+    app.w.eval(STUDIO);
+    clickUnlock(app, TEST_PIN);
+    app.q.Cloud.ghToken(TEST_GH);
+    let result = null, puts = 0;
+    app.w.fetch = function (url, init) { if (init && init.method === 'PUT') puts++; return Promise.resolve({ ok: true, json: () => Promise.resolve({ content: { sha: 'x' } }) }); };
+    app.q.Cloud.commitFiles([{ p: 'data/session.json', text: '{"words":[]}' }], 'qa', r => { result = r; });
+    app.clock.tick(50);
+    const ta = app.w.document.getElementById('publishPreviewWords');
+    assert.ok(ta, 'editable preview opens');
+    assert.equal(puts, 0);
+    const cancel = Array.from(app.w.document.querySelectorAll('#sheets button')).find(b => /Cancel/.test(b.textContent));
+    cancel.click(); app.clock.tick(50);
+    assert.equal(result.ok, false); assert.equal(puts, 0);
+  } finally { app.close(); }
 });

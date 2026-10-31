@@ -408,7 +408,7 @@
   function versionDoc() {
     return {
       ver: 53, appVersion: "5.9.0", version: "5.9.0", buildDate: BUILD_DATE, schema: 53, settingsRev: 53, key: KEY, storageKey: KEY,
-      adminPin: "78987898", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
+      adminPin: "", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop",
       voicePack: V.count(), creditLock: "student playback replays saved clips only"
     };
@@ -419,7 +419,7 @@
     list = list || {};
     return {
       appName: "Smart Dictation", appVersion: "5.9.0", ver: 53, version: "5.9.0", schema: 53, settingsRev: 53, key: KEY,
-      classDays: [2, 4], level: "B1", adminPin: "78987898", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
+      classDays: [2, 4], level: "B1", adminPin: "", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop", perf: "full",
       session: {
         no: (s.session && s.session.no) || "1", day: (s.session && s.session.day) || "", date: (s.session && s.session.date) || U.dateKey(new Date()),

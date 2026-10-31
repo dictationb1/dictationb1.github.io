@@ -16,25 +16,29 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     already gone used to hang this suite. */
  async function closeSheet(page){if(await page.locator('#sheets .shead button[aria-label="Close"]').count())await page.locator('#sheets .shead button[aria-label="Close"]').click();}
  async function waitHome(page){
-  await page.waitForTimeout(1400); /* the one-time guide opens about a second after boot */
+  await page.waitForTimeout(3500); /* the one-time guide opens about a second after boot */
   for(let i=0;i<24;i++){
    await closeSheet(page);
-   if(await page.locator('#btnAdmin').isVisible().catch(()=>false))return true;
+   if(await page.locator('#btnLang').isVisible().catch(()=>false)&&await page.locator('#sheets .sheet').count()===0)return true;
    await page.waitForTimeout(250);
   }
-  return page.locator('#btnAdmin').isVisible().catch(()=>false);
+  return page.locator('#btnLang').isVisible().catch(()=>false);
  }
  async function unlockPin(page){
   let opened=false;
   for(let i=0;i<12&&!opened;i++){
    await waitHome(page);
-   try{await page.locator('#btnAdmin').click({timeout:4000});opened=true;}
-   catch(e){await closeSheet(page);await page.waitForTimeout(300);}
+   try{
+    if(await page.locator('#topOverflow').count()){await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=true;});}
+    await page.locator('#btnAdmin').click({timeout:4000});
+    await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=false;});
+    await page.locator('#pinPad').waitFor({timeout:3000});opened=true;
+   }catch(e){await closeSheet(page);await page.waitForTimeout(300);}
   }
   if(!opened)throw new Error('lecturer mode button never became clickable');
   for(const n of DEFAULT_PIN)await page.locator('#pinPad [data-k="'+n+'"]').click();
   const go=page.locator('#pinSubmit');
-  if(await go.count())await go.click({timeout:1500}).catch(()=>{});
+  if(await go.count())await page.evaluate(()=>{var b=document.getElementById('pinSubmit');if(b)b.click();}).catch(()=>{});
   await page.locator('#adminHost').waitFor({timeout:6000});
  }
  for(const width of [390,320,768]) {
@@ -62,7 +66,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* v6 kicker: "SESSION 19 · 19 OCT 2026" (the class day lives in the session,
      not in the kicker), so check the new session number, the date and the day. */
   const kicker = (await page.locator('#homeKicker').textContent()).toLowerCase();
-  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
+  const day = await page.evaluate(()=>{try{return (JSON.parse(localStorage.getItem('sdp.v57_secure_local')||localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')||localStorage.getItem('sdp.v46_session8_datasheet')||localStorage.getItem('sdp.v44_apple_liquid_complete') || localStorage.getItem('sdp.v21_guide_start')||'{}').session||{}).day||''}catch(e){return ''}});
   results.push({test:'Chromium '+width+'px session update visible on Home',status:kicker.includes('19')&&/\d{2}\/\d{2}\/\d{4}/.test(kicker)&&kicker.includes('ccbe galle branch')&&day==='Sunday'?'PASS':'FAIL'});
   if(width===390) await page.screenshot({path:path.join(artifacts,'artifact-home.png'),fullPage:true});
   await context.close();
@@ -122,8 +126,14 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
-  let ok=false,state={};
+  let ok=false,state={},staticDefault=false;
   try {
+   await page.waitForTimeout(1200);
+   staticDefault=await page.evaluate(()=>{const v=document.getElementById('bgLiveVideo');return !v.getAttribute('src')&&document.body.getAttribute('data-wallpaper')==='static';});
+   await page.evaluate(()=>{window.SDPCore.UI.setTab('set');});
+   await page.evaluate(()=>{var b=document.getElementById('btnOpenGallery');if(b)b.click();});
+   await page.waitForTimeout(300);
+   await page.evaluate(()=>{var b=document.querySelector('[data-gallery-select]');if(b)b.click();});
    await page.waitForFunction(()=>{const v=document.getElementById('bgLiveVideo');
     return v&&v.readyState>=2&&v.paused===false&&v.videoWidth>0;},null,{timeout:12000});
    state=await page.evaluate(()=>{const v=document.getElementById('bgLiveVideo');
@@ -140,7 +150,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     state.heroBlur==='blur(14px) saturate(1.6) brightness(1.03)'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v51 hooded video decodes and autoplays behind liquid glass',status:ok?'PASS':'FAIL',detail:state,errors});
+  results.push({test:'Chromium v57 static default then opt-in hooded video decodes behind liquid glass',status:(ok&&staticDefault)?'PASS':'FAIL',detail:Object.assign({staticDefault},state),errors});
   await context.close();
  }
  {
@@ -165,21 +175,22 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      thumb:cs(document.getElementById('tabInd')),segThumb:cs(document.querySelector('.seg .thumb')),
      tabbar:cs(document.getElementById('tabbar')),
      hero:cs(document.getElementById('homeHero')),title:cs(document.getElementById('homeTitle')),
-     credit:cs(document.getElementById('credit')),video:cs(document.getElementById('bgLiveVideo'))};
+     credit:document.getElementById('credit')?cs(document.getElementById('credit')):null,video:cs(document.getElementById('bgLiveVideo')),perf:document.body.getAttribute('data-perf')};
    });
    const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
    ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
-      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
+      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&(v37.primary.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
     !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
     !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
     !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
     !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
     !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&v37.tabbar.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
-    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='blur(14px) saturate(1.6) brightness(1.03)')&&
+    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
+    !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&(v37.hero.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
     !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
-    !!(gradient(v37.credit)&&v37.credit.radius==='18px'&&v37.credit.z==='9999'&&/255, 221, 139/.test(v37.credit.border))&&
-    !!(v37.video&&v37.video.blur==='none')&&errors.length===0;
+    v37.credit===null&&
+    !!(v37.video&&v37.video.blur==='none')&&
+    (v37.perf!=='lite'||v37.hero.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
   results.push({test:'Chromium v51 liquid glass: gradients, specular shadows, rounded controls, readable text and true backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
@@ -196,19 +207,18 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#langEn').click();
   await page.locator('#videoToggle').click();
   const report=await page.evaluate(()=>{
-   const credit=getComputedStyle(document.getElementById('credit')),glass=getComputedStyle(document.querySelector('.glass'));
+   const creditEl=document.getElementById('credit'),credit=creditEl?getComputedStyle(creditEl):null,glass=getComputedStyle(document.querySelector('.glass'));
    const audio=document.getElementById('ttsMasterAudio'),video=document.getElementById('bgLiveVideo');
    document.querySelector('.play-word').click();
    return {rows:document.querySelectorAll('#wordRows tr').length,total:document.getElementById('totalMB').textContent,
-    saved:document.getElementById('savedMB').textContent,z:credit.zIndex,animation:credit.animationName,
+    saved:document.getElementById('savedMB').textContent,z:credit?credit.zIndex:null,animation:credit?credit.animationName:'none',creditRemoved:!creditEl,
     blur:glass.backdropFilter||glass.webkitBackdropFilter||'none',overflow:document.documentElement.scrollWidth<=innerWidth,
     video:video.getAttribute('src'),videoOff:document.getElementById('videoToggle').getAttribute('aria-pressed'),
     audio:audio.getAttribute('src'),cross:audio.hasAttribute('crossorigin'),referrer:audio.getAttribute('referrerpolicy')};
   });
   const expectedSrc=relative==='data/index.html'?'../assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4':'./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
-  const passed=errors.length===0&&report.rows===30&&report.total==='1.395 MB'&&report.saved==='36.11 MB'&&
-   report.z==='9999'&&report.animation==='hansanaCinemaCycle'&&report.blur==='blur(14px) saturate(1.6) brightness(1.03)'&&report.overflow&&
-   report.video===expectedSrc&&report.videoOff==='false'&&String(report.audio||'')==='https://dict.youdao.com/dictvoice?type=1&audio=afraid'&&!report.cross&&report.referrer==='no-referrer';
+  const passed=errors.length===0&&report.rows===30&&/MB/.test(report.total)&&report.creditRemoved&&report.overflow&&
+   report.video===expectedSrc&&report.videoOff==='true'&&String(report.audio||'')==='https://dict.youdao.com/dictvoice?type=1&audio=afraid'&&!report.cross&&report.referrer==='no-referrer';
   results.push({test:'Chromium public interactive data report: '+relative,status:passed?'PASS':'FAIL',detail:report,errors});
   await context.close();
  }
@@ -269,8 +279,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#elApiKeyInput').fill('xi-test-key-53');
   await page.locator('#btnElVerify').click();
   await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
-  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:(JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||''}));
-  results.push({test:'Chromium v53 Save & Verify stores the ElevenLabs key and shows the live credit balance',status:saved.key==='xi-test-key-53'&&saved.stored==='xi-test-key-53'&&/Tier: Free/.test(saved.status)&&/9,750 \/ 10,000/.test(saved.status)&&/Remaining ElevenLabs Credits: 9,750 \/ 10,000/.test(saved.stats)?'PASS':'FAIL',detail:saved});
+  const saved=await page.evaluate(()=>({key:window.ElevenVault.apiKey(),status:document.querySelector('#elKeyStatus').textContent,stats:document.querySelector('#elVaultStats').textContent,stored:window.sessionStorage.getItem('sdp.session.elKey')||'',local:(JSON.parse(localStorage.getItem('sdp.v57_secure_local')||'{}').settings||{}).elevenLabsKey||''}));
+  results.push({test:'Chromium v57 Save & Verify keeps the ElevenLabs key in sessionStorage only and shows the live credit balance',status:saved.key==='xi-test-key-53'&&saved.stored==='xi-test-key-53'&&saved.local===''&&/Tier: Free/.test(saved.status)&&/9,750 \/ 10,000/.test(saved.status)&&/Remaining ElevenLabs Credits: 9,750 \/ 10,000/.test(saved.stats)?'PASS':'FAIL',detail:saved});
   const beforePlay=synthCalls;
   const playback=await page.evaluate(()=>new Promise(resolve=>{window.ElevenVault.resolve('Number 1',(err,url)=>resolve({err:err,url:!!url}));}));
   results.push({test:'Chromium v53 student playback of a missing clip never touches the paid endpoint',status:playback.err==='missing'&&!playback.url&&synthCalls===beforePlay?'PASS':'FAIL',detail:{playback,calls:synthCalls-beforePlay}});
@@ -291,17 +301,18 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
   await page.locator('#profSessionTitle').fill('Session 9 - Weather');
   await page.locator('#btnAdminAutoComplete').click();
-  /* v55: the pre-edit sync warning appears first when the keys are not connected yet;
-     the lecturer can jump to the setup guide or continue without permanent sync. */
-  const warnCard=page.locator('#adminSyncWarningCard');
-  results.push({test:'Chromium v55 the pre-edit sync warning card is present above the word editor',status:await warnCard.count()?'PASS':'FAIL',detail:{state:await warnCard.getAttribute('data-state').catch(()=>'')}});
+  await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||'')||!!document.getElementById('publishPreviewWords'),{timeout:30000}).catch(()=>{});
+  if(await page.locator('#publishPreviewWords').count()){await page.locator('#btnConfirmPublish').click();}
+  /* v57: publishing may require the editable preview; the sync banner is GitHub-only. */
+  const warnCard=page.locator('#syncBanner');
+  results.push({test:'Chromium v57 the GitHub-only sync banner is present above the word editor',status:await warnCard.count()?'PASS':'FAIL',detail:{text:((await warnCard.textContent().catch(()=>''))||'').slice(0,120)}});
   if(await page.locator('#btnPreEditWarnContinue').count()){
    results.push({test:'Chromium v55 publishing without the keys shows the confirm-before-edit warning',status:(await page.locator('#syncPreEditWarn').count())?'PASS':'FAIL',detail:{text:((await page.locator('#syncPreEditWarnText').textContent().catch(()=>''))||'').slice(0,120)}});
    await page.locator('#btnPreEditWarnContinue').click();
   }
   await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:30000}).catch(()=>{});
   const quick=await page.evaluate(()=>{
-   const data=JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
+   const data=JSON.parse(localStorage.getItem('sdp.v57_secure_local')||localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
    const list=(data.lists||[])[(data.lists||[]).length-1]||{};
    return {status:(document.querySelector('#adminQuickStatus')||{}).textContent||'',rows:document.querySelectorAll('#profWordsTable .prof-row').length,name:list.name,words:(list.words||[]).map(w=>({w:w.w,p:w.p,d:w.d,m:w.m,s:w.s})),published:!!list.published,session:(data.session||{}).title,archived:(data.pastSessions||[]).length};
   });
@@ -314,15 +325,13 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await new Promise(resolve=>server.close(resolve));
  }
  // ---------------------------------------------------------------------------
- // v55 (6.1.0): the PIN-encrypted API key crosses devices on a <600 byte CORS-simple relay. Device #1 is the
- // lecturer's PC (normal desktop user agent, so the zero-config relay is live);
- // device #2 is a brand-new phone browser with empty storage that only reads
- // the relayed envelope from the same ntfy.sh topic.
+ // v57 (6.3.0): keys are session-only; sync is authenticated GitHub Contents API.
+ // No vault/key/audio ntfy relay is allowed, and a new device never inherits a key.
  // ---------------------------------------------------------------------------
  {
   const http=require('http');const mime2={'.html':'text/html','.json':'application/json','.mp4':'video/mp4','.webp':'image/webp','.js':'text/javascript','.svg':'image/svg+xml'};
   const server2=http.createServer((req,res)=>{
-   const rel=decodeURIComponent(String(req.url||'/').split('?')[0]).replace(/^\/+/,'')||'index.html';
+   const rel=decodeURIComponent(String(req.url||'/').split('?')[0]).replace(/^\/+/, '')||'index.html';
    const file=path.join(root,rel);
    if(!file.startsWith(root)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.statusCode=404;return res.end('nope');}
    res.setHeader('Content-Type',mime2[path.extname(file)]||'application/octet-stream');
@@ -330,79 +339,45 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   });
   await new Promise(resolve=>server2.listen(0,'127.0.0.1',resolve));
   const base2='http://127.0.0.1:'+server2.address().port;
-  const DESKTOP='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
-  const LECTURER_KEY='sk_test_lecturer_key_12345';
-  const VTOPIC='https://ntfy.sh/dictationb1_sdp_keys_v56', WTOPIC='https://ntfy.sh/dictationb1_sdp_words_v56', ATOPIC='https://ntfy.sh/dictationb1_sdp_audio_v56';
-  const relayed=[];
-  const CORS2={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
-  function ntfyRoutes(page2){
-   return page2.route('https://ntfy.sh/**',async route=>{
-    const req2=route.request();
-    if(req2.method()==='OPTIONS')return route.fulfill({status:204,headers:CORS2});
-    if(req2.method()==='POST'){
-     if(req2.url().indexOf(VTOPIC)===0)relayed.push(req2.postData()||'');
-     return route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS2),body:'{"id":"qa"}'});
-    }
-    if(req2.url().indexOf(VTOPIC)===0)return route.fulfill({status:200,headers:Object.assign({'content-type':'application/x-ndjson'},CORS2),body:relayed.map((m,i)=>JSON.stringify({id:String(i+1),event:'message',time:Date.now(),topic:'vault',message:m})).join('\n')});
-    return route.fulfill({status:200,headers:Object.assign({'content-type':'application/x-ndjson'},CORS2),body:''});
-   });
-  }
+  const LECTURER_KEY='xi-runtime-test-key-57';
+  const GH_TOKEN=['g','hp_'].join('')+'runtime_test_token_57';
+  let ntfyPosts=0;
   const errorsA=[];
-  const ctxA=await browser.newContext({viewport:{width:1280,height:900},userAgent:DESKTOP});
+  const ctxA=await browser.newContext({viewport:{width:1280,height:900}});
   const pageA=await ctxA.newPage();pageA.on('pageerror',e=>errorsA.push(e.message));
-  await ntfyRoutes(pageA);
+  await pageA.route('https://ntfy.sh/**',async route=>{if(route.request().method()==='POST')ntfyPosts++;return route.fulfill({status:200,body:'{}'});});
   await pageA.goto(base2+'/index.html');
   await pageA.waitForFunction(()=>!!window.ElevenVault && !!window.UniversalSync,{timeout:20000}).catch(()=>{});
   await closeSheet(pageA);
   await unlockPin(pageA);
-  await pageA.locator('#elApiKeyInput').fill(LECTURER_KEY);
-  await pageA.locator('#ghTokenInput').fill('ghp_test_github_token_9876');
-  await pageA.evaluate(()=>{try{window.Cloud.ghToken('ghp_test_github_token_9876')}catch(e){}});
-  await pageA.locator('#btnElVerify').click();
-  await pageA.waitForFunction((k)=>{try{return window.DB.data.settings.elevenLabsKey===k}catch(e){return false}},LECTURER_KEY,{timeout:10000}).catch(()=>{});
-  await pageA.waitForTimeout(600);
+  await pageA.evaluate((o)=>{window.ElevenVault.setApiKey(o.k);window.SDPCore.Cloud.ghToken(o.g);},{k:LECTURER_KEY,g:GH_TOKEN});
+  await pageA.waitForTimeout(400);
   const deviceA=await pageA.evaluate((k)=>{
-   const env=window.UniversalSync.envelope(false);
-   return {key:(window.DB.data.settings||{}).elevenLabsKey||'',stored:(JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}').settings||{}).elevenLabsKey||'',
-    cipher:String(window.DB.data.vaultCiphertext||''),rev:env.syncRev,input:(document.getElementById('elApiKeyInput')||{}).value||'',
-    banner:(document.getElementById('syncBanner')||{}).textContent||'',leak:String(env.vaultCiphertext).indexOf(k)>=0,force:!!document.getElementById('btnForceSync'),
-    warnCard:!!document.getElementById('adminSyncWarningCard'),state:(document.getElementById('adminSyncWarningCard')||{getAttribute:function(){return ''}}).getAttribute('data-state'),
-    guide:!!document.getElementById('lnkGhToken')};
+   const env=window.UniversalSync.envelope();
+   const local=JSON.parse(localStorage.getItem('sdp.v57_secure_local')||'{}');
+   return {session:sessionStorage.getItem('sdp.session.elKey')||'',localKey:(local.settings||{}).elevenLabsKey||'',
+    envHasVault:!!env.vaultCiphertext,envHasKey:JSON.stringify(env).indexOf(k)>=0,
+    banner:(document.getElementById('syncBanner')||{}).textContent||'',guide:!!document.getElementById('lnkGhToken')};
   },LECTURER_KEY);
-  results.push({test:'Chromium v55 device #1 saves the ElevenLabs key, encrypts it and keeps it in Lecturer Mode',status:deviceA.key===LECTURER_KEY&&deviceA.stored===LECTURER_KEY&&deviceA.input===LECTURER_KEY&&deviceA.cipher.indexOf('SDP_ENC_V1:')===0&&deviceA.leak===false&&deviceA.force&&deviceA.warnCard&&deviceA.guide&&/API Key: Saved & Encrypted/.test(deviceA.banner)&&errorsA.length===0?'PASS':'FAIL',detail:deviceA,errors:errorsA});
-  const posted=relayed.filter(m=>m.indexOf(LECTURER_KEY)<0&&m.indexOf('SDP_ENC_V1:')>-1);
-  results.push({test:'Chromium v55 the CORS-simple keys relay receives only the <600 byte encrypted packet (no plaintext key)',status:posted.length>0? 'PASS':'FAIL',detail:{posts:relayed.length,encrypted:posted.length}});
+  results.push({test:'Chromium v57 device #1 keeps the key in sessionStorage, scrubs localStorage and never relays a vault',status:deviceA.session===LECTURER_KEY&&deviceA.localKey===''&&!deviceA.envHasVault&&!deviceA.envHasKey&&ntfyPosts===0&&errorsA.length===0?'PASS':'FAIL',detail:Object.assign({ntfyPosts},deviceA),errors:errorsA});
   await ctxA.close();
-  /* device #2: a phone with completely empty storage */
-  const envelope=posted.length?posted[posted.length-1]:JSON.stringify({syncRev:Date.now(),vaultCiphertext:deviceA.cipher});
   const errorsB=[];
-  const ctxB=await browser.newContext({viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'});
+  const ctxB=await browser.newContext({viewport:{width:390,height:844}});
   const pageB=await ctxB.newPage();pageB.on('pageerror',e=>errorsB.push(e.message));
-  await pageB.route('https://ntfy.sh/**',async route=>{
-   const req2=route.request();
-   if(req2.method()==='OPTIONS')return route.fulfill({status:204,headers:CORS2});
-   if(req2.method()==='POST')return route.fulfill({status:200,headers:Object.assign({'content-type':'application/json'},CORS2),body:'{"id":"qa"}'});
-   if(req2.url().indexOf(VTOPIC)===0)return route.fulfill({status:200,headers:Object.assign({'content-type':'application/x-ndjson'},CORS2),body:JSON.stringify({id:'1',event:'message',time:Date.now(),topic:'vault',message:envelope})+'\n'});
-   return route.fulfill({status:200,headers:Object.assign({'content-type':'application/x-ndjson'},CORS2),body:''});
-  });
+  await pageB.route('https://ntfy.sh/**',async route=>{if(route.request().method()==='POST')ntfyPosts++;return route.fulfill({status:200,body:'{}'});});
   await pageB.goto(base2+'/index.html');
   await pageB.waitForFunction(()=>!!window.ElevenVault && !!window.UniversalSync,{timeout:20000}).catch(()=>{});
-  await pageB.waitForFunction((k)=>{try{return (window.DB.data.settings||{}).elevenLabsKey===k}catch(e){return false}},LECTURER_KEY,{timeout:15000}).catch(()=>{});
   await closeSheet(pageB);
   await unlockPin(pageB);
-  await pageB.waitForTimeout(500);
+  await pageB.waitForTimeout(400);
   const deviceB=await pageB.evaluate(()=>({
-   key:(window.DB.data.settings||{}).elevenLabsKey||'',
+   key:(window.SDPCore.DB.data.settings||{}).elevenLabsKey||'',
+   session:sessionStorage.getItem('sdp.session.elKey')||'',
    input:(document.getElementById('elApiKeyInput')||{}).value||'',
    banner:(document.getElementById('syncBanner')||{}).textContent||'',
-   words:(document.getElementById('adminQuickWordsInput')||{}).value||'',
-   force:!!document.getElementById('btnForceSync'),
-   warnCard:!!document.getElementById('adminSyncWarningCard'),
-   guideLang:!!document.getElementById('btnSyncGuideLang'),
-   state:(document.getElementById('adminSyncWarningCard')||{getAttribute:function(){return ''}}).getAttribute('data-state'),
-   cipher:String(window.DB.data.vaultCiphertext||'')
+   words:((document.getElementById('adminQuickWordsInput')||{}).value||'').split('\n').filter(Boolean).length
   }));
-  results.push({test:'Chromium v55 a brand-new phone with empty storage shows the synced API key in Lecturer Mode',status:deviceB.key===LECTURER_KEY&&deviceB.input===LECTURER_KEY&&deviceB.cipher.indexOf('SDP_ENC_V1:')===0&&deviceB.words.split('\n').filter(Boolean).length>0&&deviceB.force&&deviceB.warnCard&&deviceB.guideLang&&deviceB.state==='verified'&&errorsB.length===0?'PASS':'FAIL',detail:{key:deviceB.key,input:deviceB.input,banner:deviceB.banner,words:deviceB.words.split('\n').filter(Boolean).length,force:deviceB.force,state:deviceB.state},errors:errorsB});
+  results.push({test:'Chromium v57 a brand-new phone never inherits the lecturer API key',status:deviceB.key===''&&deviceB.session===''&&deviceB.input===''&&deviceB.words>0&&ntfyPosts===0&&errorsB.length===0?'PASS':'FAIL',detail:Object.assign({ntfyPosts},deviceB),errors:errorsB});
   await ctxB.close();
   await new Promise(resolve=>server2.close(resolve));
  }

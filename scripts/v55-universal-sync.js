@@ -10,7 +10,7 @@
    Channel 4: the permanent GitHub commit + the Apps Script cloud, exactly as before. */
 (function () {
   var C = window.SDPCore || {}, DB = C.DB, U = C.U, Cloud = C.Cloud, CONFIG = C.CONFIG;
-  var EV = window.EncryptedVault, PIN = "78987898";
+  var EV = window.EncryptedVault, PIN = "";
   var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v55";
   var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v55";
   var AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v55";

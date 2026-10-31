@@ -2,36 +2,39 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 6.2.0 — v56
+## Release 6.3.0 — v57
 
-The cross-device API-key bug is fixed permanently, and the audit is closed: a **WebCrypto AES-GCM-256 PIN vault** (`SDP_ENC_V2:`, legacy `SDP_ENC_V1:` still readable) plus a **three-channel universal sync engine** carry the ElevenLabs key, the GitHub token, the voice settings, the wallpaper, the session and the word list to every device, with **zero configuration** on the second phone.
+v57 is a security and data-truth release. There is **no shared/default lecturer PIN**, no public key vault, and no vault/key/audio ntfy relay. The first valid 4–8 digit unlock on a device creates a local random-salted `sha256("sdp.v2:" + deviceSalt + ":" + pin)` verifier; later unlocks verify it, and Lecturer Mode includes **Change Lecturer PIN**.
 
-### 1. Encrypted vault (`window.EncryptedVault`)
+### P0 — security and honest metering
 
-- WebCrypto AES-GCM-256: PBKDF2-SHA256 (150,000 iterations) over a random salt, AES-GCM-256 with a random 12-byte IV, URL-safe Base64, output prefixed `SDP_ENC_V2:`; the legacy `SDP_ENC_V1:` stream-XOR body is still decrypted for older builds. No raw key, token or PIN is ever stored in plaintext.
-- Payload: `syncRev`, `elevenLabsKey`, `elevenLabsVoiceId`, `elevenLabsModel`, `ghToken`, `adminPin`, `activeVideoSrc`, `videoDim`, `mode`, `writeFixed`, `repeats`, `sessionTitle`, `sessionDate`, `classInfo`.
-- `EncryptedVault.applyRemoteVault(cipher)` decrypts with `the default PIN` on boot, on `visibilitychange` and the instant Lecturer Mode unlocks, applies when `syncRev` is newer (or when the local key is empty and the remote one is not) and repaints `#elApiKeyInput`, `#elVoiceSelect`, `#elModelSelect`, `#ghTokenInput`, `#profSessionTitle`, `#profSessionDate` and `#adminQuickWordsInput`.
-- The same PIN always produces byte-identical ciphertext, a wrong PIN or one flipped byte returns `null`, and no plaintext `sk_` string is ever stored in the vault, committed to GitHub, published to `data/config.json` or sent to the relay.
+- Raw ElevenLabs/GitHub keys live only in `sessionStorage` (`sdp.session.elKey`, `sdp.session.ghToken`) while Lecturer Mode is unlocked on that tab. `localStorage`, exports and public JSON are scrubbed of keys, PIN hashes and vault ciphertext.
+- Every vault write uses `SDP_ENC_V2:` — PBKDF2-SHA256 (150,000 iterations) + AES-GCM-256 with random salt/IV. Legacy V1 is read-once migration only; new V1 writes are disabled.
+- Studio and inline paid ElevenLabs calls require `strictAdminOnly` **and** `Admin.isUnlockedOnThisDevice()`. Student playback is cache/committed-clip first, then Youdao, then pinned en-GB device synthesis; it can never spend ElevenLabs credits.
+- Publishing uses the authenticated GitHub Contents API only. GitHub instructions require a fine-grained, repo-scoped, 90-day token with Contents read/write. Session/config commits are blocked until the lecturer confirms an editable 30-word publish preview.
+- `data/data-meter.js` measures buffered video bytes from the buffered time fraction, persists only session deltas, reconciles real fetch `content-length`, labels cross-origin Youdao plays as an explicit ~11,000-byte estimate, preserves totals when the resource buffer clears, and formats B/KB/MB correctly. `/data` and `/data/index.html` are byte-identical, default to a 0-MB static background, and show live session/today MB/LKR cards plus Sri Lankan rate presets.
 
-### 2. Universal sync (`window.UniversalSync`)
+### P1 — readability and voice
 
-- `pushAll(reason, cb)` stamps `syncRev = Date.now()` and fires three channels in parallel: the zero-config relay `https://ntfy.sh/dictationb1_sdp_keys_v56` (`{Title: "SDP-Sync-"+syncRev, Cache: "yes"}`, envelope `{syncRev, vaultCiphertext, sessionTitle, sessionDate, classInfo, words, pastSessions}`), `GitHubSync.commitFiles` for `data/config.json`, `data/session.json`, `data/version.json` and `data/elevenlabs-audio.json`, and the clip relay `https://ntfy.sh/dictationb1_sdp_audio_v56` for every generated clip.
-- Pushes fire on `💾 Save & Verify`, the auto-completer, generate-missing, a clip delete, the GitHub verify button and any wallpaper/settings change in Lecturer Mode — the studio works with **only** an ElevenLabs key and no GitHub token.
-- `pullAll(onDone)` runs on boot, `visibilitychange`, Lecturer unlock and the new `🔄 Sync Now Across All Devices` button (`#btnForceSync`), cache-busts all three JSON reads, polls both ntfy topics with `?poll=1&since=all`, optionally reads the Apps Script backend, and applies the highest `syncRev`. The sync bar reads `✓ 100% Synced Across All Devices · Last Saved: <time> · API Key: Saved & Encrypted · Voice Clips: NN`.
-- Headless QA never spends a credit or calls the network: remote channels are skipped for `/HeadlessChrome/i` user agents and on `file:` origins, and nothing is pushed during boot.
+- New devices default to **Static Gradient (0 MB video)**. The wallpaper gallery is opt-in and labels each file's exact MB size. `saveData` or slow-2g/2g/3g immediately returns to Static.
+- The dimmer is 0–100 (default 18) and shows a real WCAG relative-luminance contrast ratio, warning below 4.5:1. Reading panels use ≥0.92 opacity, secondary text ≥82%, and true Lite mode disables all backdrop filters. The dead Material Mixer is removed.
+- Speed, volume (GainNode when available), repeats 1/2/3, example-sentence toggle and writing seconds 3–60 are wired to the engine. A 192/128/64-kbps selector, voice presets, volume normalization, bilingual playback-failure retry toast and durable `sdp-youdao-v1` caching/prewarming are included.
+- Committed ElevenLabs clips are primary when present. The lecturer studio can generate all session words plus `Number 1…31`; generation is admin-only and commits clips to `data/elevenlabs-audio.json` through GitHub. No clips are fabricated in QA.
 
-### 3. Preserved from v51–v53
+### P2/P3 — layout, results and offline
 
-- The three-card Professor Studio (words card, `#elVaultList` voice vault, keys card) with the collapsed advanced deck, the zero-drain `ElevenVault.strictAdminOnly` credit lock, the auto-completer, the single-run `#credit` spotlight, the 1000 ms 3-2-1 countdown, static `#btnPause` and `#btnTestVoice`, the rendered `#resSummary`, the EN/SI guide, the Hooded Red Eyes default wallpaper with all three `/assets/` videos muted, and real `backdrop-filter: blur(14px) saturate(1.6) brightness(1.03)` Liquid Glass everywhere.
+- The fixed credit banner, credit cycling/replay and duplicate hero credit are removed; About credit and a static footer remain. Phones get a compact DICTATION title and reclaimed topbar/app offsets.
+- The header has three controls: language, live data, and an overflow menu that retains the existing IDs/selectors. The fake `#sdpV56` depot is completely removed; there is exactly one `dataRateLkrInput`, one primary Data Sheet entry plus `?data=1`, and one Past Sessions heading.
+- Results show anonymous missed words; unlocked lecturers get a weakness radar, error percentages and CSV export.
+- `sw.js` is `sdp-v57`: video HTTP Range requests are answered with 206 slices from a cached full response, while a background full fetch fills `sdp-v57-media`.
 
 ### Release facts
 
-- Storage key: `sdp.v56_audit_verified` (a v55 device migrates from `sdp.v55_guaranteed_device_sync` without losing words, keys or the chosen wallpaper).
-- `APP_VERSION`: `6.2.0`; `ver`, `schema` and `settingsRev`: `56`; PIN `the default PIN`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_multilingual_v2` (tiered with `eleven_flash_v2_5`).
-- `index.html` is a single ES5 file with no external `<link>` before the manifest and no paid endpoint (the studio, the data meter and the sync engine are lazy-loaded from `data/studio.js` / `data/data-meter.js` / `sw.js`). `tests/check.cjs` enforces the **600,000**-byte ceiling.
-- Tests: `check`, the rewritten `upgrade.test` (14), `phase1`, `server` (8), `live-lab` (16), `audit-v42` (42), `browser`, `e2e` and `upgrade-browser` all pass with 0 errors, including the two-device key simulation in JSDOM and in real Chromium. ElevenLabs audio content and provider availability are exercised with mocked responses only and are not certified.
+- Storage key: `sdp.v57_secure_local` (legacy v56/v55 keys are migrated; PIN verifiers reset on migration so no compromised default survives).
+- `APP_VERSION`: `6.3.0`; `ver`, `schema`, `settingsRev`: `57`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_multilingual_v2`.
+- `index.html` remains strict ES5 and under the 600,000-byte ceiling; the only external `<link>` is the PWA manifest.
 
-## Release 5.7.0 — v51
+## Historical release 5.7.0 — v51 (superseded by v57)
 
 Session 8 contains 30 adjectives with UK IPA, Sinhala meanings and examples; the complete 30-word Session 7 remains available for practice. Paper mode, two readings and a five-second writing period are the defaults.
 

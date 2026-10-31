@@ -31,7 +31,7 @@
   CONFIG.settingsRev = CFG.settingsRev;
   CONFIG.key = CFG.key;
   CONFIG.appVersion = CFG.appVersion;
-  CONFIG.adminPin = "78987898";
+  CONFIG.adminPin = "";
 
   /* The studio (voice vault, GitHub sync, 3-step admin panel) is loaded from
      data/studio.js so the page stays tiny and students never fetch it twice. */

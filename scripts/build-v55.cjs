@@ -35,7 +35,7 @@ const APP = '6.1.0';
 const KEY = 'sdp.v55_guaranteed_device_sync';
 const VOICE = 'Xb7hH8MSUJpSbSDYk0k2';
 const MODEL = 'eleven_flash_v2_5';
-const PIN = '78987898';
+const PIN = '';
 const WALL = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
 const KEYS_TOPIC = 'https://ntfy.sh/dictationb1_sdp_keys_v55';
 const WORDS_TOPIC = 'https://ntfy.sh/dictationb1_sdp_words_v55';
@@ -160,7 +160,7 @@ version.buildDate = '2026-10-30';
 version.updatedAt = new Date().toISOString();
 version.updatedAtMs = syncRev;
 version.features = Object.assign({}, version.features, {
-  encryptedVault: 'v55: the ElevenLabs API key, the GitHub token, the voice settings, the session and the word list are encrypted as SDP_ENC_V1 URL-safe Base64 ciphertext keyed by the lecturer PIN (78987898 + salt). No raw API key or GitHub token is ever committed, so GitHub secret scanning stays quiet.',
+  encryptedVault: 'v55: the ElevenLabs API key, the GitHub token, the voice settings, the session and the word list are encrypted as SDP_ENC_V1 URL-safe Base64 ciphertext keyed by the lecturer PIN ( + salt). No raw API key or GitHub token is ever committed, so GitHub secret scanning stays quiet.',
   keysRelay: 'v55: the keys travel on a dedicated CORS-SIMPLE relay - https://ntfy.sh/dictationb1_sdp_keys_v55 - a < 600 byte JSON POST ({ syncRev, vaultCiphertext, sessionTitle, sessionDate }) with ZERO custom headers, so ntfy never answers an OPTIONS preflight and never converts the body into an attachment (the 4,096-byte trap that silently broke v54 on real devices).',
   wordsRelay: 'v55: the compact word array ({ w, p, d, m, s }) travels on https://ntfy.sh/dictationb1_sdp_words_v55 chunked under 3,500 bytes per POST, again with zero custom headers.',
   instantGithubRead: 'v55: UniversalSync.pullAll() reads https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/data/*.json?ref=main (0.05 s after the commit, 5,000 req/h with the token) so a second device never waits 60-90 s for the GitHub Pages CDN to rebuild.',

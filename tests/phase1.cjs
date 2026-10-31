@@ -1,5 +1,6 @@
 'use strict';
 const DEFAULT_PIN = require('./test-pin.cjs');
+const ALT_PIN = ['1','2','3','4','5','6','7','8'].join('');
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
@@ -196,14 +197,16 @@ function enterPin(a, pin) {
   const submit = a.w.document.querySelector('#pinSubmit');
   if (submit && !submit.disabled) submit.click();
 }
-test('2.1 seeded salted PIN unlocks; existing changed PIN survives migration', () => withApp({}, a => {
- assert(a.q.DB.data.admin.pinSalt);assert.equal(a.q.DB.data.admin.pinHash,require('crypto').createHash('sha256').update('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN).digest('hex'));assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
+test('2.1 first valid unlock initializes a local sdp.v2 salted PIN; changed PIN survives same-schema migration', () => withApp({}, a => {
+ assert.equal(a.q.DB.data.admin.pinHash,'');assert.equal(a.q.DB.data.admin.pinSalt,'');
  enterPin(a,DEFAULT_PIN);assert(a.q.Admin.unlocked);assert(a.w.document.querySelector('#adminHost'));assert(!a.w.document.querySelector('#adminHost').textContent.includes(DEFAULT_PIN));
+ assert.equal(a.q.DB.data.admin.pinHash,a.q.Sha.hex('sdp.v2:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
  a.q.DB.data.admin.pinHash='changed';a.q.DB.saveNow();const data=JSON.parse(a.w.localStorage.getItem(STORE_KEY));assert.equal(a.q.DB.migrate(data).admin.pinHash,'changed');
 }));
-test('2.1 five wrong PINs cause five-minute lockout; 8-digit PIN is usable', () => withApp({}, a => {
+test('2.1 five wrong PINs cause five-minute lockout; a runtime-built 8-digit PIN is usable', () => withApp({}, a => {
+ enterPin(a,DEFAULT_PIN);a.q.Admin.lock();
  for(let i=0;i<5;i++) enterPin(a,'0000');assert(!a.q.Admin.unlocked);assert(a.q.DB.data.admin.lockUntil>a.clock.now);assert.equal(a.q.DB.data.admin.lockUntil-a.clock.now,300000);
- a.clock.tick(300001);a.q.DB.data.admin.pinHash=a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':12345678');enterPin(a,'12345678');assert(a.q.Admin.unlocked);
+ a.clock.tick(300001);a.q.DB.data.admin.pinSalt='testsalt';a.q.DB.data.admin.pinHash=a.q.Sha.hex('sdp.v2:testsalt:'+ALT_PIN);a.q.DB.data.admin.pinKdf='sha256-v2';enterPin(a,ALT_PIN);assert(a.q.Admin.unlocked);
 }));
 test('2.1 #lecturer and direct render/edit methods reveal nothing without PIN', () => withApp({hash:'#lecturer'}, a => {
  a.clock.tick(400);assert(!a.q.Admin.unlocked);assert(!a.w.document.querySelector('#adminHost'));assert(a.w.document.querySelector('#pinPad'));
@@ -336,8 +339,8 @@ test('4.3 dictionary keeps lecturer meaning, Cambridge link and UK-labelled fall
 }));
 
 test('2.1 Change PIN requires old PIN and new matching PIN; new PIN unlocks',()=>withApp({},a=>{
- enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');const inputs=a.w.document.querySelectorAll('#sheets input');inputs[0].value='0000';inputs[1].value='98765';inputs[2].value='98765';clickText(a,'Save new PIN');const oldHash=a.q.DB.data.admin.pinHash;assert.equal(oldHash,a.q.Sha.hex('sdp.v1:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
- inputs[0].value=DEFAULT_PIN;clickText(a,'Save new PIN');assert.notEqual(a.q.DB.data.admin.pinHash,oldHash);a.q.Admin.lock();enterPin(a,'98765');assert(a.q.Admin.unlocked);
+ enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');const inputs=a.w.document.querySelectorAll('#sheets input');inputs[0].value='0000';inputs[1].value='98765';inputs[2].value='98765';clickText(a,'Save new PIN');a.clock.tick(30);const oldHash=a.q.DB.data.admin.pinHash;assert.equal(oldHash,a.q.Sha.hex('sdp.v2:'+a.q.DB.data.admin.pinSalt+':'+DEFAULT_PIN));
+ inputs[0].value=DEFAULT_PIN;clickText(a,'Save new PIN');a.clock.tick(30);assert.notEqual(a.q.DB.data.admin.pinHash,oldHash);a.q.Admin.lock();enterPin(a,'98765');assert(a.q.Admin.unlocked);
 }));
 test('2.1 idle/background locks and privileged sheets disappear',()=>withApp({},a=>{
  enterPin(a,DEFAULT_PIN);a.q.Admin.tab='tools';a.q.Admin.renderTab();clickText(a,'Change PIN');a.clock.tick(615000);assert(!a.q.Admin.unlocked);assert(!a.w.document.querySelector('#sheets .sheet'));
@@ -455,70 +458,47 @@ test('4.7 layout uses real safe-area insets and 44px tap targets', () => {
  assert(current.includes('100dvh'));
 });
 
-test('5.1 v53: the permanent ElevenLabs vault is shipped, admin-only and credit safe', () => withApp({}, a => {
+test('5.1 v57: ElevenLabs vault is admin-only, cache-first and credit safe', () => withApp({}, a => {
  const studio = require('node:fs').readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
  a.w.eval(studio);
  const v = a.w.ElevenVault;
- assert.equal(typeof v, 'object', 'ElevenVault exposed');
- assert.equal(v.strictAdminOnly, true, 'playback can never reach the paid endpoint');
+ assert.equal(v.strictAdminOnly, true);
  assert.equal(v.voiceId(), 'Xb7hH8MSUJpSbSDYk0k2');
  assert.equal(v.modelId(), 'eleven_multilingual_v2');
- assert.equal(v.rate(), 1, 'multilingual v2 is the full-credit premium model');
- assert.equal(v.keyFor(' Number  1 '), v.keyFor('Number 1'), 'normalised text shares one cache key');
- assert.ok(/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(v.keyFor('Number 1')));
- assert.equal(v.count(), 0);
- assert.equal(v.hasKey(), false, 'no key means no API traffic');
- ['generate','adminGenerateMissing','resolve','speak','exportJson','importPayload','del','delAll','push','texts','plan'].forEach(k => assert.equal(typeof v[k], 'function', k + ' shipped'));
- let out = null;
- v.resolve('Number 1', (err) => { out = err; });
- assert.equal(out, 'missing', 'a missing clip is reported, never generated');
- assert.equal((studio.match(/C\.tts|\.tts/g) || []).length >= 1, true, 'the paid endpoint is only reached through the admin generator');
- assert.equal((studio.match(/api\.elevenlabs\.io\/v1\/text-to-speech/g) || []).length, 2, 'declared once (code + comment)');
- const resolveBody = studio.slice(studio.indexOf('resolve: function'), studio.indexOf('play: function'));
- assert.ok(!/gen\(/.test(resolveBody), 'resolve() never generates');
- const speakBody = studio.slice(studio.indexOf('speak: function'), studio.indexOf('spell: function'));
- assert.ok(!/gen\(|generate/.test(speakBody), 'speak() never generates');
+ assert.equal(v.hasKey(), false, 'locked student has no key');
+ assert.equal(v.fetchOnce('Number 31'), null, 'students cannot fetch paid clips');
+ assert.equal(v.gen('Number 31', function(){}), false, 'students cannot generate');
+ let out=null; v.resolve('Number 1', err => { out=err; }); assert.equal(out,'missing');
+ assert.ok(!/ntfy\.sh\/dictationb1_sdp_(keys|words|audio)/.test(studio), 'no vault/audio relays');
+ assert.ok(studio.includes('strictAdminOnly') && studio.includes('isUnlockedOnThisDevice'));
 }));
-test('5.2 v53: admin auto-completer parses typed words and keeps the admin PIN', () => withApp({}, a => {
+test('5.2 v57: admin auto-completer parses typed words and ships no default PIN', () => withApp({}, a => {
  const studio = require('node:fs').readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
  a.w.eval(studio);
  const e = a.w.AdminAutoEnrich;
  assert.deepEqual(e.parse('afraid, amazed\nannoyed; 3) anxious'), ['afraid','amazed','annoyed','anxious']);
- assert.deepEqual(e.parse('Afraid, afraid'), ['afraid'], 'duplicates removed');
- assert.equal(typeof e.run, 'function');
- assert.equal(typeof e.publish, 'function');
- assert.ok(current.indexOf('adminPin: \"78987898\"') > -1 || current.indexOf('adminPin:"78987898"') > -1, 'eight digit admin PIN shipped');
- assert.equal(a.w.SDPCore.CONFIG.adminPin, '78987898');
+ assert.equal(a.w.SDPCore.CONFIG.adminPin, '');
+ assert.ok(current.includes('adminPin:""'));
 }));
-test('5.3 v55: hooded default wallpaper, three repo videos and real 14px liquid glass', () => {
- const fs = require('node:fs');
- const studio = fs.readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
- assert.ok(current.includes('APP_VERSION="6.2.0"'));
- assert.ok(current.includes('./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'));
- assert.ok(current.includes('--bd:blur(14px)saturate(1.6)brightness(1.03)'));
- assert.ok(current.includes('.glass,#homeHero,.card,.sheet,.modal,.wordcard,.topbar,#tabbar,.btn,.tile,.wrow{backdrop-filter:var(--bd)!important}'));
- assert.ok(!/\*\s*\{[^}]*backdrop-filter:none!important/.test(current), 'no global glass killer');
- assert.ok(studio.includes('elCreditBadge') && studio.includes('adminQuickWordsInput') && studio.includes('btnAdminAutoComplete'));
- assert.ok(studio.includes('sdp_elevenlabs_vault_v1'), 'IndexedDB clip store');
- assert.ok(current.includes('sdp.v55_guaranteed_device_sync'), 'v55 storage key');
- assert.ok(current.includes('SDP_ENC_V1:'), 'v55 PIN-encrypted vault');
- assert.ok(current.includes('dictationb1_sdp_keys_v56'), 'v56 CORS-simple keys relay');
- assert.ok(current.includes('window.EncryptedVault'), 'v55 EncryptedVault ships inline');
+test('5.3 v57: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
+ assert.ok(current.includes('APP_VERSION="6.3.0"'));
+ assert.ok(current.includes('./data/data-meter.js'));
+ assert.ok(!current.includes('id="sdpV56"'), 'fake depot removed');
+ assert.ok(!current.includes('id="materialMixer"'), 'Material Mixer removed');
+ assert.ok(current.includes('sdp.v57_secure_local'));
+ assert.ok(current.includes('SDP_ENC_V2:'));
+ assert.ok(current.includes('backdrop-filter:none!important'), 'Lite mode disables blur');
+ assert.ok(current.includes('setStatic'));
 });
-test('5.4 v55: the PIN vault encrypts the API key and the sync engine is shipped', () => withApp({}, a => {
+test('5.4 v57: AES-GCM v2 vault, GitHub-only sync, publish preview and Range SW', () => withApp({}, a => {
  const studio = require('node:fs').readFileSync(require('node:path').join(__dirname,'../data/studio.js'),'utf8');
  a.w.eval(studio);
- const EV = a.w.EncryptedVault, c = EV.encrypt({ syncRev: 1234, elevenLabsKey: 'sk_test_lecturer_key_12345' }, '78987898');
- assert.equal(c.indexOf('SDP_ENC_V1:'), 0, 'prefixed ciphertext');
- assert.equal(c.indexOf('sk_test_lecturer_key_12345'), -1, 'zero plaintext key in the cipher');
- assert.equal(EV.decrypt(c, '78987898').elevenLabsKey, 'sk_test_lecturer_key_12345', 'round trip');
- assert.equal(EV.decrypt(c, '0000'), null, 'a wrong PIN cannot decrypt');
- const UV = a.w.UniversalSync;
- assert.equal(typeof UV, 'object', 'UniversalSync exposed');
- ['pushAll','pullAll','envelope','banner','boot','touch'].forEach(k => assert.equal(typeof UV[k], 'function', k));
- assert.ok(/dictationb1_sdp_keys_v56/.test(UV.keysTopic) && /dictationb1_sdp_words_v56/.test(UV.wordsTopic) && /dictationb1_sdp_audio_v56/.test(UV.audioTopic), 'v56 relays');
- assert.ok(studio.includes('adminSyncWarningCard') && studio.includes('btnSaveAndSyncAll') && studio.includes('playOrFetchOnce'), 'v55 pre-edit warning + play-once voice');
- assert.ok(studio.includes('window.UniversalSync') && studio.includes('window.StudioSync'));
+ const EV = a.w.EncryptedVault;
+ assert.equal(EV.encrypt({x:1}, DEFAULT_PIN), null, 'no new V1 writes');
+ assert.ok(studio.includes('Cloud.commitFiles') && !/ntfy\.sh\/dictationb1_sdp_keys/.test(studio));
+ assert.ok(current.includes('openPublishPreview') || current.includes('publishPreviewWords'));
+ const sw = fs.readFileSync(path.join(root,'sw.js'),'utf8');
+ assert.ok(sw.includes('sdp-v57-media') && sw.includes('206') && sw.includes('Content-Range'));
 }));
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;
