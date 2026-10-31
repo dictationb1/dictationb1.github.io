@@ -1,11 +1,11 @@
 {
-  "ver": 59,
-  "appVersion": "8.0.0",
-  "version": "8.0.0",
+  "ver": 60,
+  "appVersion": "9.0.0.1",
+  "version": "9.0.0.1",
   "buildDate": "2026-10-31",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "settingsRev": 59,
+  "settingsRev": 60,
   "updatedAt": "2026-10-31T12:00:00.000Z",
   "updatedAtMs": 1793448000000,
   "features": {
@@ -174,7 +174,7 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "schema": 59,
+  "schema": 60,
   "sessionCode": "Session 8",
   "sessionDate": "2026-10-29",
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
@@ -413,5 +413,7 @@
   "creditLock": "student playback replays saved clips only",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1793385986993
+  "syncRev": 1793385986993,
+  "versionFamily": "9.0.0",
+  "voiceModel": "eleven_flash_v2_5"
 }

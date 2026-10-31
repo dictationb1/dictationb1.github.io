@@ -83,9 +83,9 @@ window.SDPCoreV54 = SDPC;
 
 (function() {
     var C = {
-        v: 58,
+        v: 60,
         voiceId: "Xb7hH8MSUJpSbSDYk0k2",
-        modelId: "eleven_multilingual_v2",
+        modelId: "eleven_flash_v2_5",
         tts: "https://api.elevenlabs.io/v1/text-to-speech/",
         q: "?output_format=mp3_44100_128",
         sub: "https://api.elevenlabs.io/v1/user/subscription",
@@ -128,11 +128,11 @@ window.SDPCoreV54 = SDPC;
             label: "Dorothy · British Pleasant Studio Woman"
         } ],
         models: [ {
-            id: "eleven_multilingual_v2",
-            name: "eleven_multilingual_v2 (1x HD Studio, default)"
-        }, {
             id: "eleven_flash_v2_5",
-            name: "eleven_flash_v2_5 (0.5x Credit Saver)"
+            name: "eleven_flash_v2_5 (0.5x Credit Saver · default)"
+        }, {
+            id: "eleven_multilingual_v2",
+            name: "eleven_multilingual_v2 (1x HD Studio)"
         } ],
         formats: [ {
             id: "mp3_44100_128",

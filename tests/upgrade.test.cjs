@@ -38,10 +38,10 @@ function freshMeter(opts) {
 
 test('v59 metadata, ES5 single-file budget and identical transparency routes', () => {
   for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
-    const d = JSON.parse(read(f)); assert.equal(d.ver, 59, f); assert.equal(d.appVersion, '8.0.0', f);
+    const d = JSON.parse(read(f)); assert.equal(d.ver, 60, f); assert.equal(d.appVersion, '9.0.0.1', f);
     assert.ok(!d.adminPin && !d.vaultCiphertext, f + ' has no public PIN/vault');
   }
-  assert.ok(INDEX.includes('APP_VERSION="8.0.0"'));
+  assert.ok(INDEX.includes('APP_VERSION="9.0.0.1"'));
   assert.ok(Buffer.byteLength(INDEX) <= 600000);
   assert.equal(read('data.html'), read('data/index.html'));
   assert.ok(read('data.html').includes('./data/data-meter.js'));
@@ -162,7 +162,7 @@ test('mode profiles come from the media manifest and LKR presets update cost', (
 
 test('service worker v59 slices cached full video responses into HTTP 206 ranges', async () => {
   const src = read('sw.js');
-  assert.ok(src.includes("VERSION = 'sdp-v59'"));
+  assert.ok(src.includes("VERSION = 'sdp-v60'"));
   const store = new Map();
   const caches = { open: async () => ({ match: async k => store.get(String(k)) || null, put: async (k, v) => { store.set(String(k), v); } }) };
   const listeners = {};

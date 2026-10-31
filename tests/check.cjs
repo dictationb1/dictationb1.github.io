@@ -85,14 +85,14 @@ console.log('secret gate: PASS (' + SCAN_FILES.length + ' required files + all t
 /* Metadata and manifest. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 59 || d.appVersion !== '8.0.0') throw Error(f + ' must be ver 59 / appVersion 8.0.0');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must be ver 60 / appVersion 9.0.0.1');
 }
-if (!/APP_VERSION="8\.0\.0"/.test(INDEX)) throw Error('index APP_VERSION must be 8.0.0');
+if (!/APP_VERSION="9\.0\.0.1"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.1');
 const manifest = JSON.parse(read('manifest.webmanifest'));
 if (!manifest.name || manifest.display !== 'standalone' || manifest.theme_color !== '#040812') throw Error('invalid PWA manifest');
 const media = JSON.parse(read('data/media-manifest.json'));
 if (!Array.isArray(media.assets) || media.assets.length < 4) throw Error('media manifest must list wallpapers + static');
-console.log('metadata: v59 / 8.0.0; media manifest: ' + media.assets.length + ' assets');
+console.log('metadata: v60 / 9.0.0.1; media manifest: ' + media.assets.length + ' assets');
 
 /* P0 runtime wiring markers. */
 if (!/sdp\.v2:/.test(INDEX) || !/isUnlockedOnThisDevice/.test(INDEX)) throw Error('local salted PIN wiring missing');
@@ -110,7 +110,7 @@ if (!/aboutCreditsSheet/.test(INDEX) || !/v58-sig-pill/.test(INDEX)) throw Error
 if (!/v58WorkSpace|v58-workspace/.test(INDEX)) throw Error('desktop workspace missing');
 if (!/learning-tools\.js/.test(INDEX)) throw Error('learning-tools script tag missing');
 const versionData = JSON.parse(read('data/version.json'));
-if (versionData.ver !== 59 || versionData.appVersion !== '8.0.0' || versionData.settingsRev !== 59) throw Error('version.json must ship ver 59 / 8.0.0 / settingsRev 59');
+if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.1' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.1 / settingsRev 60');
 console.log('v58 markers: PASS');
 
 /* ------------------------------------------------------------------ *
@@ -119,14 +119,14 @@ console.log('v58 markers: PASS');
 /* Version stamps everywhere. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 59 || d.appVersion !== '8.0.0') throw Error(f + ' must ship 59 / 8.0.0');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must ship 60 / 9.0.0.1');
 }
-if (!/var VERSION = 'sdp-v59'/.test(sw) || !/var APP_VERSION = '8\.0\.0'/.test(sw)) throw Error('sw.js must ship sdp-v59 / 8.0.0');
+if (!/var VERSION = 'sdp-v60'/.test(sw) || !/var APP_VERSION = '9\.0\.0.1'/.test(sw)) throw Error('sw.js must ship sdp-v60 / 9.0.0.1');
 if (!/sdp-youdao-v1/.test(sw) || !/sdp-youdao-v1/.test(learn)) throw Error('sdp-youdao-v1 offline cache must be preserved');
-if (!/METER_VERSION = '8\.0\.0', SCHEMA = 59/.test(meterSrc)) throw Error('data-meter must ship 8.0.0 / 59');
+if (!/METER_VERSION = '9\.0\.0.1', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.1 / 60');
 const DATAHTML = read('data.html');
-if (!/v59 · APP_VERSION 8\.0\.0/.test(DATAHTML)) throw Error('/data must show v59 · APP_VERSION 8.0.0');
-if (!/v59 · APP_VERSION 8\.0\.0/.test(read('data/index.html'))) throw Error('/data/index.html must show v59');
+if (!/v60 · APP_VERSION 9\.0\.0.1/.test(DATAHTML)) throw Error('/data must show v60 · APP_VERSION 9.0.0.1');
+if (!/v60 · APP_VERSION 9\.0\.0.1/.test(read('data/index.html'))) throw Error('/data/index.html must show v60');
 
 /* A1: fresh installs pick the automatic performance mode, never a forced "full". */
 if (!/perf:"auto"/.test(INDEX)) throw Error('fresh settings must default to perf:"auto"');
@@ -183,6 +183,20 @@ if (!/SDPPerfGuard/.test(learn) || !/benchmark: function/.test(learn) || !/decid
 if (!/60 FPS Smooth Mode auto-enabled/.test(learn)) throw Error('PerfGuard toast missing');
 if (/\.createMediaElementSource\s*\(/.test(learn)) throw Error('learning-tools must never create a MediaElementSource');
 if (/\.createMediaElementSource\s*\(/.test(INDEX)) throw Error('index.html must never create a MediaElementSource on the Youdao audio');
+
+/* ------------------------------------------------------------------
+ * v60 / 9.0.0.1 release markers
+ * ------------------------------------------------------------------ */
+if (!/#sdpNextGenCss/.test(learn)) throw Error('learning-tools must inject #sdpNextGenCss');
+var _mt = learn.indexOf("microToastLoad") >= 0 && learn.indexOf("getEntriesByType") >= 0 && learn.indexOf("\"navigation\"") >= 0;
+if (learn.indexOf("microToastLoad") < 0) throw Error('microToastLoad missing');
+if (learn.indexOf('getEntriesByType("navigation")') < 0) throw Error('navigation transferSize missing');
+if (!/creditPill/.test(learn) || !/v60-credit-live/.test(learn) || !/v60-credit-dock/.test(learn)) throw Error('creditPill must toggle v60-credit-live / v60-credit-dock');
+if (!/guide-si-1\.mp3/.test(sw)) throw Error('sw.js must precache guide-si-1.mp3');
+if (!/eleven_flash_v2_5/.test(studio) || !/eleven_flash_v2_5/.test(read('data/elevenlabs-audio.json'))) throw Error('eleven_flash_v2_5 must be the default model');
+if (!/iterations: ?250000/.test(INDEX)) throw Error('index.html must ship PBKDF2 iterations: 250000 (SDP_ENC_V2)');
+if (!/encVault/.test(read('data/config.json')) || !/SDP_ENC_V2:/.test(read('data/config.json'))) throw Error('config.json must carry encVault: SDP_ENC_V2:...');
+console.log('v60 markers: PASS');
 console.log('v59 markers: PASS');
-console.log('ALL v59 STATIC CHECKS PASSED');
+console.log('ALL v60 STATIC CHECKS PASSED');
 

@@ -3106,7 +3106,190 @@
     try { if (UI() && UI().applyLang) UI().applyLang(); } catch (e) {}
     try { V59.syncI18n(); } catch (e) {}
     try { Learn.syncOfflineRow(); Learn.updateGauge(); Learn.syncFocus(); } catch (e) {}
-    V59.ready = true;
+    
+  /* ============================================================
+     SDPVersion — continuous 9.0.x.y release progression
+     9.0.0.1 -> 9.0.0.2 -> ... -> 9.0.0.9 -> 9.0.1.0 -> 9.0.1.1
+     ============================================================ */
+  window.SDPVersion = {
+    family: '9.0',
+    current: '9.0.0.1',
+    parse: function (v) {
+      var m = /^9\.0\.(\d+)(?:\.(\d+))?$/.exec(String(v || '9.0.0.1'));
+      return { major: 9, minor: 0, patch: Number(m && m[1] ? m[1] : 0), build: Number(m && m[2] ? m[2] : 1) };
+    },
+    bumpPatch: function (currentVersion) {
+      var p = this.parse(currentVersion || this.current);
+      if (p.build < 9) { p.build++; }
+      else { p.build = 1; p.patch++; }
+      var next = '9.0.' + p.patch + '.' + p.build;
+      this.current = next;
+      return next;
+    },
+    isValid: function (v) { return /^9\.0\.\d+(\.\d+)?$/.test(String(v || '')); }
+  };
+
+  /* ============================================================
+     SDP.microToastLoad — whisper-quiet load micro-notification
+     Includes navigation transferSize so the 485 KB document is counted.
+     ============================================================ */
+  Learn.microToastLoad = function () {
+    try {
+      var total = 0, entries, i, nav, mb, l, msg, pill;
+      entries = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType('resource') : [];
+      for (i = 0; i < entries.length; i++) total += Number(entries[i].transferSize || 0);
+      nav = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType("navigation") : [];
+      if (nav && nav.length) total += Number(nav[0].transferSize || 0);
+      mb = (total / 1048576);
+      l = lang();
+      msg = l === 'si' ? ('⏲ ' + mb.toFixed(2) + ' MB කලන්රග෍කරඪ෍දය෍ඪව්ඪ 0.34 MB വിഭ්ඪ േവර෍දඪ') : ('⚡ ' + mb.toFixed(2) + ' MB used on load');
+      pill = D.createElement('div');
+      pill.id = 'sdpMicroToast';
+      pill.className = 'sdp-micro-toast';
+      pill.setAttribute('aria-hidden', 'true');
+      pill.style.cssText = 'position:fixed;left:12px;bottom:calc(94px + env(safe-area-inset-bottom,0px));z-index:100;pointer-events:none;font-size:11.5px;padding:6px 10px;border-radius:10px;background:rgba(6,10,22,.82);color:#e2e8f0;border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .3s ease,transform .3s ease;transform:translateY(10px);white-space:nowrap';
+      pill.textContent = msg;
+      try { (D.body || D.documentElement).appendChild(pill); } catch (e) { return; }
+      setTimeout(function () { try { pill.style.opacity = '1'; pill.style.transform = 'translateY(0)'; } catch (e) {} }, 40);
+      setTimeout(function () { try { pill.style.opacity = '0'; pill.style.transform = 'translateY(-10px)'; } catch (e) {} }, 3500);
+      setTimeout(function () { try { if (pill.parentNode) pill.parentNode.removeChild(pill); } catch (e) {} }, 4000);
+    } catch (e) {}
+  };
+
+  /* ============================================================
+     SDP.creditPill — animated 🦢 Credits Goes To Hansana live pill
+     ============================================================ */
+  Learn.creditPill = function () {
+    try {
+      var credit, reduced;
+      credit = $('#credit');
+      if (!credit) return;
+      reduced = W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      credit.className = (credit.className || '').replace(/v60-credit-dock/g, '') + ' v60-credit-live';
+      credit.style.cssText = 'position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:55;pointer-events:none!important;font-size:12px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#fbbf24,#38bdf8);color:#062530;font-weight:800;border:1px solid rgba(255,255,255,.4);box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;transform:translate(-50%,-14px) scale(0.88);transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .38s ease,border-color .38s ease';
+      credit.textContent = '�� CREDITS GOES TO Hansana';
+      credit.setAttribute('aria-hidden', 'true');
+      try { credit.offsetHeight; } catch (e) {}
+      credit.style.opacity = '1';
+      credit.style.transform = 'translate(-50%,0) scale(1)';
+      if (reduced) {
+        setTimeout(function () { Learn.dockCreditPill(); }, 50);
+        return;
+      }
+      setTimeout(function () {
+        try {
+          credit.style.borderColor = 'rgba(103,232,249,.6)';
+          credit.style.boxShadow = '0 0 20px rgba(103,232,249,.5),0 8px 24px rgba(0,0,0,.45)';
+        } catch (e) {}
+      }, 100);
+      setTimeout(function () { Learn.dockCreditPill(); }, 3800);
+    } catch (e) {}
+  };
+  Learn.dockCreditPill = function () {
+    try {
+      var credit = $('#credit');
+      if (!credit) return;
+      credit.className = (credit.className || '').replace(/v60-credit-live/g, '') + ' v60-credit-dock';
+      credit.style.cssText = 'position:static!important;transform:none!important;pointer-events:auto!important;z-index:1!important;font-size:12px;padding:6px 14px;border-radius:999px;background:rgba(6,10,22,.72);color:#e2e8f0;border:1px solid rgba(255,255,255,.18);font-weight:700';
+      credit.textContent = '�� Crafted by Hansana';
+      credit.setAttribute('aria-label', 'About & Credits');
+      credit.onclick = function () { try { Learn.openAbout(); } catch (e) {} };
+    } catch (e) {}
+  };
+
+  /* ============================================================
+     #sdpNextGenCss — Next-Gen shadcn/ui Zinc/Sky design system
+     Injected at runtime by learning-tools.js (index.html adds 0 CSS bytes)
+     ============================================================ */
+  Learn.sdpNextGenCss = function () {
+    try {
+      if ($('#sdpNextGenCss')) return;
+      var st = D.createElement('style');
+      st.id = 'sdpNextGenCss';
+      st.textContent = [
+        ':root{--sdp-zinc-950:#09090b;--sdp-zinc-900:#18181b;--sdp-zinc-800:#27272a;--sdp-sky-400:#38bdf8;--sdp-emerald:#4ade80;--sdp-amber:#fbbf24;--sdp-border:1px solid rgba(255,255,255,0.09);--sdp-tap:48px}',
+        'html[lang=en]{--font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}',
+        'html[lang=si]{--font:"Noto Sans Sinhala",Inter,sans-serif;line-height:1.75}',
+        '.topbar,.topbar.glass{position:fixed!important;top:0!important;left:0!important;right:0!important;height:54px!important;min-height:54px!important;max-width:100%!important;margin:0!important;padding:0 14px!important;border-radius:0!important;background:rgba(24,24,27,0.88)!important;backdrop-filter:blur(14px) saturate(1.4)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important;border-bottom:1px solid rgba(255,255,255,0.09)!important;z-index:60!important}',
+        '#app{padding-top:calc(66px + env(safe-area-inset-top,0px))!important;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}',
+        '.v60-cockpit-bar{position:absolute;top:0;left:0;right:0;height:4px;border-radius:0;z-index:1}',
+        '.v60-cockpit-bar.sky{background:linear-gradient(90deg,#38bdf8,#38bdf8)}',
+        '.v60-cockpit-bar.amber{background:linear-gradient(90deg,#fbbf24,#fbbf24)}',
+        '.v60-cockpit-bar.emerald{background:linear-gradient(90deg,#4ade80,#4ade80)}',
+        '.v60-cockpit-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}',
+        '.v60-cockpit-pill{height:34px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(24,24,27,0.72);display:inline-flex;align-items:center;gap:8px;padding:0 10px;font-variant-numeric:tabular-nums}',
+        '#cdNum{font-variant-numeric:tabular-nums;font-weight:700}',
+        '#ring{width:26px!important;height:26px!important}',
+        '.v60-credit-live{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:55;pointer-events:none!important}',
+        '.v60-credit-dock{position:static!important;transform:none!important;pointer-events:auto!important}',
+        'body.v58-keyboard #tabbar{pointer-events:auto!important;opacity:1!important}',
+        '@media (prefers-reduced-motion: reduce){.v60-credit-live{animation:none!important;transition:none!important}}'
+      ].join('\n');
+      (D.head || D.documentElement).appendChild(st);
+    } catch (e) {}
+  };
+
+  /* ============================================================
+     SDPOfflineDB — IndexedDB learner store (sdp-learner-v1)
+     with localStorage mirror fallback
+     ============================================================ */
+  window.SDPOfflineDB = {
+    DB_NAME: 'sdp-learner-v1',
+    STORES: ['results', 'weakWords', 'outbox'],
+    _db: null,
+    _open: function (cb) {
+      try {
+        if (!W.indexedDB) { cb(null); return; }
+        var req = W.indexedDB.open(this.DB_NAME, 1);
+        req.onupgradeneeded = function (ev) {
+          var db = ev.target.result, i;
+          for (i = 0; i < this.STORES.length; i++) {
+            if (!db.objectStoreNames.contains(this.STORES[i])) db.createObjectStore(this.STORES[i], { keyPath: 'id' });
+          }
+        }.bind(this);
+        req.onsuccess = function (ev) { this._db = ev.target.result; cb(this._db); }.bind(this);
+        req.onerror = function () { cb(null); };
+      } catch (e) { cb(null); }
+    },
+    _store: function (db, name, mode, cb) {
+      try { var tx = db.transaction([name], mode || 'readonly'); cb(tx.objectStore(name)); } catch (e) { cb(null); }
+    },
+    put: function (storeName, item, cb) {
+      this._open(function (db) {
+        if (!db) { try { this._lsPut(storeName, item); if (cb) cb(); } catch (e) { if (cb) cb(); } return; }
+        this._store(db, storeName, 'readwrite', function (store) {
+          if (!store) { if (cb) cb(); return; }
+          try { var r = store.put({ id: String(item.id || Date.now()), data: item, ts: Date.now() }); r.onsuccess = function () { try { this._lsPut(storeName, item); } catch (e) {} if (cb) cb(); }.bind(this); r.onerror = function () { if (cb) cb(); }; } catch (e) { if (cb) cb(); }
+        }.bind(this));
+      }.bind(this));
+    },
+    get: function (storeName, id, cb) {
+      this._open(function (db) {
+        if (!db) { if (cb) cb(this._lsGet(storeName, id)); return; }
+        this._store(db, storeName, 'readonly', function (store) {
+          if (!store) { if (cb) cb(null); return; }
+          try { var r = store.get(String(id)); r.onsuccess = function () { if (cb) cb(r.result && r.result.data ? r.result.data : null); }; r.onerror = function () { if (cb) cb(null); }; } catch (e) { if (cb) cb(null); }
+        }.bind(this));
+      }.bind(this));
+    },
+    _lsKey: function (storeName, id) { return 'sdp.idb.' + storeName + '.' + String(id); },
+    _lsPut: function (storeName, item) { try { W.localStorage.setItem(this._lsKey(storeName, item.id || Date.now()), JSON.stringify({ data: item, ts: Date.now() })); } catch (e) {} },
+    _lsGet: function (storeName, id) { try { var raw = W.localStorage.getItem(this._lsKey(storeName, id)); if (!raw) return null; var o = JSON.parse(raw); return o && o.data ? o.data : null; } catch (e) { return null; } },
+    mirrorWeak: function () {
+      try {
+        var weak = Learn.loadWeakWords ? Learn.loadWeakWords() : {}, k;
+        for (k in weak) if (Object.prototype.hasOwnProperty.call(weak, k)) this.put('weakWords', { word: k, entry: weak[k], ts: Date.now() });
+      } catch (e) {}
+    },
+    hydrateWeak: function () {
+      try {
+        var stored = W.localStorage.getItem('sdp.weakWords.v1');
+        if (!stored || stored === '{}') return false;
+        return true;
+      } catch (e) { return false; }
+    }
+  };
+V59.ready = true;
     try { PG.start(UI(), DB()); } catch (e) {}
   }
 
