@@ -30,7 +30,7 @@ const APP = '6.0.0';
 const KEY = 'sdp.v54_encrypted_universal_sync';
 const VOICE = 'Xb7hH8MSUJpSbSDYk0k2';
 const MODEL = 'eleven_flash_v2_5';
-const PIN = '78987898';
+const PIN = '';
 const WALL = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
 
 const PATCHES = [
@@ -146,7 +146,7 @@ version.buildDate = '2026-10-30';
 version.updatedAt = new Date().toISOString();
 version.updatedAtMs = syncRev;
 version.features = Object.assign({}, version.features, {
-  encryptedVault: 'v54: the ElevenLabs API key, the GitHub token, the voice settings, the session and the word list are encrypted as SDP_ENC_V1 URL-safe Base64 ciphertext keyed by the lecturer PIN (78987898 + salt). No raw API key or GitHub token is ever committed, so GitHub secret scanning stays quiet.',
+  encryptedVault: 'v54: the ElevenLabs API key, the GitHub token, the voice settings, the session and the word list are encrypted as SDP_ENC_V1 URL-safe Base64 ciphertext keyed by the lecturer PIN ( + salt). No raw API key or GitHub token is ever committed, so GitHub secret scanning stays quiet.',
   universalSync: 'v54: every lecturer save stamps syncRev, encrypts the vault and pushes three channels in parallel - the ntfy.sh zero-config relay (dictationb1_sdp_vault_v54), the Google Apps Script Cloud backend and a permanent GitHub commit of data/config.json, data/session.json, data/version.json and data/elevenlabs-audio.json.',
   audioRelay: 'v54: generated ElevenLabs clips are also published to the shared clip relay (dictationb1_sdp_audio_v54), so a phone without a GitHub token still receives the exact saved clips.',
   syncPull: 'v54: UniversalSync.pullAll() runs on boot, on visibilitychange, when Lecturer Mode unlocks and from the Sync Now button, cache-busting every JSON read and applying the highest syncRev.',

@@ -31,7 +31,7 @@
   /* v55: the < 600 byte keys envelope lives in the studio (index.html stays lean).
      The inline vault keeps encrypt/decrypt/payload/applyRemoteVault; these three add the tiny wire record. */
   (function extendVault() {
-    var EV = window.EncryptedVault, PIN = "78987898";
+    var EV = window.EncryptedVault, PIN = "";
     if (!EV || EV.keyEnvelope) { return; }
     /* the wire record: ONLY elevenLabsKey + ghToken + the voice pair + syncRev, no words and no
        settings that already travel in data/config.json, so the ciphertext always stays tiny. */
@@ -391,7 +391,7 @@
     payload: function (cb) {
       var self = this;
       this.clips(function (c2) {
-        var k, p = { version: 55, ver: 55, appVersion: "6.1.0", schema: 55, settingsRev: 55, key: "sdp.v55_guaranteed_device_sync", adminPin: "78987898", strictAdminOnly: true, voiceId: self.vid(), modelId: self.mid(), generatedAt: new Date().toISOString(), clips: {} };
+        var k, p = { version: 55, ver: 55, appVersion: "6.1.0", schema: 55, settingsRev: 55, key: "sdp.v55_guaranteed_device_sync", adminPin: "", strictAdminOnly: true, voiceId: self.vid(), modelId: self.mid(), generatedAt: new Date().toISOString(), clips: {} };
         for (k in c2) if (c2[k]) p.clips[k] = { text: (self.metaMap[k] && self.metaMap[k].text) || "", voiceId: self.vid(), modelId: self.mid(), audio: c2[k] };
         cb(p);
       });
@@ -542,7 +542,7 @@
   function versionDoc() {
     return {
       ver: 55, appVersion: "6.1.0", version: "6.1.0", buildDate: BUILD_DATE, schema: 55, settingsRev: 55, key: KEY, storageKey: KEY,
-      adminPin: "78987898", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
+      adminPin: "", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop",
       voicePack: V.count(), creditLock: "student playback replays saved clips only",
       syncRev: vaultBits().syncRev, vaultCiphertext: vaultBits().vaultCiphertext
@@ -554,7 +554,7 @@
     list = list || {};
     return {
       appName: "Smart Dictation", appVersion: "6.1.0", ver: 55, version: "6.1.0", schema: 55, settingsRev: 55, key: KEY,
-      classDays: [2, 4], level: "B1", adminPin: "78987898", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
+      classDays: [2, 4], level: "B1", adminPin: "", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop", perf: "full",
       session: {
         no: (s.session && s.session.no) || "1", day: (s.session && s.session.day) || "", date: (s.session && s.session.date) || U.dateKey(new Date()),
@@ -1243,7 +1243,7 @@
     for (i = 0; i < files.length; i++) {
       try { o = JSON.parse(files[i].text || "{}"); } catch (e) { o = {}; }
       o.ver = 55; o.appVersion = "6.1.0"; o.version = "6.1.0"; o.schema = 55; o.settingsRev = 55;
-      o.key = "sdp.v55_guaranteed_device_sync"; o.storageKey = o.key; o.adminPin = "78987898";
+      o.key = "sdp.v55_guaranteed_device_sync"; o.storageKey = o.key; o.adminPin = "";
       o.syncRev = env.syncRev; o.vaultCiphertext = env.vaultCiphertext;
       o.updatedAt = new Date().toISOString(); o.updatedAtMs = Date.now();
       if (/session\.json$/.test(files[i].p)) {
@@ -1288,7 +1288,7 @@
     return {
       version: 55, ver: 55, appVersion: "6.1.0", schema: 55, settingsRev: 55,
       key: "sdp.v55_guaranteed_device_sync", storageKey: "sdp.v55_guaranteed_device_sync",
-      adminPin: "78987898", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
+      adminPin: "", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
       strictAdminOnly: true, clips: clips, generatedAt: new Date().toISOString(),
       note: "Permanent ElevenLabs voice vault: every device replays these clips with 0 credits."
     };

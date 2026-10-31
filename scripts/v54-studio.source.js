@@ -407,7 +407,7 @@
   function versionDoc() {
     return {
       ver: 54, appVersion: "6.0.0", version: "6.0.0", buildDate: BUILD_DATE, schema: 54, settingsRev: 54, key: KEY, storageKey: KEY,
-      adminPin: "78987898", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
+      adminPin: "", updatedAt: new Date().toISOString(), updatedAtMs: Date.now(), voiceId: V.vid(), voiceName: V.vname(), modelId: V.mid(),
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop",
       voicePack: V.count(), creditLock: "student playback replays saved clips only",
       syncRev: vaultBits().syncRev, vaultCiphertext: vaultBits().vaultCiphertext
@@ -419,7 +419,7 @@
     list = list || {};
     return {
       appName: "Smart Dictation", appVersion: "6.0.0", ver: 54, version: "6.0.0", schema: 54, settingsRev: 54, key: KEY,
-      classDays: [2, 4], level: "B1", adminPin: "78987898", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
+      classDays: [2, 4], level: "B1", adminPin: "", repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
       activeVideoSrc: DEFAULT_WALLPAPER_SRC, activeMediaType: "video", videoPlaylistMode: "loop", perf: "full",
       session: {
         no: (s.session && s.session.no) || "1", day: (s.session && s.session.day) || "", date: (s.session && s.session.date) || U.dateKey(new Date()),
@@ -899,7 +899,7 @@
     for (i = 0; i < files.length; i++) {
       try { o = JSON.parse(files[i].text || "{}"); } catch (e) { o = {}; }
       o.ver = 54; o.appVersion = "6.0.0"; o.version = "6.0.0"; o.schema = 54; o.settingsRev = 54;
-      o.key = "sdp.v54_encrypted_universal_sync"; o.storageKey = o.key; o.adminPin = "78987898";
+      o.key = "sdp.v54_encrypted_universal_sync"; o.storageKey = o.key; o.adminPin = "";
       o.syncRev = env.syncRev; o.vaultCiphertext = env.vaultCiphertext;
       o.updatedAt = new Date().toISOString(); o.updatedAtMs = Date.now();
       if (/session\.json$/.test(files[i].p)) {
@@ -938,7 +938,7 @@
       }
     }
     p = { version: 54, ver: 54, appVersion: "6.0.0", schema: 54, settingsRev: 54, key: "sdp.v54_encrypted_universal_sync",
-      adminPin: "78987898", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
+      adminPin: "", voiceId: V ? V.vid() : "Xb7hH8MSUJpSbSDYk0k2", modelId: V ? V.mid() : "eleven_flash_v2_5",
       strictAdminOnly: true, clips: clips, generatedAt: new Date().toISOString() };
     return p;
   }

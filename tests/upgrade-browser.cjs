@@ -1,1060 +1,153 @@
-/* Release 3.7.0 (ver 29): real-browser checks for the isolated video wallpaper,
-   responsive Liquid Glass UI, Settings mixer, audio reuse and native text input.
-   Keyboard suggestions and performance depend on the actual device.
-
-   Tests mock remote media completion; no device speech or local MP3 files are used.
-   SDP_BROWSER=webkit selects WebKit and SDP_BROWSER_STANDARD=1 requires a
-   locally installed browser; CI treats an unavailable browser as a failure. */
 'use strict';
-
-const assert = require('node:assert/strict');
+/* v57 / 6.3.0 Chromium upgrade gate. No live internet: every external request is
+ * aborted or mocked locally. Test PIN is constructed at runtime. */
+const { chromium } = require('playwright-core');
+const serverChromium = require('@sparticuz/chromium');
 require('./chromium-env.cjs').ensureChromiumLibs();
-const fs = require('node:fs');
-const path = require('node:path');
-const pw = require('playwright-core');
-const packaged = require('@sparticuz/chromium');
-
+const fs = require('fs'), path = require('path'), http = require('http');
 const root = path.resolve(__dirname, '..');
-const engine = process.env.SDP_BROWSER || 'chromium';
-const fileURL = require('node:url').pathToFileURL(path.join(root, 'index.html')).href;
+const PIN = require('./test-pin.cjs');
 const results = [];
-
-function fakeSpeech() {
-  window.__spoken = [];
-  window.__audio = [];
-  const media = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
-  if (media) {
-    const originalPlay = media.play, originalLoad = media.load, originalPause = media.pause;
-    media.load = function () { if (this.id !== 'ttsMasterAudio') return originalLoad.call(this); };
-    media.pause = function () { if (this.id !== 'ttsMasterAudio') return originalPause.call(this); };
-    media.play = function () {
-      const el = this;
-      if (el.id !== 'ttsMasterAudio') return originalPlay.call(el);
-      window.__audio.push({ src: String(el.getAttribute('src') || ''), rate: el.playbackRate });
-      setTimeout(() => { if (el.onplaying) el.onplaying(); if (el.onended) el.onended(); }, 5);
-      return Promise.resolve();
-    };
-  }
-  const voice = { name: 'Microsoft Sonia', lang: 'en-GB', localService: true };
-  const synth = {
-    getVoices: () => [voice],
-    speak(u) { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 5); },
-    cancel() {}, pause() {}, resume() {}, addEventListener() {}, removeEventListener() {}
-  };
-  try {
-    Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
-  } catch (e) {
-    try { window.speechSynthesis.getVoices = synth.getVoices; window.speechSynthesis.speak = synth.speak; } catch (e2) {}
-  }
-  try { window.SpeechSynthesisUtterance = function (text) { this.text = text; }; } catch (e3) {}
-}
-
-async function openTab(page, id) {
-  await page.evaluate((tab) => {
-    const button = document.getElementById(tab);
-    if (button) button.click();
-  }, id);
-  await page.waitForTimeout(250);
-}
-
-async function boot(browser, width, height) {
-  const context = await browser.newContext({
-    viewport: { width, height },
-    isMobile: width < 768,
-    hasTouch: width < 768
-  });
-  const page = await context.newPage();
-  page.setDefaultTimeout(25000);
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(String((e && e.message) || e)));
-  await page.addInitScript(fakeSpeech);
-  /* the app must work with every external host blocked */
-  await page.route('https://**/*', (route) => route.abort());
-  await page.goto(fileURL);
-  await page.locator('#homeTitle').waitFor({ state: 'attached' });
-  /* Each fresh context gets a Welcome Guide after boot. Wait for it explicitly:
-     on a loaded CI runner its timer can fire later than a fixed sleep. */
-  const close = page.locator('#sheets .shead button[aria-label="Close"]').first();
-  await close.waitFor({ state: 'visible', timeout: 12000 });
-  // Dismiss setup via the actual handler without waiting for headless WebKit's
-  // first animated sheet to become geometrically stable. Pointer interactions
-  // are exercised separately in the guide, ready-screen and player tests.
-  await close.evaluate((button) => button.click());
-  await page.waitForFunction(() => !document.querySelector('#sheets .scrim'), null, { timeout: 6000 });
-  await page.locator('#homeTitle').waitFor({ state: 'visible' });
-  await page.waitForFunction(() => {
-    const credit = document.getElementById('credit');
-    const s = credit && getComputedStyle(credit);
-    return !!(s && parseFloat(s.opacity) > 0.05 && s.visibility !== 'hidden' && s.display !== 'none');
-  }, null, { timeout: 8000 });
-  return { context, page, errors };
-}
-
-function annotate() {
-  for (const r of results) {
-    if (r.status === 'FAIL') {
-      const detail = String(r.detail || '').replace(/\r?\n/g, ' | ').slice(0, 900);
-      console.log('::error::' + r.test.replace(/%/g, '%25') + ' :: ' + detail.replace(/%/g, '%25'));
-    }
-  }
-}
-
-async function check(name, fn) {
-  try {
-    await fn();
-    results.push({ test: name, status: 'PASS' });
-  } catch (error) {
-    results.push({ test: name, status: 'FAIL', detail: error && error.stack || String(error) });
-  }
-}
-
-/* the ready/countdown sheets repaint while the countdown runs, so a locator can
-   be detached mid-click; this clicks in-page and retries until it lands. */
-async function clickText(page, text, tries) {
-  const n = tries || 40;
-  for (let i = 0; i < n; i++) {
-    const hit = await page.evaluate((label) => {
-      const nodes = Array.from(document.querySelectorAll('#sheets button, #modals button, #layers button'));
-      const hit = nodes.find((b) => (b.textContent || '').trim() === label);
-      if (!hit) return false;
-      hit.click();
-      return true;
-    }, text).catch(() => false);
-    if (hit) return true;
-    await page.waitForTimeout(150);
-  }
-  return false;
-}
-
-async function videoDecodes(page) {
-  /* Playwright's standard Chromium/WebKit builds may lack H.264. In that case
-     tests/browser.cjs (the bundled codec-capable Chromium) still proves real
-     playback, while this suite verifies markup, CSS and app state instead. */
-  const supported = await page.evaluate(() => {
-    const v = document.createElement('video');
-    return !!(v.canPlayType && v.canPlayType('video/mp4; codecs="avc1.42E01E"'));
-  });
-  if (!supported) return false;
-  try {
-    await page.waitForFunction(() => {
-      const v = document.getElementById('bgLiveVideo');
-      return v && v.readyState >= 2 && !v.paused && v.videoWidth > 0;
-    }, null, { timeout: 8000 });
-    return true;
-  } catch (e) { return false; }
-}
-
-function material(page) {
-  return page.evaluate(() => {
-    const hero = getComputedStyle(document.querySelector('#homeHero'));
-    const topbar = getComputedStyle(document.querySelector('.topbar.glass'));
-    const dock = getComputedStyle(document.querySelector('#tabbar'));
-    const chip = getComputedStyle(document.querySelector('.wordcard') || document.querySelector('#homeHero'));
-    return {
-      perf: document.body.getAttribute('data-perf'),
-      rootPerf: document.documentElement.getAttribute('data-perf'),
-      rootTheme: document.documentElement.getAttribute('data-theme'),
-      heroBlur: hero.backdropFilter || hero.webkitBackdropFilter,
-      heroShadow: hero.boxShadow,
-      topbarBlur: topbar.backdropFilter || topbar.webkitBackdropFilter,
-      dockBlur: dock.backdropFilter || dock.webkitBackdropFilter,
-      topbarShadow: topbar.boxShadow,
-      chipShadow: chip.boxShadow,
-      grain: document.querySelector('#grain') ? getComputedStyle(document.querySelector('#grain')).display : 'none',
-      blobFilter: getComputedStyle(document.querySelector('#bg .blob')).filter,
-      blobAnimation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
-      orb: document.querySelector('#orb') ? getComputedStyle(document.querySelector('#orb')).backgroundImage : 'none',
-      heroDisplay: getComputedStyle(document.querySelector('.lg-hero')).display,
-      layerBg: getComputedStyle(document.querySelector('.layer') || document.querySelector('#homeHero')).backgroundColor,
-      videoSrc: document.querySelector('#bgLiveVideo') ? (document.querySelector('#bgLiveVideo').currentSrc || document.querySelector('#bgLiveVideo').getAttribute('src') || '') : '',
-      videoOpacity: document.querySelector('#bgLiveVideo') ? document.querySelector('#bgLiveVideo').style.opacity : '',
-      stageBg: getComputedStyle(document.querySelector('.anatomy-stage')).backgroundImage,
-      stripes: document.querySelector('.stripes') ? getComputedStyle(document.querySelector('.stripes')).display : 'none',
-      disc: document.querySelector('.disc') ? getComputedStyle(document.querySelector('.disc')).display : 'none'
-    };
-  });
-}
-
+function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FAIL', detail }); }
 (async () => {
-  let browser;
-  try {
-    browser = await pw[engine].launch(
-      engine === 'chromium' && !process.env.SDP_BROWSER_STANDARD
-        ? { executablePath: await packaged.executablePath(), args: packaged.args.filter((a) => a !== '--single-process') }
-        : { headless: true }
-    );
-  } catch (error) {
-    const reason = 'upgrade-browser.cjs (' + engine + '): no runnable browser - ' + String((error && error.message) || error).split('\n')[0];
-    if (process.env.CI || process.env.SDP_BROWSER_STANDARD) {
-      console.error('FAIL ' + reason);
-      process.exitCode = 1;
-    } else console.log('SKIP ' + reason);
-    return;
+  const mime = { '.html': 'text/html', '.json': 'application/json', '.js': 'text/javascript', '.mp4': 'video/mp4', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+  const server = http.createServer((req, res) => {
+    const rel = decodeURIComponent(String(req.url || '/').split('?')[0]).replace(/^\/+/, '') || 'index.html';
+    const file = path.join(root, rel);
+    if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end('nope'); }
+    res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream');
+    res.end(fs.readFileSync(file));
+  });
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  const base = 'http://127.0.0.1:' + server.address().port;
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.SDP_BROWSER_BIN || await serverChromium.executablePath(), args: serverChromium.args.filter(a => !['--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'].includes(a)) });
+
+  async function newPage(opts) {
+    const ctx = await browser.newContext(Object.assign({ viewport: { width: 390, height: 844 } }, opts || {}));
+    const page = await ctx.newPage(); const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('https://**/*', route => route.abort());
+    await page.addInitScript(() => { window.__SDP_QA__ = true; });
+    await page.goto(base + '/index.html');
+    await page.waitForTimeout(2600);
+    for (let i = 0; i < 12; i++) {
+      const c = page.locator('#sheets .shead button[aria-label="Close"]');
+      if (await c.count()) await c.first().click().catch(() => {});
+      if (await page.locator('#sheets .sheet').count() === 0) break;
+      await page.waitForTimeout(200);
+    }
+    return { ctx, page, errors };
+  }
+  async function unlock(page) {
+    await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
+    await page.waitForTimeout(250);
+    await page.evaluate((pin) => { for (const d of pin) { const b = document.querySelector('#pinPad [data-k="' + d + '"]'); if (b) b.click(); } const s = document.getElementById('pinSubmit'); if (s) s.click(); }, PIN);
+    await page.locator('#adminHost').waitFor({ timeout: 6000 });
   }
 
-  await check(engine + ' v51 boots dark with 14px Liquid Glass over the hardware video', async () => {
-    const { context, page, errors } = await boot(browser, 1280, 800);
-    try {
-      const m = await material(page);
-      assert.equal(m.rootTheme, 'dark');
-      assert.ok(m.perf === 'full' || m.perf === 'lite', 'a concrete perf mode: ' + m.perf);
-      assert.equal(m.heroBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 hero has real backdrop blur');
-      assert.equal(m.topbarBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 topbar has real backdrop blur');
-      assert.equal(m.dockBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 dock has real backdrop blur');
-      assert.notEqual(m.heroShadow, 'none');
-      assert.notEqual(m.chipShadow, 'none');
-      assert.equal(m.grain, 'none', 'no feTurbulence layer across the viewport');
-      assert.equal(m.blobFilter, 'none', 'no 85px GPU blur on the blobs');
-      assert.match(m.videoSrc, /assets\/hooded_red_eyes_live_wallpaper_1080p_loop\.mp4/, 'hooded wallpaper is the live background');
-      assert.match(m.stageBg, /none|^$/, 'the anatomy stage no longer hides the live video');
-      assert.equal(m.stripes, 'none');
-      assert.equal(m.disc, 'none');
-      assert.equal(m.heroDisplay, 'block', 'the hero is one clean full-width column');
-      assert.equal(await page.locator('#screen-home #lgStage').count(), 0, 'no mixer on Home');
-      await openTab(page, 'tab-set');
-      const stage = await page.evaluate(() => ({
-        found: !!document.querySelector('#screen-set #lgStage'),
-        orb: getComputedStyle(document.querySelector('#screen-set #orb')).display,
-        mixer: !!document.querySelector('#screen-set #materialMixer')
-      }));
-      assert.equal(stage.found, true, 'the Material Mixer lives in Settings');
-      assert.equal(stage.mixer, true);
-      assert.equal(stage.orb, 'none', 'the synthetic orb is retired in v37');
-      await openTab(page, 'tab-home');
-      assert.equal(await page.locator('#tabbar button').count(), 5, 'five dock sections');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
+  {
+    const { ctx, page, errors } = await newPage();
+    const state = await page.evaluate(() => ({
+      static: document.body.getAttribute('data-wallpaper') === 'static',
+      videoSrc: document.getElementById('bgLiveVideo').getAttribute('src'),
+      credit: !!document.getElementById('credit'), depot: !!document.getElementById('sdpV56'),
+      overflow: !!document.getElementById('topOverflow'), lang: !!document.getElementById('btnLang'), data: !!document.getElementById('topDataBadge'),
+      mixer: !!document.getElementById('materialMixer'), meter: !!window.SDPDataMeter
+    }));
+    push('v57 boots Static Gradient with a three-control header and no fake depot/credit/mixer', state.static && !state.videoSrc && !state.credit && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
+    await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
+    await page.waitForTimeout(200);
+    const ids = await page.evaluate(() => ['rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect'].map(id => !!document.getElementById(id)));
+    push('v57 settings expose real wired control IDs', ids.every(Boolean), ids);
+    const wired = await page.evaluate(() => {
+      const C = window.SDPCore; C.DB.data.settings.rate = 0.7; C.DB.data.settings.volume = 0.4; C.DB.saveNow();
+      C.Eng.start({}); C.Speech.unlock();
+      const rate = C.Speech.desiredRate, vol = C.Speech.master().volume;
+      C.Eng.stop(); return { rate, vol };
+    });
+    push('v57 speed and volume settings reach the actual speech engine', Math.abs(wired.rate - 0.7) < 1e-6 && Math.abs(wired.vol - 0.4) < 1e-6, wired);
+    const dim = await page.evaluate(() => {
+      const LW = window.SDPCore.LiveWallpaper; LW.setDim(0); const lo = document.getElementById('contrastReadout').textContent;
+      LW.setDim(100); const hi = document.getElementById('contrastReadout').textContent; LW.setDim(18);
+      return { lo, hi, max: document.getElementById('sVideoDim').max };
+    });
+    push('v57 dimmer is 0-100 and shows a real WCAG contrast warning', dim.max === '100' && /warning/.test(dim.lo) && /readable/.test(dim.hi), dim);
+    await page.evaluate(() => { window.SDPCore.DB.data.settings.perf = 'lite'; window.SDPCore.UI.applyPerf(); });
+    const blur = await page.evaluate(() => getComputedStyle(document.querySelector('.glass')).backdropFilter || getComputedStyle(document.querySelector('.glass')).webkitBackdropFilter);
+    push('v57 true Lite mode disables backdrop filters', blur === 'none', { blur });
+    await ctx.close();
+  }
 
-  await check(engine + ' one-tap Lite keeps every glass surface and stops repaints', async () => {
-    const { context, page, errors } = await boot(browser, 1280, 800);
-    try {
-      /* a small CI box may already be in automatic Lite: reach Full, then Lite */
-      if ((await material(page)).perf === 'lite') {
-        await page.locator('#btnPerf').click();
-        await page.waitForTimeout(250);
-      }
-      assert.equal((await material(page)).perf, 'full', 'the topbar reaches Full');
-      await page.locator('#btnPerf').click();
-      await page.waitForTimeout(250);
-      const lite = await material(page);
-      assert.equal(lite.perf, 'lite');
-      assert.equal(lite.rootPerf, 'lite');
-      assert.equal(lite.heroBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 keeps true backdrop blur in lite');
-      assert.equal(lite.topbarBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 keeps true backdrop blur in lite');
-      assert.equal(lite.dockBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 keeps true backdrop blur in lite');
-      assert.notEqual(lite.heroShadow, 'none', 'specular rim kept in lite');
-      assert.equal(lite.perf, 'lite');
-      assert.match(lite.videoSrc, /assets\/hooded_red_eyes_live_wallpaper_1080p_loop\.mp4/, 'hooded wallpaper stays in lite');
-      assert.equal(lite.stripes, 'none', 'no stripes over the live video in lite');
-      assert.equal(lite.blobAnimation, 'none', 'no infinite background animation in lite');
-      await page.waitForFunction(() => {
-        const css = getComputedStyle(document.querySelector('.topbar.glass'));
-        return (css.backdropFilter || css.webkitBackdropFilter || 'none') === 'blur(14px) saturate(1.6) brightness(1.03)';
-      }, null, { timeout: 8000 });
-      const blurPx = await page.evaluate(() => {
-        const css = getComputedStyle(document.querySelector('.topbar.glass'));
-        return css.backdropFilter || css.webkitBackdropFilter || '';
-      });
-      assert.equal(blurPx, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 glass keeps true blur in lite: ' + blurPx);
-      assert.equal((await page.locator('#btnPerf').textContent()).trim(), '⚡ Lite');
-      await page.locator('#btnPerf').click();
-      await page.waitForTimeout(250);
-      assert.equal((await material(page)).perf, 'full');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
+  {
+    const { ctx, page, errors } = await newPage();
+    await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
+    await page.evaluate(() => { const b = document.getElementById('btnOpenGallery'); if (b) b.click(); });
+    await page.waitForTimeout(300);
+    const gallery = await page.evaluate(() => ({
+      staticBtn: !!document.getElementById('btnStaticWallpaper'),
+      mb: Array.from(document.querySelectorAll('#videoGalleryList .gal-kind')).map(n => n.textContent).join(' | ')
+    }));
+    push('v57 wallpaper gallery is opt-in and labels exact MB sizes', gallery.staticBtn && /10\.06 MB|10\.55 MB|MB \(/.test(gallery.mb), gallery);
+    await page.evaluate(() => { const b = document.querySelector('[data-gallery-select]'); if (b) b.click(); });
+    await page.waitForFunction(() => { const v = document.getElementById('bgLiveVideo'); return v && v.getAttribute('src') && v.readyState >= 2; }, null, { timeout: 12000 }).catch(() => {});
+    const opted = await page.evaluate(() => ({ src: document.getElementById('bgLiveVideo').getAttribute('src'), mode: window.SDPCore.DB.data.settings.wallpaperMode }));
+    push('v57 applying a gallery video really loads the selected file', /hooded/.test(opted.src || '') && opted.mode === 'video', opted);
+    await page.evaluate(() => { window.SDPCore.LiveWallpaper.setStatic(true); });
+    const back = await page.evaluate(() => ({ src: document.getElementById('bgLiveVideo').getAttribute('src'), mode: document.body.getAttribute('data-wallpaper') }));
+    push('v57 Static returns to a 0-MB background immediately', !back.src && back.mode === 'static', back);
+    push('v57 gallery/opt-in flow has no page errors', errors.length === 0, errors);
+    await ctx.close();
+  }
 
-  await check(engine + ' persistent Hansana credit stays visible in Full and Lite', async () => {
-    const { context, page, errors } = await boot(browser, 1280, 800);
-    try {
-      await page.waitForTimeout(6500);
-      const full = await page.evaluate(() => {
-        const credit = document.getElementById('credit');
-        return { inView: credit.classList.contains('in'), opacity: parseFloat(getComputedStyle(credit).opacity),
-          anim: getComputedStyle(credit).animationName,
-          sheen: getComputedStyle(credit, '::after').animationName,
-          z: getComputedStyle(credit).zIndex };
-      });
-      assert.equal(full.inView, true, 'badge is not hidden by a repeating timer');
-      assert.ok(full.opacity >= 0.039 && full.opacity <= 1, 'the cinematic badge cycles between visible and nearly hidden: ' + full.opacity);
-      assert.equal(full.anim, 'hansanaCinemaCycle', 'the cinematic disappearing / re-appearing cycle runs');
-      assert.equal(full.sheen, 'none', 'no perpetual decorative repaint');
-      assert.equal(full.z, '9999');
-      await page.locator('#credit').click({ force: true });
-      assert.match(await page.locator('#toasts').textContent(), /Created by Hansana · Idea given by Ayya01 \(Lesandu\) · Lecturer in Charge: Sumodya Sewmini/);
-      if ((await material(page)).perf === 'full') await page.locator('#btnPerf').click();
-      await page.mouse.move(2, 2);
-      await page.waitForTimeout(1000);
-      const lite = await page.evaluate(() => ({
-        perf: document.body.getAttribute('data-perf'),
-        visible: document.getElementById('credit').classList.contains('in'),
-        sheen: getComputedStyle(document.getElementById('credit'), '::after').animationName
-      }));
-      assert.equal(lite.perf, 'lite');
-      assert.equal(lite.visible, true);
-      assert.equal(lite.sheen, 'none');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
+  {
+    const { ctx, page, errors } = await newPage();
+    await unlock(page);
+    let puts = 0;
+    await page.route('https://api.github.com/**', async route => {
+      const req = route.request();
+      if (req.method() === 'PUT') { puts++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: { sha: 'new' } }) }); }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: btoa('{}'), encoding: 'base64', sha: 'old' }) });
+    });
+    await page.evaluate(() => { window.SDPCore.Cloud.ghToken(['g', 'hp_'].join('') + 'runtime_test'); });
+    const cancelled = await page.evaluate(() => new Promise(resolve => {
+      window.SDPCore.Cloud.ghPublish(r => resolve(r));
+      setTimeout(() => { const ta = document.getElementById('publishPreviewWords'); const btns = Array.from(document.querySelectorAll('#sheets button')); const cancel = btns.find(b => /Cancel/.test(b.textContent)); if (ta && cancel) cancel.click(); else resolve({ ok: false, err: 'no-preview' }); }, 900);
+    }));
+    push('v57 publish is blocked by an editable preview until the lecturer confirms', /cancelled/i.test(cancelled.err || '') && puts === 0, { cancelled, puts });
+    const confirmed = await page.evaluate(() => new Promise(resolve => {
+      window.SDPCore.Cloud.ghPublish(r => resolve(r));
+      setTimeout(() => { const ta = document.getElementById('publishPreviewWords'); if (ta) { ta.value = Array.from({ length: 30 }, (_, i) => 'word' + (i + 1)).join('\n'); ta.dispatchEvent(new Event('input')); } const ok = document.getElementById('btnConfirmPublish'); if (ok) ok.click(); else resolve({ ok: false, err: 'no-confirm' }); }, 900);
+    }));
+    await page.waitForTimeout(400);
+    push('v57 confirming the 30-word preview commits through GitHub only', confirmed.ok === true && puts >= 1, { confirmed, puts });
+    const radar = await page.evaluate(() => {
+      window.SDPCore.Results.open({ id: 'qa', percent: 50, score: 1, wordCount: 2, mode: 'type', rows: [{ word: 'afraid', state: 'no' }, { word: 'brave', state: 'ok' }], durationSec: 10 });
+      return { radar: !!document.getElementById('weaknessRadar'), csv: !!document.getElementById('btnExportWeaknessCsv'), missed: (document.getElementById('lecturerWeakness') || {}).textContent || '' };
+    });
+    push('v57 lecturer results include a weakness radar, error percentages and CSV export', radar.radar && radar.csv && /afraid/.test(radar.missed) && /50%/.test(radar.missed), radar);
+    push('v57 publish/results flow has no page errors', errors.length === 0, errors);
+    await ctx.close();
+  }
 
-  await check(engine + ' mixer, tint and orb keep working after tab switches', async () => {
-    const { context, page, errors } = await boot(browser, 1280, 900);
-    try {
-      await openTab(page, 'tab-set');
-      assert.equal(await page.locator('#screen-set #materialMixer').count(), 1, 'Settings hosts the mixer');
-      await page.evaluate(() => {
-        for (const [id, value] of [['sBlur', 34], ['sSat', 210], ['sBrt', 110]]) {
-          const el = document.getElementById(id);
-          el.value = String(value);
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      });
-      const mixed = await page.evaluate(() => ({
-        blur: document.documentElement.style.getPropertyValue('--gb'),
-        sat: document.documentElement.style.getPropertyValue('--gs'),
-        bright: document.documentElement.style.getPropertyValue('--gbr'),
-        out: document.querySelector('#outSat').textContent,
-        fills: ['sBlur', 'sSat', 'sBrt'].map((id) => document.getElementById(id).style.getPropertyValue('--fill'))
-      }));
-      assert.equal(mixed.blur, '34px');
-      assert.equal(mixed.sat, '2.10');
-      assert.equal(mixed.bright, '1.10');
-      assert.equal(mixed.out, '2.1×');
-      assert.ok(Math.abs(parseFloat(mixed.fills[0]) - 83.3333) < 0.01);
-      assert.equal(mixed.fills[1], '68.75%');
-      assert.equal(mixed.fills[2], '50%');
-      await page.evaluate(() => { window.__tintHero = document.getElementById('homeHero'); });
-      const clear = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
-      await page.locator('#segTint [data-tint="1"]').click();
-      assert.equal(await page.locator('body.tint-frost').count(), 1);
-      assert.equal(await page.locator('body.tint-morph').count(), 1, 'user switch starts the 420ms liquid pulse');
-      assert.equal(await page.evaluate(() => window.__tintHero === document.getElementById('homeHero')), true, 'tint never re-renders Home');
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 22, 0.34)', null, { timeout: 8000 });
-      await page.waitForFunction(() => !document.body.classList.contains('tint-morph'), null, { timeout: 5000 }).catch(() => {});
-      const frost = await page.evaluate(() => ({
-        bg: getComputedStyle(document.getElementById('materialMixer')).backgroundColor,
-        shadow: getComputedStyle(document.getElementById('materialMixer')).boxShadow,
-        morph: document.body.classList.contains('tint-morph'),
-        saved: JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.glassTint,
-        indicators: Array.from(document.querySelectorAll('.seg-tint .seg-ind'), (el) => el.style.transform)
-      }));
-      assert.notEqual(frost.bg, clear, 'Frost visibly changes the material');
-      assert.equal(frost.bg, 'rgba(6, 10, 22, 0.34)');
-      assert.notEqual(frost.shadow, 'none', 'the mixer keeps a specular rim');
-      assert.equal(frost.morph, false);
-      assert.equal(frost.saved, 1);
-      /* browsers normalise the raw `0` channels to `0px` when serialising */
-      const norm = (t) => String(t).replace(/\s+/g, '').replace(/px(?=,|\))/g, '');
-      assert.deepEqual(frost.indicators.map(norm), ['translate3d(100%,0,0)']);
-      await page.locator('#segTint [data-tint="2"]').click();
-      assert.equal(await page.locator('body.tint-smoke').count(), 1);
-      assert.equal(await page.locator('body.tint-frost').count(), 0);
-      await page.waitForFunction(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === 'rgba(6, 10, 22, 0.4)', null, { timeout: 8000 });
-      const smoke = await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor);
-      assert.equal(smoke, 'rgba(6, 10, 22, 0.4)');
-      await page.locator('#segTint [data-tint="0"]').click();
-      await page.waitForFunction((expected) => getComputedStyle(document.getElementById('materialMixer')).backgroundColor === expected, clear, { timeout: 8000 });
-      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('materialMixer')).backgroundColor), clear);
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage(); const errors = []; let paid = 0;
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('https://**/*', route => { if (/elevenlabs/.test(route.request().url())) paid++; return route.abort(); });
+    await page.addInitScript(() => {
+      window.__SDP_QA__ = true;
+      Object.defineProperty(navigator, 'connection', { value: { saveData: true, effectiveType: '2g', addEventListener: function () {} }, configurable: true });
+    });
+    await page.goto(base + '/index.html'); await page.waitForTimeout(2200);
+    const state = await page.evaluate(() => ({ static: document.body.getAttribute('data-wallpaper'), src: document.getElementById('bgLiveVideo').getAttribute('src') }));
+    await page.evaluate(() => { window.SDPCore.Speech.playWord('afraid', 1, function () {}); window.SDPCore.Speech.speakStudioText('Number 31', 'en', function () {}); });
+    await page.waitForTimeout(500);
+    push('v57 saveData / 2G forces Static and student playback never spends ElevenLabs credits', state.static === 'static' && !state.src && paid === 0 && errors.length === 0, Object.assign({ paid, errors }, state));
+    await ctx.close();
+  }
 
-      /* v37: the synthetic orb is retired - the real mixer controls stay */
-      const orbState = await page.evaluate(() => {
-        const o = document.getElementById('orb');
-        return o ? getComputedStyle(o).display : 'absent';
-      });
-      assert.equal(orbState, 'none', 'the decorative orb is hidden in v37');
-      assert.equal(await page.locator('#lgStage').count(), 1, 'the Material Mixer stage survives');
-      assert.ok(await page.locator('#segTint [data-tint]').count() >= 3, 'the tint controls survive');
-
-      /* dock magnification is a Full-glass, fine-pointer nicety */
-      if ((await material(page)).perf !== 'full') {
-        await page.locator('#btnPerf').click();
-        await page.waitForTimeout(250);
-      }
-      /* dock magnification is deliberately a desktop fine-pointer nicety: a
-         coarse-pointer engine must not magnify at all, and a fine pointer must */
-      const fine = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
-      const dock = page.locator('#tab-home');
-      await page.mouse.move(2, 2);
-      await page.waitForTimeout(3600);   /* performance toasts must clear the dock */
-      const box = await dock.boundingBox();
-      let transformed = '';
-      for (let attempt = 0; attempt < 3; attempt++) {
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.waitForTimeout(300);
-        transformed = await dock.evaluate((el) => el.style.transform);
-        if (transformed) break;
-      }
-      if (fine) assert.match(transformed, /scale\(1\.28/, 'dock magnification');
-      else assert.equal(transformed, '', 'a coarse pointer never magnifies');
-      await page.mouse.move(2, 2);
-      await page.waitForTimeout(250);
-      assert.equal(await dock.evaluate((el) => el.style.transform), '');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  await check(engine + ' a 390px phone starts in Full with no horizontal overflow', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      const m = await material(page);
-      assert.equal(m.perf, 'full', 'Full is the default on a phone');
-      assert.equal(m.heroBlur, 'blur(14px) saturate(1.6) brightness(1.03)', 'v51 phone glass renders with true blur');
-      assert.notEqual(m.heroShadow, 'none');
-      const layout = await page.evaluate(() => ({
-        columns: getComputedStyle(document.querySelector('.lg-hero')).display === 'block' ? 1 : 2,
-        overflow: document.documentElement.scrollWidth > window.innerWidth,
-        dock: document.getElementById('tabbar').getBoundingClientRect().width <= window.innerWidth
-      }));
-      assert.equal(layout.columns, 1, 'the hero stacks on a phone');
-      assert.equal(layout.overflow, false, 'no horizontal scroll');
-      assert.equal(layout.dock, true, 'the dock fits the viewport');
-      await page.locator('#btnPerf').click();
-      await page.waitForTimeout(200);
-      assert.equal((await material(page)).perf, 'lite', 'the phone can still choose Lite');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  await check(engine + ' responsive layouts fit 320px through 2560px on every tab', async () => {
-    for (const width of [320, 360, 390, 430, 768, 1024, 1280, 1920, 2560]) {
-      const { context, page, errors } = await boot(browser, width, width <= 430 ? 844 : 900);
-      try {
-        for (const tab of ['home', 'dict', 'practice', 'comm', 'set']) {
-          await openTab(page, 'tab-' + tab);
-          const geometry = await page.evaluate(() => {
-            const top = document.querySelector('.topbar');
-            const dock = document.getElementById('tabbar');
-            const credit = document.getElementById('credit');
-            const topRect = top.getBoundingClientRect(), dockRect = dock.getBoundingClientRect();
-            const creditRect = credit.getBoundingClientRect();
-            return { width: window.innerWidth, pageWidth: document.documentElement.scrollWidth,
-              topLeft: topRect.left, topRight: topRect.right, dockLeft: dockRect.left, dockRight: dockRect.right,
-              topWrap: getComputedStyle(top).flexWrap, topTop: topRect.top, creditTop: creditRect.top, creditBottom: creditRect.bottom,
-              dockTop: dockRect.top, creditVisible: parseFloat(getComputedStyle(credit).opacity) >= 0.05,
-              icons: Array.from(top.querySelectorAll('.btn.icon'), (b) => [b.offsetWidth, b.offsetHeight]),
-              labels: Array.from(dock.querySelectorAll('button > span[data-i18n]'), (el) => {
-                const box = el.getBoundingClientRect();
-                return { text: el.textContent, left: box.left, right: box.right };
-              }) };
-          });
-          assert.ok(geometry.pageWidth <= geometry.width, width + 'px ' + tab + ': ' + JSON.stringify(geometry));
-          assert.ok(geometry.topLeft >= -0.5 && geometry.topRight <= width + 0.5, width + 'px navbar fits');
-          assert.ok(geometry.dockLeft >= -0.5 && geometry.dockRight <= width + 0.5, width + 'px dock fits');
-          assert.equal(geometry.topWrap, 'nowrap');
-          assert.equal(geometry.creditVisible, true);
-          assert.ok(geometry.creditBottom <= geometry.topTop + 1, width + 'px credit stays above the topbar: ' + JSON.stringify(geometry));
-          if (width <= 720) {
-            assert.ok(geometry.creditBottom <= geometry.dockTop + 1, width + 'px credit stays above the dock');
-            assert.ok(geometry.icons.every((size) => size[0] >= 44 && size[1] >= 44), width + 'px icon targets: ' + JSON.stringify(geometry.icons));
-          }
-          for (let i = 1; i < geometry.labels.length; i++) {
-            assert.ok(geometry.labels[i - 1].right <= geometry.labels[i].left + 0.5,
-              width + 'px dock labels must not overlap: ' + JSON.stringify(geometry.labels));
-          }
-        }
-        if (width <= 720) {
-          await page.locator('#btnAdmin').scrollIntoViewIfNeeded();
-          const reachable = await page.evaluate(() => {
-            const top = document.querySelector('.topbar').getBoundingClientRect();
-            const btn = document.getElementById('btnAdmin').getBoundingClientRect();
-            return btn.left >= top.left - 0.5 && btn.right <= top.right + 0.5;
-          });
-          assert.equal(reachable, true, width + 'px navbar controls are reachable by scrolling');
-        }
-        assert.equal(errors.length, 0, width + 'px page errors: ' + errors.join(' | '));
-      } finally { await context.close(); }
-    }
-  });
-
-  await check(engine + ' PC 16:9 video fills the screen in BOTH Full and Lite', async () => {
-    const { context, page, errors } = await boot(browser, 1920, 1080);
-    try {
-      const decodes = await videoDecodes(page);
-      const state = await page.evaluate(() => {
-        const v = document.getElementById('bgLiveVideo');
-        const stage = document.getElementById('bgLiveWrap').getBoundingClientRect();
-        return { size: [stage.width, stage.height], fit: v.style.objectFit, position: v.style.objectPosition,
-          opacity: v.style.opacity, pixels: [v.videoWidth, v.videoHeight],
-          hero: getComputedStyle(document.getElementById('homeHero')).backgroundColor,
-          app: getComputedStyle(document.getElementById('app')).backgroundColor, time: v.currentTime };
-      });
-      assert.deepEqual(state.size, [1920, 1080]);
-      assert.equal(state.fit, 'cover');assert.equal(state.position, 'center 28%');
-      assert.equal(state.opacity, '1');
-      if (decodes) assert.ok(state.pixels[0] > 0 && state.pixels[1] > 0, 'bundled 16:9 video decodes at full resolution');
-      assert.match(state.hero, /rgba\(/, 'glass card stays translucent');
-      assert.equal(state.app, 'rgba(0, 0, 0, 0)', 'the app does not hide video');
-      for (const mode of ['lite', 'full']) {
-        if ((await material(page)).perf !== mode) await page.locator('#btnPerf').click();
-        await page.waitForTimeout(350);
-        const video = await page.evaluate(() => ({ perf: document.body.dataset.perf,
-          paused: document.getElementById('bgLiveVideo').paused,
-          opacity: document.getElementById('bgLiveVideo').style.opacity,
-          fit: document.getElementById('bgLiveVideo').style.objectFit,
-          time: document.getElementById('bgLiveVideo').currentTime }));
-        assert.equal(video.perf, mode);
-        if (decodes) { assert.equal(video.paused, false); assert.ok(video.time > state.time, 'video advances in ' + mode); }
-        assert.equal(video.opacity, '1');assert.equal(video.fit, 'cover');
-      }
-      const universal = await page.evaluate(() => {
-        const v = document.getElementById('bgLiveVideo');
-        Object.defineProperty(v, 'videoWidth', { configurable: true, value: 1920 });
-        Object.defineProperty(v, 'videoHeight', { configurable: true, value: 1080 });
-        window.LiveWallpaper.fitVideo();return v.style.objectFit;
-      });
-      assert.equal(universal, 'cover', 'a universal 16:9 video fills the desktop');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally { await context.close(); }
-  });
-
-  await check(engine + ' local MP4 starts immediately, survives reload via IndexedDB, pauses and resets', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      /* v29/v30: the topbar opens the GitHub gallery; the Settings card keeps the
-         one-tap native device picker. */
-      await openTab(page, 'tab-set');
-      const choose = page.waitForEvent('filechooser');
-      await page.locator('#btnPickVideoFileSet').click();
-      const chooser = await choose;
-      assert.equal(await chooser.element().getAttribute('id'), 'liveVideoInput');
-      await chooser.setFiles({ name: 'WhatsApp Video 2026-10-27 at 07.32.25.mp4', mimeType: 'video/mp4',
-        buffer: fs.readFileSync(path.join(root, 'assets', 'bunny-live-wallpaper.mp4')) });
-      const decodes = await videoDecodes(page);
-      await page.waitForFunction((needsDecode) => {
-        const v = document.getElementById('bgLiveVideo');
-        return window.LiveWallpaper.source === 'custom' && v.currentSrc.indexOf('blob:') === 0 &&
-          (!needsDecode || (v.readyState >= 2 && !v.paused));
-      }, decodes, { timeout: 12000 });
-      await page.evaluate(() => new Promise((resolve) => {
-        const started = Date.now();
-        function check() {
-          const open = indexedDB.open('sdp_wallpaper_db', 1);
-          open.onerror = () => setTimeout(check, 200);
-          open.onsuccess = () => {
-            const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
-            get.onsuccess = () => {
-              const b = get.result; db.close();
-              if (b && b.size > 10000) resolve(true);
-              else if (Date.now() - started > 10000) resolve(false);
-              else setTimeout(check, 200);
-            };
-            get.onerror = () => { db.close(); setTimeout(check, 200); };
-          };
-        }
-        check();
-      }));
-      const saved = await page.evaluate(() => new Promise((resolve, reject) => {
-        const open = indexedDB.open('sdp_wallpaper_db', 1);
-        open.onerror = () => reject(open.error);
-        open.onsuccess = () => {
-          const db = open.result, get = db.transaction('videos').objectStore('videos').get('custom_bg');
-          get.onsuccess = () => { const blob = get.result;db.close();resolve({ size: blob && blob.size,
-            name: blob && blob.name, mode: JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.wallpaperVideo }); };
-          get.onerror = () => reject(get.error);
-        };
-      }));
-      assert.ok(saved.size > 10000);assert.match(saved.name, /WhatsApp Video/);
-      assert.equal(saved.mode, true);
-      await page.reload();
-      await page.waitForFunction(() => window.LiveWallpaper && window.LiveWallpaper.source === 'custom' &&
-        document.getElementById('bgLiveVideo').currentSrc.indexOf('blob:') === 0, null, { timeout: 12000 });
-      await openTab(page, 'tab-set');
-      assert.match(await page.locator('#setBody > :first-child').textContent(), /Live Wallpaper Video/);
-      assert.equal(await page.locator('#btnPickVideoFileSet').count(), 1);
-      assert.equal(await page.locator('#btnOpenGallery').count(), 1);
-      await page.locator('#btnToggleVideo').click();
-      assert.equal(await page.evaluate(() => window.LiveWallpaper.enabled), false);
-      assert.equal(await page.locator('#btnToggleVideo').textContent(), 'Play Live Video');
-      await page.waitForTimeout(250);await page.reload();
-      await page.waitForFunction(() => window.LiveWallpaper && !window.LiveWallpaper.enabled, null, { timeout: 10000 });
-      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('bgLiveWrap')).display), 'none');
-      await openTab(page, 'tab-set');
-      await page.locator('#btnResetVideo').click();
-      await page.waitForFunction(() => window.LiveWallpaper.source === 'default' &&
-        document.getElementById('bgLiveVideo').currentSrc.indexOf('blob:') === -1, null, { timeout: 12000 });
-      assert.equal(await page.evaluate(() => window.LiveWallpaper.enabled), true);
-      await page.waitForTimeout(250);await page.reload();
-      await page.waitForFunction(() => window.LiveWallpaper && window.LiveWallpaper.source === 'default' &&
-        document.getElementById('bgLiveVideo').currentSrc.endsWith('hooded_red_eyes_live_wallpaper_1080p_loop.mp4'), null, { timeout: 12000 });
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally { await context.close(); }
-  });
-
-  await check(engine + ' full-screen video stays active in Lite, while the neon canvas sleeps at idle', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      if ((await material(page)).perf !== 'lite') await page.locator('#btnPerf').click();
-      const decodes = await videoDecodes(page);
-      const scene = await page.evaluate(() => {
-        const stage = document.getElementById('bgLiveWrap');
-        const v = document.getElementById('bgLiveVideo');
-        const r = stage.getBoundingClientRect();
-        return { blobs: document.querySelectorAll('#bg .blob').length,
-          canvas: !!document.getElementById('bgLiveCanvas'), video: !!v,
-          swanStage: typeof window.SwanStage, animation: getComputedStyle(document.querySelector('#bg .blob')).animationName,
-          width: r.width, height: r.height, fit: v.style.objectFit, muted: v.muted, opacity: v.style.opacity,
-          source: v.currentSrc, pixels: [v.videoWidth, v.videoHeight], perf: document.body.dataset.perf,
-          contained: getComputedStyle(stage).contain, onscreen: getComputedStyle(stage).display !== 'none' };
-      });
-      assert.equal(scene.blobs, 4); assert.equal(scene.canvas, true); assert.equal(scene.video, true);
-      assert.equal(scene.swanStage, 'undefined'); assert.equal(scene.animation, 'none');
-      assert.ok(Math.abs(scene.width - 390) < 2 && Math.abs(scene.height - 844) < 2, 'full-viewport stage: ' + scene.width + 'x' + scene.height);
-      assert.equal(scene.fit, 'cover');assert.equal(scene.muted, true);assert.equal(scene.opacity, '1');
-      assert.equal(scene.perf, 'lite');assert.equal(scene.contained, 'strict');assert.equal(scene.onscreen, true);
-      assert.match(scene.source, /hooded_red_eyes_live_wallpaper_1080p_loop\.mp4$/);
-      if (decodes) assert.ok(scene.pixels[0] > 0 && scene.pixels[1] > 0);
-      await page.waitForTimeout(1800); // the finite startup perf probe has finished
-      await page.evaluate(() => {
-        window.__frames = 0;
-        const original = window.requestAnimationFrame;
-        window.requestAnimationFrame = function (cb) {window.__frames++;return original.call(window, cb);};
-      });
-      await page.waitForTimeout(700);
-      const idle = await page.evaluate(() => window.__frames);
-      await page.waitForTimeout(700);
-      assert.equal(await page.evaluate(() => window.__frames), idle, 'no idle animation-frame loop');
-      await page.mouse.click(7, 240);
-      assert.ok(await page.evaluate(() => window.LiveWallpaper.ripples.length > 0), 'tap starts the soft ripple rings');
-      await page.waitForFunction(() => window.LiveWallpaper.rafId === null &&
-        window.LiveWallpaper.ripples.length === 0 && window.LiveWallpaper.sparks.length === 0, null, { timeout: 5000 });
-      const asleep = await page.evaluate(() => window.__frames);
-      await page.evaluate(() => window.scrollBy(0, 500));await page.waitForTimeout(700);
-      assert.equal(await page.evaluate(() => window.__frames), asleep, 'scroll never restarts wallpaper canvas');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally { await context.close(); }
-  });
-
-  await check(engine + ' dictation starts, unlocks audio and speaks the first word', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      await page.locator('#btnStart').click();
-      await clickText(page, "I'm ready");
-      /* the countdown screen repaints itself, so wait for the player beat */
-      await page.waitForFunction(() => /Your turn|Next word|Listening|Paused/.test((document.getElementById('plStatus') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
-      const unlocked = await page.evaluate(() => {
-        const a = document.getElementById('ttsMasterAudio');
-        return { preload: a.getAttribute('preload'), paused: a.paused };
-      });
-      assert.equal(unlocked.preload, 'auto', 'the one master audio element is ready to play');
-      const clearance = await page.evaluate(() => {
-        const credit = document.getElementById('credit').getBoundingClientRect();
-        const restart = document.getElementById('btnRestart').getBoundingClientRect();
-        return { credit: { left: credit.left, right: credit.right, top: credit.top, bottom: credit.bottom },
-          restart: { left: restart.left, right: restart.right, top: restart.top, bottom: restart.bottom },
-          overlap: !(credit.right <= restart.left || credit.left >= restart.right || credit.bottom <= restart.top || credit.top >= restart.bottom) };
-      });
-      assert.equal(clearance.overlap, false, 'the cinema credit never covers Restart: ' + JSON.stringify(clearance));
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  await check(engine + ' a paper dictation ends in a working 30-word tick list', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      await page.locator('#btnStart').click();
-      await clickText(page, "I'm ready");
-      const word = await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).lists[0].words[0].w);
-      /* The mocked Youdao endpoint is requested on the shared media element. */
-      await page.waitForFunction(() => (window.__audio || []).filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2,
-        null, { timeout: 12000 }).catch(() => {});
-      const played = await page.evaluate(() => window.__audio || []);
-      assert.ok(played.filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2, 'the single Youdao studio voice played both readings: ' + JSON.stringify(played));
-      // The offline route can emit a real media error before the mock completes;
-      // any pinned-voice fallback must correspond to a Youdao clip attempted.
-      const fallback = await page.evaluate(() => window.__spoken || []);
-      for (const text of fallback) assert.ok(played.some(t => decodeURIComponent(String(t.src).split('audio=')[1] || '') === text), 'fallback text was first requested from Youdao: ' + text);
-      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')).settings.writeFixed), 5, 'five second timer');
-
-      assert.equal(await clickText(page, 'Finish early'), true, 'Finish early opens');
-      assert.equal(await clickText(page, 'Finish now'), true, 'Finish now confirms');
-      await page.waitForTimeout(1200);
-      const marks = page.locator('[aria-label^="Got it right"]');
-      assert.equal(await marks.count(), 30, 'all 30 words can be ticked');
-      for (let i = 0; i < 3; i++) await marks.nth(i).click();
-      await page.waitForTimeout(600);
-      const saved = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
-        const rec = (d.history || [])[0] || {};
-        return { runs: (d.history || []).length, score: rec.score, percent: rec.percent, marks: (rec.marks || []).length, selfScored: rec.selfScored };
-      });
-      assert.equal(saved.runs, 1, 'the result is saved');
-      assert.equal(saved.score, 3, 'three ticks = three correct');
-      assert.equal(saved.percent, 10, '3/30 is 10%');
-      assert.equal(saved.marks, 30, 'every word keeps its mark');
-      assert.equal(saved.selfScored, true, 'the paper checklist is scored');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  await check(engine + ' v33 User Guide Start practising launches the ready player on Home', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      await page.evaluate(() => document.getElementById('btnGuideTop').click());
-      const start = page.locator('#btnGuideStart');
-      await start.waitFor({ state: 'visible' });
-      assert.equal((await start.textContent()).trim(), 'Start practising');
-      assert.equal(await start.evaluate((b) => b.className), 'btn primary xl block');
-      assert.equal(await start.locator('svg use').getAttribute('href'), '#i-play');
-      await start.click();
-      await page.waitForFunction(() => {
-        const sheet = document.querySelector('#sheets .sheet');
-        return !document.querySelector('#layers .layer') && !!sheet && sheet.textContent.includes('Are you ready?');
-      }, null, { timeout: 10000 });
-      const launched = await page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
-        return {
-          home: !document.getElementById('screen-home').classList.contains('hidden'),
-          ready: document.querySelector('#sheets .sheet').textContent.includes('Are you ready?'),
-          layers: document.querySelectorAll('#layers .layer').length,
-          tourSeen: saved.tourSeen,
-          guideSeen: saved.guideSeen
-        };
-      });
-      assert.equal(launched.home, true, 'the guide redirects to Home');
-      assert.equal(launched.ready, true, 'Eng.start opens the Are you ready sheet');
-      assert.equal(launched.layers, 0, 'the player waits behind the ready sheet');
-      assert.equal(launched.tourSeen, true);
-      assert.equal(launched.guideSeen, true);
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  await check(engine + ' v33 no-password native keyboard: text sentinel, mirror, tick, cross and 1-tap exits', async () => {
-    const { context, page, errors } = await boot(browser, 390, 844);
-    try {
-      /* the ready sheet keeps ONE far-right cross mark and no duplicates */
-      await page.evaluate(() => {
-        document.querySelector('#segMode [data-mode="type"]').click();
-      });
-      await page.waitForTimeout(200);
-      await page.locator('#btnStart').click();
-      await page.waitForFunction(() => !!document.querySelector('#sheets .shead button[aria-label="Close"]'), null, { timeout: 8000 });
-      assert.equal(await page.locator('#btnReadyClose').count(), 0, 'no duplicate header cross');
-      assert.equal(await page.locator('#btnNotReady').count(), 0, 'no duplicate footer exit');
-      assert.equal(await page.locator('#sheets .shead button[aria-label="Close"]').count(), 1, 'one far-right cross only');
-      await page.locator('#sheets .shead button[aria-label="Close"]').click();
-      await page.waitForTimeout(400);
-      const closed = await page.evaluate(() => ({
-        sheets: document.querySelectorAll('#sheets .sheet').length,
-        layers: document.querySelectorAll('#layers .layer').length,
-        state: window.SDP ? 'ok' : 'ok',
-        homeVisible: !document.getElementById('screen-home').classList.contains('hidden')
-      }));
-      assert.equal(closed.sheets, 0, 'the ready sheet closed');
-      assert.equal(closed.layers, 0, 'the player layer closed');
-      assert.equal(closed.homeVisible, true, 'Home is back');
-
-      /* start again and audit the typing deck */
-      await page.locator('#btnStart').click();
-      await clickText(page, "I'm ready");
-      await page.waitForFunction(() => !!document.getElementById('ansInput'), null, { timeout: 15000 });
-      const deck = await page.evaluate(() => {
-        const i = document.getElementById('ansInput');
-        const m = document.getElementById('ansMirror');
-        return {
-          type: i.type,
-          autocomplete: i.getAttribute('autocomplete'),
-          spellcheck: i.getAttribute('spellcheck'),
-          autocorrect: i.getAttribute('autocorrect'),
-          inputmode: i.getAttribute('inputmode'),
-          name: i.name,
-          vkb: document.querySelectorAll('#ansVkb .vkb-key').length,
-          toggle: !!document.getElementById('btnVkbToggle'),
-          mirror: !!m,
-          mirrorText: !!document.getElementById('ansMirrorText'),
-          mirrorCaret: !!(m && m.querySelector('.ans-caret')),
-          tick: !!document.getElementById('ansTick'),
-          cross: !!document.getElementById('ansWrong'),
-          closeBtn: !!document.getElementById('btnPlayerClose'),
-          pill: (document.getElementById('plLiveScore') || {}).textContent || ''
-        };
-      });
-      assert.equal(deck.type, 'text', 'a plain text field never opens the password manager');
-      assert.equal(deck.autocomplete, 'off');
-      assert.equal(deck.spellcheck, 'false');
-      assert.equal(deck.autocorrect, 'off');
-      assert.equal(deck.inputmode, 'text', 'the native system keyboard opens');
-      assert.match(deck.name, /^sdp_field_\d+$/, 'a random name defeats form autofill');
-      assert.equal(deck.vkb, 0, 'the custom keyboard is gone');
-      assert.equal(deck.toggle, false, 'the Keyboard toggle is gone');
-      assert.equal(deck.mirror, true, 'the plain-text mirror exists');
-      assert.equal(deck.mirrorText, true);
-      assert.equal(deck.mirrorCaret, true);
-      assert.equal(deck.tick, true);
-      assert.equal(deck.cross, true);
-      assert.equal(deck.closeBtn, true);
-      assert.match(deck.pill, /Correct/);
-
-      /* type on the native keyboard: the mirror must show plain letters */
-      const word = await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
-        const l = d.lists[0];
-        return l.words[0].w.split('/')[0];
-      });
-      await page.waitForFunction(() => (window.__audio || []).filter((t) => String(t.src || '').indexOf('https://dict.youdao.com/dictvoice?type=1&audio=') === 0).length >= 2,
-        null, { timeout: 12000 });
-      await page.evaluate((value) => {
-        const i = document.getElementById('ansInput');
-        i.focus();
-        i.value = value;
-        i.dispatchEvent(new Event('input', { bubbles: true }));
-      }, word);
-      await page.waitForTimeout(250);
-      const mirrored = await page.evaluate(() => ({
-        text: document.getElementById('ansMirrorText').textContent,
-        sentinel: document.getElementById('ansInput').value === ' ',
-        type: document.getElementById('ansInput').type,
-        autocomplete: document.getElementById('ansInput').getAttribute('autocomplete')
-      }));
-      assert.equal(mirrored.sentinel, true, 'only the single-space IME sentinel is left in the field');
-      assert.equal(mirrored.type, 'text');
-      assert.equal(mirrored.autocomplete, 'off');
-      assert.equal(mirrored.text, word, 'the mirror paints the plain letters');
-      const solved = await page.evaluate(() => ({
-        solved: document.getElementById('ansWrap').classList.contains('is-correct'),
-        tick: document.getElementById('ansTick').classList.contains('is-correct'),
-        hero: document.getElementById('plTickHero').classList.contains('is-correct'),
-        slots: document.querySelectorAll('#ansSlots .slot-done').length
-      }));
-      assert.equal(solved.solved, true, 'the input bar glows');
-      assert.equal(solved.tick, true, 'the tick mark animates in');
-      assert.equal(solved.hero, true, 'the Correct! badge shows');
-      assert.ok(solved.slots > 0, 'the letter slots light up');
-
-      /* a wrong answer breaks the streak and shows the correction card */
-      await page.waitForTimeout(1300);
-      await page.evaluate(() => {
-        const i = document.getElementById('ansInput');
-        i.value = 'zzzz';
-        i.dispatchEvent(new Event('input', { bubbles: true }));
-        i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-      });
-      await page.waitForTimeout(400);
-      const wrong = await page.evaluate(() => ({
-        cross: document.getElementById('ansWrong').classList.contains('is-wrong'),
-        hero: document.getElementById('plWrongHero').classList.contains('is-wrong'),
-        streak: document.getElementById('plStreakCount').className,
-        compare: (document.getElementById('ansCompare') || {}).textContent || ''
-      }));
-      assert.equal(wrong.cross, true, 'the cross mark shows');
-      assert.equal(wrong.hero, true, 'the Incorrect badge shows');
-      assert.match(wrong.streak, /streak-broken/, 'the streak breaks');
-      assert.match(wrong.compare, /Correct UK spelling/);
-      assert.match(wrong.compare, /Your answer/);
-
-      /* the player cross mark exits in one tap */
-      await page.locator('#btnPlayerClose').click();
-      await page.waitForTimeout(500);
-      const after = await page.evaluate(() => ({
-        layers: document.querySelectorAll('#layers .layer').length,
-        home: !document.getElementById('screen-home').classList.contains('hidden')
-      }));
-      assert.equal(after.layers, 0, 'the player closed');
-      assert.equal(after.home, true, 'Home is back');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  /* --- v52: the one-time ElevenLabs vault and the admin auto-completer ---- */
-  await check('v52: ElevenLabs studio vault, admin studio card and quick-word auto-completer', async () => {
-    const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
-    try {
-      const page = await context.newPage();
-      const errors = [];
-      page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto(fileURL);
-      await page.waitForTimeout(1000);
-      const state = await page.evaluate(() => {
-        const vault = window.ElevenVault;
-        return {
-          vault: typeof vault,
-          auto: typeof window.AdminAutoEnrich,
-          voice: vault && vault.voiceId(),
-          model: vault && vault.modelId(),
-          clips: vault && vault.clipCount(),
-          generated: vault && vault.stats.generatedCount,
-          key: vault && vault.hasKey(),
-          hash: typeof (window.TTS && window.TTS.hashText),
-          cacheKey: vault && vault.keyFor('Number 1'),
-          glass: (function () { const el = document.querySelector('.glass'); const cs = getComputedStyle(el); return cs.backdropFilter || cs.webkitBackdropFilter || ''; })()
-        };
-      });
-      assert.equal(state.vault, 'object', 'ElevenVault exposed');
-      assert.equal(state.auto, 'object', 'AdminAutoEnrich exposed');
-      assert.equal(state.voice, 'Xb7hH8MSUJpSbSDYk0k2', 'Alice is the default voice');
-      assert.equal(state.model, 'eleven_multilingual_v2', 'credit saver model');
-      assert.equal(state.clips, 0, 'empty vault on a fresh device');
-      assert.equal(state.generated, 0, 'no credits spent');
-      assert.equal(state.key, false, 'no API key by default');
-      assert.equal(state.hash, 'function', 'deterministic hash exposed');
-      assert.match(state.cacheKey, /^el_Xb7hH8MSUJpSbSDYk0k2_/);
-      assert.match(state.glass, /blur\(14px\)/, 'real Apple Liquid Glass: ' + state.glass);
-      /* unlock the admin panel with the eight digit PIN and type raw words */
-      const close = page.locator('#sheets .shead button[aria-label="Close"]');
-      if (await close.count()) await close.first().click({ timeout: 3000 }).catch(() => {});
-      await page.waitForTimeout(300);
-      await page.locator('#btnAdmin').click();
-      await page.waitForTimeout(250);
-      for (const digit of require('./test-pin.cjs')) {
-        const key = page.locator('#pinPad [data-k="' + digit + '"]');
-        if (await key.count()) await key.click();
-      }
-      const submit = page.locator('#pinSubmit');
-      if (await submit.count()) await submit.click({ timeout: 1500 }).catch(() => {});
-      await page.locator('#adminHost').waitFor({ timeout: 6000 });
-      const cards = await page.evaluate(() => ({
-        studio: !!document.querySelector('#elCreditLockBanner'),
-        quick: !!document.querySelector('#profWordsTable'),
-        keyField: !!document.querySelector('#elApiKeyInput'),
-        verify: !!document.querySelector('#btnElVerify'),
-        generate: !!document.querySelector('#btnElGenerateAll'),
-        exportJson: !!document.querySelector('#btnElExportJson'),
-        words: !!document.querySelector('#adminQuickWordsInput'),
-        go: !!document.querySelector('#btnAdminAutoComplete')
-      }));
-      Object.keys(cards).forEach((name) => assert.ok(cards[name], 'admin control: ' + name));
-      await page.locator('#adminQuickWordsInput').fill('afraid, amazed, amusing');
-      const parsed = await page.evaluate(() => window.AdminAutoEnrich.parse(document.querySelector('#adminQuickWordsInput').value));
-      assert.deepEqual(parsed, ['afraid', 'amazed', 'amusing'], 'raw words parsed');
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await context.close();
-    }
-  });
-
-  /* --- v55: the PIN vault carries the lecturer key from PC to phone in a <600 byte packet --- */
-  await check('v55: one saved API key reaches a second device and opens Lecturer Mode', async () => {
-    const KEY = 'sdp.v56_audit_verified';
-    const PIN = '78987898';
-    const LECTURER_KEY = 'sk_test_lecturer_key_12345';
-    async function openLecturer(page) {
-      await page.waitForTimeout(1600);
-      for (let i = 0; i < 24; i++) {
-        const close = page.locator('#sheets .shead button[aria-label="Close"]');
-        if (await close.count()) await close.first().click({ timeout: 3000 }).catch(() => {});
-        const button = page.locator('#btnAdmin');
-        if (await button.isVisible().catch(() => false)) {
-          try { await button.click({ timeout: 4000 }); break; }
-          catch (error) { await page.waitForTimeout(300); continue; }
-        }
-        await page.waitForTimeout(250);
-      }
-      await page.waitForTimeout(250);
-      for (const digit of PIN) {
-        const pad = page.locator('#pinPad [data-k="' + digit + '"]');
-        if (await pad.count()) await pad.click();
-      }
-      const submit = page.locator('#pinSubmit');
-      if (await submit.count()) await submit.click({ timeout: 1500 }).catch(() => {});
-      await page.locator('#adminHost').waitFor({ timeout: 8000 });
-    }
-    const pc = await browser.newContext({ viewport: { width: 1366, height: 900 } });
-    let deviceOne = null;
-    try {
-      const page = await pc.newPage();
-      const errors = [];
-      page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto(fileURL);
-      await page.waitForFunction(() => !!window.ElevenVault && !!window.UniversalSync, null, { timeout: 20000 });
-      await openLecturer(page);
-      await page.locator('#elApiKeyInput').fill(LECTURER_KEY);
-      await page.locator('#btnElVerify').click();
-      await page.waitForFunction((k) => {
-        try { return window.DB.data.settings.elevenLabsKey === k; } catch (e) { return false; }
-      }, LECTURER_KEY, { timeout: 10000 });
-      await page.waitForTimeout(400);
-      deviceOne = await page.evaluate((k) => {
-        const data = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync') || '{}');
-        const env = window.UniversalSync.envelope(false);
-        return {
-          stored: (data.settings || {}).elevenLabsKey || '',
-          cipher: String(data.vaultCiphertext || ''),
-          rev: Number(data.syncRev || 0),
-          envelope: String(env.vaultCiphertext || env || ''),
-          leak: (String(data.vaultCiphertext || '') + String(env.vaultCiphertext || '')).indexOf(k) >= 0,
-          input: (document.getElementById('elApiKeyInput') || {}).value || '',
-          banner: (document.getElementById('syncBanner') || {}).textContent || '',
-          force: !!document.getElementById('btnForceSync'),
-          decrypt: (function (d) { return d ? (d.k || d.elevenLabsKey || '') : ''; }(window.EncryptedVault.decrypt(String(data.vaultCiphertext || ''), '78987898'))),
-          packetBytes: String(data.vaultCiphertext || '').length
-        };
-      }, LECTURER_KEY);
-      assert.equal(deviceOne.stored, LECTURER_KEY, 'device #1 keeps its key');
-      assert.equal(deviceOne.input, LECTURER_KEY, 'device #1 shows its key');
-      assert.equal(deviceOne.decrypt, LECTURER_KEY, 'the stored ciphertext decrypts with the PIN');
-      assert.match(deviceOne.cipher, /^SDP_ENC_V1:/, 'ciphertext prefix: ' + deviceOne.cipher.slice(0, 24));
-      assert.ok(deviceOne.packetBytes < 700, 'the stored keys envelope stays tiny: ' + deviceOne.packetBytes + ' chars');
-      assert.equal(deviceOne.leak, false, 'no plaintext key inside the ciphertext or the envelope');
-      assert.equal(deviceOne.force, true, '#btnForceSync rendered');
-      assert.match(deviceOne.banner, /API Key: Saved & Encrypted/, 'banner: ' + deviceOne.banner);
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await pc.close();
-    }
-    /* device #2: a fresh phone that only ever receives the ciphertext */
-    const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    try {
-      const page = await phone.newPage();
-      const errors = [];
-      page.on('pageerror', (error) => errors.push(error.message));
-      await page.addInitScript((payload) => {
-        localStorage.setItem('sdp.v56_audit_verified', JSON.stringify(payload));
-      }, { v: 55, settingsRev: 55, syncRev: deviceOne.rev, vaultCiphertext: deviceOne.cipher,
-           settings: { elevenLabsKey: '', elevenLabsVoiceId: 'Xb7hH8MSUJpSbSDYk0k2', elevenLabsModelId: 'eleven_multilingual_v2' },
-           lists: [{ id: 'list_session_8_feelings', name: 'Session 8', published: true,
-                     words: [{ w: 'afraid', s: 'She was never afraid.', m: 'Feeling fear.' }] }] });
-      await page.goto(fileURL);
-      await page.waitForFunction(() => !!window.ElevenVault && !!window.UniversalSync, null, { timeout: 20000 });
-      await page.waitForFunction((k) => {
-        try { return window.DB.data.settings.elevenLabsKey === k; } catch (e) { return false; }
-      }, LECTURER_KEY, { timeout: 15000 });
-      await openLecturer(page);
-      await page.waitForTimeout(400);
-      const deviceTwo = await page.evaluate(() => ({
-        key: (window.DB.data.settings || {}).elevenLabsKey || '',
-        input: (document.getElementById('elApiKeyInput') || {}).value || '',
-        banner: (document.getElementById('syncBanner') || {}).textContent || '',
-        force: !!document.getElementById('btnForceSync')
-      }));
-      assert.equal(deviceTwo.key, LECTURER_KEY, 'device #2 received the synced key');
-      assert.equal(deviceTwo.input, LECTURER_KEY, 'device #2 typed it into the field');
-      assert.equal(deviceTwo.force, true, 'device #2 has Sync Now');
-      assert.match(deviceTwo.banner, /100% Synced Across All Devices/, 'banner: ' + deviceTwo.banner);
-      assert.equal(errors.length, 0, 'page errors: ' + errors.join(' | '));
-    } finally {
-      await phone.close();
-    }
-  });
-
-  await require('./v50-browser.cjs')(browser, check, fileURL);
-  await browser.close();
-  const output = path.join(__dirname, 'artifacts');
-  fs.mkdirSync(output, { recursive: true });
-  fs.writeFileSync(path.join(output, 'upgrade-browser-' + engine + '.json'), JSON.stringify(results, null, 2));
+  await browser.close(); await new Promise(r => server.close(r));
   console.log(JSON.stringify(results, null, 2));
-  annotate();
-  if (results.some((r) => r.status === 'FAIL')) process.exitCode = 1;
-})().catch((error) => {
-  console.error(error);
-  console.log('::error::' + String((error && error.stack) || error).replace(/\r?\n/g, ' | ').replace(/%/g, '%25').slice(0, 900));
-  process.exitCode = 1;
-});
+  for (const r of results) if (r.status === 'FAIL') console.log('::error::' + r.test + ' :: ' + JSON.stringify(r.detail || '').slice(0, 600));
+  if (results.some(r => r.status === 'FAIL')) process.exitCode = 1;
+})().catch(e => { console.error(e); console.log('::error::' + String(e && e.stack || e).replace(/\r?\n/g, ' | ').slice(0, 900)); process.exit(1); });

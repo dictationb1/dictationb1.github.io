@@ -1,7 +1,7 @@
 {
-  "ver": 56,
-  "appVersion": "6.2.0",
-  "updatedAt": "2026-10-30",
+  "ver": 57,
+  "appVersion": "6.3.0",
+  "updatedAt": "2026-10-31",
   "assets": [
     {
       "id": "hooded",
@@ -20,7 +20,7 @@
       "src": "./assets/wanderingpixels_2025-12-26_7588160805032430870.mp4",
       "file": "wanderingpixels_2025-12-26_7588160805032430870.mp4",
       "bytes": 899985,
-      "mb": 0.90,
+      "mb": 0.9,
       "width": 1280,
       "height": 720,
       "poster": "./assets/wanderingpixels-poster.webp",
@@ -32,7 +32,7 @@
       "src": "./assets/bunny-live-wallpaper.mp4",
       "file": "bunny-live-wallpaper.mp4",
       "bytes": 1499208,
-      "mb": 1.50,
+      "mb": 1.5,
       "width": 1280,
       "height": 720,
       "poster": "./assets/bunny-poster.webp",
@@ -44,9 +44,14 @@
       "src": "",
       "file": "",
       "bytes": 0,
-      "mb": 0.00,
+      "mb": 0,
       "label": "Static Liquid Aurora Gradient (Data Saver)",
       "dataSaver": true
     }
-  ]
+  ],
+  "audioBytesPerWord": 11000,
+  "sessionWords": 30,
+  "numberCues": 31,
+  "appShellBytes": 440000,
+  "profileNote": "Estimated profiles use manifest asset bytes plus one uncached audio reading per word/number. Live totals use Resource Timing plus labelled opaque-audio estimates."
 }

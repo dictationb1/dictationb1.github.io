@@ -1,6 +1,6 @@
 /* SECTION 60 - v54 PIN-ENCRYPTED ADMIN VAULT & UNIVERSAL CROSS-DEVICE SYNC (pure ES5) */
 (function () {
-  var PIN = "78987898", SALT = "::sdp_galle_v54_salt", PFX = "SDP_ENC_V1:";
+  var PIN = "", SALT = "::sdp_galle_v54_salt", PFX = "SDP_ENC_V1:";
   var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   var CFG = {
     version: 54, appVersion: "6.0.0", schema: 54, settingsRev: 54, key: "sdp.v54_encrypted_universal_sync",

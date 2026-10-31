@@ -1,7 +1,7 @@
 /* SECTION 64 - v54 UNIVERSAL CROSS-DEVICE SYNC (three redundant channels, one engine) */
 (function () {
   var C = window.SDPCore || {}, DB = C.DB, U = C.U, Cloud = C.Cloud, CONFIG = C.CONFIG;
-  var EV = window.EncryptedVault, PIN = "78987898";
+  var EV = window.EncryptedVault, PIN = "";
   var VAULT = "https://ntfy.sh/dictationb1_sdp_vault_v54", AUDIO = "https://ntfy.sh/dictationb1_sdp_audio_v54";
   var STATIC = ["./data/config.json", "./data/session.json", "./data/elevenlabs-audio.json"];
   function live() { return !/HeadlessChrome/i.test(String((window.navigator && window.navigator.userAgent) || "")); }

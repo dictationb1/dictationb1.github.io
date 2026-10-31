@@ -116,7 +116,7 @@ module.exports = async function runV51(browser, check, fileURL) {
     const initial = await pageWithAudio(browser, fileURL, {width:393,height:851}, false);
     const seed = await initial.page.evaluate(() => JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio')));
     await initial.context.close();
-    seed.v = 50; seed.settingsRev = 50; seed.settings.perf = 'lite'; seed.settings.activeVideoSrc = './assets/bunny-live-wallpaper.mp4'; seed.settings.adminPin = '78987898';
+    seed.v = 50; seed.settingsRev = 50; seed.settings.perf = 'lite'; seed.settings.activeVideoSrc = './assets/bunny-live-wallpaper.mp4'; seed.settings.adminPin = '';
     seed.history = [{id:'migration-history', wordCount:30}];
     seed.comments = [{id:'migration-comment', text:'keep this comment'}];
     seed.lists.push({id:'migration-personal', name:'Personal', words:[{w:'treasure', s:'A treasure is precious.', m:'Something valuable.'}]});
@@ -137,7 +137,7 @@ module.exports = async function runV51(browser, check, fileURL) {
       await page.waitForFunction(() => window.SDP && localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
       const migrated = await page.evaluate(() => {
         const data = JSON.parse(localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||localStorage.getItem('sdp.v54_encrypted_universal_sync')||localStorage.getItem('sdp.v52_elevenlabs_studio'));
-        return {v:data.v, rev:data.settingsRev, perf:data.settings.perf, rendered:document.body.getAttribute('data-perf'), src:data.settings.activeVideoSrc, clearPin:JSON.stringify(localStorage).includes('78987898'),
+        return {v:data.v, rev:data.settingsRev, perf:data.settings.perf, rendered:document.body.getAttribute('data-perf'), src:data.settings.activeVideoSrc, clearPin:JSON.stringify(localStorage).includes(''),
           history:data.history[0].id, comment:data.comments[0].text, pin:data.admin.pinHash,
           personal:data.lists.some((list) => list.id === 'migration-personal' && list.words[0].w === 'treasure')};
       });

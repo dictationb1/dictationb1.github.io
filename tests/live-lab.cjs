@@ -230,10 +230,10 @@ function device(html, base) {
     });
 
     /* --- v53: the permanent ElevenLabs voice vault is served with the app --- */
-    check('the repository publishes the permanent v55 ElevenLabs voice vault that every student can fetch', () => {
+    check('the repository publishes the v57 clips-only ElevenLabs manifest that every student can fetch', () => {
       const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
-      if (vault.version !== 56) throw Error('version ' + vault.version);
-      if (String(vault.vaultCiphertext || '').indexOf('SDP_ENC_V1:') !== 0) throw Error('encrypted settings envelope missing');
+      if (vault.version !== 57 || vault.ver !== 57) throw Error('version ' + vault.version);
+      if (vault.vaultCiphertext || vault.adminPin) throw Error('public manifest must not ship a vault or PIN');
       if (vault.strictAdminOnly !== true) throw Error('credit lock missing');
       if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
       if (typeof vault.clips !== 'object') throw Error('clips map missing');
@@ -242,7 +242,7 @@ function device(html, base) {
       const S = student.q;
       /* data/studio.js is fetched on boot, exactly like a real browser */
       const studioSrc = fs.readFileSync(path.join(root, 'data', 'studio.js'), 'utf8');
-      if (typeof student.w.ElevenVault !== 'object') student.w.eval(studioSrc);
+      if (typeof student.w.ElevenVault !== 'object' || typeof student.w.ElevenVault.voiceId !== 'function') student.w.eval(studioSrc);
       const V = student.w.ElevenVault;
       if (typeof V !== 'object') throw Error('no vault');
       if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_multilingual_v2') throw Error('voice/model');

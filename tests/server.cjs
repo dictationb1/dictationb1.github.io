@@ -52,14 +52,16 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
-test('v55 release metadata, the PIN-encrypted vault, the CORS-simple relays and the permanent ElevenLabs voice pack ship together',()=>{
+test('v57 release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json']){const d=read(f);assert.equal(d.ver,56,f);assert.equal(d.appVersion,'6.2.0',f);assert.equal(d.key,'sdp.v56_audit_verified',f);assert.ok(d.adminPin===undefined||d.adminPin==='78987898',f);assert.equal(typeof d.syncRev,'number',f);assert.equal(d.vaultCiphertext.indexOf('SDP_ENC_V1:'),0,f+' encrypted vault');assert.equal(d.vaultCiphertext.indexOf('sk_'),-1,f+' no cleartext key');}
- const vault=read('data/elevenlabs-audio.json');assert.equal(vault.version,56);assert.equal(vault.appVersion,'6.2.0');assert.equal(vault.vaultCiphertext.indexOf('SDP_ENC_V1:'),0);assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_multilingual_v2');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
+ for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,57,f);assert.equal(d.appVersion,'6.3.0',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
+ const vault=read('data/elevenlabs-audio.json');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_multilingual_v2');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
  const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
- assert.ok(html.includes('sdp.v55_guaranteed_device_sync'));assert.ok(html.includes('APP_VERSION="6.2.0"'));assert.ok(html.includes('data/studio.js?v=56'));assert.ok(html.includes('dictationb1_sdp_keys_v56'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V1:'));
+ assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="6.3.0"'));assert.ok(html.includes('data/studio.js?v=57'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
+ assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(html),'index has no vault/audio relays');
+ assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(studio),'studio has no vault/audio relays');
  assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));
- assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));assert.ok(studio.includes('window.UniversalSync'));assert.ok(studio.includes('window.StudioSync'));assert.ok(studio.includes('dictationb1_sdp_keys_v56'));assert.ok(studio.includes('dictationb1_sdp_words_v56'));assert.ok(studio.includes('dictationb1_sdp_audio_v56'));assert.ok(studio.includes('adminSyncWarningCard'));assert.ok(studio.includes('playOrFetchOnce'));
+ assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));assert.ok(studio.includes('window.UniversalSync'));assert.ok(studio.includes('playOrFetchOnce'));assert.ok(studio.includes('isUnlockedOnThisDevice'));
  assert.ok(html.length < 600000, 'index.html stays under the published byte ceiling');
 });
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;

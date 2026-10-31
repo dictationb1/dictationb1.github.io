@@ -178,3 +178,8 @@ The five-minute lockout/long idle timers and multiple physical iPhone sizes may 
 | Lockstep 3-2-1 hands over to word 1 | PASS | `count-3` at 0 ms, `count-2` at ~950 ms, `count-1` at ~1900 ms and `pass1-1-*` at ~2850 ms measured in the Chromium audit. |
 | No robotic fallback, no console errors | PASS | 4000 ms watchdog with `load()`/`play()` retry; the audit records 0 `speechSynthesis` utterances, 0 console errors and 0 page errors, and a missing clip resolves `false` cleanly instead of speaking. |
 | Size and syntax budget | PASS | `441,018 / 450,000` bytes, strict ES5 (`var`/`function` only), zero external `<link>` or external `<script src>`. |
+
+
+## v57 / 6.3.0 update (2026-10-31)
+
+Phase 1 regression suite re-run against v57: 69 PASS, 0 FAIL, 3 historical SKIP (baseline commit 7577968 unavailable). PIN tests now cover first-unlock local initialization, lockout, Change PIN and same-schema migration; v55 relay expectations were replaced with v57 session-only/GitHub-only assertions.

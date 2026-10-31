@@ -1,6 +1,6 @@
 /* SECTION 60 - v55 PIN-ENCRYPTED ADMIN VAULT, <600-BYTE KEYS RELAY & UNIVERSAL CROSS-DEVICE SYNC (pure ES5) */
 (function () {
-  var PIN = "78987898", SALT = "::sdp_galle_v55_salt", PFX = "SDP_ENC_V1:";
+  var PIN = "", SALT = "::sdp_galle_v55_salt", PFX = "SDP_ENC_V1:";
   var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   var KEYS = "https://ntfy.sh/dictationb1_sdp_keys_v55";
   var WORDS = "https://ntfy.sh/dictationb1_sdp_words_v55";
