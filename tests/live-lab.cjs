@@ -232,7 +232,7 @@ function device(html, base) {
     /* --- v53: the permanent ElevenLabs voice vault is served with the app --- */
     check('the repository publishes the v59 clips-only ElevenLabs manifest that every student can fetch', () => {
       const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
-      if (vault.version !== 59 || vault.ver !== 59) throw Error('version ' + vault.version);
+      if (vault.version !== '9.0.0.1' || vault.ver !== 60) throw Error('version ' + vault.version);
       if (vault.vaultCiphertext || vault.adminPin) throw Error('public manifest must not ship a vault or PIN');
       if (vault.strictAdminOnly !== true) throw Error('credit lock missing');
       if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
@@ -245,7 +245,7 @@ function device(html, base) {
       if (typeof student.w.ElevenVault !== 'object' || typeof student.w.ElevenVault.voiceId !== 'function') student.w.eval(studioSrc);
       const V = student.w.ElevenVault;
       if (typeof V !== 'object') throw Error('no vault');
-      if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_multilingual_v2') throw Error('voice/model');
+      if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_flash_v2_5') throw Error('voice/model');
       if (V.strictAdminOnly !== true) throw Error('playback is not locked to admin generation');
       let missing = null;
       V.resolve('Number 1', (err) => { missing = err; });

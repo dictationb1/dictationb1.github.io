@@ -1,14 +1,14 @@
-/* Smart Dictation Player — Service Worker (v59 / 8.0.0)
+/* Smart Dictation Player — Service Worker (v60 / 9.0.0.1)
  * GitHub Pages static hosting.
  *   - Stale-While-Revalidate for the app shell.
  *   - Cache-First for versioned media/audio, stored as FULL responses.
  *   - HTTP Range/206 support: slice a cached full response, or answer the
- *     range from the network while a background full fetch fills sdp-v59-media.
+ *     range from the network while a background full fetch fills sdp-v60-media.
  */
 'use strict';
 
-var VERSION = 'sdp-v59';
-var APP_VERSION = '8.0.0';
+var VERSION = 'sdp-v60';
+var APP_VERSION = '9.0.0.1';
 var SHELL = [
   './',
   './index.html',
@@ -25,11 +25,24 @@ var SHELL = [
   './data/media-manifest.json',
   './data/elevenlabs-audio.json',
   './manifest.webmanifest',
-  './sw.js'
+  './sw.js',
+  './assets/audio/guide-si-1.mp3',
+  './assets/audio/guide-si-2.mp3',
+  './assets/audio/guide-si-3.mp3',
+  './assets/audio/guide-si-4.mp3',
+  './assets/audio/guide-si-5.mp3',
+  './assets/audio/guide-si-6.mp3'
 ];
 var CACHE = VERSION + '-shell';
 var MEDIA_CACHE = VERSION + '-media';
 
+function pruneMediaCache(cache, maxEntries) {
+  return cache.keys().then(function (keys) {
+    if (keys.length <= maxEntries) return;
+    var removals = keys.slice(0, keys.length - maxEntries);
+    return Promise.all(removals.map(function (k) { return cache.delete(k); }));
+  });
+}
 function safeFetch(url, init) {
   try { return fetch(url, init || {}); } catch (e) { return Promise.reject(e); }
 }
@@ -87,7 +100,11 @@ self.addEventListener('activate', function (event) {
     caches.keys().then(function (keys) {
       return Promise.all(keys.filter(function (k) {
         return k !== CACHE && k !== MEDIA_CACHE && k !== 'sdp-youdao-v1';
-      }).map(function (k) { return caches.delete(k); }));
+      }).map(function (k) { return caches.delete(k); }))
+    }).then(function () {
+      return caches.open(MEDIA_CACHE).then(function (cache) {
+        return pruneMediaCache(cache, 40);
+      });
     }).then(function () { return self.clients.claim(); })
   );
 });

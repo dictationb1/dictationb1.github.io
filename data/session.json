@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 59,
+  "ver": 60,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -513,11 +513,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "8.0.0",
+  "appVersion": "9.0.0.1",
   "updatedAt": "2026-10-31T12:00:00.000Z",
-  "version": "8.0.0",
+  "version": "9.0.0.1",
   "buildDate": "2026-10-31",
-  "settingsRev": 59,
+  "settingsRev": 60,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -617,7 +617,7 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "updatedAtMs": 1793448000000,
-  "schema": 59,
+  "schema": 60,
   "pastSessions": [
     {
       "no": "7",
@@ -1098,5 +1098,6 @@
       "s": "After the two-hour lecture, everyone in the class was hungry.",
       "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hungry"
     }
-  ]
+  ],
+  "versionFamily": "9.0.0"
 }

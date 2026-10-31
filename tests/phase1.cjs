@@ -481,7 +481,7 @@ test('5.2 v57: admin auto-completer parses typed words and ships no default PIN'
  assert.ok(current.includes('adminPin:""'));
 }));
 test('5.3 v59: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
- assert.ok(current.includes('APP_VERSION="8.0.0"'));
+ assert.ok(current.includes('APP_VERSION="9.0.0.1"'));
  assert.ok(current.includes('./data/data-meter.js'));
  assert.ok(!current.includes('id="sdpV56"'), 'fake depot removed');
  assert.ok(!current.includes('id="materialMixer"'), 'Material Mixer removed');
@@ -498,7 +498,7 @@ test('5.4 v57: AES-GCM v2 vault, GitHub-only sync, publish preview and Range SW'
  assert.ok(studio.includes('Cloud.commitFiles') && !/ntfy\.sh\/dictationb1_sdp_keys/.test(studio));
  assert.ok(current.includes('openPublishPreview') || current.includes('publishPreviewWords'));
  const sw = fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('sdp-v59-media') && sw.includes('206') && sw.includes('Content-Range'));
+ assert.ok(sw.includes('sdp-v60-media') && sw.includes('206') && sw.includes('Content-Range'));
 }));
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;
