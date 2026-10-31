@@ -15,14 +15,14 @@ window.SDPCoreV54 = SDPC;
   function canNet() { try { return !!window.fetch && location.protocol !== 'file:' && !/HeadlessChrome|jsdom/i.test(navigator.userAgent || ''); } catch (e) { return false; } }
   function token() { return admin() && Cloud.ghToken ? Cloud.ghToken() : ''; }
   var SYNC = {
-    version: 57, appVersion: '6.3.0', staticFiles: ['./data/config.json', './data/session.json', './data/elevenlabs-audio.json'],
+    version: 58, appVersion: '7.0.0', staticFiles: ['./data/config.json', './data/session.json', './data/elevenlabs-audio.json'],
     repoApi: 'https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/',
     keysTopic: '', wordsTopic: '', audioTopic: '', vaultTopic: '', rev: 0, lastSaved: 0, lastPull: 0,
     lastChannels: [], notes: [], busy: false, pushing: false, timer: null, audioTimer: null,
     live: function () { return !/HeadlessChrome|jsdom/i.test(navigator.userAgent || ''); }, canNet: canNet,
     gasUrl: function () { return String(CONFIG.gasUrl || ''); },
-    keyBody: function () { return JSON.stringify({ ver: 57, appVersion: '6.3.0', syncRev: Number(DB.data.syncRev) || 0 }); },
-    envelope: function () { return { ver: 57, appVersion: '6.3.0', syncRev: Number(DB.data.syncRev) || 0 }; },
+    keyBody: function () { return JSON.stringify({ ver: 58, appVersion: '7.0.0', syncRev: Number(DB.data.syncRev) || 0 }); },
+    envelope: function () { return { ver: 58, appVersion: '7.0.0', syncRev: Number(DB.data.syncRev) || 0 }; },
     wordBodies: function () { return []; },
     applyEnvelope: function () { return null; },
     status: function () {
@@ -32,7 +32,7 @@ window.SDPCoreV54 = SDPC;
     },
     banner: function () {
       var st = this.status(), el = document.getElementById('syncBanner');
-      var text = 'v57 · Keys stay in this unlocked tab only · GitHub: ' + (st.token ? 'connected' : 'not connected') + ' · Saved clips: ' + st.clips;
+      var text = 'v58 · Keys stay in this unlocked tab only · GitHub: ' + (st.token ? 'connected' : 'not connected') + ' · Saved clips: ' + st.clips;
       if (el) { el.textContent = text; el.className = 'small ' + (st.verified ? 'good' : ''); }
       return text;
     },
@@ -83,7 +83,7 @@ window.SDPCoreV54 = SDPC;
 
 (function() {
     var C = {
-        v: 57,
+        v: 58,
         voiceId: "Xb7hH8MSUJpSbSDYk0k2",
         modelId: "eleven_multilingual_v2",
         tts: "https://api.elevenlabs.io/v1/text-to-speech/",
@@ -185,7 +185,7 @@ window.SDPCoreV54 = SDPC;
         document.addEventListener("touchstart", markGesture, true);
     } catch (e) {}
     var V = {
-        version: 57,
+        version: 58,
         strictAdminOnly: true,
         adminBusy: false,
         sharedMap: {},
@@ -318,7 +318,7 @@ window.SDPCoreV54 = SDPC;
                 return;
             }
             try {
-                window.fetch(C.file + "?v=57", {
+                window.fetch(C.file + "?v=58", {
                     cache: "no-cache"
                 }).then(function(r) {
                     return r && r.ok ? r.json() : null;
@@ -752,7 +752,7 @@ window.SDPCoreV54 = SDPC;
             var self = this;
             this.clips(function(c2) {
                 var k, p = {
-                    version: 57, ver: 57, appVersion: "6.3.0", schema: 57, settingsRev: 57,
+                    version: 58, ver: 58, appVersion: "7.0.0", schema: 58, settingsRev: 58,
                     strictAdminOnly: true, voiceId: self.vid(), modelId: self.mid(),
                     generatedAt: new Date().toISOString(), clips: {}
                 };
@@ -833,7 +833,7 @@ window.SDPCoreV54 = SDPC;
             if (!window.Admin || !window.Admin.isUnlockedOnThisDevice || !window.Admin.isUnlockedOnThisDevice()) { cb({ ok:false, err:"locked" }); return false; }
             this.payload(function(p) {
                 if (!Cloud.ghToken || !Cloud.ghToken()) { cb({ ok:false, err:"Connect a fine-grained GitHub Contents token first." }); return; }
-                Cloud.commitFiles([{ p:"data/elevenlabs-audio.json", text:JSON.stringify(p,null,2)+"\n" }], "v57: permanent studio voice clips", cb);
+                Cloud.commitFiles([{ p:"data/elevenlabs-audio.json", text:JSON.stringify(p,null,2)+"\n" }], "v58: permanent studio voice clips", cb);
             });
             return true;
         },
@@ -1013,7 +1013,7 @@ window.SDPCoreV54 = SDPC;
             version: "6.1.0",
             buildDate: BUILD_DATE,
             schema: 55,
-            settingsRev: 57,
+            settingsRev: 58,
             key: KEY,
             storageKey: KEY,
             
@@ -1045,7 +1045,7 @@ window.SDPCoreV54 = SDPC;
             ver: 55,
             version: "6.1.0",
             schema: 55,
-            settingsRev: 57,
+            settingsRev: 58,
             key: KEY,
             classDays: [ 2, 4 ],
             level: "B1",
@@ -1192,7 +1192,7 @@ window.SDPCoreV54 = SDPC;
             if (i >= files.length) { cb({ ok: !bad.length, committed: files.length - bad.length, err: bad.join(" ") }); return; }
             var f = files[i], url = self.ghPath(f.p);
             self.ghApi(url, "GET", null, tok, function(r) {
-                var body = { message: msg || "v57: publish from the professor studio (GitHub only)", content: self.b64utf8(f.text), branch: "main" };
+                var body = { message: msg || "v58: publish from the professor studio (GitHub only)", content: self.b64utf8(f.text), branch: "main" };
                 if (r && r.ok && r.res && r.res.content) body.sha = r.res.content.sha;
                 self.ghApi(url, "PUT", body, tok, function(w) {
                     if (!w || !w.ok) bad.push(f.p + ": " + (w && w.err || "failed"));
@@ -1261,7 +1261,7 @@ window.SDPCoreV54 = SDPC;
                 p: "data/elevenlabs-audio.json",
                 text: JSON.stringify(p, null, 2) + "\n"
             });
-            Cloud.commitFiles(f, "v57: publish words + committed voice clips (GitHub only)", cb);
+            Cloud.commitFiles(f, "v58: publish words + committed voice clips (GitHub only)", cb);
         });
     };
     try {
@@ -1487,9 +1487,9 @@ window.SDPCoreV54 = SDPC;
         return true;
     }
     function syncBar(host) {
-        var txt = "v57 · GitHub-only clip sync · Keys stay in this unlocked tab · Last Saved: " + (UV && UV.time ? UV.time(DB.data.syncRev || 0) : "—") + " · API Key: " + (V.apiKey() ? "In this tab only" : "Not set") + " · Voice Clips: " + V.count();
+        var txt = "v58 · GitHub-only clip sync · Keys stay in this unlocked tab · Last Saved: " + (UV && UV.time ? UV.time(DB.data.syncRev || 0) : "—") + " · API Key: " + (V.apiKey() ? "In this tab only" : "Not set") + " · Voice Clips: " + V.count();
         var box = open(host, '<p class="small good" id="syncBanner" role="status">' + esc(txt) + "</p>" + '<p class="tiny muted" id="syncDetail">Keys stay in this unlocked tab only. Reviewed lessons and generated clips are published through the authenticated GitHub Contents API.</p>' + '<button class="btn primary block" type="button" id="btnForceSync">🔄 Sync Now Across All Devices</button>');
-        title(box, "🛰️ v57 GitHub Sync — Committed Voice Clips (keys stay in this tab)");
+        title(box, "🛰️ v58 GitHub Sync — Committed Voice Clips (keys stay in this tab)");
         var go = $("btnForceSync", box);
         go.onclick = function() {
             var spot = $("syncDetail", box);
@@ -1527,7 +1527,7 @@ window.SDPCoreV54 = SDPC;
             }
         } catch (e) {}
         if (!el) return "";
-        var txt = UV ? UV.banner() : "v57 · GitHub-only clip sync · API Key: " + (V.apiKey() ? "In this tab only" : "Not set") + " · Voice Clips: " + V.count();
+        var txt = UV ? UV.banner() : "v58 · GitHub-only clip sync · API Key: " + (V.apiKey() ? "In this tab only" : "Not set") + " · Voice Clips: " + V.count();
         if (UV) {
             el.textContent = txt;
             el.className = "small good";
@@ -1850,6 +1850,109 @@ window.SDPCoreV54 = SDPC;
         cards++;
         return box;
     }
+    /* v58 / 9.8 — anonymous word-level weakness aggregation + remediation. */
+    function weaknessTop10() {
+        var attempts = {}, misses = {}, i, j, h, rows, row, w, out = [], wm = (DB.data.mistakes || []);
+        rows = DB.data.history || [];
+        for (i = 0; i < rows.length; i++) {
+            h = rows[i] || {};
+            var hrows = h.rows || [];
+            for (j = 0; j < hrows.length; j++) {
+                row = hrows[j] || {};
+                w = String(row.word || row.w || "").toLowerCase().split("/")[0].replace(/[^a-z\u0D80-\u0DFF']/g, "").trim();
+                if (!w) continue;
+                attempts[w] = (attempts[w] || 0) + 1;
+                if (row.state && row.state !== "ok") misses[w] = (misses[w] || 0) + 1;
+            }
+        }
+        for (i = 0; i < wm.length; i++) {
+            w = String((wm[i] && wm[i].w) || "").toLowerCase().trim();
+            if (!w) continue;
+            if (!attempts[w]) attempts[w] = 1;
+            if (!misses[w]) misses[w] = 1;
+        }
+        for (w in misses) {
+            if (Object.prototype.hasOwnProperty.call(misses, w)) {
+                out.push({ word: w, misses: misses[w], attempts: Math.max(misses[w], attempts[w] || 1) });
+            }
+        }
+        out.sort(function(a, b) { return b.misses - a.misses || a.word.localeCompare(b.word); });
+        return out.slice(0, 10);
+    }
+    function remediationDrillText(w) {
+        return 'Flashcards \u2192 4-Choice Quiz \u2192 type-drill x3 for "' + w + '" (3-streak graduates)';
+    }
+    function card4(host) {
+        var box = open(host, '<p class="tiny muted">Anonymous word-level mistake counts from past results on this device. No names, no accounts \u2014 words only.</p>' + '<div id="adminWeaknessTop" class="prof-table"></div>' + '<div class="btn-row tight"><button class="btn sm soft" type="button" id="btnExportWeaknessTop10">\u2b07\ufe0f Export top-10 CSV (col E: suggested_remediation_drill)</button><button class="btn sm primary" type="button" id="btnBuildRemediationSession">🛠️ Build Remediation Session</button></div>' + '<p class="tiny muted" id="remediationStatus" role="status"></p>');
+        title(box, "📊 Step 4: Class weakness & remediation (top 10)");
+        var host2 = $("adminWeaknessTop", box), note = $("remediationStatus", box);
+        function top() { return weaknessTop10(); }
+        function paint() {
+            var list = top(), i, html = "<p class=\"tiny muted\">word \u00b7 misses / attempts \u00b7 error %</p>";
+            if (!list.length) html += "<p class=\"small\">No missed words recorded yet \u2014 run a few dictations and the pattern shows up here.</p>";
+            for (i = 0; i < list.length; i++) {
+                html += "<p class=\"small\"><b>" + esc(list[i].word) + "</b> \u00b7 " + list[i].misses + "/" + list[i].attempts + " \u00b7 " + Math.round(100 * list[i].misses / Math.max(1, list[i].attempts)) + "%</p>";
+            }
+            host2.innerHTML = html;
+            return list;
+        }
+        var list = paint();
+        var csv = $("btnExportWeaknessTop10", box);
+        csv.addEventListener("click", function() {
+            var rows = top(), lines = ["word,attempts,misses,error_percent,suggested_remediation_drill"], i;
+            for (i = 0; i < rows.length; i++) {
+                var r = rows[i], pct = Math.round(100 * r.misses / Math.max(1, r.attempts));
+                lines.push([r.word, r.attempts, r.misses, pct, '"' + remediationDrillText(r.word) + '"'].join(","));
+            }
+            var blob = new Blob([lines.join("\n")], { type: "text/csv" }), url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "weakness-top10.csv";
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 500);
+        });
+        var build = $("btnBuildRemediationSession", box);
+        build.addEventListener("click", function() {
+            var rows = top();
+            if (!rows.length) {
+                note.textContent = "Nothing to remediate yet \u2014 no misses recorded.";
+                return;
+            }
+            var words = [], i, pool = DB.data.lists || [], j, k;
+            for (i = 0; i < rows.length; i++) {
+                var found = null;
+                for (j = 0; j < pool.length && !found; j++) {
+                    var wl = pool[j].words || [];
+                    for (k = 0; k < wl.length; k++) {
+                        var cw = String(wl[k].w || "").toLowerCase().split("/")[0];
+                        if (cw === rows[i].word) { found = wl[k]; break; }
+                    }
+                }
+                words.push(found || { w: rows[i].word, s: "", m: "", p: "", si: "" });
+            }
+            var area = $("adminQuickWordsInput");
+            if (area) {
+                area.value = words.map(function(x) { return x.w; }).join("\n");
+                try {
+                    var ev;
+                    if (typeof Event === "function") { ev = new Event("input", { bubbles: true }); }
+                    else { ev = document.createEvent("UIEvents"); ev.initUIEvent("input", true, false, window); }
+                    area.dispatchEvent(ev);
+                } catch (e) {}
+                note.textContent = "Top " + words.length + " weak words loaded into Step 1 \u2014 press the big publish button to send the remediation list to every device.";
+            } else {
+                var listObj = { id: "v58-remediation", name: "Remediation Drill (top " + words.length + ")", words: words, published: false };
+                var replaced = false;
+                for (j = 0; j < pool.length; j++) if (pool[j].id === "v58-remediation") { pool[j] = listObj; replaced = true; }
+                if (!replaced) pool.push(listObj);
+                try { DB.saveNow(); } catch (e) { DB.save(); }
+                note.textContent = "Remediation list saved (v58-remediation, " + words.length + " words).";
+            }
+        });
+        cards++;
+        return box;
+    }
     function advanced(host) {
         var html = "";
         TABS.forEach(function(t) {
@@ -1919,6 +2022,9 @@ window.SDPCoreV54 = SDPC;
         card1(target);
         card2(target);
         card3(target);
+        try {
+            card4(target);
+        } catch (e) {}
         advanced(target);
         return cards;
     };
@@ -1967,7 +2073,7 @@ window.SDPCoreV54 = SDPC;
   'use strict';
   var C = window.SDPCore || {}, DB = C.DB, Cloud = C.Cloud, CONFIG = C.CONFIG, U = C.U, Lib = C.Lib;
   function admin() { return !!(C.Admin && C.Admin.isUnlockedOnThisDevice && C.Admin.isUnlockedOnThisDevice()); }
-  function stamp(o) { o.ver = 57; o.schema = 57; o.settingsRev = 57; o.appVersion = '6.3.0'; o.version = '6.3.0'; o.updatedAt = new Date().toISOString(); return o; }
+  function stamp(o) { o.ver = 58; o.schema = 58; o.settingsRev = 58; o.appVersion = '7.0.0'; o.version = '7.0.0'; o.updatedAt = new Date().toISOString(); return o; }
   function publicConfig() {
     var s = DB.data.settings || {}, n = DB.data.session || {};
     return stamp({ appName: 'Smart Dictation', level: 'B1', repoOwner: CONFIG.repoOwner, repoName: CONFIG.repoName,
@@ -2002,11 +2108,11 @@ window.SDPCoreV54 = SDPC;
   };
   window.GitHubSync = GH;
   window.StudioSync = {
-    version: 57,
-    keyBody: function () { return JSON.stringify({ ver: 57, appVersion: '6.3.0' }); },
+    version: 58,
+    keyBody: function () { return JSON.stringify({ ver: 58, appVersion: '7.0.0' }); },
     wordsBodies: function () { return []; },
     clipDoc: function () {
-      var V = window.ElevenVault, out = { ver: 57, appVersion: '6.3.0', strictAdminOnly: true, clips: {} }, k;
+      var V = window.ElevenVault, out = { ver: 58, appVersion: '7.0.0', strictAdminOnly: true, clips: {} }, k;
       if (V) for (k in V.sharedMap) if (Object.prototype.hasOwnProperty.call(V.sharedMap, k)) out.clips[k] = { audio: V.sharedMap[k], text: V.metaMap[k] && V.metaMap[k].text || '', voiceId: V.vid(), modelId: V.mid() };
       return out;
     },
@@ -2015,7 +2121,7 @@ window.SDPCoreV54 = SDPC;
       if (!doc || !doc.words || Number(doc.syncRev || doc.ver) <= Number(DB.data.syncRev || 0)) return 0;
       var n = window.EncryptedVault.applyWords(doc.words, doc.listName); if (n) { DB.data.syncRev = Number(doc.syncRev || doc.ver); DB.saveNow(); } return n;
     },
-    push: function (env, reason, cb) { GH.commitAll('v57: reviewed lecturer publication', cb || function () {}); },
+    push: function (env, reason, cb) { GH.commitAll('v58: reviewed lecturer publication', cb || function () {}); },
     clips: function (clips, cb) { if (window.ElevenVault) window.ElevenVault.push(cb); else if (cb) cb({ ok: false }); }
   };
 })();

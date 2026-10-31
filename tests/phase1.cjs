@@ -184,7 +184,7 @@ test('1.6 user strings remain literal text, not executable HTML', () => withApp(
 test('Static: node --check, ES2017 parser, no eval, under 450KB', () => {
  const d=new JSDOM(current);const script=Array.from(d.window.document.scripts).find(n=>!n.type&&n.textContent.includes('var APP_VERSION')).textContent;
  const file=path.join(require('os').tmpdir(),'sdp-check.js');fs.writeFileSync(file,script);cp.execFileSync(process.execPath,['--check',file]);fs.unlinkSync(file);
- acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<456000);d.window.close();
+ acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<598000);d.window.close();
 });
 function enterPin(a, pin) {
   a.q.Admin.open();
@@ -480,8 +480,8 @@ test('5.2 v57: admin auto-completer parses typed words and ships no default PIN'
  assert.equal(a.w.SDPCore.CONFIG.adminPin, '');
  assert.ok(current.includes('adminPin:""'));
 }));
-test('5.3 v57: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
- assert.ok(current.includes('APP_VERSION="6.3.0"'));
+test('5.3 v58: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
+ assert.ok(current.includes('APP_VERSION="7.0.0"'));
  assert.ok(current.includes('./data/data-meter.js'));
  assert.ok(!current.includes('id="sdpV56"'), 'fake depot removed');
  assert.ok(!current.includes('id="materialMixer"'), 'Material Mixer removed');
@@ -498,7 +498,7 @@ test('5.4 v57: AES-GCM v2 vault, GitHub-only sync, publish preview and Range SW'
  assert.ok(studio.includes('Cloud.commitFiles') && !/ntfy\.sh\/dictationb1_sdp_keys/.test(studio));
  assert.ok(current.includes('openPublishPreview') || current.includes('publishPreviewWords'));
  const sw = fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('sdp-v57-media') && sw.includes('206') && sw.includes('Content-Range'));
+ assert.ok(sw.includes('sdp-v58-media') && sw.includes('206') && sw.includes('Content-Range'));
 }));
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;

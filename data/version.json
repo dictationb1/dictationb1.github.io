@@ -1,11 +1,11 @@
 {
-  "ver": 57,
-  "appVersion": "6.3.0",
-  "version": "6.3.0",
+  "ver": 58,
+  "appVersion": "7.0.0",
+  "version": "7.0.0",
   "buildDate": "2026-10-31",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "settingsRev": 57,
+  "settingsRev": 58,
   "updatedAt": "2026-10-31T00:00:00.000Z",
   "updatedAtMs": 1793377173709,
   "features": {
@@ -74,7 +74,11 @@
     "wordsRelay": "v55: the compact word array ({ w, p, d, m, s }) travels on https://ntfy.sh/dictationb1_sdp_words_v55 chunked under 3,500 bytes per POST, again with zero custom headers.",
     "instantGithubRead": "v55: UniversalSync.pullAll() reads https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/data/*.json?ref=main (0.05 s after the commit, 5,000 req/h with the token) so a second device never waits 60-90 s for the GitHub Pages CDN to rebuild.",
     "preEditWarning": "v55: Lecturer Mode opens with #adminSyncWarningCard - an amber \"Action Required Before Editing\" banner and a bilingual (English / Sinhala) 3-step setup guide with the pre-filled github.com/settings/tokens/new?...&scopes=repo link, turning emerald-green once both keys are encrypted and synced.",
-    "crossDeviceVoice": "v55: ElevenVault.playOrFetchOnce() replays every permanent clip for 0 credits and, when a clip is missing on a new device, generates it exactly once with the PIN-decrypted key, stores it in IndexedDB, and commits data/elevenlabs-audio.json so no second device ever pays again."
+    "crossDeviceVoice": "v55: ElevenVault.playOrFetchOnce() replays every permanent clip for 0 credits and, when a clip is missing on a new device, generates it exactly once with the PIN-decrypted key, stores it in IndexedDB, and commits data/elevenlabs-audio.json so no second device ever pays again.",
+    "v58": "7.0.0 release: two-tier Liquid Glass (#sdpV58Css), Sinhala WOFF2 fonts, visualViewport dock, 2-column workspace + keyboard HUD, 3-card home with Practice Bento, inline signature pill + About sheet, dual-zone vignette + 3 contrast presets with a real WCAG gauge, data meter v2 (5 LKR plans, cache honesty, 2-panel sheet), 8 learning features in data/learning-tools.js",
+    "liquidGlassTiers": "Tier A chrome blur(18px) saturate(1.7) + Tier B >=94% Optical Core; Lite mode = zero blur/gradient/shimmer",
+    "learningTools": "ES5 data/learning-tools.js: Levenshtein diff coach, weak-word bank (3-streak mastery), paper self-check + A4 print sheet, syllable spotlight, sentence context mode, Speak & Compare, offline pack (sdp-youdao-v1), lecturer remediation builder",
+    "contrastPresetsV58": "Low Light 12% / Balanced Glass 34% (default) / Bright-Day Shield 68% + Live WCAG contrast gauge in #contrastReadout"
   },
   "mode": "paper",
   "storageKey": "sdp.v56_audit_verified",
@@ -170,7 +174,7 @@
   "guideLang": "en",
   "voice": "Amy",
   "lockedVoice": "Amy",
-  "schema": 57,
+  "schema": 58,
   "sessionCode": "Session 8",
   "sessionDate": "2026-10-29",
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",

@@ -50,8 +50,8 @@
     "volume": 1,
     "readSentence": false
   },
-  "ver": 57,
-  "version": "6.3.0",
+  "ver": 58,
+  "version": "7.0.0",
   "buildDate": "2026-10-31",
   "credits": {
     "createdBy": "Hansana",
@@ -85,8 +85,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "6.3.0",
-  "settingsRev": 57,
+  "appVersion": "7.0.0",
+  "settingsRev": 58,
   "performance": {
     "mode": "paper",
     "lite": {},
@@ -413,7 +413,7 @@
   },
   "updatedAt": "2026-10-31T00:00:00.000Z",
   "updatedAtMs": 1793318400000,
-  "schema": 57,
+  "schema": 58,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",

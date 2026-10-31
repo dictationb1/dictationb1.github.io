@@ -1,5 +1,5 @@
 'use strict';
-/* v57 / 6.3.0 Chromium upgrade gate. No live internet: every external request is
+/* v58 / 7.0.0 Chromium upgrade gate. No live internet: every external request is
  * aborted or mocked locally. Test PIN is constructed at runtime. */
 const { chromium } = require('playwright-core');
 const serverChromium = require('@sparticuz/chromium');
@@ -50,11 +50,11 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     const state = await page.evaluate(() => ({
       static: document.body.getAttribute('data-wallpaper') === 'static',
       videoSrc: document.getElementById('bgLiveVideo').getAttribute('src'),
-      credit: !!document.getElementById('credit'), depot: !!document.getElementById('sdpV56'),
+      credit: document.getElementById('credit') ? getComputedStyle(document.getElementById('credit')).position : 'missing', depot: !!document.getElementById('sdpV56'),
       overflow: !!document.getElementById('topOverflow'), lang: !!document.getElementById('btnLang'), data: !!document.getElementById('topDataBadge'),
       mixer: !!document.getElementById('materialMixer'), meter: !!window.SDPDataMeter
     }));
-    push('v57 boots Static Gradient with a three-control header and no fake depot/credit/mixer', state.static && !state.videoSrc && !state.credit && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
+    push('v58 boots Static Gradient with a three-control header, inline signature pill and no fake depot/mixer', state.static && !state.videoSrc && state.credit === 'static' && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
     await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
     await page.waitForTimeout(200);
     const ids = await page.evaluate(() => ['rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect'].map(id => !!document.getElementById(id)));
@@ -69,9 +69,10 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     const dim = await page.evaluate(() => {
       const LW = window.SDPCore.LiveWallpaper; LW.setDim(0); const lo = document.getElementById('contrastReadout').textContent;
       LW.setDim(100); const hi = document.getElementById('contrastReadout').textContent; LW.setDim(18);
-      return { lo, hi, max: document.getElementById('sVideoDim').max };
+      const ratio = t => { const m = /Live WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
+      return { lo, hi, max: document.getElementById('sVideoDim').max, loRatio: ratio(lo), hiRatio: ratio(hi) };
     });
-    push('v57 dimmer is 0-100 and shows a real WCAG contrast warning', dim.max === '100' && /warning/.test(dim.lo) && /readable/.test(dim.hi), dim);
+    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /Live WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
     await page.evaluate(() => { window.SDPCore.DB.data.settings.perf = 'lite'; window.SDPCore.UI.applyPerf(); });
     const blur = await page.evaluate(() => getComputedStyle(document.querySelector('.glass')).backdropFilter || getComputedStyle(document.querySelector('.glass')).webkitBackdropFilter);
     push('v57 true Lite mode disables backdrop filters', blur === 'none', { blur });
@@ -143,6 +144,77 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     await page.evaluate(() => { window.SDPCore.Speech.playWord('afraid', 1, function () {}); window.SDPCore.Speech.speakStudioText('Number 31', 'en', function () {}); });
     await page.waitForTimeout(500);
     push('v57 saveData / 2G forces Static and student playback never spends ElevenLabs credits', state.static === 'static' && !state.src && paid === 0 && errors.length === 0, Object.assign({ paid, errors }, state));
+    await ctx.close();
+  }
+
+  {
+    /* v58: two-panel data sheet with plan chips + focus-dim controller. */
+    const { ctx, page, errors } = await newPage();
+    const sheet = await page.evaluate(() => new Promise(resolve => {
+      const C = window.SDPCore;
+      C.UI.setTab('home');
+      if (C.UI.openDataSheet) C.UI.openDataSheet();
+      setTimeout(() => resolve({
+        open: !!document.getElementById('dataReportSheet'),
+        network: !!document.getElementById('v58NetworkPanel'),
+        cache: !!document.getElementById('v58CachePanel'),
+        today: (document.getElementById('dataSessionTodayMB') || {}).textContent || '',
+        lkr: (document.getElementById('dataSessionTodayLkr') || {}).textContent || '',
+        savedMB: (document.getElementById('dataCacheSavedMB') || {}).textContent || '',
+        savedLkr: (document.getElementById('dataCacheSavedLkr') || {}).textContent || '',
+        planLabel: (document.getElementById('dataPlanLabel') || {}).textContent || '',
+        chips: Array.from(document.querySelectorAll('#dataPlanChips .v58-plan-chip')).map(b => b.textContent),
+        active: document.querySelectorAll('#dataPlanChips .v58-plan-chip[aria-pressed="true"]').length
+      }), 700);
+    }));
+    const expectedChips = ['Student Lite — LKR 49.00/GB', 'Study Pack — LKR 99.00/GB', 'Family Share — LKR 150.00/GB', 'Classroom — LKR 220.00/GB', 'Custom Price'];
+    push('v58 data sheet renders Network & Cache panels, live MB, ≈ LKR and the five plan chips',
+      sheet.open && sheet.network && sheet.cache && /MB/.test(sheet.today) && /^≈/.test(sheet.lkr) &&
+      /(B|MB)/.test(sheet.savedMB) && /^≈/.test(sheet.savedLkr) && /LKR \d+\.\d+\/GB/.test(sheet.planLabel) &&
+      JSON.stringify(sheet.chips) === JSON.stringify(expectedChips) && sheet.active === 1 && errors.length === 0,
+      Object.assign({ errors }, sheet));
+    await page.evaluate(() => {
+      const C = window.SDPCore;
+      if (C.UI.closeSheet) C.UI.closeSheet();
+      if (C.Speech.showRetryToast) C.Speech.showRetryToast('QA retry', 'en', function () {});
+      const el = document.querySelector('.sdp-retry-toast');
+      if (el) el.setAttribute('data-qa', '1');
+    });
+    await page.locator('#btnStart').click();
+    await page.waitForTimeout(900);
+    const focus = await page.evaluate(() => ({
+      on: document.body.classList.contains('v58-focus'),
+      qaToastGone: document.querySelectorAll('.sdp-retry-toast[data-qa]').length === 0
+    }));
+    await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('#sheets button'));
+      const ready = btns.find(x => /ready/i.test(x.textContent));
+      if (ready) ready.click();
+    });
+    await page.waitForTimeout(1200);
+    const session = await page.evaluate(() => ({
+      dock: !!document.getElementById('v58Dock'),
+      layer: !!(window.SDPCore.Eng && window.SDPCore.Eng.layer)
+    }));
+    await page.evaluate(() => { window.SDPCore.Eng.stop(); });
+    await page.waitForTimeout(800);
+    const focusOff = await page.evaluate(() => !document.body.classList.contains('v58-focus'));
+    push('v58 focus-dim activates on Start, kills the toast and the dock appears with the player', focus.on === true && focus.qaToastGone === true && session.dock === true && session.layer === true && focusOff === true, Object.assign({ focusOff }, focus, session));
+    const chipClick = await page.evaluate(() => new Promise(resolve => {
+      const C = window.SDPCore;
+      if (C.UI.openDataSheet) C.UI.openDataSheet();
+      setTimeout(() => {
+        const chip = document.getElementById('v58Plan-study');
+        if (chip) chip.click();
+        setTimeout(() => resolve({
+          label: (document.getElementById('dataPlanLabel') || {}).textContent || '',
+          price: window.SDPDataMeter.price(),
+          pressed: chip ? chip.getAttribute('aria-pressed') : null
+        }), 300);
+      }, 500);
+    }));
+    push('v58 tapping a plan chip persists the plan, price and active state',
+      /Study Pack/.test(chipClick.label) && chipClick.price === 99 && chipClick.pressed === 'true' && errors.length === 0, Object.assign({ errors }, chipClick));
     await ctx.close();
   }
 

@@ -1,4 +1,4 @@
-/* v57 / 6.3.0 static release gate: ES5, size, secrets, metadata and wiring. */
+/* v58 / 7.0.0 static release gate: ES5, size, secrets, metadata and wiring. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -33,12 +33,24 @@ function checkInline(rel, artifact, budget) {
 const INDEX = checkInline('index.html', 'app', 600000);
 if (/<link\b(?![^>]*rel="manifest")/i.test(INDEX)) throw Error('index.html contains a non-manifest <link> tag');
 if (!/<link[^>]*rel="manifest"[^>]*href="\.\/manifest\.webmanifest"/i.test(INDEX)) throw Error('manifest link missing');
-checkInline('data.html', 'data-app', 60000);
-checkInline('data/index.html', 'data-route-app', 60000);
+checkInline('data.html', 'data-app', 65000);
+checkInline('data/index.html', 'data-route-app', 65000);
 if (read('data.html') !== read('data/index.html')) throw Error('data.html and data/index.html must remain identical');
 const studio = parseES5('data/studio.js', 'studio');
 const meterSrc = parseES5('data/data-meter.js', 'data-meter');
 const sw = parseES5('sw.js', 'sw');
+const learn = parseES5('data/learning-tools.js', 'learning-tools');
+/* v58: learning-tools is strict-ES5, wired and precached. */
+if (!/\.SDPLearning\s*=/.test(learn)) throw Error('learning-tools must expose window.SDPLearning');
+if (!/visualViewport/.test(learn)) throw Error('visualViewport docking missing from learning-tools');
+if (!/levenshteinOps/.test(learn) || !/markMissed/.test(learn) || !/markCorrect/.test(learn)) throw Error('learning-tools APIs missing');
+if (!/\.\/data\/learning-tools\.js/.test(sw)) throw Error('learning-tools missing from sw.js SHELL');
+if (!/\.\/assets\/fonts\/NotoSansSinhala-Regular\.woff2/.test(sw) || !/\.\/assets\/fonts\/NotoSansSinhala-Bold\.woff2/.test(sw)) throw Error('Sinhala fonts missing from sw.js SHELL');
+for (const f of ['assets/fonts/NotoSansSinhala-Regular.woff2', 'assets/fonts/NotoSansSinhala-Bold.woff2']) {
+  const b = fs.readFileSync(path.join(ROOT, f));
+  if (b.length > 60000) throw Error(f + ' exceeds 60KB');
+  if (b.slice(0, 4).toString('utf8') !== 'wOF2') throw Error(f + ' is not a WOFF2 file');
+}
 if (!/window\.ElevenVault\s*=/.test(studio)) throw Error('studio must expose ElevenVault');
 if (!/adminGenerateMissing/.test(studio)) throw Error('studio generator missing');
 if (!/SDPDataMeter\s*=/.test(meterSrc) || !/SDP_DATA_METER\s*=/.test(meterSrc)) throw Error('meter aliases missing');
@@ -48,7 +60,7 @@ if (!/caches\.match/.test(sw)) throw Error('service worker cache strategy missin
 /* Secret/PIN gate: every shipped file, every test, and the rest of the repo. */
 const SCAN_FILES = [
   'README.md', 'CHANGELOG.md', 'index.html', 'data.html', 'data/index.html',
-  'data/studio.js', 'data/data-meter.js', 'sw.js',
+  'data/studio.js', 'data/data-meter.js', 'data/learning-tools.js', 'sw.js',
   'data/config.json', 'data/session.json', 'data/version.json',
   'data/elevenlabs-audio.json', 'data/media-manifest.json', 'tests/test-pin.cjs'
 ];
@@ -73,14 +85,14 @@ console.log('secret gate: PASS (' + SCAN_FILES.length + ' required files + all t
 /* Metadata and manifest. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 57 || d.appVersion !== '6.3.0') throw Error(f + ' must be ver 57 / appVersion 6.3.0');
+  if (d.ver !== 58 || d.appVersion !== '7.0.0') throw Error(f + ' must be ver 58 / appVersion 7.0.0');
 }
-if (!/APP_VERSION="6\.3\.0"/.test(INDEX)) throw Error('index APP_VERSION must be 6.3.0');
+if (!/APP_VERSION="7\.0\.0"/.test(INDEX)) throw Error('index APP_VERSION must be 7.0.0');
 const manifest = JSON.parse(read('manifest.webmanifest'));
 if (!manifest.name || manifest.display !== 'standalone' || manifest.theme_color !== '#040812') throw Error('invalid PWA manifest');
 const media = JSON.parse(read('data/media-manifest.json'));
 if (!Array.isArray(media.assets) || media.assets.length < 4) throw Error('media manifest must list wallpapers + static');
-console.log('metadata: v57 / 6.3.0; media manifest: ' + media.assets.length + ' assets');
+console.log('metadata: v58 / 7.0.0; media manifest: ' + media.assets.length + ' assets');
 
 /* P0 runtime wiring markers. */
 if (!/sdp\.v2:/.test(INDEX) || !/isUnlockedOnThisDevice/.test(INDEX)) throw Error('local salted PIN wiring missing');
@@ -89,4 +101,16 @@ if (/ntfy\.sh\/dictationb1_sdp_(keys|words|audio)/.test(studio)) throw Error('st
 if (!/persistedSession/.test(meterSrc) || !/videoBufferedBytes/.test(meterSrc) || !/content-length/.test(meterSrc)) throw Error('meter truth fixes missing');
 if (!/data\/data-meter\.js/.test(read('data.html')) || !/liveSessionMB/.test(read('data.html')) || !/dataPlanPreset/.test(read('data.html'))) throw Error('/data live meter/preset wiring missing');
 console.log('P0 wiring markers: PASS');
-console.log('ALL v57 STATIC CHECKS PASSED');
+/* v58 markers: two-tier glass, fonts, dock, learning tools and signature pill. */
+if (!/sdpV58Css/.test(INDEX)) throw Error('sdpV58Css runtime style missing');
+if (!/Noto Sans Sinhala/.test(INDEX)) throw Error('Noto Sans Sinhala @font-face missing');
+if (!/v58-glass-blur/.test(INDEX) || !/v58-core/.test(INDEX)) throw Error('two-tier glass variables missing');
+if (!/v58Dock|v58-keyboard/.test(learn)) throw Error('keyboard dock wiring missing');
+if (!/aboutCreditsSheet/.test(INDEX) || !/v58-sig-pill/.test(INDEX)) throw Error('signature pill / about sheet missing');
+if (!/v58WorkSpace|v58-workspace/.test(INDEX)) throw Error('desktop workspace missing');
+if (!/learning-tools\.js/.test(INDEX)) throw Error('learning-tools script tag missing');
+const versionData = JSON.parse(read('data/version.json'));
+if (versionData.ver !== 58 || versionData.appVersion !== '7.0.0' || versionData.settingsRev !== 58) throw Error('version.json must ship ver 58 / 7.0.0 / settingsRev 58');
+console.log('v58 markers: PASS');
+console.log('ALL v58 STATIC CHECKS PASSED');
+

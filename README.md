@@ -2,7 +2,16 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 6.3.0 — v57
+## Release 7.0.0 — v58
+
+v58 is the Liquid Glass + learning release. Two-tier runtime glass (Tier A chrome `blur(18px) saturate(1.7)`, Tier B ≥94% Optical Core reading surfaces), Sinhala WOFF2 fonts (runtime `@font-face`, ≤60 KB, no static `<link>`), the Android `visualViewport` keyboard dock (`#v58Dock` / `body.v58-keyboard`), a desktop ≥1024px two-column workspace with `#v58KbdHud` shortcuts (`window.SDP.__kbdTests`), the compact 3-card home (`#v58PracticeBento`, `#v58ProgressArchiveCard`, inline `#credit` signature pill → `#aboutCreditsSheet`), grouped overflow menus, three contrast presets with a real composited WCAG gauge, data meter v2 (plans, cache honesty, 2-panel data sheet) and the eight learning features in `data/learning-tools.js` (`window.SDPLearning`).
+
+- `sw.js` is `sdp-v58`: shell precaches `data/learning-tools.js` + the two Sinhala fonts; Youdao word audio still lives in `sdp-youdao-v1`.
+- Storage key remains `sdp.v57_secure_local` (data migrates in place; ver/schema/settingsRev 58).
+- `APP_VERSION`: `7.0.0`; `ver`, `schema`, `settingsRev`: `58`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_multilingual_v2`.
+- New scripts/tests: `data/learning-tools.js` is strict ES5 and covered by `tests/check.cjs`, `tests/upgrade.test.cjs` and the Chromium suites.
+
+## Historical release 6.3.0 — v57 (superseded by v58)
 
 v57 is a security and data-truth release. There is **no shared/default lecturer PIN**, no public key vault, and no vault/key/audio ntfy relay. The first valid 4–8 digit unlock on a device creates a local random-salted `sha256("sdp.v2:" + deviceSalt + ":" + pin)` verifier; later unlocks verify it, and Lecturer Mode includes **Change Lecturer PIN**.
 

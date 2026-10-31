@@ -1,11 +1,13 @@
-/*! Smart Dictation Player — Live Network & Cost Meter (v57 / 6.3.0).
+/*! Smart Dictation Player — Live Network & Cost Meter (v58 / 7.0.0).
  * ES5, dependency-free. Resource Timing is measured; opaque dictionary audio
- * and complete-session profiles are explicitly labelled estimates. */
+ * and complete-session profiles are explicitly labelled estimates (≈).
+ * v58: durable buffer high-water marks, 30s fetchPending TTL, newest-30 daily
+ * pruning, five LKR plans and honest cached-vs-network audio accounting. */
 (function (global) {
   'use strict';
-  var METER_VERSION = '6.3.0', SCHEMA = 57, KB = 1024, MB = KB * KB, GB = KB * MB;
+  var METER_VERSION = '7.0.0', SCHEMA = 58, KB = 1024, MB = KB * KB, GB = KB * MB;
   var AUDIO_ESTIMATE = 11000;
-  var STORAGE = { daily: 'sdp.dataMeter.daily', allTime: 'sdp.dataMeter.allTime', price: 'sdp.dataPriceLkrPerGb', manifest: 'sdp.mediaManifest.v1' };
+  var STORAGE = { daily: 'sdp.dataMeter.daily', allTime: 'sdp.dataMeter.allTime', price: 'sdp.dataPriceLkrPerGb', plan: 'sdp.dataPricePlan', manifest: 'sdp.mediaManifest.v1', buffer: 'sdp.dataMeter.videoHW' };
   var KNOWN_ASSETS = {};
   var persistedSession = 0;
   var state = {
@@ -80,8 +82,14 @@
     var now = Date.now(), last = state.audioPlayTimes[url] || 0;
     if (now - last < 300) return 0;
     state.audioPlayTimes[url] = now;
-    addBytes(cached ? 'cache' : 'audio', AUDIO_ESTIMATE);
-    if (!cached) state.estimatedAudioBytes += AUDIO_ESTIMATE;
+    if (cached) {
+      /* v58: a cache hit is SAVINGS — it only raises cacheSavedBytes, never
+         audioBytes/sessionBytes/allTime totals (so cost reports stay honest). */
+      addBytes('cache', AUDIO_ESTIMATE);
+      return AUDIO_ESTIMATE;
+    }
+    addBytes('audio', AUDIO_ESTIMATE);
+    state.estimatedAudioBytes += AUDIO_ESTIMATE;
     return AUDIO_ESTIMATE;
   }
   function accountEntry(entry) {
@@ -91,10 +99,11 @@
     state.seenEntries[key] = true;
     state.seenUrls[url] = true;
     var transfer = Number(entry.transferSize) || 0, encoded = Number(entry.encodedBodySize) || 0;
-    var category = classify(url), pending = state.fetchPending[url];
+    var category = classify(url), pending = prunePending(state.fetchPending[url]);
+    if (state.fetchPending[url] && !pending.length) delete state.fetchPending[url];
     if (transfer > 0) {
       if (pending && pending.length) {
-        var estimate = pending.shift();
+        var estimate = pending.shift().bytes;
         addBytes(category, transfer - estimate);
         if (estimate > transfer) {
           if (category === 'video') state.videoBytes = Math.max(0, state.videoBytes - (estimate - transfer));
@@ -122,12 +131,18 @@
     var frac = Math.min(1, Math.max(0, secs / el.duration));
     return Math.round(frac * known);
   }
+  function prunePending(list) {
+    if (!list) return list;
+    var out = [], i, now = Date.now();
+    for (i = 0; i < list.length; i++) if (now - (list[i].ts || 0) <= 30000) out.push(list[i]);
+    return out;
+  }
   function trackFetch(url, bytes, category) {
     url = String(url || ''); bytes = Math.max(0, Math.round(Number(bytes) || 0));
     if (!url || !bytes) return;
     category = category || classify(url);
-    if (!state.fetchPending[url]) state.fetchPending[url] = [];
-    state.fetchPending[url].push(bytes);
+    state.fetchPending[url] = prunePending(state.fetchPending[url] || []);
+    state.fetchPending[url].push({ bytes: bytes, ts: Date.now() }); /* 30s TTL */
     state.trackedUrls[url] = bytes;
     addBytes(category, bytes);
   }
@@ -194,6 +209,8 @@
     var el = null, vb = videoBufferedBytes();
     try { el = global.document && global.document.getElementById('bgLiveVideo'); } catch (e) {}
     if (el && vb) { var src = assetName(el.currentSrc || el.src); state.videoBufferedSources[src] = Math.max(state.videoBufferedSources[src] || 0, vb); }
+    /* v58: the high-water mark survives reloads so buffered-bytes never regress */
+    try { var hws = 0, hk; for (hk in state.videoBufferedSources) if (own(state.videoBufferedSources, hk)) hws += state.videoBufferedSources[hk]; state._lastBufferHW = hws; } catch (e) {}
     var buffered = 0, k;
     for (k in state.videoBufferedSources) if (own(state.videoBufferedSources, k)) buffered += state.videoBufferedSources[k];
     state.videoBytes = Math.max(state.resourceVideoBytes, buffered);
@@ -207,8 +224,51 @@
       appBytes: state.appBytes, cacheSavedBytes: state.cacheSavedBytes, archivedBytes: state.archivedBytes,
       estimatedAudioBytes: state.estimatedAudioBytes };
   }
+  var PLANS = [
+    { id: 'student-lite', label: 'Student Lite', lkr: 49 },
+    { id: 'study', label: 'Study Pack', lkr: 99 },
+    { id: 'family', label: 'Family Share', lkr: 150 },
+    { id: 'classroom', label: 'Classroom', lkr: 220 },
+    { id: 'custom', label: 'Custom', lkr: 0 }
+  ];
   function price() { var p = Number(safeGet(STORAGE.price)); return isFinite(p) && p > 0 ? p : 150; }
   function costLkr(bytes) { return (Number(bytes) || 0) / GB * price(); }
+  function toLKR(bytes) { return Math.round(100 * (Number(bytes) || 0) / 1e9 * price()) / 100; }
+  /* v58 honesty: every derived figure is prefixed with ≈ and scaled K/M/G/L. */
+  function toLKRParts(x) {
+    x = Math.abs(Number(x) || 0);
+    if (x >= 1e9) return { n: x / 1e9, s: 'L' };
+    if (x >= 1e6) return { n: x / 1e6, s: 'G' };
+    if (x >= 1e3) return { n: x / 1e3, s: 'M' };
+    return { n: x, s: 'K' };
+  }
+  function formatLKR(lkr) { var p = toLKRParts(lkr); return '≈' + p.s + ' ' + p.n.toFixed(2); }
+  function getPlans() {
+    var out = [], i;
+    for (i = 0; i < PLANS.length; i++) {
+      var pl = PLANS[i];
+      out.push({ id: pl.id, label: pl.label, lkr: pl.lkr,
+        chip: pl.lkr > 0 ? pl.label + ' — LKR ' + pl.lkr.toFixed(2) + '/GB' : 'Custom Price' });
+    }
+    return out;
+  }
+  function getPlanId() { var id = String(safeGet(STORAGE.plan) || 'custom'); return id || 'custom'; }
+  function findPlan(id) { for (var i = 0; i < PLANS.length; i++) if (PLANS[i].id === id) return PLANS[i]; return null; }
+  function setPlan(id) {
+    var plan = findPlan(id);
+    if (!plan) return getPlan();
+    safeSet(STORAGE.plan, plan.id);
+    if (plan.lkr > 0) setPrice(plan.lkr);
+    return getPlan();
+  }
+  function getPlan() {
+    var plan = findPlan(getPlanId()) || findPlan('custom');
+    return { id: plan.id, label: plan.label, lkr: plan.lkr > 0 ? plan.lkr : price(), chip: plan.lkr > 0 ? plan.label + ' — LKR ' + plan.lkr.toFixed(2) + '/GB' : (plan.id === 'custom' ? 'Custom Price' : plan.label) };
+  }
+  function getPlanLabel() {
+    var plan = getPlan();
+    return plan.label + ' · LKR ' + plan.lkr.toFixed(2) + '/GB';
+  }
   function formatMB(bytes) {
     var b = Math.max(0, Number(bytes) || 0);
     if (b < KB) return Math.round(b) + ' B';
@@ -220,7 +280,16 @@
     var totals = computeTotals(), delta = Math.max(0, totals.sessionBytes - persistedSession);
     if (delta > 0) { var day = nowDay(); state.daily[day] = (Number(state.daily[day]) || 0) + delta; persistedSession = totals.sessionBytes; }
     state.allTime = Math.max(state.allTime || 0, (state.allTime || 0) + delta);
+    /* v58: prune to the newest 30 day buckets; totals survive inside allTime */
+    var keys = [], k;
+    for (k in state.daily) if (own(state.daily, k)) keys.push(k);
+    if (keys.length > 30) {
+      keys.sort(); /* ascending dates */
+      var cut = keys.slice(0, keys.length - 30);
+      for (var ci = 0; ci < cut.length; ci++) delete state.daily[cut[ci]];
+    }
     safeSet(STORAGE.daily, JSON.stringify(state.daily)); safeSet(STORAGE.allTime, String(state.allTime));
+    try { safeSet(STORAGE.buffer, JSON.stringify(state.videoBufferedSources || {})); } catch (e) {}
   }
   function getLive() {
     var t = computeTotals();
@@ -231,7 +300,9 @@
       todayMB: (t.todayBytes / MB).toFixed(2), allTimeMB: (t.allTimeBytes / MB).toFixed(2), cacheMB: (t.cacheSavedBytes / MB).toFixed(2),
       priceLkrPerGb: price(), costSessionLkr: costLkr(t.sessionBytes), costTodayLkr: costLkr(t.todayBytes),
       costAllTimeLkr: costLkr(t.allTimeBytes), costCacheLkr: costLkr(t.cacheSavedBytes),
-      audioLabel: 'Measured + ~11 KB/word cross-origin audio estimate', saveData: state.saveData, hidden: state.hidden };
+      planId: getPlanId(), planLabel: getPlanLabel(),
+      cacheSavedLkr: formatLKR(costLkr(t.cacheSavedBytes)), estimatedTodayLkr: formatLKR(costLkr(t.todayBytes)),
+      audioLabel: 'Measured + ≈11 KB/word cross-origin audio estimate', saveData: state.saveData, hidden: state.hidden };
   }
   function getModeProfiles() {
     var m = loadManifest() || {}, list = m.assets || [], i, profiles = [];
@@ -258,7 +329,12 @@
     opts = opts || {};
     if (state.started && !state.paused) return meter;
     state.started = true; state.paused = false; state.daily = readDaily(); state.allTime = Number(safeGet(STORAGE.allTime)) || 0;
+    try {
+      var hw = JSON.parse(safeGet(STORAGE.buffer) || '{}');
+      if (hw && typeof hw === 'object') for (var hk2 in hw) if (own(hw, hk2)) state.videoBufferedSources[hk2] = Math.max(state.videoBufferedSources[hk2] || 0, Number(hw[hk2]) || 0);
+    } catch (e) {}
     loadManifest(); installObserver(); installFetchHooks(); flushEntries();
+    try { sample(); } catch (e) {} /* v58: record the buffered high-water immediately */
     if (opts.interval !== false && !state.interval) state.interval = global.setInterval(function () {
       if (state.paused) return;
       var live = sample(), i; for (i = 0; i < state.tickers.length; i++) try { state.tickers[i](live); } catch (e) {}
@@ -283,6 +359,7 @@
     knownBytesFor: knownBytesFor, classify: classify, addBytes: addBytes, trackFetch: trackFetch, accountEntry: accountEntry,
     videoBufferedBytes: videoBufferedBytes, recordAudioPlay: recordAudioPlay, sample: sample, flushEntries: flushEntries,
     getLive: getLive, getModeProfiles: getModeProfiles, formatMB: formatMB, formatBytes: formatBytes, costLkr: costLkr,
+    toLKR: toLKR, formatLKR: formatLKR, getPlans: getPlans, getPlan: getPlan, getPlanId: getPlanId, getPlanLabel: getPlanLabel, setPlan: setPlan,
     price: price, setPrice: setPrice, start: start, stop: stop, resetSession: resetSession, onTick: onTick, loadManifest: loadManifest,
     persistTotals: persistTotals };
   global.SDPDataMeter = meter; global.SDP_DATA_METER = meter;

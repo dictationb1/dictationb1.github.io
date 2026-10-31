@@ -168,7 +168,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     const cs=(el)=>{if(!el)return null;const s=getComputedStyle(el);
      return {bg:s.backgroundColor,img:s.backgroundImage,fg:s.color,radius:s.borderRadius,weight:s.fontWeight,
       border:s.borderColor,shadow:s.boxShadow,textShadow:s.textShadow,stroke:s.webkitTextStrokeWidth||'',
-      blur:s.backdropFilter||s.webkitBackdropFilter||'none',z:s.zIndex};};
+      blur:s.backdropFilter||s.webkitBackdropFilter||'none',z:s.zIndex,pos:s.position};};
     return {primary:cs(document.querySelector('.btn.pri')||document.getElementById('btnStart')),
      ghost:cs(document.getElementById('btnTheme')),seg:cs(document.getElementById('segMode')),
      tab:cs(document.querySelector('#tabbar button[aria-selected=true]')),
@@ -185,10 +185,10 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
     !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
     !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
+    !!(gradient(v37.tabbar)&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(18px) saturate(1.7) brightness(1.04)'||v37.perf==='lite'))&&
     !!(gradient(v37.hero)&&v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&(v37.hero.blur==='blur(14px) saturate(1.6) brightness(1.03)'||v37.perf==='lite'))&&
     !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
-    v37.credit===null&&
+    !!(v37.credit&&v37.credit.pos==='static'&&v37.credit.z==='1')&&
     !!(v37.video&&v37.video.blur==='none')&&
     (v37.perf!=='lite'||v37.hero.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
@@ -319,7 +319,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const complete=quick.words.length===2&&quick.words.every(w=>w.w&&w.p&&w.d&&w.m&&w.s);
   results.push({test:'Chromium v53 one click on the big button completes IPA, definition, Sinhala, sentence and publishes the session',status:/words saved/.test(quick.status)&&complete&&quick.published&&quick.name==='Session 9 - Weather'&&quick.session==='Session 9 - Weather'&&quick.rows===3&&dictCalls>0&&siCalls>0?'PASS':'FAIL',detail:quick});
   const glass=await page.evaluate(()=>{const el=document.querySelector('.glass');const cs=getComputedStyle(el);return {filter:cs.backdropFilter||cs.webkitBackdropFilter};});
-  results.push({test:'Chromium v53 Apple Liquid Glass keeps the real backdrop-filter blur(14px)',status:/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
+  results.push({test:'Chromium v58 Apple Liquid Glass keeps a real two-tier backdrop blur',status:/blur\(18px\) saturate\(1\.7\)/.test(glass.filter)||/blur\(14px\)/.test(glass.filter)?'PASS':'FAIL',detail:glass});
   results.push({test:'Chromium v53 no page errors during the studio, vault and auto-completer run',status:errors.length===0?'PASS':'FAIL',errors});
   await context.close();
   await new Promise(resolve=>server.close(resolve));
@@ -380,6 +380,189 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   results.push({test:'Chromium v57 a brand-new phone never inherits the lecturer API key',status:deviceB.key===''&&deviceB.session===''&&deviceB.input===''&&deviceB.words>0&&ntfyPosts===0&&errorsB.length===0?'PASS':'FAIL',detail:Object.assign({ntfyPosts},deviceB),errors:errorsB});
   await ctxB.close();
   await new Promise(resolve=>server2.close(resolve));
+ }
+
+ // ------------------------------------------------------------------
+ // v58 / 7.0.0: compact 3-card home, signature pill, retry toast,
+ // keyboard dock, language parity and the two-tier glass surfaces.
+ // ------------------------------------------------------------------
+ {
+  const context=await browser.newContext({viewport:{width:360,height:800}});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route('https://**/*',route=>route.abort());
+  await page.addInitScript(()=>{if(window.speechSynthesis)window.speechSynthesis.speak=function(u){setTimeout(function(){if(u&&u.onend)u.onend();},10);};});
+  await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
+  await page.waitForTimeout(1600);await closeSheet(page);
+  try{await page.evaluate(()=>document.fonts&&document.fonts.ready);}catch(e){}
+  await page.waitForTimeout(300);await closeSheet(page);
+  const home=await page.evaluate(()=>{
+   const hero=document.getElementById('homeHero'),seg=document.getElementById('segMode');
+   const r=hero?hero.getBoundingClientRect():{height:9999};
+   const sr=seg?seg.getBoundingClientRect():{bottom:9999};
+   return {height:Math.round(r.height),segBottom:Math.round(sr.bottom),
+    bento:document.querySelectorAll('.v58-tile').length,
+    card3:!!document.getElementById('v58ProgressArchiveCard'),
+    stats:(document.getElementById('homeStats')||{children:[]}).children.length,
+    offline:!!document.getElementById('v58OfflineRow'),
+    voice:!!document.getElementById('v58VoiceBadge'),
+    railHidden:getComputedStyle(document.getElementById('v58Rail')).display==='none',
+    dockAtRest:!document.getElementById('v58Dock')};
+  });
+  results.push({test:'Chromium v58 compact home: hero <=450px, mode row above y=480, 3-card bento at 360x800',
+   status:home.height<=450&&home.segBottom<=480&&home.bento===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&errors.length===0?'PASS':'FAIL',
+   detail:Object.assign({errors},home),errors});
+  /* language parity: every new string flips to Sinhala and back */
+  const lang=await page.evaluate(()=>{
+   const C=window.SDPCore;
+   const tile=document.querySelector('[data-v58-practice="flash"] b');
+   const credit=document.getElementById('credit');
+   const grab=()=>({tile:tile?tile.textContent:'',credit:credit?credit.textContent:''});
+   C.UI.setLang('si');
+   const si=grab();
+   const siTitle=(document.querySelector('.v58-menu-group-title')||{}).textContent||'';
+   C.UI.setLang('en');
+   const en=grab();
+   return {si,en,siTileOk:!!tile&&tile.getAttribute('data-v58-si')===si.tile,siCreditOk:!!credit&&credit.getAttribute('data-v58-si')===si.credit,enTileOk:!!tile&&tile.getAttribute('data-v58-en')===en.tile,
+    htmlLang:document.documentElement.getAttribute('lang'),siMenu:siTitle};
+  });
+  results.push({test:'Chromium v58 Sinhala parity: home card labels, signature pill and menu strings all flip',
+   status:lang.siTileOk&&lang.siCreditOk&&lang.enTileOk&&lang.si.tile!==lang.en.tile&&lang.si.credit!==lang.en.credit&&lang.htmlLang==='en'&&errors.length===0?'PASS':'FAIL',
+   detail:lang,errors});
+  /* signature pill opens the About & Credits showcase */
+  const about=await page.evaluate(()=>{
+   const c=document.getElementById('credit');if(c)c.click();
+   const sheet=document.getElementById('aboutCreditsSheet');
+   const open=!!sheet&&!sheet.classList.contains('hidden');
+   const txt=sheet?sheet.textContent:'';
+   const close=document.getElementById('v58AboutClose');if(close)close.click();
+   return {open,names:/Hansana/.test(txt)&&/Ayya01 \(Lesandu\)/.test(txt)&&/Sumodya Sewmini/.test(txt),
+    header:/Smart Dictation Player · v58 · 7\.0\.0/.test(txt),
+    closedAfter:!sheet||sheet.classList.contains('hidden')};
+  });
+  results.push({test:'Chromium v58 the inline signature pill opens About & Credits with all three credits',
+   status:about.open&&about.names&&about.header&&about.closedAfter&&errors.length===0?'PASS':'FAIL',detail:about,errors});
+  /* retry toast: pointer-events none + auto-dismiss at 5s */
+  const toast=await page.evaluate(()=>new Promise(resolve=>{
+   const C=window.SDPCore;
+   if(C.Speech.showRetryToast)C.Speech.showRetryToast('QA retry','en',function(){});
+   const el=document.querySelector('.sdp-retry-toast');
+   const props=el?getComputedStyle(el):null;
+   resolve({exists:!!el,pe:props?props.pointerEvents:'',t0:document.querySelectorAll('.sdp-retry-toast').length});
+  }));
+  await page.waitForTimeout(5600);
+  const toastAfter=await page.evaluate(()=>document.querySelectorAll('.sdp-retry-toast').length);
+  results.push({test:'Chromium v58 retry toast never blocks taps and dismisses itself by 5s',
+   status:toast.exists&&toast.pe==='none'&&toastAfter===0&&errors.length===0?'PASS':'FAIL',detail:Object.assign({toastAfter},toast),errors});
+  /* dock + focus-dim + keyboard dock mode (real Start click kills the toast) */
+  await page.evaluate(()=>{
+   if(window.SDPCore.Speech.showRetryToast)window.SDPCore.Speech.showRetryToast('QA retry','en',function(){});
+   const el=document.querySelector('.sdp-retry-toast');
+   if(el)el.setAttribute('data-qa','1');
+  });
+  await page.locator('#btnStart').click();
+  await page.waitForTimeout(900);
+  const atReady=await page.evaluate(()=>({
+   focus:document.body.classList.contains('v58-focus'),
+   qaGone:document.querySelectorAll('.sdp-retry-toast[data-qa]').length===0,
+   vignette:!!document.getElementById('v58EdgeVignette')
+  }));
+  await page.evaluate(()=>{
+   const btns=Array.from(document.querySelectorAll('#sheets button'));
+   const ready=btns.find(x=>/ready/i.test(x.textContent));
+   if(ready)ready.click();
+  });
+  await page.waitForTimeout(1400);
+  const atPlayer=await page.evaluate(()=>({
+   dock:!!document.getElementById('v58Dock'),
+   layer:!!(window.SDPCore.Eng&&window.SDPCore.Eng.layer),
+   focus:document.body.classList.contains('v58-focus')
+  }));
+  await page.setViewportSize({width:360,height:660});
+  await page.waitForTimeout(400);
+  const kbOn=await page.evaluate(()=>document.body.classList.contains('v58-keyboard'));
+  await page.setViewportSize({width:360,height:800});
+  await page.waitForTimeout(400);
+  const kbOff=await page.evaluate(()=>!document.body.classList.contains('v58-keyboard'));
+  await page.evaluate(()=>{window.SDPCore.Eng.stop();});
+  await page.waitForTimeout(500);
+  const focusCleared=await page.evaluate(()=>!document.body.classList.contains('v58-focus'));
+  results.push({test:'Chromium v58 v58Dock, focus-dim, toast kill on Start and visualViewport keyboard dock toggle',
+   status:atReady.focus&&atReady.qaGone&&atReady.vignette&&atPlayer.dock&&atPlayer.layer&&atPlayer.focus&&kbOn&&kbOff&&focusCleared&&errors.length===0?'PASS':'FAIL',
+   detail:Object.assign({kbOn,kbOff,focusCleared,atReady,atPlayer}),errors});
+  await context.close();
+ }
+ {
+  /* desktop: 2-column workspace, keyboard HUD, grouped overflow, glass tiers + presets */
+  const context=await browser.newContext({viewport:{width:1280,height:800}});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route('https://**/*',route=>route.abort());
+  await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
+  await page.waitForTimeout(1500);await closeSheet(page);
+  const desk=await page.evaluate(()=>{
+   const ws=document.querySelector('.v58-workspace');
+   const hud=document.getElementById('v58KbdHud');
+   return {grid:ws?getComputedStyle(ws).gridTemplateColumns:'',
+    appW:Math.round(document.getElementById('app').getBoundingClientRect().width),
+    rail:document.getElementById('v58Rail')?getComputedStyle(document.getElementById('v58Rail')).display:'',
+    hud:hud?getComputedStyle(hud).display:''};
+  });
+  results.push({test:'Chromium v58 desktop >=1024px renders the 2-column workspace with rail and keyboard HUD',
+   status:/336px/.test(desk.grid)&&desk.appW<=1181&&desk.rail==='flex'&&desk.hud==='flex'&&errors.length===0?'PASS':'FAIL',
+   detail:desk,errors});
+  await page.keyboard.press('r');
+  await page.waitForTimeout(120);
+  const kbd=await page.evaluate(()=>({n:(window.SDP&&window.SDP.__kbdTests)||0}));
+  await page.keyboard.press('?');
+  await page.waitForTimeout(150);
+  const hudOff=await page.evaluate(()=>document.body.classList.contains('v58-hud-off')&&getComputedStyle(document.getElementById('v58KbdHud')).display==='none');
+  results.push({test:'Chromium v58 keyboard shortcuts increment SDP.__kbdTests and ? toggles the HUD',
+   status:kbd.n>=1&&hudOff&&errors.length===0?'PASS':'FAIL',detail:Object.assign({hudOff},kbd),errors});
+  const menu=await page.evaluate(()=>{
+   const d=document.getElementById('topOverflow');if(d)d.open=true;
+   const titles=Array.from(document.querySelectorAll('.v58-menu-group-title')).map(n=>n.textContent.trim());
+   const admin=!!document.querySelector('#topOverflow #btnAdmin');
+   const practice=!!document.getElementById('v58MenuPractice');
+   if(d)d.open=false;
+   return {titles,admin,practice};
+  });
+  const want=['Study Tools','Appearance & Wallpaper','Audio & Data','Lecturer Studio'];
+  results.push({test:'Chromium v58 grouped overflow menu has the four group titles with admin inside',
+   status:JSON.stringify(menu.titles)===JSON.stringify(want)&&menu.admin&&menu.practice&&errors.length===0?'PASS':'FAIL',
+   detail:menu,errors});
+  const tiers=await page.evaluate(()=>{
+   const top=document.querySelector('.topbar');
+   const card=document.querySelector('#v58ProgressArchiveCard .card');
+   const tile=document.querySelector('.v58-tile');
+   return {topBlur:getComputedStyle(top).backdropFilter||'',
+    cardBg:card?getComputedStyle(card).backgroundColor:'',
+    tileImg:tile?getComputedStyle(tile).backgroundImage:'',
+    coreVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-core').trim(),
+    blurVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-glass-blur').trim()};
+  });
+  results.push({test:'Chromium v58 two-tier glass: Tier A chrome blur(18px) and Tier B >=94% reading core',
+   status:/blur\(18px\) saturate\(1\.7\)/.test(tiers.topBlur)&&/rgba?\(6, 10, 22,? ?0?\.9[0-9]\)/.test(tiers.cardBg)&&/linear-gradient/.test(tiers.tileImg)&&/\.94/.test(tiers.coreVar)&&/blur\(18px\)/.test(tiers.blurVar)&&errors.length===0?'PASS':'FAIL',
+   detail:tiers,errors});
+  const presets=await page.evaluate(()=>new Promise(resolve=>{
+   const C=window.SDPCore;
+   C.UI.setTab('set');
+   setTimeout(()=>{
+    const open=document.getElementById('btnOpenGallery');if(open)open.click();
+    setTimeout(()=>{
+     const chips=Array.from(document.querySelectorAll('.v58-preset'));
+     const shield=document.getElementById('v58Preset-shield');
+     if(shield)shield.click();
+     setTimeout(()=>resolve({n:chips.length,labels:chips.map(c=>c.textContent),
+      preset:document.documentElement.getAttribute('data-v58-preset'),
+      readout:(document.getElementById('contrastReadout')||{}).textContent||''}),250);
+    },350);
+   },200);
+  }));
+  results.push({test:'Chromium v58 three contrast presets sit above the dimmer and switch the reading core',
+   status:presets.n===3&&presets.preset==='shield'&&/Live WCAG contrast \d/.test(presets.readout)&&errors.length===0?'PASS':'FAIL',
+   detail:presets,errors});
+  await context.close();
  }
  // Force a genuine boot exception, so measure the actual animated fatal-card geometry.
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
