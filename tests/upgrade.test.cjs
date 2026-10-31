@@ -1,5 +1,5 @@
 'use strict';
-/* v57 / 6.3.0 regression gate. Test PINs and token prefixes are constructed at
+/* v58 / 7.0.0 regression gate. Test PINs and token prefixes are constructed at
  * runtime; no shipped/default PIN or live-looking token literal is committed. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { JSDOM } = require('jsdom');
+const acorn = require('acorn');
 const { harness } = require('./app-harness.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -37,10 +38,10 @@ function freshMeter(opts) {
 
 test('v57 metadata, ES5 single-file budget and identical transparency routes', () => {
   for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
-    const d = JSON.parse(read(f)); assert.equal(d.ver, 57, f); assert.equal(d.appVersion, '6.3.0', f);
+    const d = JSON.parse(read(f)); assert.equal(d.ver, 58, f); assert.equal(d.appVersion, '7.0.0', f);
     assert.ok(!d.adminPin && !d.vaultCiphertext, f + ' has no public PIN/vault');
   }
-  assert.ok(INDEX.includes('APP_VERSION="6.3.0"'));
+  assert.ok(INDEX.includes('APP_VERSION="7.0.0"'));
   assert.ok(Buffer.byteLength(INDEX) <= 600000);
   assert.equal(read('data.html'), read('data/index.html'));
   assert.ok(read('data.html').includes('./data/data-meter.js'));
@@ -159,9 +160,9 @@ test('mode profiles come from the media manifest and LKR presets update cost', (
 });
 
 
-test('service worker v57 slices cached full video responses into HTTP 206 ranges', async () => {
+test('service worker v58 slices cached full video responses into HTTP 206 ranges', async () => {
   const src = read('sw.js');
-  assert.ok(src.includes("VERSION = 'sdp-v57'"));
+  assert.ok(src.includes("VERSION = 'sdp-v58'"));
   const store = new Map();
   const caches = { open: async () => ({ match: async k => store.get(String(k)) || null, put: async (k, v) => { store.set(String(k), v); } }) };
   const listeners = {};
@@ -205,4 +206,131 @@ test('publish preview is mandatory and cancel never commits session files', () =
     cancel.click(); app.clock.tick(50);
     assert.equal(result.ok, false); assert.equal(puts, 0);
   } finally { app.close(); }
+});
+
+/* ---------------- v58 / 7.0.0 additions ---------------- */
+test('v58 meter: durable buffer high-water mark is preserved', () => {
+  const env = freshMeter();
+  env.w.localStorage.setItem('sdp.mediaManifest.v1', read('data/media-manifest.json'));
+  const v = env.w.document.getElementById('bgLiveVideo');
+  v.src = './assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4';
+  let bufEnd = 40;
+  Object.defineProperties(v, { readyState: { value: 4, configurable: true }, networkState: { value: 1, configurable: true }, duration: { value: 100, configurable: true }, buffered: { configurable: true, value: { length: 1, start: () => 0, end: () => bufEnd } } });
+  env.m.start({ interval: false });
+  const first = env.m.videoBufferedBytes();
+  assert.equal(first, Math.round(10555152 * 0.4));
+  bufEnd = 10;
+  env.m.sample();
+  assert.ok(env.m.getLive().videoBytes >= first, 'videoBytes keeps the buffered high-water');
+  env.m.stop();
+  const stored = JSON.parse(env.w.localStorage.getItem(env.m.STORAGE.buffer) || '{}');
+  assert.ok(Object.keys(stored).some(k => stored[k] >= first), 'high-water mark persisted');
+  env.dom.window.close();
+});
+
+test('v58 meter: five LKR plans, setPlan/getPlan and ≈-formatted LKR', () => {
+  const env = freshMeter(); const m = env.m; m.start({ interval: false });
+  const plans = m.getPlans();
+  assert.deepEqual(Array.from(plans, p => p.lkr), [49, 99, 150, 220, 0]);
+  assert.deepEqual(Array.from(plans, p => p.id), ['student-lite', 'study', 'family', 'classroom', 'custom']);
+  m.setPlan('study');
+  assert.equal(m.getPlanId(), 'study');
+  assert.equal(m.price(), 99);
+  assert.equal(m.getPlanLabel(), 'Study Pack · LKR 99.00/GB');
+  assert.ok(/Study Pack — LKR 99\.00\/GB/.test(m.getPlan().chip));
+  const live = m.getLive();
+  assert.equal(live.planId, 'study');
+  assert.ok(/Study Pack/.test(live.planLabel));
+  assert.match(String(live.cacheSavedLkr), /^≈/);
+  assert.match(String(live.estimatedTodayLkr), /^≈/);
+  assert.equal(m.toLKR(1e9), 99);
+  assert.equal(m.formatLKR(0.5), '≈K 0.50');
+  assert.match(m.formatLKR(1e12), /L/);
+  m.setPlan('student-lite');
+  assert.equal(m.toLKR(1e9), 49);
+  m.setPrice(149.9); m.setPlan('custom');
+  assert.equal(m.price(), 149.9);
+  assert.ok(/Custom · LKR 149\.90\/GB/.test(m.getPlanLabel()));
+  env.dom.window.close();
+});
+
+test('v58 meter: cached audio counts as savings only; estimates are labelled ≈', () => {
+  const env = freshMeter(); const m = env.m; m.start({ interval: false });
+  const before = m.getLive();
+  m.recordAudioPlay('https://dict.youdao.com/dictvoice?type=1&audio=brave', true);
+  const afterHit = m.getLive();
+  assert.equal(afterHit.audioBytes, before.audioBytes, 'cache hit never raises audioBytes');
+  assert.equal(afterHit.sessionBytes, before.sessionBytes, 'cache hit never raises session totals');
+  assert.equal(afterHit.cacheSavedBytes, before.cacheSavedBytes + 11000, 'cache hit raises savings');
+  m.recordAudioPlay('https://dict.youdao.com/dictvoice?type=1&audio=brave2', false);
+  const afterNet = m.getLive();
+  assert.equal(afterNet.audioBytes, before.audioBytes + 11000, 'network play still measures audio');
+  assert.match(afterNet.audioLabel, /≈/);
+  m.trackFetch('https://example.test/slow.mp4', 5000, 'video');
+  assert.ok(m.getLive().videoBytes >= 5000);
+  env.dom.window.close();
+});
+
+test('v58 meter: daily buckets prune to the newest 30 days', () => {
+  const env = freshMeter(); const m = env.m;
+  const stored = {};
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(Date.UTC(2026, 0, 1 + i));
+    stored[d.toISOString().slice(0, 10)] = 1000;
+  }
+  env.w.localStorage.setItem(m.STORAGE.daily, JSON.stringify(stored));
+  env.w.localStorage.setItem(m.STORAGE.allTime, '40000');
+  m.start({ interval: false });
+  m.addBytes('app', 500);
+  m.stop();
+  const after = JSON.parse(env.w.localStorage.getItem(m.STORAGE.daily));
+  assert.equal(Object.keys(after).length, 30, 'newest 30 daily buckets kept');
+  assert.equal(Number(env.w.localStorage.getItem(m.STORAGE.allTime)), 40500, 'all-time survives pruning');
+  env.dom.window.close();
+});
+
+test('v58 learning-tools: ES5, SDPLearning API and weak-word streak graduation', () => {
+  const src = read('data/learning-tools.js');
+  acorn.parse(src, { ecmaVersion: 5 });
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
+  const w = dom.window;
+  try {
+    vm.runInContext(src, dom.getInternalVMContext());
+    const L = w.SDPLearning;
+    assert.ok(L, 'window.SDPLearning exposed');
+    for (const api of ['levenshteinOps', 'diffFeedback', 'markMissed', 'markCorrect', 'getWeakWords', 'renderPaperSelfCheck', 'printStudySheet', 'startSyllableSpotlight', 'recordAndCompare', 'downloadOfflinePack', 'renderMistakeCoach', 'openWeakWords', 'drillWeakWords']) {
+      assert.equal(typeof L[api], 'function', api);
+    }
+    const ops = L.levenshteinOps('brave', 'brav');
+    assert.equal(ops.length, 1);
+    assert.ok(['insert', 'delete', 'replace'].indexOf(ops[0].op) >= 0, ops[0].op);
+    const fb = L.diffFeedback('confident', 'confidnt');
+    assert.ok(/letters off|Almost/.test(fb), fb);
+    L.markMissed('embarrassing');
+    L.markMissed('embarrassing');
+    let weak = L.getWeakWords();
+    assert.equal(weak.length, 1);
+    assert.equal(weak[0].count, 2);
+    assert.equal(weak[0].streak, 0);
+    assert.equal(L.markCorrect('embarrassing'), false);
+    assert.equal(L.markCorrect('embarrassing'), false);
+    assert.equal(L.markCorrect('embarrassing'), true, '3rd consecutive correct graduates');
+    weak = L.getWeakWords();
+    assert.equal(weak.length, 0, 'graduated out of the weak bank');
+    const mastered = JSON.parse(w.localStorage.getItem('sdp.masteredWords.v1'));
+    assert.ok(mastered.embarrassing, 'mastered bank keeps the word');
+    assert.equal(L.syllablesOf('confident').join(''), 'confident');
+  } finally {
+    try { w.close(); } catch (e) {}
+  }
+});
+
+test('v58 fonts: Noto Sans Sinhala WOFF2 files ship under 60KB each', () => {
+  for (const f of ['assets/fonts/NotoSansSinhala-Regular.woff2', 'assets/fonts/NotoSansSinhala-Bold.woff2']) {
+    const buf = fs.readFileSync(path.join(ROOT, f));
+    assert.ok(buf.length <= 60000, f + ' <= 60KB');
+    assert.equal(buf.slice(0, 4).toString('utf8'), 'wOF2', f + ' is WOFF2');
+  }
+  assert.ok(INDEX.includes('NotoSansSinhala-Regular.woff2') && INDEX.includes('NotoSansSinhala-Bold.woff2'));
+  assert.ok(!/<link[^>]*fonts/i.test(INDEX), 'no static font link tags');
 });

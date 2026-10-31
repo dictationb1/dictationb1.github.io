@@ -1,14 +1,14 @@
-/* Smart Dictation Player — Service Worker (v57 / 6.3.0)
+/* Smart Dictation Player — Service Worker (v58 / 7.0.0)
  * GitHub Pages static hosting.
  *   - Stale-While-Revalidate for the app shell.
  *   - Cache-First for versioned media/audio, stored as FULL responses.
  *   - HTTP Range/206 support: slice a cached full response, or answer the
- *     range from the network while a background full fetch fills sdp-v57-media.
+ *     range from the network while a background full fetch fills sdp-v58-media.
  */
 'use strict';
 
-var VERSION = 'sdp-v57';
-var APP_VERSION = '6.3.0';
+var VERSION = 'sdp-v58';
+var APP_VERSION = '7.0.0';
 var SHELL = [
   './',
   './index.html',
@@ -16,6 +16,9 @@ var SHELL = [
   './data/index.html',
   './data/studio.js',
   './data/data-meter.js',
+  './data/learning-tools.js',
+  './assets/fonts/NotoSansSinhala-Regular.woff2',
+  './assets/fonts/NotoSansSinhala-Bold.woff2',
   './data/session.json',
   './data/config.json',
   './data/version.json',

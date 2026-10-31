@@ -52,12 +52,12 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
-test('v57 release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
+test('v58 release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,57,f);assert.equal(d.appVersion,'6.3.0',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
+ for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,58,f);assert.equal(d.appVersion,'7.0.0',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
  const vault=read('data/elevenlabs-audio.json');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_multilingual_v2');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
  const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
- assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="6.3.0"'));assert.ok(html.includes('data/studio.js?v=57'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
+ assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="7.0.0"'));assert.ok(html.includes('data/studio.js?v=58'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(html),'index has no vault/audio relays');
  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(studio),'studio has no vault/audio relays');
  assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));

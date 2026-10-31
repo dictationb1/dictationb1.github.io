@@ -385,6 +385,56 @@ async function flow(browser, vp, label, seed) {
     priv.includes('E2E check: private note') && !commTxt.includes('private note'),
     { stored: priv.slice(0, 90), leakedToComments: commTxt.includes('private note'), toast: sentToast });
 
+  /* ---- v58: data report dashboard, Practice Hub entry and credits parity ---- */
+  await dismissTour(page);
+  await page.locator('#tab-home').click();
+  await dismissTour(page);
+  await page.evaluate(() => { const b = document.getElementById('topDataBadge'); if (b) b.click(); });
+  await page.waitForTimeout(700);
+  const v58sheet = await page.evaluate(() => ({
+    open: !!document.getElementById('dataReportSheet'),
+    network: !!document.getElementById('v58NetworkPanel'),
+    cache: !!document.getElementById('v58CachePanel'),
+    today: (document.getElementById('dataSessionTodayMB') || {}).textContent || '',
+    lkr: (document.getElementById('dataSessionTodayLkr') || {}).textContent || '',
+    saved: (document.getElementById('dataCacheSavedLkr') || {}).textContent || '',
+    planLabel: (document.getElementById('dataPlanLabel') || {}).textContent || '',
+    chips: document.querySelectorAll('#dataPlanChips .v58-plan-chip').length,
+    active: document.querySelectorAll('#dataPlanChips .v58-plan-chip[aria-pressed="true"]').length
+  }));
+  rec(label + ' v58 data sheet: Network & Cache panels, live MB, \u2248 LKR and plan chips',
+    v58sheet.open && v58sheet.network && v58sheet.cache && /MB/.test(v58sheet.today) && /^\u2248/.test(v58sheet.lkr) &&
+    /^\u2248/.test(v58sheet.saved) && /LKR \d+\.\d+\/GB/.test(v58sheet.planLabel) && v58sheet.chips === 5 && v58sheet.active === 1,
+    v58sheet);
+  await page.evaluate(() => { if (window.SDPCore && SDPCore.UI.closeSheet) SDPCore.UI.closeSheet(); });
+  await page.waitForTimeout(300);
+  /* Practice Hub bento tile opens the flashcard practice screen */
+  await page.evaluate(() => { const t = document.querySelector('[data-v58-practice="flash"]'); if (t) t.click(); });
+  await page.waitForTimeout(500);
+  const practice = await page.evaluate(() => ({
+    tab: document.querySelector('#tab-practice') ? document.querySelector('#tab-practice').getAttribute('aria-selected') : '',
+    stage: (document.getElementById('pracStage') || { children: [] }).children.length,
+    count: (document.getElementById('pracCount') || {}).textContent || ''
+  }));
+  rec(label + ' v58 Practice Hub tile jumps into the flashcard practice screen',
+    practice.tab === 'true' && practice.stage > 0 && /\d+ \/ \d+/.test(practice.count), practice);
+  /* Settings: three contrast presets + signature pill About sheet */
+  await page.locator('#tab-set').click();
+  await page.waitForTimeout(400);
+  const settingsBits = await page.evaluate(() => {
+    const presets = document.querySelectorAll('.v58-preset').length;
+    const about = document.getElementById('v58AboutPill');
+    if (about) about.click();
+    const sheet = document.getElementById('aboutCreditsSheet');
+    const open = !!sheet && !sheet.classList.contains('hidden');
+    const txt = sheet ? sheet.textContent : '';
+    const close = document.getElementById('v58AboutClose'); if (close) close.click();
+    return { presets, about: !!about, open,
+      names: /Hansana/.test(txt) && /Ayya01/.test(txt) && /Sumodya Sewmini/.test(txt),
+      closed: !sheet || sheet.classList.contains('hidden') };
+  });
+  rec(label + ' v58 Settings exposes three contrast presets and the About & Credits signature pill',
+    settingsBits.presets === 3 && settingsBits.about && settingsBits.open && settingsBits.names && settingsBits.closed, settingsBits);
   rec(label + ' zero page errors and zero console errors',
     errors.length === 0 && consoleErrors.length === 0, { pageerrors: errors, consoleErrors });
   await context.close();

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 57,
+  "ver": 58,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -513,11 +513,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "6.3.0",
+  "appVersion": "7.0.0",
   "updatedAt": "2026-10-31T00:00:00.000Z",
-  "version": "6.3.0",
+  "version": "7.0.0",
   "buildDate": "2026-10-31",
-  "settingsRev": 57,
+  "settingsRev": 58,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -617,7 +617,7 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "updatedAtMs": 1793318400000,
-  "schema": 57,
+  "schema": 58,
   "pastSessions": [
     {
       "no": "7",
