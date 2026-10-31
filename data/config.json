@@ -50,8 +50,8 @@
     "volume": 1,
     "readSentence": false
   },
-  "ver": 58,
-  "version": "7.0.0",
+  "ver": 59,
+  "version": "8.0.0",
   "buildDate": "2026-10-31",
   "credits": {
     "createdBy": "Hansana",
@@ -85,8 +85,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "7.0.0",
-  "settingsRev": 58,
+  "appVersion": "8.0.0",
+  "settingsRev": 59,
   "performance": {
     "mode": "paper",
     "lite": {},
@@ -411,9 +411,9 @@
       "credit": "One 3.2s intro followed by one 8s spotlight cycle"
     }
   },
-  "updatedAt": "2026-10-31T00:00:00.000Z",
-  "updatedAtMs": 1793318400000,
-  "schema": 58,
+  "updatedAt": "2026-10-31T12:00:00.000Z",
+  "updatedAtMs": 1793448000000,
+  "schema": 59,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "sessionCode": "Session 8",
@@ -612,7 +612,7 @@
       ]
     }
   ],
-  "perf": "full",
+  "perf": "auto",
   "features": {
     "elevenlabs": "v52: one-time ElevenLabs British woman professor studio voice (Alice Xb7hH8MSUJpSbSDYk0k2) with a 3-tier permanent vault (data/elevenlabs-audio.json, IndexedDB sdp_elevenlabs_vault_v1 + Cache API sdp-elevenlabs-v52, memory) so every clip is generated only once and replays for 0 credits.",
     "adminAutoComplete": "v52: Admin PIN  -> type only words -> IPA, English definition, Sinhala meaning, example sentence and the published session are completed automatically.",

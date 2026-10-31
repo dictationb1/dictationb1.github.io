@@ -27,7 +27,13 @@
   function DB() { var c = core(); return c && c.DB; }
   function $(sel, root) { try { return (root || D).querySelector(sel); } catch (e) { return null; } }
   function $$(sel, root) { try { return Array.prototype.slice.call((root || D).querySelectorAll(sel)); } catch (e) { return []; } }
-  function on(node, ev, fn) { if (node && node.addEventListener) node.addEventListener(ev, fn, false); }
+  function on(node, ev, fn, capture) {
+    if (!node || !node.addEventListener) return;
+    /* v59 R5: every scroll / touch listener is passive so it can never block the compositor. */
+    var passive = /^(scroll|touchstart|touchmove|wheel|mousewheel)$/i.test(String(ev));
+    try { node.addEventListener(ev, fn, passive ? { passive: true, capture: !!capture } : !!capture); }
+    catch (e) { try { node.addEventListener(ev, fn, !!capture); } catch (e2) {} }
+  }
   function toast(msg, opts) { try { var u = UI(); if (u && u.toast) u.toast(msg, opts || {}); } catch (e) {} }
   function guard(fn, where) {
     return function () {
@@ -184,7 +190,7 @@
         var sub = D.createElement('div');
         sub.className = 'tiny muted';
         var streakTxt = entry.streak ? 'streak ' + entry.streak + '/3' : 'not streaked yet';
-        sub.textContent = 'missed ×' + entry.count + ' · ' + streakTxt + (entry.obj && entry.obj.si ? ' · ' + entry.obj.si : '');
+        sub.textContent = 'missed ×' + entry.count + ' · ' + streakTxt + (entry.obj && entry.obj.si && currentLang() === 'si' ? ' · ' + entry.obj.si : '');
         box.appendChild(b); box.appendChild(sub);
         var play = D.createElement('button');
         play.type = 'button'; play.className = 'btn icon soft'; play.setAttribute('aria-label', 'Play ' + entry.word);
@@ -543,10 +549,56 @@
       halo.style.opacity = String(0.25 + level * 0.65);
     } catch (e) {}
   }, 'v58.haloFrame');
-  Learn._haloLoop = function (ts) {
-    try { Learn.haloFrame(ts || Date.now()); } catch (e) {}
-    try { W.requestAnimationFrame(Learn._haloLoop); } catch (e) {}
+  /* v59 A6: the halo only animates while audio is actually playing. When the
+     player is idle or the audio is paused/ended the loop stops and never
+     schedules another frame, so the Home screen burns zero rAF time. */
+  Learn.haloShouldRun = function () {
+    var audio = $('#ttsMasterAudio');
+    var playing = !!(audio && !audio.paused && !audio.ended && audio.currentTime > 0);
+    var st = (Eng() && Eng().st) || 'idle';
+    var perf = 'full';
+    try { perf = DB().data.settings.perf; } catch (e) {}
+    var reduced = false;
+    try { reduced = W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    return playing && st !== 'idle' && perf === 'full' && !reduced && !!(D && D.querySelector('.v58-orb-halo'));
   };
+  Learn._haloLoop = function (ts) {
+    Learn._haloTicks = (Learn._haloTicks || 0) + 1;
+    try { Learn.haloFrame(ts || Date.now()); } catch (e) {}
+    if (!Learn.haloShouldRun()) { Learn._haloRunning = false; return; }
+    try { W.requestAnimationFrame(Learn._haloLoop); } catch (e) { Learn._haloRunning = false; }
+  };
+  Learn.startHalo = function () {
+    if (Learn._haloRunning) return;
+    Learn._haloRunning = true;
+    try { W.requestAnimationFrame(Learn._haloLoop); } catch (e) { Learn._haloRunning = false; }
+  };
+  Learn.stopHalo = function () {
+    Learn._haloRunning = false;
+    var halo = $('.v58-orb-halo');
+    if (halo) { try { halo.style.transform = 'scale(1)'; halo.style.opacity = '0'; } catch (e) {} }
+  };
+
+  /* v59 R6: the halo is driven by playback events and the media clock only.
+     No AnalyserNode, no MediaElementSource, no canvas readback — a cross-origin
+     dict.youdao.com <audio> element can therefore never be silenced on Android
+     Chrome or iOS Safari. */
+  Learn.haloFrame = guard(function () {
+    var halo = $('.v58-orb-halo');
+    if (!halo) return;
+    var audio = $('#ttsMasterAudio');
+    var playing = !!(audio && !audio.paused && !audio.ended);
+    if (!playing) {
+      try { halo.style.opacity = '0'; halo.style.transform = 'scale(1)'; } catch (e) {}
+      return;
+    }
+    var t = Number(audio.currentTime) || 0;
+    var level = 0.35 + 0.35 * Math.abs(Math.sin(t * 3.2));
+    try {
+      halo.style.transform = 'scale(' + (1 + level * 0.45).toFixed(3) + ')';
+      halo.style.opacity = String(0.2 + level * 0.6);
+    } catch (e) {}
+  }, 'v59.haloFrame');
 
   /* =========================================================
      9.5 Sentence Context Mode
@@ -786,7 +838,7 @@
     enabled: function () {
       var s = (DB() && DB().data && DB().data.settings) || {};
       if (s.vkb === false || s.vkb === 0) return false;
-      if (D.body && D.body.getAttribute('data-perf') === 'lite') return false;
+      /* v59 R6: the keyboard dock is a safety feature, so Lite mode keeps it. */
       return true;
     },
     layout: guard(function () {
@@ -861,41 +913,39 @@
     function f(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
   };
-  Learn.sampleVideo = function () {
+  /* v59 A5: zero readback. The old implementation drew a 1x1 copy of the
+     wallpaper video into a canvas and called getImageData — that forced a GPU
+     readback on every gauge tick and tainted Android Chrome. The gauge is now
+     pure O(1) arithmetic from a precomputed wallpaper luminance. */
+  Learn.sampleVideo = function () { return null; };
+  Learn.wallpaperLuminance = function () {
+    var bright = false;
+    try { bright = D.documentElement.getAttribute('data-theme') === 'light' || (D.body && D.body.getAttribute('data-theme') === 'light'); } catch (e) {}
     var v = $('#bgLiveVideo');
-    var st = (Eng() && Eng().st) || 'idle';
-    if (v && !v.paused && !v.ended && v.readyState >= 2 && st === 'speaking') {
-      try {
-        var cv = Learn._gaugeCanvas || (Learn._gaugeCanvas = D.createElement('canvas'));
-        cv.width = 1; cv.height = 1;
-        var cx = cv.getContext('2d');
-        cx.drawImage(v, 0, 0, 1, 1);
-        var d = cx.getImageData(0, 0, 1, 1).data;
-        return { r: d[0], g: d[1], b: d[2] };
-      } catch (e) { /* tainted or not ready: fall through */ }
-    }
-    return null;
+    var playing = false;
+    try { playing = !!(v && !v.paused && !v.ended && v.readyState >= 2); } catch (e) {}
+    /* Static wallpaper is the dim 0.22 default; a live video frame peaks at 0.72. */
+    return playing ? 0.72 : (bright ? 0.66 : 0.22);
   };
   Learn.contrastRatio = function () {
     var lw = (core() && core().LiveWallpaper) || null;
-    var dim = 18;
-    try { dim = lw && lw.dimValue ? Number(lw.dimValue()) : Number((DB().data.settings.videoDim) || 18); } catch (e) {}
+    var dim = 34;
+    try { dim = lw && lw.dimValue ? Number(lw.dimValue()) : Number((DB().data.settings.videoDim) || 34); } catch (e) {}
     var a = Math.max(0, Math.min(100, dim)) / 100;
     var lr = false;
     try { lr = (D.documentElement.getAttribute('data-theme') === 'light') || (D.body.getAttribute('data-theme') === 'light'); } catch (e) {}
-    var scrim = lr ? { r: 232, g: 236, b: 244 } : { r: 5, g: 9, b: 20 };
-    var base = Learn.sampleVideo() || { r: 222, g: 236, b: 255 }; /* worst-case bright frame when static */
-    var bg = { r: base.r * (1 - a) + scrim.r * a, g: base.g * (1 - a) + scrim.g * a, b: base.b * (1 - a) + scrim.b * a };
-    var strong = D.documentElement.getAttribute('data-v58-preset') === 'shield';
+    /* v59: no canvas, no video readback — pure arithmetic WCAG composite. */
+    var wallpaperL = Learn.wallpaperLuminance();
+    var scrimL = lr ? 0.90 : 0.015;
+    var bgL = wallpaperL * (1 - a) + scrimL * a;
+    var strong = false;
+    try { strong = D.documentElement.getAttribute('data-v58-preset') === 'shield'; } catch (e) {}
     var coreA = strong ? 0.97 : 0.94;
-    var coreRGB = lr ? { r: 255, g: 255, b: 255 } : { r: 6, g: 10, b: 22 };
-    var out = {
-      r: coreRGB.r * coreA + bg.r * (1 - coreA),
-      g: coreRGB.g * coreA + bg.g * (1 - coreA),
-      b: coreRGB.b * coreA + bg.b * (1 - coreA)
-    };
-    var ratio = (Learn.relLum(248, 250, 252) + 0.05) / (Learn.relLum(out.r, out.g, out.b) + 0.05);
-    return { ratio: ratio, dim: dim };
+    var coreL = lr ? 1 : 0.012;
+    var outL = coreL * coreA + bgL * (1 - coreA);
+    var fgL = lr ? 0.015 : 0.965;
+    var hi = Math.max(fgL, outL), lo = Math.min(fgL, outL);
+    return { ratio: (hi + 0.05) / (lo + 0.05), dim: dim, lum: outL };
   };
   Learn.updateGauge = guard(function () {
     var lw = (core() && core().LiveWallpaper) || null;
@@ -1613,16 +1663,6 @@
       }
     } catch (e) {}
     on(D, 'focusin', function () { setTimeout(function () { try { Learn.VV.layout(); } catch (e) {} }, 50); });
-    /* gauge guard interval: keep the "Live WCAG" format on screen */
-    setInterval(function () {
-      try {
-        var n = $('#contrastReadout');
-        if (n && !/^Live WCAG contrast/.test(n.textContent || '')) Learn.updateGauge();
-        if (!n) Learn.updateGauge();
-      } catch (e) {}
-    }, 1000);
-    /* focus-dim sync */
-    setInterval(function () { try { Learn.syncFocus(); } catch (e) {} }, 400);
     /* persisted preset */
     try {
       var db = DB();
@@ -1685,8 +1725,6 @@
     hookWallpaper();
     wireStatic();
     try { Learn.regroupOverflow(); } catch (e) {}
-    /* the overflow menu is rebuilt on settings changes; re-group after a beat */
-    setInterval(function () { try { Learn.regroupOverflow(); } catch (e) {} }, 1500);
     try { Learn.syncRail(); Learn.syncWeakBadge(); Learn.syncOfflineRow(); Learn.VV.layout(); Learn.updateGauge(); } catch (e) {}
     try {
       var s = Screens();
@@ -1694,5 +1732,1384 @@
     } catch (e) {}
   }
   if (D && D.readyState === 'loading') on(D, 'DOMContentLoaded', boot);
+  else setTimeout(boot, 0);
+})();
+/* ============================================================================
+   Smart Dictation Player — v59 / 8.0.0
+   Human-Scale Spacious Design System, SDPPerfGuard, one unified UI.applyLang()
+   engine, the Full-English dictionary cards and every learning-tool fix (F1-F8).
+
+   Everything v59 needs lives in THIS file, so index.html adds zero bytes of CSS
+   and stays far below its byte budget. Strict ES5: var + function only.
+   ========================================================================== */
+(function () {
+  'use strict';
+  var W = typeof window !== 'undefined' ? window : null;
+  if (!W) return;
+  var D = W.document;
+  if (!D) return;
+  var Learn = W.SDPLearning;
+  if (!Learn) { Learn = W.SDPLearning = {}; }
+
+  var SINHALA = /[\u0D80-\u0DFF]/;
+  var SINHALA_RUN = /[\u0D80-\u0DFF][\u0D80-\u0DFF\u200D ]*/g;
+
+  function core() { return W.SDPCore || null; }
+  function UI() { var c = core(); return c && c.UI; }
+  function DB() { var c = core(); return c && c.DB; }
+  function Lib() { var c = core(); return c && c.Lib; }
+  function Eng() { var c = core(); return c && c.Eng; }
+  function Screens() { var c = core(); return c && c.Screens; }
+  function Speech() { var c = core(); return c && c.Speech; }
+  function Util() { var c = core(); return c && c.U; }
+  function $(sel, root) { try { return (root || D).querySelector(sel); } catch (e) { return null; } }
+  function $$(sel, root) { try { return Array.prototype.slice.call((root || D).querySelectorAll(sel)); } catch (e) { return []; } }
+  function el(tag, cls, txt) {
+    var n = D.createElement(tag || 'div');
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+  function on(node, ev, fn, capture) {
+    if (!node || !node.addEventListener) return;
+    var passive = /^(scroll|touchstart|touchmove|wheel|mousewheel)$/i.test(String(ev));
+    try { node.addEventListener(ev, fn, passive ? { passive: true, capture: !!capture } : !!capture); }
+    catch (e) { try { node.addEventListener(ev, fn, !!capture); } catch (e2) {} }
+  }
+  function toast(msg, opts) { try { var u = UI(); if (u && u.toast) u.toast(msg, opts || {}); } catch (e) {} }
+  function guard(fn, where) {
+    return function () {
+      try { return fn.apply(this, arguments); }
+      catch (err) { try { var c = core(); if (c && c.Errors) c.Errors.report(err, where); } catch (e) {} return undefined; }
+    };
+  }
+  function norm(w) {
+    return String(w == null ? '' : w).toLowerCase().split('/')[0].replace(/[^a-z\u0D80-\u0DFF']/g, '').trim();
+  }
+  function lang() {
+    try { var db = DB(); return (db && db.data && db.data.settings && db.data.settings.lang) === 'si' ? 'si' : 'en'; }
+    catch (e) { return 'en'; }
+  }
+  function T(en, si) { return lang() === 'si' ? si : en; }
+  function tag(node, en, si) {
+    if (!node) return node;
+    try { node.setAttribute('data-v58-en', en); if (si != null) node.setAttribute('data-v58-si', si); node.textContent = T(en, si); } catch (e) {}
+    return node;
+  }
+  function settings() { try { return DB().data.settings; } catch (e) { return {}; } }
+
+  var V59 = Learn.v59 = Learn.v59 || {};
+  V59.version = '8.0.0';
+  V59.cssCleanup = { removedRules: 0, removedDecls: 0, scanned: 0 };
+  V59.puritySweeps = 0;
+  V59.dictCardCount = 0;
+  V59.ready = false;
+
+  /* ==========================================================================
+     3A. Runtime CSS cleanup + the v59 Human-Scale Spacious Design System
+     ========================================================================== */
+
+  /* Split a stylesheet into top-level rule chunks with balanced braces. */
+  function splitRules(css) {
+    var out = [], i = 0, n = css.length, depth = 0, start = 0, preEnd = -1;
+    while (i < n) {
+      var ch = css.charAt(i);
+      if (ch === '{') { if (depth === 0) preEnd = i; depth++; }
+      else if (ch === '}') {
+        if (depth > 0) depth--;
+        if (depth === 0 && preEnd >= 0) {
+          out.push({ prelude: css.slice(start, preEnd), body: css.slice(preEnd + 1, i) });
+          start = i + 1; preEnd = -1;
+        }
+      }
+      i++;
+    }
+    if (start < n) out.push({ prelude: '', body: css.slice(start) });
+    return out;
+  }
+
+  var CRUSH_MQ = /@media[^{]*max-width\s*:\s*560px/i;
+  var BASE_RULE = /\.modal|\.wordcard|\.topbar|#tabbar|\.wrow/;
+
+  function cleanSheet(css) {
+    var rules = splitRules(String(css || '')), i, r, pre, body, drops = 0, out = [];
+    for (i = 0; i < rules.length; i++) {
+      r = rules[i];
+      pre = String(r.prelude || '');
+      body = String(r.body || '');
+      if (!pre) { out.push(pre + '{' + body + '}'); continue; }
+      /* (a) the hero-crushing 560px media block */
+      if (CRUSH_MQ.test(pre)) { V59.cssCleanup.removedRules++; drops++; continue; }
+      var low = pre.toLowerCase().replace(/\s+/g, ' ');
+      /* (b) .tiny{font-size:11px!important} — text below 14px is banned */
+      if (/(^|,|\s)\.tiny(\s*,|\s*$)/.test(low) && /font-size\s*:\s*1[01]px/i.test(body)) {
+        V59.cssCleanup.removedRules++; drops++; continue;
+      }
+      /* (c) Tier-A glass blur on chips / tiles / soft buttons */
+      if (/(^|,|\s)\.(chip|tile|btn|btn-soft)(\s*,|\s*$)/.test(low)) {
+        body = body.replace(/(^|;)\s*(?:-webkit-)?backdrop-filter\s*:\s*var\(--v58-glass-blur\)[^;}]*/gi, function () { V59.cssCleanup.removedDecls++; return ''; });
+      }
+      /* (d) the base overdraw rule that blurred every card, button and row */
+      body = body.replace(/(^|;)\s*(?:-webkit-)?backdrop-filter\s*:\s*var\(--bd\)[^;}]*/gi, function () { V59.cssCleanup.removedDecls++; return ''; });
+      if (BASE_RULE.test(low) && /backdrop-filter\s*:\s*var\(--v58-glass-blur\)/i.test(body)) {
+        body = body.replace(/(^|;)\s*(?:-webkit-)?backdrop-filter\s*:\s*var\(--v58-glass-blur\)[^;}]*/gi, function () { V59.cssCleanup.removedDecls++; return ''; });
+      }
+      /* (e) any surviving sub-14px font floor inside these legacy sheets */
+      body = body.replace(/font-size\s*:\s*(?:0?\.[0-7]\d*rem|1[0-3](?:\.\d+)?px)/gi, function (m0) {
+        V59.cssCleanup.removedDecls++;
+        return /px/i.test(m0) ? 'font-size:14px' : 'font-size:.875rem';
+      });
+      if (!body.replace(/[\s;]/g, '')) { V59.cssCleanup.removedRules++; drops++; continue; }
+      out.push(pre + '{' + body + '}');
+    }
+    V59.cssCleanup.scanned++;
+    return out.join('\n');
+  }
+
+  var V59_CSS = [
+    ':root{',
+    '  --fs-body:16px;--fs-meta:14px;--fs-ipa:19px;--fs-def:17px;--fs-tile:17px;',
+    '  --fs-hero:clamp(24px,6vw,36px);--fs-word:clamp(32px,9vw,52px);',
+    '  --sp-card:22px;--sp-gap:16px;--sp-btn:12px;',
+    '  --v59-card:rgba(13,20,38,.94);--v59-card-2:rgba(18,27,50,.92);',
+    '  --v58-glass-blur:blur(14px) saturate(1.4);',
+    '  --v59-line:rgba(255,255,255,.14);--v59-shadow:0 14px 34px -14px rgba(2,6,23,.7);',
+    '}',
+    /* strictly <= 4 blurred elements on screen: .topbar, #tabbar and open scrims.
+       The universal :not() chain outranks every legacy !important blur rule. */
+    ':root body *:not(.topbar):not(#tabbar):not(.scrim):not(#aboutCreditsScrim):not(.v58-scrim){',
+    '  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;',
+    '}',
+    ':root body .tile,:root body .wrow,:root body .listrow,:root body .card,:root body .sheet,',
+    ':root body .modal,:root body .v58-tile,:root body .v58-preset,:root body .v58-credit-card,',
+    ':root body #credit,:root body #homeHero{',
+    '  background:var(--v59-card-2)!important;border:1px solid var(--v59-line)!important;',
+    '  box-shadow:var(--v59-shadow)!important;',
+    '}',
+    /* buttons and chips keep their liquid gradients — only the blur is gone */
+    ':root body .btn,:root body .btn-soft,:root body .chip{',
+    '  background-color:rgba(18,27,50,.86)!important;border:1px solid var(--v59-line)!important;',
+    '  box-shadow:var(--v59-shadow)!important;',
+    '}',
+    '.topbar,#tabbar{backdrop-filter:blur(14px) saturate(1.4)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important}',
+    '.scrim,#aboutCreditsScrim,.v58-scrim{backdrop-filter:blur(14px) saturate(1.4)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4)!important}',
+    /* a blurred bar is its own stacking context, so lift it above #tabbar (z 50)
+       and keep the overflow popover clear of the bottom bar */
+    '.topbar{position:relative;z-index:60!important}',
+    '#topOverflow .overflow-menu{z-index:120!important;max-height:calc(100vh - 190px)!important;padding-bottom:16px!important}',
+    '.top-controls .btn,.top-controls .chip{min-height:40px!important;padding:4px 8px!important}',
+    '#btnLang{min-height:40px!important}',
+    'body[data-perf="lite"] *,body[data-perf="lite"] .topbar,body[data-perf="lite"] #tabbar,body[data-perf="lite"] .scrim{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
+    /* typography floors: nothing below 14px anywhere in the chrome */
+    '.tiny,.small,.v58-menu-group-title,.v58-credit-card i,.v58-railrow .badge,.chip,.lbl,',
+    '#tabbar button span,.top-controls .chip,#contrastReadout{font-size:var(--fs-meta)!important}',
+    /* spacious hero: 360x800 phone AND 1366x768 desktop above the fold */
+    '#homeHero.hero{padding:20px!important}',
+    '#homeHero .kicker{font-size:12px!important;letter-spacing:.08em!important;margin-bottom:6px!important}',
+    '#homeHero h1,#homeTitle{font-size:clamp(23px,5.5vw,34px)!important;line-height:1.22!important;margin:6px 0!important}',
+    '#homeHero #homeSub{font-size:15px!important;line-height:1.5!important;white-space:normal!important;overflow:visible!important;text-overflow:unset!important}',
+    '#btnStart{min-height:56px!important;font-size:17px!important;font-weight:700!important}',
+    '.seg#segMode button{min-height:48px!important;font-size:15px!important}',
+    /* large practice bento tiles */
+    '.v58-bento{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}',
+    '.v58-tile{min-height:102px!important;padding:15px 14px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:flex-start!important;gap:8px!important}',
+    '.v58-tile .v58-tile-ico{font-size:28px!important;line-height:1!important}',
+    '.v58-tile-t b{font-size:17px!important;font-weight:800!important;display:block!important}',
+    '.v58-tile-t i{font-size:14px!important;font-style:normal!important;opacity:.88!important;display:block!important;margin-top:3px!important}',
+    '@media (min-width:1024px){',
+    '  #homeHero.hero{padding:20px 24px!important}',
+    '  #homeHero h1,#homeTitle{font-size:clamp(26px,2.4vw,34px)!important}',
+    '  .v58-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) 336px!important;gap:18px!important;align-items:start!important}',
+    '  .v58-tile{min-height:106px!important}',
+    '  #v58KbdHud{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}',
+    '}',
+    /* dictation player, context mode and print sheet */
+    '#ansInput{font-size:20px!important;min-height:52px!important}',
+    '.v58-context-sentence{font-size:19px!important;line-height:1.6!important}',
+    '.v58-context-choices .btn{min-height:52px!important;font-size:16px!important}',
+    '.v58-syl-chip{font-size:16px!important}',
+    '.pv-table{font-size:10.5pt!important}.pv-table th{font-size:9.5pt!important}',
+    '.listrow,.wrow,.v59-dict-card{contain-intrinsic-size:1px 110px}',
+    /* ---- v59 Full-English word card ---- */
+    '.v59-dict-card{padding:16px 16px 14px;margin:10px 0;border-radius:18px;background:var(--v59-card);border:1px solid var(--v59-line);box-shadow:var(--v59-shadow)}',
+    '.v59-dict-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px}',
+    '.v59-idx{font-size:14px;font-weight:800;opacity:.72;min-width:26px}',
+    '.v59-word{font-size:22px;font-weight:800;margin:0;letter-spacing:.01em}',
+    '.v59-ipa{font-size:19px!important;color:#7fe6ff;background:rgba(60,224,184,.12);border:1px solid rgba(60,224,184,.34);border-radius:999px;padding:2px 10px}',
+    '.v59-pos{font-size:14px;opacity:.85;border:1px solid var(--v59-line);border-radius:8px;padding:1px 7px}',
+    '.v59-def{font-size:17px;line-height:1.55;margin:9px 0 6px}',
+    '.v59-ex{font-size:17px;font-style:italic;line-height:1.5;opacity:.92;margin:0 0 10px}',
+    '.v59-actions{display:flex;flex-wrap:wrap;gap:8px}',
+    '.v59-actions .btn{min-height:44px;font-size:15px}',
+    '.v59-si-text{display:block;margin-top:8px;font-size:17px;line-height:1.6;color:#ffd479}',
+    '.v59-si-chip[aria-expanded="false"]+.v59-si-text{display:none}',
+    '.v59-dict-filters{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}',
+    '.v59-dict-filters .btn{min-height:44px;font-size:15px}',
+    '.v59-dict-filters .btn[aria-pressed="true"]{background:linear-gradient(135deg,#5cd0f4,#3ce0b8)!important;color:#04222c!important;font-weight:800}',
+    /* paper self-check + confirmation states */
+    '.v58-selfcheck .v58-selfrow{padding:10px 0}',
+    '.v58-selfrow .v59-selfmeta{display:block;font-size:14px;opacity:.85;margin-top:3px}',
+    '.v59-context-ok{margin:10px 0;padding:12px 14px;border-radius:14px;background:rgba(60,224,184,.16);border:1px solid rgba(60,224,184,.45);color:#b8ffe9;font-weight:700;font-size:16px}',
+    '.v59-context-hint{font-size:15px;line-height:1.6}',
+    '.v59-mic-panel{margin-top:12px;padding:12px;border-radius:14px;background:var(--v59-card);border:1px solid var(--v59-line)}',
+    '.v59-mic-panel .btn{min-height:48px;font-size:15px}',
+    '.v59-print-note{font-size:12px}'
+  ].join('\n');
+
+  function injectCss() {
+    try {
+      if ($('#sdpV59Css')) return;
+      var st = D.createElement('style');
+      st.id = 'sdpV59Css';
+      st.textContent = V59_CSS;
+      (D.head || D.documentElement).appendChild(st);
+    } catch (e) {}
+  }
+
+  V59.cleanLegacyCss = guard(function () {
+    var ids = ['sdpV57Css', 'sdpV58Css'], i;
+    for (i = 0; i < ids.length; i++) {
+      try {
+        var node = D.getElementById(ids[i]);
+        if (!node || node.__v59cleaned) continue;
+        var next = cleanSheet(node.textContent || '');
+        node.textContent = next;
+        node.__v59cleaned = true;
+      } catch (e) {}
+    }
+    return V59.cssCleanup;
+  }, 'v59.cleanLegacyCss');
+
+  /* Every practice tile carries a bold title AND a one-line subtitle. */
+  var BENTO_SUBS = {
+    flash: ['Flip & learn all 30 words', 'වචන 30 ම පෙරළා ඉගෙන ගන්න'],
+    quiz: ['Pick the right meaning', 'නිවැරදි අර්ථය තෝරන්න'],
+    audio: ['Listen to the full list', 'සම්පූර්ණ ලැයිස්තුව අසන්න'],
+    weak: ['Drill until they graduate', 'දියුණු වන තුරු පුහුණු වන්න']
+  };
+  V59.ensureBentoTiles = guard(function () {
+    var tiles = $$('.v58-tile[data-v58-practice]'), i;
+    for (i = 0; i < tiles.length; i++) {
+      try {
+        var kind = tiles[i].getAttribute('data-v58-practice');
+        var def = BENTO_SUBS[kind];
+        if (!def) continue;
+        var wrap = $('.v58-tile-t', tiles[i]) || tiles[i];
+        var sub = $('i', wrap);
+        if (!sub) { sub = el('i'); wrap.appendChild(sub); }
+        if (!sub.getAttribute('data-v58-en')) tag(sub, def[0], def[1]);
+      } catch (e) {}
+    }
+  }, 'v59.ensureBentoTiles');
+
+  /* ==========================================================================
+     3B. One unified UI.applyLang() engine (EN is pure English, SI is full Sinhala)
+     ========================================================================== */
+
+  function isAllowedSinhala(node) {
+    var el2 = node && node.parentElement;
+    while (el2 && el2 !== D.body) {
+      try {
+        if (el2.id === 'btnLang') return true;
+        var cls = String(el2.className || '');
+        if (/\bv59-si-chip\b/.test(cls) || /\bv59-si-text\b/.test(cls)) return true;
+        if (el2.getAttribute && el2.getAttribute('data-v59-sinhala') === '1') return true;
+        if (/^(SCRIPT|STYLE|TEMPLATE)$/.test(el2.tagName)) return true;
+      } catch (e) {}
+      el2 = el2.parentElement;
+    }
+    return false;
+  }
+
+  /* Belt and braces: if any legacy string still carries Sinhala while English
+     is active, strip it so the screen is provably 100% English. */
+  V59.puritySweep = guard(function () {
+    var l = lang();
+    if (l !== 'en') return 0;
+    var walker, count = 0, nodes = [];
+    try {
+      walker = D.createTreeWalker(D.body, 4 /* SHOW_TEXT */, null, false);
+      while (walker.nextNode()) {
+        var n = walker.currentNode;
+        if (!n || !SINHALA.test(n.nodeValue || '')) continue;
+        if (isAllowedSinhala(n)) continue;
+        nodes.push(n);
+      }
+    } catch (e) { return 0; }
+    for (var i = 0; i < nodes.length; i++) {
+      var txt = String(nodes[i].nodeValue || '');
+      var next = txt.replace(SINHALA_RUN, '').replace(/\s*[\/·|]\s*(?=[\s]*$)/, '').replace(/\s{2,}/g, ' ');
+      nodes[i].nodeValue = next.replace(/^[\s\/·|]+/, '').replace(/[\s\/·|]+$/, '');
+      count++;
+    }
+    if (count) V59.puritySweeps++;
+    return count;
+  }, 'v59.puritySweep');
+
+  V59.syncI18n = guard(function () {
+    var l = lang(), i, nodes, btn;
+    try {
+      D.documentElement.setAttribute('lang', l);
+      D.documentElement.setAttribute('data-lang', l);
+    } catch (e) {}
+    nodes = $$('[data-v58-en]');
+    for (i = 0; i < nodes.length; i++) {
+      try {
+        var en = nodes[i].getAttribute('data-v58-en');
+        var si = nodes[i].getAttribute('data-v58-si');
+        nodes[i].textContent = (l === 'si' && si) ? si : en;
+      } catch (e) {}
+    }
+    nodes = $$('[data-en]');
+    for (i = 0; i < nodes.length; i++) {
+      try {
+        var en2 = nodes[i].getAttribute('data-en');
+        var si2 = nodes[i].getAttribute('data-si');
+        if (en2 != null) nodes[i].textContent = (l === 'si' && si2) ? si2 : en2;
+      } catch (e) {}
+    }
+    btn = $('#btnLang');
+    if (btn) {
+      try {
+        btn.textContent = l === 'si' ? 'EN' : 'සිංහල';
+        btn.setAttribute('aria-pressed', l === 'si' ? 'true' : 'false');
+        btn.setAttribute('aria-label', l === 'si' ? 'Switch to English' : 'සිංහලට මාරු කරන්න');
+      } catch (e) {}
+    }
+    V59.ensureBentoTiles();
+    V59.refreshDynamic();
+    if (l === 'en') V59.puritySweep();
+  }, 'v59.syncI18n');
+
+  function installLangEngine() {
+    var u = UI();
+    if (!u || u.__v59Lang) return;
+    var orig = u.applyLang;
+    u.applyLang = function () {
+      var out;
+      try { if (orig) out = orig.apply(this, arguments); } catch (e) {}
+      try { V59.syncI18n(); } catch (e) {}
+      return out;
+    };
+    u.__v59Lang = true;
+  }
+
+  /* ==========================================================================
+     3C. Full-English dictionary cards + filter tabs
+     ========================================================================== */
+
+  function allWordMap() {
+    var map = {}, lists = [], i, j, ws;
+    try { lists = (DB() && DB().data && DB().data.lists) || []; } catch (e) { lists = []; }
+    for (i = 0; i < lists.length; i++) {
+      ws = (lists[i] && lists[i].words) || [];
+      for (j = 0; j < ws.length; j++) if (ws[j] && ws[j].w) map[norm(ws[j].w)] = ws[j];
+    }
+    return map;
+  }
+  function currentList() {
+    try {
+      var lib = Lib();
+      var cur = lib && lib.current && lib.current();
+      if (cur && cur.words && cur.words.length) return cur;
+    } catch (e) {}
+    var map = allWordMap(), out = [], k;
+    for (k in map) if (Object.prototype.hasOwnProperty.call(map, k)) out.push(map[k]);
+    return { name: 'Session 8', words: out };
+  }
+  function sessionWords() { return (currentList().words || []).slice(); }
+  /* The embedded sample list ships without a part of speech, so v59 knows the
+     adjective set of this session and falls back to the UK POS table after it. */
+  var ADJ_WORDS = ('afraid amazed amusing annoyed anxious ashamed awesome boring brilliant ' +
+    'challenging charming confident confusing cruel curious delighted depressed disappointed ' +
+    'embarrassing enjoyable excellent excited fantastic favourite frightened friendly generous ' +
+    'guilty healthy hungry').split(' ');
+  function posFor(ob, embeddedPos) {
+    if (ob && ob.pos) return ob.pos;
+    var k = norm(ob && ob.w);
+    if (k && ADJ_WORDS.indexOf(k) >= 0) return 'adj.';
+    return embeddedPos || '';
+  }
+  function enrichWord(ob) {
+    if (!ob || !ob.w) return ob;
+    var pos = posFor(ob, '');
+    if (ob.p && pos && ob.m) return mergeWord(ob, { pos: pos });
+    try {
+      var c = core();
+      var d = c && c.Dict;
+      if (d && d.embedded) {
+        var e = d.embedded(ob.w);
+        if (e) return mergeWord({ w: ob.w, p: e.ipa || e.phon || '', pos: posFor(ob, e.pos), m: e.def || '', s: e.ex || '', si: ob.si, audio: e.audio || ob.audio }, ob);
+      }
+    } catch (er) {}
+    return mergeWord(ob, { pos: pos });
+  }
+  function wordObjFor(w) {
+    var map = allWordMap();
+    return enrichWord(map[norm(w)] || { w: String(w || '') });
+  }
+  function weakSet() {
+    var set = {}, w = Learn.loadWeakWords ? Learn.loadWeakWords() : {};
+    for (var k in w) if (Object.prototype.hasOwnProperty.call(w, k)) set[k] = w[k];
+    return set;
+  }
+  function masteredSet() {
+    var set = {}, m = Learn.loadMasteredWords ? Learn.loadMasteredWords() : {};
+    for (var k in m) if (Object.prototype.hasOwnProperty.call(m, k)) set[k] = m[k];
+    return set;
+  }
+
+  function playWord(word, rate) {
+    try {
+      var sp = Speech();
+      if (sp && sp.playWord) { sp.playWord(word, rate || 1, function () {}); return; }
+    } catch (e) {}
+    try {
+      var audio = $('#ttsMasterAudio') || el('audio');
+      audio.src = 'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(word);
+      audio.volume = Math.max(0, Math.min(1, Number(settings().volume == null ? 1 : settings().volume)));
+      audio.playbackRate = rate || 1;
+      var pr = audio.play();
+      if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) {}
+  }
+
+  function siChipText() { return T('🇱🇰 Sinhala meaning', '🇱🇰 සිංහල අර්ථය'); }
+
+  function mergeWord(base, over) {
+    var out = {}, k;
+    base = base || {};
+    for (k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+    over = over || {};
+    for (k in over) {
+      if (!Object.prototype.hasOwnProperty.call(over, k)) continue;
+      var v = over[k];
+      if (v == null || v === '') continue;
+      out[k] = v;
+    }
+    return out;
+  }
+
+  function buildCard(word, index) {
+    var original = (word && typeof word === 'object' && word.w) ? word : { w: word };
+    var w = mergeWord(wordObjFor(original.w), original);
+    var card = el('div', 'v59-dict-card');
+    card.setAttribute('data-word', w.w || '');
+    var head = el('div', 'v59-dict-head');
+    head.appendChild(el('span', 'v59-idx', '#' + index));
+    var h = el('h3', 'v59-word', String(w.w || ''));
+    head.appendChild(h);
+    if (w.p) head.appendChild(el('span', 'v59-ipa', '/' + String(w.p) + '/'));
+    if (w.pos) head.appendChild(el('span', 'v59-pos', String(w.pos)));
+    card.appendChild(head);
+    if (w.m) card.appendChild(el('p', 'v59-def', String(w.m)));
+    if (w.s) card.appendChild(el('p', 'v59-ex', '“' + String(w.s) + '”'));
+    var actions = el('div', 'v59-actions');
+    var listen = el('button', 'btn sm soft', T('🔊 Listen', '🔊 අසන්න'));
+    listen.type = 'button';
+    listen.setAttribute('aria-label', 'Listen to ' + (w.w || ''));
+    on(listen, 'click', function () { playWord(w.w, 1); });
+    var slow = el('button', 'btn sm soft', '🐢 0.72×');
+    slow.type = 'button';
+    slow.setAttribute('aria-label', 'Play ' + (w.w || '') + ' slowly');
+    on(slow, 'click', function () { playWord(w.w, 0.72); });
+    var mic = el('button', 'btn sm soft', T('🎤 Speak & Compare', '🎤 කථා කර සසඳන්න'));
+    mic.type = 'button';
+    on(mic, 'click', function () { Learn.recordAndCompare(w); });
+    actions.appendChild(listen); actions.appendChild(slow); actions.appendChild(mic);
+    var si = String(w.si || '');
+    if (si) {
+      var chip = el('button', 'btn sm soft v59-si-chip');
+      chip.type = 'button';
+      var expanded = lang() === 'si';
+      chip.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      chip.textContent = lang() === 'si' ? si : siChipText();
+      var reveal = el('span', 'v59-si-text', si);
+      reveal.setAttribute('data-v59-sinhala', '1');
+      reveal.style.display = expanded ? 'block' : 'none';
+      chip.setAttribute('aria-controls', '');
+      on(chip, 'click', function () {
+        var openNow = chip.getAttribute('aria-expanded') === 'true';
+        chip.setAttribute('aria-expanded', openNow ? 'false' : 'true');
+        reveal.style.display = openNow ? 'none' : 'block';
+        chip.textContent = openNow ? siChipText() : si;
+        if (openNow && lang() === 'si') chip.textContent = si;
+      });
+      actions.appendChild(chip);
+      card.appendChild(actions);
+      card.appendChild(reveal);
+    } else {
+      card.appendChild(actions);
+    }
+    return card;
+  }
+
+  function dictFilters() {
+    var host = $('#v59DictFilters');
+    if (host) return host;
+    var listBox = $('#dictList');
+    if (!listBox || !listBox.parentNode) return null;
+    host = el('div', 'v59-dict-filters');
+    host.id = 'v59DictFilters';
+    host.setAttribute('role', 'group');
+    host.setAttribute('aria-label', 'Word filters');
+    var screens = Screens();
+    var filter = (screens && screens.v59Filter) || 'all';
+    var weakN = Learn.weakCount ? Learn.weakCount() : 0;
+    var mN = 0, mk, mm = Learn.loadMasteredWords ? Learn.loadMasteredWords() : {};
+    for (mk in mm) if (Object.prototype.hasOwnProperty.call(mm, mk)) mN++;
+    var defs = [
+      ['all', T('All 30 Words (' + sessionWords().length + ')', 'වචන 30 ම (' + sessionWords().length + ')')],
+      ['weak', '⭐ ' + T('My Weak Words (' + weakN + ')', 'මගේ දුර්වල වචන (' + weakN + ')')],
+      ['mastered', '✓ ' + T('Mastered (' + mN + ')', 'දියුණු වූ (' + mN + ')')]
+    ];
+    for (var i = 0; i < defs.length; i++) {
+      (function (key, label) {
+        var b = el('button', 'btn sm soft', label);
+        b.type = 'button';
+        b.id = 'v59Filter-' + key;
+        b.setAttribute('data-v59-filter', key);
+        b.setAttribute('aria-pressed', filter === key ? 'true' : 'false');
+        on(b, 'click', function () {
+          var s = Screens();
+          if (s) s.v59Filter = key;
+          V59.renderDictCards();
+        });
+        host.appendChild(b);
+      })(defs[i][0], defs[i][1]);
+    }
+    listBox.parentNode.insertBefore(host, listBox);
+    return host;
+  }
+
+  V59.renderDictCards = guard(function () {
+    var host = $('#dictList');
+    if (!host) return 0;
+    var screens = Screens();
+    var filter = (screens && screens.v59Filter) || 'all';
+    var q = '';
+    try { q = String(($('#dictSearch') || {}).value || '').toLowerCase().trim(); } catch (e) {}
+    var words = [], i, k;
+    if (filter === 'weak') {
+      var weak = weakSet();
+      for (k in weak) if (Object.prototype.hasOwnProperty.call(weak, k)) words.push(wordObjFor(k));
+    } else if (filter === 'mastered') {
+      var mast = masteredSet();
+      for (k in mast) if (Object.prototype.hasOwnProperty.call(mast, k)) words.push(wordObjFor(k));
+    } else {
+      words = sessionWords();
+    }
+    var forCard = [];
+    for (i = 0; i < words.length; i++) forCard.push(words[i]);
+    if (q) {
+      var filtered = [];
+      for (i = 0; i < words.length; i++) {
+        var ob = wordObjFor(words[i] && (words[i].w || words[i]));
+        var hay = [ob.w, ob.m, ob.si, ob.pos].join(' ').toLowerCase();
+        if (hay.indexOf(q) >= 0) filtered.push(ob);
+      }
+      words = filtered;
+    }
+    if (!words.length) {
+      dictFilters();
+      return 0;
+    }
+    /* rebuild the filter strip (counts change as words graduate) */
+    var strip = $('#v59DictFilters');
+    if (strip && strip.parentNode) strip.parentNode.removeChild(strip);
+    host.innerHTML = '';
+    for (i = 0; i < words.length; i++) host.appendChild(buildCard(forCard[i], i + 1));
+    if (filter === 'all') {
+      var note = el('p', 'small muted', T('All 30 words of this session, with UK IPA, English meaning and an example sentence.', ''));
+      host.appendChild(note);
+    }
+    dictFilters();
+    V59.dictCardCount = words.length;
+    return words.length;
+  }, 'v59.renderDictCards');
+
+  function hookDict() {
+    var s = Screens();
+    if (!s || s.__v59Dict || typeof s.dict !== 'function') return;
+    var orig = s.dict;
+    s.dict = guard(function () {
+      var out = orig.apply(this, arguments);
+      try {
+        if (!s.v59Filter) s.v59Filter = 'all';
+        V59.renderDictCards();
+      } catch (e) {}
+      return out;
+    }, 'v59.screens.dict');
+    s.__v59Dict = true;
+  }
+
+  V59.refreshDynamic = guard(function () {
+    try {
+      var u = UI(), s = Screens();
+      var tab = (u && u.tab) || (s && s.tab) || '';
+      if (tab === 'dict') V59.renderDictCards();
+    } catch (e) {}
+    try {
+      var sheet = $('#v58SelfCheck');
+      if (sheet && sheet.__v59refresh) sheet.__v59refresh();
+    } catch (e) {}
+  }, 'v59.refreshDynamic');
+
+  /* ==========================================================================
+     3D-1. F3 Paper self-check (30 rows, live #v58SelfScore + #resSummary)
+     ========================================================================== */
+
+  function summaryBase(sum) {
+    var base = '';
+    try { base = sum.getAttribute('data-v59-base'); } catch (e) {}
+    if (!base) {
+      base = String(sum.textContent || '');
+      var cut = base.indexOf(' · self-check:');
+      if (cut >= 0) base = base.slice(0, cut);
+      try { sum.setAttribute('data-v59-base', base); } catch (e) {}
+    }
+    return base;
+  }
+
+  function writeSummary(correct, total) {
+    var sum = $('#resSummary');
+    if (!sum) return '';
+    var base = summaryBase(sum);
+    var pct = Math.round(100 * correct / Math.max(1, total));
+    var text = base + ' · self-check: ' + correct + '/' + total + ' (' + pct + '%)';
+    try { sum.textContent = text; } catch (e) {}
+    return text;
+  }
+
+  Learn.renderPaperSelfCheck = guard(function (result, layerHost) {
+    if (!result || !result.rows || !result.rows.length || !layerHost) return null;
+    var existing = $('#v58SelfCheck', layerHost);
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    var box = el('div', 'v58-selfcheck glass card');
+    box.id = 'v58SelfCheck';
+    var head = el('div', 'spread');
+    var title = el('h3', null, '🧾 ' + T('Paper self-check', 'කොළ ස්වයං පරීක්ෂාව'));
+    var chip = el('span', 'chip', '0 / ' + result.rows.length + ' · 0%');
+    chip.id = 'v58SelfScore';
+    head.appendChild(title); head.appendChild(chip);
+    box.appendChild(head);
+    var note = el('p', 'tiny muted', 'Tap ✓ Got It if you wrote the word correctly, ✗ Missed It if you did not. Misses feed the weak-words bank — anonymous, on this phone only.');
+    box.appendChild(note);
+    var state = [], rows = result.rows, i;
+    for (i = 0; i < rows.length; i++) state[i] = rows[i] && rows[i].state === 'ok' ? 'ok' : 'miss';
+    function refresh() {
+      var ok = 0, j;
+      for (j = 0; j < state.length; j++) if (state[j] === 'ok') ok++;
+      var pct = Math.round(100 * ok / Math.max(1, state.length));
+      chip.textContent = ok + ' / ' + state.length + ' · ' + pct + '%';
+      chip.setAttribute('aria-label', 'Self-check score ' + ok + ' of ' + state.length);
+      result.score = ok;
+      result.percent = pct;
+      Learn._selfCheck = { ok: ok, total: state.length };
+      writeSummary(ok, state.length);
+    }
+    box.__v59refresh = refresh;
+    for (i = 0; i < rows.length; i++) {
+      (function (row, idx) {
+        var obj = (row && row.w) || wordObjFor(row && row.word);
+        var r = el('div', 'v58-selfrow');
+        var w = el('span', 'v58-selfword');
+        var b = el('b', null, '✗');
+        w.appendChild(b);
+        w.appendChild(D.createTextNode(' ' + String((row && row.word) || (obj && obj.w) || '')));
+        if (obj && obj.p) w.appendChild(el('span', 'chip', '/' + obj.p + '/'));
+        if (obj && obj.m) w.appendChild(el('span', 'v59-selfmeta', String(obj.m)));
+        if (obj && obj.si && lang() === 'si') w.appendChild(el('span', 'v59-selfmeta', String(obj.si)));
+        var btns = el('span', 'v58-selfbtns');
+        var okB = el('button', 'btn sm soft', '✓ ' + T('Got It', 'නිවැරදියි'));
+        okB.type = 'button'; okB.setAttribute('aria-label', 'Got it: ' + ((row && row.word) || ''));
+        var missB = el('button', 'btn sm soft', '✗ ' + T('Missed It', 'වැරදියි'));
+        missB.type = 'button'; missB.setAttribute('aria-label', 'Missed it: ' + ((row && row.word) || ''));
+        function paint() {
+          var good = state[idx] === 'ok';
+          b.textContent = good ? '✓' : '✗';
+          try { okB.classList[good ? 'add' : 'remove']('good'); } catch (e) {}
+          try { missB.classList[good ? 'remove' : 'add']('warn'); } catch (e) {}
+        }
+        on(okB, 'click', function () {
+          state[idx] = 'ok';
+          try { if (Learn.markCorrect) Learn.markCorrect((row && row.word) || (obj && obj.w) || ''); } catch (e) {}
+          paint(); refresh();
+        });
+        on(missB, 'click', function () {
+          state[idx] = 'miss';
+          try { if (Learn.markMissed) Learn.markMissed((row && row.word) || (obj && obj.w) || ''); } catch (e) {}
+          paint(); refresh();
+        });
+        btns.appendChild(okB); btns.appendChild(missB);
+        r.appendChild(w); r.appendChild(btns);
+        box.appendChild(r);
+        paint();
+      })(rows[i], i);
+    }
+    layerHost.appendChild(box);
+    refresh();
+    return box;
+  }, 'v59.renderPaperSelfCheck');
+
+  /* ==========================================================================
+     3D-2. F3/D10 Print / Save the A4 study sheet – all six columns
+     ========================================================================== */
+
+  Learn.printStudySheet = guard(function () {
+    var pv = $('#printview');
+    if (!pv) return;
+    var list = currentList();
+    var db = DB();
+    var sess = (db && db.data && db.data.session) || {};
+    var words = list.words || [];
+    var title = sess.title || list.name || 'Session 8';
+    var date = sess.date || '2026-10-29';
+    pv.innerHTML = '';
+    var head = el('div', 'pv-head', 'CCBE Galle Branch · B1 · Session ' + (sess.no || '8') + ' · ' + date + ' · Student Name: _______________');
+    pv.appendChild(head);
+    pv.appendChild(el('h1', null, 'Smart Dictation Practice Sheet — ' + title));
+    var sub = el('div', 'pv-sub', 'Words: ' + words.length + ' · UK IPA · part of speech · English meaning · Sinhala meaning');
+    pv.appendChild(sub);
+    var table = el('table', 'pv-table');
+    var thead = el('thead');
+    thead.innerHTML = '<tr><th>#</th><th>English Word</th><th>UK IPA</th><th>Part of Speech</th>' +
+      '<th>English Meaning</th><th>Sinhala Meaning (සිංහල තේරුම)</th></tr>';
+    table.appendChild(thead);
+    var tb = el('tbody');
+    var i, w, tr;
+    for (i = 0; i < words.length; i++) {
+      w = words[i] || {};
+      tr = el('tr');
+      tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + String(w.w || '') + '</td><td>' +
+        (w.p ? '/' + String(w.p) + '/' : '') + '</td><td>' + String(w.pos || '') + '</td><td>' +
+        String(w.m || '') + '</td><td>' + String(w.si || '') + '</td>';
+      tb.appendChild(tr);
+    }
+    table.appendChild(tb);
+    pv.appendChild(table);
+    pv.appendChild(el('h2', null, 'Writing practice'));
+    var lines = el('div', 'lines');
+    for (i = 0; i < words.length; i++) {
+      var line = el('div', 'pv-line');
+      line.innerHTML = '<span>' + (i + 1) + '.</span><i></i>';
+      lines.appendChild(line);
+    }
+    pv.appendChild(lines);
+    var key = el('div', 'pv-key');
+    key.appendChild(el('h2', null, 'Answer Key & Example Sentences'));
+    var ol = el('ol');
+    for (i = 0; i < words.length; i++) {
+      w = words[i] || {};
+      var li = el('li', null, String(w.w || '') + (w.p ? ' /' + w.p + '/' : '') +
+        (w.pos ? ' (' + w.pos + ')' : '') + (w.m ? ' — ' + w.m : '') +
+        (w.si ? ' — ' + w.si : '') + (w.s ? ' — “' + w.s + '”' : ''));
+      ol.appendChild(li);
+    }
+    key.appendChild(ol);
+    pv.appendChild(key);
+    try { W.print(); } catch (e) {}
+  }, 'v59.printStudySheet');
+
+  /* ==========================================================================
+     3D-3. F5 Sentence Context Mode (meaning clue, Next question, green correct)
+     ========================================================================== */
+
+  function contextStage() { return $('#pracStage'); }
+
+  function advanceContext(screens) {
+    var s = screens || Screens();
+    if (!s) return;
+    var words = sessionWords();
+    if (!words.length) return;
+    s.pracIndex = ((Number(s.pracIndex) || 0) + 1) % words.length;
+    Learn.renderContextMode(s);
+  }
+
+  Learn.renderContextMode = guard(function (screens) {
+    var s = screens || Screens();
+    var stage = contextStage();
+    var words = sessionWords();
+    var count = $('#pracCount');
+    if (count) count.textContent = words.length ? (((Number(s && s.pracIndex) || 0) % words.length) + 1) + ' / ' + words.length : '0 / 0';
+    var chips = $$('#pracMode button'), c;
+    for (c = 0; c < chips.length; c++) {
+      var sel = chips[c].getAttribute('data-p') === 'context';
+      chips[c].setAttribute('aria-selected', sel ? 'true' : 'false');
+      chips[c].setAttribute('aria-pressed', sel ? 'true' : 'false');
+    }
+    if (!stage) return false;
+    stage.innerHTML = '';
+    if (!words.length) {
+      stage.appendChild(el('p', 'muted', 'No list loaded yet.'));
+      return true;
+    }
+    var idx = ((s && Number(s.pracIndex)) || 0) % words.length;
+    var word = words[idx];
+    var blank = Learn.blankSentence(word.s, word.w);
+    var card = el('div', 'glass card v58-context-card');
+    card.appendChild(el('div', 'tiny muted', '📖 ' + T('Sentence Context · fill the gap', 'වාක්ය සන්දර්භය · හිස් තැන පුරන්න')));
+    card.appendChild(el('p', 'v58-context-sentence', blank));
+    var hintText;
+    if (lang() === 'si') hintText = (word.p ? '/' + word.p + '/ · ' : '') + (word.si || word.m || '');
+    else hintText = (word.p ? '/' + word.p + '/ · ' : '') + (word.m || '');
+    card.appendChild(el('div', 'v59-context-hint', hintText));
+    stage.appendChild(card);
+    var choices = [word], pool = [], i;
+    for (i = 0; i < words.length; i++) if (i !== idx) pool.push(words[i]);
+    pool.sort(function () { return Math.random() - 0.5; });
+    for (i = 0; i < 3 && i < pool.length; i++) choices.push(pool[i]);
+    choices.sort(function () { return Math.random() - 0.5; });
+    var row = el('div', 'v58-context-choices');
+    row.id = 'v58ContextChoices';
+    for (i = 0; i < choices.length; i++) {
+      (function (choice, pos) {
+        var b = el('button', 'btn soft', (pos + 1) + '. ' + (choice.w || ''));
+        b.type = 'button';
+        on(b, 'click', function () { Learn.answerContext(word, choice, row); });
+        row.appendChild(b);
+      })(choices[i], i);
+    }
+    stage.appendChild(row);
+    var typedRow = el('div', 'v58-context-typed');
+    var input = el('input');
+    input.type = 'text';
+    input.id = 'v58ContextInput';
+    input.setAttribute('aria-label', 'Type the missing word');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocapitalize', 'none');
+    input.placeholder = T('…or type the missing word', '…හෝ හිස් තැනට වචනය ටයිප් කරන්න');
+    var check = el('button', 'btn pri', T('Check', 'පරීක්ෂා කරන්න'));
+    check.type = 'button';
+    check.id = 'v58ContextCheck';
+    var speak = el('button', 'btn soft', T('🔊 Hear sentence', '🔊 වාක්යය අසන්න'));
+    speak.type = 'button';
+    on(speak, 'click', function () {
+      try { Speech().speakStudioText(String(word.s || word.w || ''), 'en', function () {}); } catch (e) {}
+    });
+    on(check, 'click', function () { Learn.answerContextTyped(word, input.value, row); });
+    on(input, 'keydown', function (e) {
+      if (e && e.key === 'Enter') { e.preventDefault(); Learn.answerContextTyped(word, input.value, row); }
+    });
+    typedRow.appendChild(input); typedRow.appendChild(check); typedRow.appendChild(speak);
+    stage.appendChild(typedRow);
+    /* always-present primary Next question control (D3 fix) */
+    var next = el('button', 'btn pri block', 'Next question →');
+    next.type = 'button';
+    next.id = 'v58ContextNextBtn';
+    next.setAttribute('aria-label', 'Next question');
+    on(next, 'click', function () { advanceContext(s); });
+    stage.appendChild(next);
+    Learn._contextWord = word;
+    Learn._contextChoices = row;
+    return true;
+  }, 'v59.renderContextMode');
+
+  function contextCorrect(word, host) {
+    var box = el('div', 'v59-context-ok');
+    box.id = 'v59ContextOk';
+    box.textContent = '✓ ' + T('Correct!', 'නිවැරදියි!') + ' ' + String(word.w || '') + (word.p ? ' · /' + word.p + '/' : '');
+    var stage = host || contextStage();
+    if (stage) stage.appendChild(box);
+    try { if (Learn.hideMistakeCoach) Learn.hideMistakeCoach(); } catch (e) {}
+    try { if (Learn.markCorrect) Learn.markCorrect(word.w); } catch (e) {}
+    try { Speech().speakStudioText(String(word.s || word.w || ''), 'en', function () {}); } catch (e) {}
+    setTimeout(function () {
+      try {
+        if (Screens() && Screens().pracMode === 'context') advanceContext(Screens());
+      } catch (e) {}
+    }, 1200);
+  }
+
+  Learn.answerContext = guard(function (word, choice, row) {
+    var right = norm(choice.w) === norm(word.w);
+    var btns = $$('button', row), i;
+    for (i = 0; i < btns.length; i++) {
+      var label = norm(String(btns[i].textContent || '').replace(/^\d+\.\s*/, ''));
+      var isRight = label === norm(word.w);
+      try { btns[i].classList.add(isRight ? 'good' : 'soft'); } catch (e) {}
+      if (!isRight && label === norm(choice.w)) { try { btns[i].classList.add('warn'); } catch (e) {} }
+      if (isRight) { try { btns[i].classList.add('good'); } catch (e) {} }
+    }
+    if (right) { contextCorrect(word, contextStage()); return; }
+    try { if (Learn.markMissed) Learn.markMissed(word.w); } catch (e) {}
+    Learn.renderMistakeCoach(word, choice && choice.w || '', contextStage());
+  }, 'v59.answerContext');
+
+  Learn.answerContextTyped = guard(function (word, typed, row) {
+    var right = norm(typed) === norm(word.w);
+    if (right) { contextCorrect(word, contextStage()); return; }
+    try { if (Learn.markMissed) Learn.markMissed(word.w); } catch (e) {}
+    Learn.renderMistakeCoach(word, typed, contextStage());
+  }, 'v59.answerContextTyped');
+
+  /* ==========================================================================
+     3D-4. F6 Speak & Compare (explicit play buttons, iOS-safe MIME)
+     ========================================================================== */
+
+  Learn.recordAndCompare = guard(function (wordObj) {
+    var word = String((wordObj && (wordObj.w || wordObj.word)) || '');
+    if (!word) {
+      try { var cw = Eng() && Eng().currentWord && Eng().currentWord(); word = String((cw && (cw.w || cw.word)) || ''); } catch (e) {}
+    }
+    if (!word) return;
+    var nav = W.navigator || {};
+    if (!W.MediaRecorder || !nav.mediaDevices || !nav.mediaDevices.getUserMedia) {
+      toast(T('🎤 Speak & Compare needs a modern browser with MediaRecorder. Your voice is never uploaded.',
+        '🎤 මෙම විශේෂාංගය සඳහා නවීන බ්‍රව්සරයක් අවශ්‍යයි. ඔබේ හඬ කිසිවිටෙක උඩුගත නොවේ.'), { icon: 'i-alert', ms: 6000 });
+      return;
+    }
+    if (Learn._mirrorUrl) { try { W.URL.revokeObjectURL(Learn._mirrorUrl); } catch (e) {} Learn._mirrorUrl = null; }
+    if (Learn._mirrorStream) { try { Learn._mirrorStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} Learn._mirrorStream = null; }
+    var mime = (W.MediaRecorder.isTypeSupported && W.MediaRecorder.isTypeSupported('audio/mp4')) ? 'audio/mp4' : 'audio/webm';
+    nav.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      Learn._mirrorStream = stream;
+      var chunks = [];
+      var rec;
+      try { rec = new W.MediaRecorder(stream, { mimeType: mime }); }
+      catch (e) { rec = new W.MediaRecorder(stream); }
+      rec.ondataavailable = function (e) { if (e && e.data) chunks.push(e.data); };
+      rec.onstop = function () {
+        try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+        var type = (chunks[0] && chunks[0].type) || mime;
+        var blob = new W.Blob(chunks, { type: type });
+        var url = W.URL.createObjectURL(blob);
+        Learn._mirrorUrl = url;
+        var old = $('#v59MicPanel');
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+        var panel = el('div', 'v59-mic-panel');
+        panel.id = 'v59MicPanel';
+        panel.appendChild(el('p', 'small muted', T('Your recording is ready — compare it with the studio voice.', 'ඔබේ පටිගත කිරීම සූදානම් — මැදිරි හඬ සමඟ සසඳන්න.')));
+        var mineAudio = el('audio');
+        mineAudio.id = 'v59MyRecording';
+        mineAudio.preload = 'auto';
+        mineAudio.src = url;
+        var studioUrl = (wordObj && wordObj.audio) || ('https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(word));
+        var row = el('div', 'btn-row tight');
+        var both = el('button', 'btn pri', T('▶ Play Studio → My Voice', '▶ මැදිරි හඬ → මගේ හඬ'));
+        both.type = 'button';
+        on(both, 'click', function () {
+          /* R6: plain <audio> element, never createMediaElementSource on a
+             cross-origin dict.youdao.com file (it would silence Android/iOS). */
+          var studio = $('#v59StudioCompare') || el('audio');
+          studio.id = 'v59StudioCompare';
+          studio.preload = 'auto';
+          studio.crossOrigin = null;
+          studio.src = studioUrl;
+          studio.volume = Math.max(0, Math.min(1, Number(settings().volume == null ? 1 : settings().volume)));
+          studio.onended = function () { try { mineAudio.play(); } catch (e) {} };
+          var p = studio.play();
+          if (p && p.catch) p.catch(function () { try { mineAudio.play(); } catch (e) {} });
+        });
+        var mine = el('button', 'btn soft', T('▶ Play my recording', '▶ මගේ පටිගත කිරීම අසන්න'));
+        mine.type = 'button';
+        mine.id = 'v59PlayMine';
+        on(mine, 'click', function () { try { mineAudio.currentTime = 0; mineAudio.play(); } catch (e) {} });
+        row.appendChild(both); row.appendChild(mine);
+        panel.appendChild(row);
+        panel.appendChild(mineAudio);
+        var host = (Eng() && Eng().layer && (($('.lbody', Eng().layer) || Eng().layer))) || D.body;
+        host.appendChild(panel);
+        toast('🎤 ' + T('Recording captured. Tap ▶ Play my recording to hear it.', 'පටිගත කිරීම සුරකින ලදී.'), { icon: 'i-mic' });
+      };
+      rec.start();
+      toast('🎤 ' + T('Listening — say “' + word + '” after the studio voice.', '🎤 “' + word + '” කියන්න.'), { icon: 'i-mic' });
+      setTimeout(function () { try { if (rec.state !== 'inactive') rec.stop(); } catch (e) {} }, 2600);
+    }, function () {
+      toast(T('🎤 Microphone unavailable. Allow mic access in your browser settings — or use the typing mode.',
+        '🎤 මයික්‍රෝෆෝනය ලබාගත නොහැකි විය. බ්‍රව්සර් සැකසුම්වලින් අවසර දෙන්න.'), { icon: 'i-alert', ms: 6000 });
+    });
+  }, 'v59.recordAndCompare');
+
+  /* ==========================================================================
+     3D-5. F7 Offline pack: only real cache writes count as saved
+     ========================================================================== */
+
+  Learn.downloadOfflinePack = guard(function () {
+    var fill = $('#v58OfflineFill');
+    var text = $('#v58OfflineText');
+    var words = sessionWords();
+    if (!words.length) { toast('No word list loaded yet.', { icon: 'i-info' }); return; }
+    if (!W.caches) { toast('Offline packs need a secure context (https).', { icon: 'i-alert' }); return; }
+    if (Learn._offlineBusy) return;
+    Learn._offlineBusy = true;
+    var total = words.length, saved = 0, done = 0;
+    function progress() {
+      if (fill) { try { fill.style.width = Math.round(100 * done / Math.max(1, total)) + '%'; } catch (e) {} }
+      if (text) { try { text.textContent = done + '/' + total + ' checked · ' + saved + '/' + total + ' saved offline ✓'; } catch (e) {} }
+    }
+    progress();
+    W.caches.open('sdp-youdao-v1').then(function (cache) {
+      var i = 0;
+      function next() {
+        if (i >= words.length) { finish(); return; }
+        var w = words[i++] || {};
+        var url = w.audio || ('https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(w.w));
+        done++;
+        var chain;
+        try {
+          chain = cache.match(url).then(function (hit) {
+            if (hit) { saved++; progress(); return true; }
+            return W.fetch(url, { mode: 'no-cors', credentials: 'omit' }).then(function (res) {
+              if (!res) return false;
+              return cache.put(url, res.clone()).then(function () { saved++; progress(); return true; },
+                function () { progress(); return false; });
+            });
+          });
+        } catch (e) { chain = null; }
+        Promise.resolve(chain).then(function () { progress(); next(); }, function () { progress(); next(); });
+      }
+      next();
+    }).catch(function () { Learn._offlineBusy = false; toast('Offline packs need a secure context (https).', { icon: 'i-alert' }); });
+    function finish() {
+      Learn._offlineBusy = false;
+      progress();
+      try {
+        var db = DB();
+        if (db && db.data && db.data.settings) {
+          db.data.settings.offlineReadyCount = saved;
+          db.data.settings.offlineReadyTotal = total;
+          db.data.settings.offlineReadyAt = saved >= total ? Date.now() : 0;
+          if (db.save) db.save();
+        }
+      } catch (e) {}
+      if (saved >= total) toast('📥 Offline pack ready: ' + saved + '/' + total + ' word clips in sdp-youdao-v1.', { icon: 'i-check', ms: 6000 });
+      else toast('📥 Saved ' + saved + ' of ' + total + ' clips — the rest need a connection. Tap again to retry.', { icon: 'i-alert', ms: 6000 });
+      try {
+        W.caches.open('sdp-v59-media').then(function (cache) {
+          return Promise.all([
+            cache.add('./assets/fonts/NotoSansSinhala-Regular.woff2'),
+            cache.add('./assets/fonts/NotoSansSinhala-Bold.woff2')
+          ]);
+        }).catch(function () {});
+      } catch (e) {}
+    }
+  }, 'v59.downloadOfflinePack');
+
+  Learn.syncOfflineRow = guard(function () {
+    var fill = $('#v58OfflineFill');
+    var text = $('#v58OfflineText');
+    if (!fill || !text) return;
+    var s = settings();
+    var total = sessionWords().length;
+    var count = Number(s.offlineReadyCount) || 0;
+    if (count > 0) {
+      try { fill.style.width = Math.round(100 * count / Math.max(1, total)) + '%'; } catch (e) {}
+      text.textContent = count + '/' + total + ' word clips saved offline ✓ · re-download anytime';
+    } else {
+      try { fill.style.width = '0%'; } catch (e) {}
+      text.textContent = total + ' word clips can be saved offline';
+    }
+  }, 'v59.syncOfflineRow');
+
+  /* ==========================================================================
+     3E. window.SDPPerfGuard — keep the UI at 60 fps, memoised
+     ========================================================================== */
+
+  function reduceDeltas(deltas) {
+    var arr = (deltas || []).slice(0).sort(function (a, b) { return a - b; });
+    if (!arr.length) return { avg: 0, med: 0, slow3: 0, frames: 0, lite: false };
+    var sum = 0, i;
+    for (i = 0; i < arr.length; i++) sum += arr[i];
+    var slow = 0;
+    for (i = 0; i < arr.length; i++) if (arr[i] > 32) slow++;
+    var med = arr[Math.floor(arr.length / 2)];
+    return {
+      avg: sum / arr.length,
+      med: med,
+      slow3: arr.length ? (slow / arr.length) * 100 : 0,
+      frames: arr.length
+    };
+  }
+
+  var PG = W.SDPPerfGuard = {
+    KEY: 'sdp.perfGuard.v1',
+    SLOW_AVG: 22,
+    SLOW_MED: 25,
+    SLOW3: 32,
+    stats: null,
+    _busy: false,
+    sampler: null,
+    memo: function () {
+      try { return JSON.parse(W.localStorage.getItem(PG.KEY) || 'null'); } catch (e) { return null; }
+    },
+    writeMemo: function (obj) {
+      try { W.localStorage.setItem(PG.KEY, JSON.stringify(obj)); } catch (e) {}
+    },
+    /* Pure decision function — unit-testable without a browser frame loop. */
+    decide: function (r) {
+      r = r || {};
+      var slow = (Number(r.avg) > PG.SLOW_AVG) || (Number(r.med) > PG.SLOW_MED) || (Number(r.slow3) > PG.SLOW3);
+      r.lite = !!slow;
+      var s = settings();
+      var userChosen = s && s.perfChosenBy === 'user';
+      PG.stats = r;
+      if (slow && !userChosen) PG.applyLite(r);
+      return r;
+    },
+    applyLite: function (r) {
+      var db = DB(), u = UI(), s = (db && db.data && db.data.settings) || null;
+      try {
+        if (s) {
+          if (s.perfChosenBy === 'user') return false;
+          s.perf = 'lite';
+          s.perfChosenBy = 'guard';
+          if (db && db.save) db.save();
+        }
+      } catch (e) {}
+      try { if (u && typeof u.setPerfSilent === 'function') u.setPerfSilent('lite'); } catch (e) {}
+      try { if (u && u.applyPerf) u.applyPerf(); } catch (e) {}
+      try {
+        if (D.body) D.body.setAttribute('data-perf', 'lite');
+        D.documentElement.setAttribute('data-perf', 'lite');
+      } catch (e) {}
+      PG.writeMemo({ mode: 'lite', at: Date.now(), avg: r && r.avg, med: r && r.med, slow3: r && r.slow3 });
+      toast('⚡ 60 FPS Smooth Mode auto-enabled', { icon: 'i-target', ms: 3400 });
+      return true;
+    },
+    benchmark: function (done) {
+      var max = 90, deltas = [], last = 0, count = 0;
+      /* injected samples (tests) always resolve immediately */
+      if (PG.sampler && PG.sampler.length) {
+        var rr = reduceDeltas(PG.sampler.slice(0));
+        PG.stats = rr;
+        if (typeof done === 'function') done(rr);
+        return rr;
+      }
+      if (PG._busy) return PG.stats;
+      function finish() {
+        PG._busy = false;
+        var r = reduceDeltas(deltas);
+        PG.stats = r;
+        if (typeof done === 'function') done(r);
+        return r;
+      }
+      var raf = W.requestAnimationFrame;
+      if (typeof raf !== 'function') {
+        /* very old engines: approximate with a short timer chain, then stop */
+        var t0 = 0;
+        function tickTimer() {
+          var now = Date.now();
+          if (t0) deltas.push(now - t0);
+          t0 = now;
+          if (++count >= 40) { finish(); return; }
+          setTimeout(tickTimer, 16);
+        }
+        tickTimer();
+        return null;
+      }
+      function frame(ts) {
+        if (last) deltas.push(ts - last);
+        last = ts;
+        if (++count >= max) { finish(); return; }
+        try { raf.call(W, frame); } catch (e) { finish(); }
+      }
+      try { raf.call(W, frame); } catch (e) { PG._busy = false; }
+      return null;
+    },
+    /* Boot entry: start(UIref, DBref) — normalises the legacy default, honours a
+       saved memo and samples exactly one 90-frame window, then stops forever. */
+    start: function (u, db) {
+      try {
+        var memo = PG.memo();
+        var s = (db && db.data && db.data.settings) || null;
+        if (!s) { try { s = settings(); } catch (e) { s = null; } }
+        if (!s) return;
+        if (s.perf === 'full' && s.perfChosenBy !== 'user') {
+          s.perf = 'auto';
+          s.perfChosenBy = s.perfChosenBy || 'auto';
+          try { if (db && db.save) db.save(); } catch (e) {}
+          try { if (u && u.applyPerf) u.applyPerf(); } catch (e) {}
+        }
+        if (memo && memo.mode === 'lite' && s.perfChosenBy !== 'user') {
+          PG.applyLite({ avg: memo.avg, med: memo.med, slow3: memo.slow3, memo: true });
+          return;
+        }
+        var run = function () {
+          var go = function () {
+            PG.benchmark(function (r) { PG.decide(r); });
+          };
+          if (W.setTimeout) W.setTimeout(go, 700);
+        };
+        if (D.readyState === 'complete') run();
+        else {
+          try { W.addEventListener('load', run, { passive: true }); } catch (e) { run(); }
+        }
+      } catch (e) {}
+    }
+  };
+
+  function normalizePerf() {
+    try {
+      var db = DB();
+      if (!db || !db.data || !db.data.settings) return;
+      var s = db.data.settings;
+      if (s.perfChosenBy == null) s.perfChosenBy = '';
+      if (s.perf === 'full' && s.perfChosenBy !== 'user') {
+        s.perf = 'auto';
+        s.perfChosenBy = 'auto';
+        if (db.save) db.save();
+        try { if (UI() && UI().applyPerf) UI().applyPerf(); } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  /* ==========================================================================
+     R5/R6: event-driven updates, no idle rAF, no idle intervals, safe dock
+     ========================================================================== */
+
+  V59.clampDock = guard(function () {
+    if (!D.body || !D.body.classList.contains('v58-keyboard')) return;
+    var dock = $('#v58Dock') || $('#v58KbdHud');
+    if (!dock) return;
+    var bar = $('.topbar');
+    var bottom = bar && bar.getBoundingClientRect ? bar.getBoundingClientRect().bottom : 0;
+    var rect = dock.getBoundingClientRect ? dock.getBoundingClientRect() : null;
+    if (!rect || !rect.height) return;
+    /* Android soft keyboard: never translate the dock above the top bar */
+    if (rect.top < bottom + 6) {
+      var shift = (bottom + 6) - rect.top;
+      try { dock.style.transform = 'translateY(' + Math.round(shift) + 'px)'; } catch (e) {}
+    } else {
+      try { dock.style.transform = ''; } catch (e) {}
+    }
+  }, 'v59.clampDock');
+
+  function wireAudioEvents() {
+    var audio = $('#ttsMasterAudio');
+    if (!audio || audio.__v59Halo) return;
+    audio.__v59Halo = true;
+    on(audio, 'playing', function () { Learn.startHalo(); });
+    on(audio, 'timeupdate', function () { if (!Learn._haloRunning) Learn.startHalo(); });
+    on(audio, 'pause', function () { Learn.stopHalo(); });
+    on(audio, 'ended', function () { Learn.stopHalo(); });
+    on(audio, 'emptied', function () { Learn.stopHalo(); });
+  }
+
+  function hookEngFocus() {
+    var e = Eng();
+    if (!e || e.__v59Focus) return;
+    var start = e.start, stop = e.stop;
+    if (typeof start === 'function') {
+      e.start = guard(function () {
+        var out = start.apply(this, arguments);
+        try { Learn.syncFocus(); V59.clampDock(); } catch (err) {}
+        return out;
+      }, 'v59.eng.start.focus');
+    }
+    if (typeof stop === 'function') {
+      e.stop = guard(function () {
+        var out = stop.apply(this, arguments);
+        try { Learn.stopHalo(); Learn.syncFocus(); } catch (err) {}
+        return out;
+      }, 'v59.eng.stop.focus');
+    }
+    e.__v59Focus = true;
+  }
+
+  function hookScreensSet() {
+    var s = Screens();
+    if (!s || s.__v59Set) return;
+    s.__v59Set = true;
+    if (typeof s.set === 'function') {
+      var set = s.set;
+      s.set = guard(function () {
+        var out = set.apply(this, arguments);
+        try {
+          Learn.updateGauge();
+          Learn.syncFocus();
+          Learn.regroupOverflow();
+          V59.ensureBentoTiles();
+          var u = UI();
+          if ((this && this.tab === 'dict') || (u && u.tab === 'dict')) V59.renderDictCards();
+        } catch (e) {}
+        return out;
+      }, 'v59.screens.set');
+    }
+  }
+
+  function hookFinishSummary() {
+    var e = Eng();
+    if (!e || e.__v59Summary || typeof e.speakFinishSummary !== 'function') return;
+    var orig = e.speakFinishSummary;
+    e.speakFinishSummary = guard(function () {
+      var out = orig.apply(this, arguments);
+      try {
+        if (Learn._selfCheck) writeSummary(Learn._selfCheck.ok, Learn._selfCheck.total);
+      } catch (err) {}
+      return out;
+    }, 'v59.eng.speakFinishSummary');
+    e.__v59Summary = true;
+  }
+
+  function hookResultsPaper() {
+    var c = core();
+    if (!c || !c.Results || c.Results.__v59Paper) return;
+    var open = c.Results.open;
+    if (typeof open !== 'function') return;
+    c.Results.open = guard(function () {
+      var result = arguments[0];
+      var out = open.apply(this, arguments);
+      try {
+        if (result && result.mode === 'paper') {
+          /* paper mode is self-marked, so a 30-line "breakdown" is noise */
+          var coach = $('#v58ResultsCoach');
+          if (coach && coach.parentNode) coach.parentNode.removeChild(coach);
+        }
+        if (result && result.rows && result.rows.length && $('[data-v59-results]')) { /* noop */ }
+      } catch (e) {}
+      return out;
+    }, 'v59.results.open');
+    c.Results.__v59Paper = true;
+  }
+
+  V59.wireEvents = guard(function () {
+    wireAudioEvents();
+    hookEngFocus();
+    hookScreensSet();
+    hookResultsPaper();
+    hookFinishSummary();
+    on(W, 'resize', function () { try { Learn.updateGauge(); Learn.regroupOverflow(); V59.clampDock(); } catch (e) {} }, true);
+    on(W, 'scroll', function () { try { V59.clampDock(); } catch (e) {} }, true);
+    try {
+      if (W.visualViewport) {
+        on(W.visualViewport, 'resize', function () { try { V59.clampDock(); } catch (e) {} });
+        on(W.visualViewport, 'scroll', function () { try { V59.clampDock(); } catch (e) {} });
+      }
+    } catch (e) {}
+    var theme = $('#btnTheme');
+    on(theme, 'click', function () { setTimeout(function () { try { Learn.updateGauge(); } catch (e) {} }, 40); });
+    var perfBtn = $('#btnPerf');
+    on(perfBtn, 'click', function () { setTimeout(function () { try { Learn.updateGauge(); } catch (e) {} }, 40); });
+    /* focus changes inside the player keep the dock visible on mobile keyboards */
+    on(D, 'focusin', function () { setTimeout(function () { try { V59.clampDock(); } catch (e) {} }, 60); });
+  }, 'v59.wireEvents');
+
+  /* ==========================================================================
+     Boot
+     ========================================================================== */
+
+  function boot() {
+    if (!D || !core()) {
+      V59._tries = (V59._tries || 0) + 1;
+      if (V59._tries < 100) setTimeout(boot, 60);
+      return;
+    }
+    injectCss();
+    V59.cleanLegacyCss();
+    V59.ensureBentoTiles();
+    installLangEngine();
+    normalizePerf();
+    hookDict();
+    hookResultsPaper();
+    V59.wireEvents();
+    try { if (UI() && UI().applyLang) UI().applyLang(); } catch (e) {}
+    try { V59.syncI18n(); } catch (e) {}
+    try { Learn.syncOfflineRow(); Learn.updateGauge(); Learn.syncFocus(); } catch (e) {}
+    V59.ready = true;
+    try { PG.start(UI(), DB()); } catch (e) {}
+  }
+
+  if (D.readyState === 'loading') on(D, 'DOMContentLoaded', boot);
   else setTimeout(boot, 0);
 })();

@@ -15,14 +15,14 @@ window.SDPCoreV54 = SDPC;
   function canNet() { try { return !!window.fetch && location.protocol !== 'file:' && !/HeadlessChrome|jsdom/i.test(navigator.userAgent || ''); } catch (e) { return false; } }
   function token() { return admin() && Cloud.ghToken ? Cloud.ghToken() : ''; }
   var SYNC = {
-    version: 58, appVersion: '7.0.0', staticFiles: ['./data/config.json', './data/session.json', './data/elevenlabs-audio.json'],
+    version: 59, appVersion: '8.0.0', staticFiles: ['./data/config.json', './data/session.json', './data/elevenlabs-audio.json'],
     repoApi: 'https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/',
     keysTopic: '', wordsTopic: '', audioTopic: '', vaultTopic: '', rev: 0, lastSaved: 0, lastPull: 0,
     lastChannels: [], notes: [], busy: false, pushing: false, timer: null, audioTimer: null,
     live: function () { return !/HeadlessChrome|jsdom/i.test(navigator.userAgent || ''); }, canNet: canNet,
     gasUrl: function () { return String(CONFIG.gasUrl || ''); },
-    keyBody: function () { return JSON.stringify({ ver: 58, appVersion: '7.0.0', syncRev: Number(DB.data.syncRev) || 0 }); },
-    envelope: function () { return { ver: 58, appVersion: '7.0.0', syncRev: Number(DB.data.syncRev) || 0 }; },
+    keyBody: function () { return JSON.stringify({ ver: 59, appVersion: '8.0.0', syncRev: Number(DB.data.syncRev) || 0 }); },
+    envelope: function () { return { ver: 59, appVersion: '8.0.0', syncRev: Number(DB.data.syncRev) || 0 }; },
     wordBodies: function () { return []; },
     applyEnvelope: function () { return null; },
     status: function () {
@@ -32,7 +32,7 @@ window.SDPCoreV54 = SDPC;
     },
     banner: function () {
       var st = this.status(), el = document.getElementById('syncBanner');
-      var text = 'v58 · Keys stay in this unlocked tab only · GitHub: ' + (st.token ? 'connected' : 'not connected') + ' · Saved clips: ' + st.clips;
+      var text = 'v59 · Keys stay in this unlocked tab only · GitHub: ' + (st.token ? 'connected' : 'not connected') + ' · Saved clips: ' + st.clips;
       if (el) { el.textContent = text; el.className = 'small ' + (st.verified ? 'good' : ''); }
       return text;
     },
@@ -752,7 +752,7 @@ window.SDPCoreV54 = SDPC;
             var self = this;
             this.clips(function(c2) {
                 var k, p = {
-                    version: 58, ver: 58, appVersion: "7.0.0", schema: 58, settingsRev: 58,
+                    version: 59, ver: 59, appVersion: "8.0.0", schema: 59, settingsRev: 59,
                     strictAdminOnly: true, voiceId: self.vid(), modelId: self.mid(),
                     generatedAt: new Date().toISOString(), clips: {}
                 };
@@ -833,7 +833,7 @@ window.SDPCoreV54 = SDPC;
             if (!window.Admin || !window.Admin.isUnlockedOnThisDevice || !window.Admin.isUnlockedOnThisDevice()) { cb({ ok:false, err:"locked" }); return false; }
             this.payload(function(p) {
                 if (!Cloud.ghToken || !Cloud.ghToken()) { cb({ ok:false, err:"Connect a fine-grained GitHub Contents token first." }); return; }
-                Cloud.commitFiles([{ p:"data/elevenlabs-audio.json", text:JSON.stringify(p,null,2)+"\n" }], "v58: permanent studio voice clips", cb);
+                Cloud.commitFiles([{ p:"data/elevenlabs-audio.json", text:JSON.stringify(p,null,2)+"\n" }], "v59: permanent studio voice clips", cb);
             });
             return true;
         },
@@ -1192,7 +1192,7 @@ window.SDPCoreV54 = SDPC;
             if (i >= files.length) { cb({ ok: !bad.length, committed: files.length - bad.length, err: bad.join(" ") }); return; }
             var f = files[i], url = self.ghPath(f.p);
             self.ghApi(url, "GET", null, tok, function(r) {
-                var body = { message: msg || "v58: publish from the professor studio (GitHub only)", content: self.b64utf8(f.text), branch: "main" };
+                var body = { message: msg || "v59: publish from the professor studio (GitHub only)", content: self.b64utf8(f.text), branch: "main" };
                 if (r && r.ok && r.res && r.res.content) body.sha = r.res.content.sha;
                 self.ghApi(url, "PUT", body, tok, function(w) {
                     if (!w || !w.ok) bad.push(f.p + ": " + (w && w.err || "failed"));
@@ -1261,7 +1261,7 @@ window.SDPCoreV54 = SDPC;
                 p: "data/elevenlabs-audio.json",
                 text: JSON.stringify(p, null, 2) + "\n"
             });
-            Cloud.commitFiles(f, "v58: publish words + committed voice clips (GitHub only)", cb);
+            Cloud.commitFiles(f, "v59: publish words + committed voice clips (GitHub only)", cb);
         });
     };
     try {
@@ -2109,10 +2109,10 @@ window.SDPCoreV54 = SDPC;
   window.GitHubSync = GH;
   window.StudioSync = {
     version: 58,
-    keyBody: function () { return JSON.stringify({ ver: 58, appVersion: '7.0.0' }); },
+    keyBody: function () { return JSON.stringify({ ver: 59, appVersion: '8.0.0' }); },
     wordsBodies: function () { return []; },
     clipDoc: function () {
-      var V = window.ElevenVault, out = { ver: 58, appVersion: '7.0.0', strictAdminOnly: true, clips: {} }, k;
+      var V = window.ElevenVault, out = { ver: 59, appVersion: '8.0.0', strictAdminOnly: true, clips: {} }, k;
       if (V) for (k in V.sharedMap) if (Object.prototype.hasOwnProperty.call(V.sharedMap, k)) out.clips[k] = { audio: V.sharedMap[k], text: V.metaMap[k] && V.metaMap[k].text || '', voiceId: V.vid(), modelId: V.mid() };
       return out;
     },
