@@ -1,5 +1,5 @@
 @charset "UTF-8";
-/* Smart Dictation Player — sdp-ui.css (v0.0.1.a / schema 1)
+/* Smart Dictation Player — sdp-ui.css (v0.0.1.c / schema 3)
  * contract: docs/UI_COMPONENT_GUIDE.md §Design tokens
  * Zinc + Sky flat matte. No glass, no blur, no backdrop-filter, no runtime
  * injection: this file is the single stylesheet of the app. */
@@ -31,6 +31,9 @@
   --bg-sunken: #0C0C0F;
   --border: #27272A;
   --border-strong: #3F3F46;
+  /* D-UI7: .credit-foot and .empty-state referenced --stroke, which was never
+     defined, so those rules silently lost their borders. */
+  --stroke: var(--border);
   --text: #FAFAFA;
   --text-muted: #A1A1AA;
   --accent: #38BDF8;
@@ -58,6 +61,7 @@ body[data-theme='light'] {
   --bg-sunken: #FAFAFA;
   --border: #E4E4E7;
   --border-strong: #D4D4D8;
+  --stroke: var(--border);
   --text: #09090B;
   --text-muted: #52525B;
   --accent: #0284C7;
@@ -67,6 +71,30 @@ body[data-theme='light'] {
   --danger: #DC2626;
   color-scheme: light;
 }
+
+/* D-UI3: Smart Board high-contrast theme. 18px base type, pure black stage,
+ * white text and a single sky accent — legible from the back row of a
+ * projector-lit classroom, and still flat matte (no blur, no glass). */
+html[data-theme='board'],
+body[data-theme='board'] {
+  --bg-app: #000000;
+  --bg-card: #09090D;
+  --bg-elev: #14141C;
+  --bg-sunken: #000000;
+  --border: #52525B;
+  --border-strong: #71717A;
+  --stroke: #52525B;
+  --text: #FFFFFF;
+  --text-muted: #E4E4E7;
+  --accent: #38BDF8;
+  --accent-ink: #000000;
+  --ok: #34D399;
+  --warn: #FBBF24;
+  --danger: #F87171;
+  font-size: 18px;
+  color-scheme: dark;
+}
+html[data-theme='board'] body, body[data-theme='board'] { font-size: 18px; }
 
 /* ── Reset & base ───────────────────────────────────────────────────────── */
 *,
@@ -443,7 +471,9 @@ select.input { cursor: pointer; }
   width: 45%;
   height: 100%;
   background: linear-gradient(100deg, rgba(56, 189, 248, 0) 0%, rgba(56, 189, 248, 0.42) 50%, rgba(56, 189, 248, 0) 100%);
-  animation: sdp-shimmer 3.4s ease-in-out infinite;
+  /* D-UI8: 3 iterations only — an infinite gradient violated the flat-matte
+     60fps budget and kept the compositor awake on every idle screen. */
+  animation: sdp-shimmer 3.4s ease-in-out 3;
 }
 @keyframes sdp-shimmer {
   0% { left: -60%; }
@@ -701,6 +731,55 @@ html[lang='si'] .hint-chip-out { font-family: var(--font-si); }
 .studio-preview-table th { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .studio-card textarea#studioEnvelope { min-height: 84px; }
 
+/* ══ v0.0.1.c Studio: 56px Touch PIN Pad, key helpers, quota card ══════ */
+/* D-L2 — every key is a real 56px tap target (WCAG 2.5.5 / classroom thumbs). */
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0 4px;
+  max-width: 340px;
+}
+.pin-key {
+  min-height: 56px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.pin-key:hover, .pin-key:focus-visible { border-color: var(--accent); }
+.pin-key:active { background: var(--bg-card); }
+.pin-key-soft { font-size: 13px; color: var(--text-muted); }
+.pin-key-primary { font-size: 13.5px; background: var(--accent); border-color: var(--accent); color: #09090B; }
+.pin-dots { display: flex; gap: 6px; align-items: center; min-height: 18px; margin: 6px 0; }
+.pin-dots > span {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  display: inline-block;
+}
+.pin-dots > span.on { background: var(--accent); border-color: var(--accent); }
+.pin-row { display: flex; gap: 8px; align-items: center; }
+.pin-row .input { flex: 1 1 auto; min-width: 0; }
+/* D-L3/D-L4 — key inputs with Show / Paste / Test affordances. */
+.key-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.key-row .input { flex: 1 1 180px; min-width: 0; }
+.key-row .btn { flex: 0 0 auto; }
+.studio-keys, .studio-quota, .studio-record {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.studio-h4 { font-size: 13px; font-weight: 700; color: var(--text-muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+.studio-quota .checkline { margin: 8px 0; }
+.rec-preview { width: 100%; max-width: 420px; margin-top: 8px; }
+
 /* ── Guide modal ───────────────────────────────────────────────────────── */
 .modal {
   position: fixed;
@@ -732,8 +811,41 @@ html[lang='si'] .hint-chip-out { font-family: var(--font-si); }
   padding: 10px 12px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border);
   border-radius: var(--radius-sm);
+}
+/* D-G3: the step being spoken right now is unmistakable. Flat matte only —
+   a left accent bar and a surface tint, no filters, no shadows, 60fps safe. */
+.guide-step { transition: background-color 0.18s ease, border-color 0.18s ease; }
+.guide-step.guide-active {
+  border-left: 3px solid var(--accent);
+  background: var(--bg-elev);
+  border-color: var(--accent);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.guide-step.guide-active h3 { color: var(--accent); }
+/* D-G2: the autoplay-unlock banner. Pulses only while it is visible. */
+.guide-tap-banner {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #09090B;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  cursor: pointer;
+  animation: sdp-tap-pulse 1.8s ease-in-out 3;
+}
+.guide-tap-banner.hidden, .guide-tap-banner[hidden] { display: none !important; }
+@keyframes sdp-tap-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
 .guide-steps h3 { font-size: 14.5px; margin-bottom: 3px; }
 .guide-steps p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
@@ -767,3 +879,173 @@ html[lang='si'] .guide-steps p { font-family: var(--font-si); }
 
 /* Footer spacing keeps the last card clear of the fixed bars. */
 #screen-settings { padding-bottom: 6px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * v0.0.1.c — Smart Board Classroom Bar, journey card, sync badge
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* D-UI9: .sync-badge and .quick-jumper had no styles of their own at all. */
+.sync-badge {
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  min-height: 28px;
+  cursor: pointer;
+}
+.sync-badge[data-sync-state='synced'] { color: var(--ok); border-color: var(--ok); }
+.sync-badge[data-sync-state='offline'] { color: var(--warn); border-color: var(--warn); }
+.sync-badge[data-sync-state='update'] { color: var(--accent); border-color: var(--accent); }
+.sync-badge[data-sync-state='error'] { color: var(--danger); border-color: var(--danger); }
+.quick-jumper { display: flex; align-items: center; gap: 6px; }
+.quick-jumper .input { min-height: 30px; padding: 2px 8px; font-size: 12.5px; max-width: 92px; }
+
+/* D-UI1 / D-UI6: the 390px student phone must never clip the header. */
+#brandName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+@media (max-width: 480px) {
+  #appHeader { padding: 0 6px; gap: 4px; }
+  #sdpBrand { gap: 3px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  /* The swan is decorative; on a 390px phone the wordmark wins. */
+  #sdpBrand .swan { display: none; }
+  #brandName { font-size: 12.5px; flex: 1 1 auto; min-width: 0; max-width: none; }
+  .b1badge { display: none; }
+  /* The version is still shown in Settings -> About and on /data; on a 390px
+     phone the wordmark takes that space instead (D-UI1). */
+  #sdpVerPill { display: none; }
+  /* D-UI6: the badge collapses to a short, unambiguous label. */
+  .sync-badge {
+    max-width: 64px;
+    font-size: 9.5px;
+    padding: 2px 5px;
+    min-height: 22px;
+    letter-spacing: 0;
+  }
+  #btnStudioQuick { font-size: 13px; padding: 0 4px; min-width: 30px; }
+  .header-actions { gap: 2px; flex: 0 0 auto; }
+  .header-actions .hbtn { min-width: 34px; padding: 0 5px; font-size: 11px; }
+  .header-actions .hbtn-icon { min-width: 32px; }
+}
+/* Very narrow phones (320-400px): the badge keeps only its state word so the
+   wordmark is never truncated. */
+@media (max-width: 400px) {
+  #appHeader { padding: 0 4px; gap: 3px; }
+  #sdpBrand { gap: 2px; }
+  .sync-badge { max-width: 36px; padding: 2px 4px; min-width: 30px; }
+  #btnStudioQuick { min-width: 26px; padding: 0 3px; }
+  .header-actions { gap: 1px; }
+  .header-actions .hbtn { min-width: 30px; padding: 0 3px; font-size: 10px; }
+  .header-actions .hbtn-icon { min-width: 28px; }
+}
+/* Tablets (481-900px): room for a two-line-safe badge, not the whole sentence. */
+@media (min-width: 481px) and (max-width: 900px) {
+  .sync-badge { max-width: 132px; }
+}
+
+/* ── Home: 1-2-3 student journey + session readiness ─────────────────── */
+.journey { margin-bottom: var(--gap); }
+.ready-badge {
+  display: inline-block;
+  margin: 2px 0 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ok);
+  color: var(--ok);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.ready-badge[data-ready='false'] { border-color: var(--warn); color: var(--warn); }
+.journey-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.journey-list li { line-height: 1.45; }
+
+/* ── D-UI4/D-UI5/R10: Smart Board Classroom Bar ──────────────────────── */
+/* Hidden by default. It appears on a projector-sized screen (>= 1024px) or
+   whenever the board theme is explicitly on, and only while a session exists. */
+.board-class-bar {
+  display: none;
+  gap: 10px;
+  margin-bottom: var(--gap);
+  border: 1px solid var(--border);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.board-class-bar.is-active { display: flex; }
+.board-transport { display: flex; gap: 8px; flex-wrap: wrap; }
+.board-btn {
+  min-height: 64px;
+  min-width: 96px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+.board-jumper {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  flex: 1 1 320px;
+  padding-bottom: 2px;
+}
+.board-chip {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.board-chip[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.board-word-row { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; }
+.board-word {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  min-width: 120px;
+}
+@media (min-width: 1024px) {
+  .board-class-bar.is-active { display: flex; }
+  .board-word { font-size: 26px; }
+}
+@media (min-width: 1440px) {
+  .board-class-bar.is-active { display: flex; }
+  #beatSeconds { font-size: 48px; line-height: 1.05; }
+  .board-word { font-size: 30px; }
+  .board-btn { min-height: 68px; }
+}
+html[data-theme='board'] .board-class-bar.is-active { display: flex; }
+html[data-theme='board'] #beatSeconds { font-size: 48px; }
+html[data-theme='board'] .board-word { font-size: 30px; }
+
+/* Sinhala credit line under the English one (R1: both languages, always). */
+.credit-line-si {
+  font-family: var(--font-si);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

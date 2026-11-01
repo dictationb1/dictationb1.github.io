@@ -6,6 +6,31 @@ and the gate order. Nothing else has to be explained.
 
 ---
 
+## v0.0.1.c — 2026-11-01 — the twelve-gate release
+
+Prompts written against v0.0.1.b asked for **eight** runtime gates and a
+48,000 B `sdp-data-sync.js`. Both numbers are wrong now. Copy these lines into
+any new upgrade prompt instead:
+
+- The suite is **twelve gates, G1–G12**; `tests/check.cjs` (G1) fails if any of
+  `voice-guide.cjs`, `vault-sync.cjs` or `studio-safety.cjs` is missing.
+- Budgets: `index.html` 35,000 · `sdp-ui.css` 60,000 · `sdp-data-sync.js` 65,000 ·
+  `sdp-audio-speech.js` 48,000 · `sdp-dictation-engine.js` 58,000 ·
+  `sdp-ui-views.js` 110,000 · `studio.js` 85,000 · `data-meter.js` 22,000 ·
+  `data.html` = `data/index.html` 60,000 · `sw.js` 12,000 · `docs/*.md` 32,000
+  (this template 14,000).
+- **Never** call `/v1/text-to-speech` from a gate, test, script or probe. The only
+  live TTS is a human click on `#btnGenClips` / `#btnTestOneWord` in
+  `data/studio.js`; G12 fails the release if a test file even mentions the path.
+- `data/elevenlabs-audio.json` is **app-written** (D-UI11): budget it, never
+  hash-freeze it.
+- Credit lines are verbatim in EN *and* SI on Home, About and `/data`:
+  `CREDITS GOES TO Hansana` ·
+  `Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)` ·
+  `නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini`.
+
+---
+
 ## The template
 
 ```

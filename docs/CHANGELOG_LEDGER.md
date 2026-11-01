@@ -1,11 +1,64 @@
 # CHANGELOG_LEDGER — Smart Dictation Player
 
 Newest release first. Every row is a fact verified by a gate, not a promise.
-When you ship `0.0.1.b`, copy the block, rename it, and fill in the real numbers
-from `node tests/check.cjs` and the eight runtime gates.
+When you ship `0.0.1.d`, copy the block, rename it, and fill in the real numbers
+from the twelve gates.
 
 ---
 
+## v0.0.1.c — 2026-11-01 — Voice, Vault, Studio & Human-Friendly UI
+
+**Release type:** defect-fix + priority-workstream release over v0.0.1.b (no classroom data migration; `sdp.progress` is never overwritten).
+**Audience:** CCBE Galle Branch — B1 English Class. Persona A: Android 360×640–390×844 on unstable 3G/offline. Persona B: Smart Board 1280×720 / 1920×1080, weak OPS box, no keyboard.
+**Attribution:** Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) · නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini.
+
+### What this release is
+
+Forty-two verified defects (D-V1–D-V6, D-G1–D-G5, D-S1–D-S12, D-C1–D-C7, D-L1–D-L9, D-UI1–D-UI12, D-E1–D-E5, D-M1–D-M4) closed across five priority workstreams. The headline fixes:
+
+1. **P1 — the voice works at all.** `pickVoice` was referenced but never defined, so the first utterance threw `ReferenceError` and every spoken word, the whole guide and the voice test died silently. It now exists, caches one British Female Professor (en-GB, rate 0.92, pitch 1.03) and scores every male name (`david|mark|george|daniel|fred|james|richard|oliver|thomas|male|man|guy`) at −100 so a board laptop can never switch the class to a male voice between lessons. Guide 2.0 auto-opens once per release, speaks step 1 immediately, and a 600 ms watchdog reveals `#guideTapBanner` when the browser blocks un-gestured audio; the tap primes `speechSynthesis.resume()` plus the shared `<audio>` element and narrates 1→4.
+2. **P2 — the vault survives and syncs in about a second.** `SDP.Sync.publishFilesSequential` commits one file at a time, re-reading a fresh SHA before each PUT, always publishing `version.json` last; `fetchRawGitHubJson` reads the public Contents API so a second device never waits out the Pages CDN; the GAS relay body carries `{action, app, ver}` and no PIN.
+3. **P3 — credit-safe audio.** The Quota Inspector is a zero-character `GET /v1/user/subscription`; the run is preflighted at `30 words = 241 chars · 4 guide steps = 731 chars · total 972 chars`; only missing clips are generated (`_guide_1.._guide_4` are reusable keys); a 1-word test button exists for cheap dry runs. No gate, test or script ever calls `/v1/text-to-speech`.
+4. **P4 — the studio cannot be misused.** A real 56 px twelve-key `#pinPad` (1–9, Clear, 0, Unlock) with ⌫ outside the pad, Show/Hide and Paste helpers on the key field, live `ghp_`/`github_pat_` test buttons, and a per-clip Commit button that writes to the permanent voice vault.
+5. **P5 — a student can see what to do.** Home carries a 1-2-3 journey card and a `Session 8 ready · 30 words` badge; the Smart Board Classroom Bar appears at ≥1024 px with 1..N chips, 64 px transport controls and a spoiler-safe word toggle that defaults to `••••••`; `data-theme="board"` is a real token set (pure black, 18 px base type, 48 px beat clock); and the 390 px header clips nothing at all (verified at 320/360/390/414/480/768/1024/1440).
+
+### Preserved, byte for byte (Appendix A lock)
+
+| File | Bytes | SHA-256 (first 12) |
+| --- | --- | --- |
+| `data/session.json` | 46,403 | `e0e86c807fc6` |
+| `data/gas-source.txt` | 13,764 | `591b9b086f6d` |
+| `assets/fonts/NotoSansSinhala-Regular.woff2` | 48,520 | `23f1503e1e75` |
+| `assets/fonts/NotoSansSinhala-Bold.woff2` | 48,748 | `bf59c1487b0a` |
+
+`data/elevenlabs-audio.json` left the frozen table in this release: the studio now writes it on every publish, so it is budgeted at ≤ 2,500,000 B and its release header is asserted instead of being hash-frozen (D-UI11). It still contains zero rendered clips in the repository, so publishing costs nothing until a lecturer presses a generate button.
+
+### Version bump set
+
+`index.html` `TARGET='0.0.1.c'` · `#sdpVerPill` · `#aboutVersion` · meta description · `data/sdp-data-sync.js` `APP_VERSION` / `SDP.version` / `SDP.ver=3` · `sw.js` `SW_VERSION='sdp-v0.0.1.c'` / `SHELL_CACHE='sdp-v0.0.1.c-shell'` · `data/version.json` `ver:3, schema:3, settingsRev:3, syncRev:1762000000002` · `data/config.json` and `data/elevenlabs-audio.json` headers · `manifest.webmanifest` description, `start_url:"./?v=0.0.1.c"` and both shortcuts. `data/studio.js` reads `SDP.version` and never hardcodes a release literal (G1 asserts that over comment-stripped source).
+
+### Gate results
+
+| Gate | Result |
+| --- | --- |
+| G1 `check.cjs` | 76 PASS / 0 FAIL |
+| G2 `upgrade.test.cjs` | 10 PASS / 0 FAIL |
+| G3 `phase1.cjs` | 61 PASS / 0 FAIL |
+| G4 `server.cjs` | 0 FAIL |
+| G5 `browser.cjs` | 44 PASS / 0 FAIL |
+| G6 `upgrade-browser.cjs` | 15 PASS / 0 FAIL |
+| G7 `e2e.cjs` | 48 PASS / 0 FAIL |
+| G8 `live-lab.cjs` | 26 PASS / 0 FAIL |
+| G9 `audit-v42.cjs` | 47 PASS / 0 FAIL |
+| G10 `voice-guide.cjs` | 21 PASS / 0 FAIL |
+| G11 `vault-sync.cjs` | 28 PASS / 0 FAIL |
+| G12 `studio-safety.cjs` | 33 PASS / 0 FAIL |
+
+### Byte budgets actually used
+
+`index.html` 28,1xx / 35,000 · `sdp-ui.css` 36,6xx / 60,000 · `sdp-data-sync.js` 54,983 / 65,000 · `sdp-audio-speech.js` 23,6xx / 48,000 · `sdp-dictation-engine.js` 33,759 / 58,000 · `sdp-ui-views.js` 91,7xx / 110,000 · `studio.js` 56,5xx / 85,000 · `data-meter.js` 21,740 / 22,000 · `data.html` = `data/index.html` 27,5xx / 60,000 · `sw.js` 7,3xx / 12,000.
+
+---
 ## v0.0.1.b — 2026-11-01 — Defect Fixes & Classroom Priorities
 
 **Release type:** defect-fix release over v0.0.1.a (no classroom data migration).

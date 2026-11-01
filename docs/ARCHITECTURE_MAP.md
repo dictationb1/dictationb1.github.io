@@ -1,4 +1,4 @@
-# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.b
+# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.c
 
 Audience: **CCBE Galle Branch — B1 English Class, Sri Lanka**
 Lecturer in Charge: **Ms. Sumodya Sewmini** · Creator: **Hansana** · Concept: **Ayya01 (Lesandu)**
@@ -17,26 +17,28 @@ a change needs a new file, it needs a new row in §H1 and a new budget in
 | `assets/css/sdp-ui.css` | ≤ 60,000 B | The single stylesheet (Zinc + Sky flat matte). No runtime CSS injection, ever |
 | `assets/fonts/NotoSansSinhala-Regular.woff2` | exactly 48,520 B | **Preserved read-only**, SHA-256 locked |
 | `assets/fonts/NotoSansSinhala-Bold.woff2` | exactly 48,748 B | **Preserved read-only**, SHA-256 locked |
-| `data/sdp-data-sync.js` | ≤ 48,000 B | `SDP.Data` (5 keys), `SDP.Sync` (fetch/reconcile/publish/SW), `SDP.Sync.Vault` (`SDP_ENC_V2`) |
-| `data/sdp-audio-speech.js` | ≤ 40,000 B | `SDP.Speech`: `say()` normaliser, 4-tier `playWord()`, shared `<audio>` |
-| `data/sdp-dictation-engine.js` | ≤ 48,000 B | `SDP.Engine`: beat machine, ring/bar timer, Paper/Typing, hints, 30-row self-check |
-| `data/sdp-ui-views.js` | ≤ 90,000 B | `SDP.Views`: `STRINGS_EN`/`STRINGS_SI`, router, Home, Guide, Words, Practice, Settings, toast |
-| `data/studio.js` | ≤ 60,000 B | `SDP.Studio`: PIN vault, session editor, recorder, ElevenLabs, publish |
+| `data/sdp-data-sync.js` | ≤ 65,000 B | `SDP.Data` (5 keys), `SDP.Sync` (fetch/reconcile/publish/SW), `SDP.Sync.Vault` (`SDP_ENC_V2`) |
+| `data/sdp-audio-speech.js` | ≤ 48,000 B | `SDP.Speech`: `say()` normaliser, 4-tier `playWord()`, shared `<audio>` |
+| `data/sdp-dictation-engine.js` | ≤ 58,000 B | `SDP.Engine`: beat machine, ring/bar timer, Paper/Typing, hints, 30-row self-check |
+| `data/sdp-ui-views.js` | ≤ 110,000 B | `SDP.Views`: `STRINGS_EN`/`STRINGS_SI`, router, Home, Guide, Words, Practice, Settings, toast |
+| `data/studio.js` | ≤ 85,000 B | `SDP.Studio`: PIN vault, session editor, recorder, ElevenLabs, publish |
 | `data/data-meter.js` | ≤ 22,000 B | Preserved metering engine, `METER_VERSION = '0.0.1.a'`, `SCHEMA = 1` |
 | `data/session.json` | exactly 46,403 B | **Preserved read-only**: 30 Session 8 words + 30 archived Session 7 words + plan |
 | `data/config.json` | ≤ 36,000 B | Preserved backend payload; only `ver/appVersion/version/schema/settingsRev` are ours |
 | `data/version.json` | ≤ 2,000 B | Slim pointer schema (H3) |
 | `data/gas-source.txt` | exactly 13,764 B | **Preserved read-only**: Apps Script backend |
-| `data/elevenlabs-audio.json` | exactly 920 B | **Preserved read-only**: Alice voice pack manifest |
+| `data/elevenlabs-audio.json` | ≤ 2,500,000 B | **App-written** Alice voice pack (D-UI11); header asserted, clips travel with the repo |
 | `data.html` | ≤ 60,000 B | `/data` transparency route |
 | `data/index.html` | ≤ 60,000 B | Byte-identical twin of `data.html` |
-| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.b` service worker |
-| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.b` |
-| `docs/*.md` (5 files) | ≤ 20,000 B each (template ≤ 8,000 B) | This ledger |
+| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.c` service worker |
+| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.c` |
+| `docs/*.md` (5 files) | ≤ 32,000 B each (template ≤ 14,000 B) | This ledger |
 
 **Preserved files are never edited by hand.** `tests/check.cjs` compares their
 byte count *and* SHA-256; the hashes live in its `PRESERVED_SHA` table and in
-`docs/SYNC_AND_DATA_CONTRACT.md` Appendix A.
+`docs/SYNC_AND_DATA_CONTRACT.md` Appendix A. Since v0.0.1.c that table is four
+files, not five: `data/elevenlabs-audio.json` is written by the Lecturer Studio
+on every publish (D-UI11), so freezing it would have made publishing impossible.
 
 ---
 
@@ -245,7 +247,7 @@ open; because audio is cache-first, replaying a word costs zero data.
 
 ---
 
-## 12. Release gate map (v0.0.1.b)
+## 12. Release gate map (v0.0.1.c)
 
 | Gate | File | Runner | What it proves |
 | --- | --- | --- | --- |
@@ -254,10 +256,17 @@ open; because audio is cache-first, replaying a word costs zero data.
 | G3 | `tests/phase1.cjs` | jsdom | storage corruption, PIN lockout, guide, paper/typing runs |
 | G4 | `tests/server.cjs` | node | config/metadata + Apps Script loader |
 | G5 | `tests/browser.cjs` | Chromium | 54px header, one screen, focus law, ring colours, toast |
-| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.b, single reload, offline shell |
+| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.c, single reload, offline shell |
 | G7 | `tests/e2e.cjs` | Chromium | the full student journey + backup download |
 | G8 | `tests/live-lab.cjs` | Chromium | dead API, offline reload, hung relay, empty bank |
 | G9 | `tests/audit-v42.cjs` | node | retirement, H1 budgets, ES5, PWA pins, preserved hashes |
+| G10 | `tests/voice-guide.cjs` | jsdom | `pickVoice` exists, one en-GB professor, male names −100, Guide 2.0 step machine + tap banner |
+| G11 | `tests/vault-sync.cjs` | jsdom | `SDP_ENC_V2` round trip, sequential publish with `version.json` last, fresh SHA per PUT, no PIN in any body |
+| G12 | `tests/studio-safety.cjs` | jsdom | twelve-key `#pinPad`, zero-character quota read, 972-char cost preview, delta-only clips, no gate touches the billing endpoint |
+
+The suite is exactly these twelve gates; G1 asserts that every one of them is
+present, and G12 asserts that no gate or test file even mentions
+`/v1/text-to-speech` (W5 credit safety).
 
 Shared plumbing: `tests/static-server.cjs` (one server, `setOverride` for
 per-test payloads) and `tests/app-harness.cjs` (jsdom + `@sinonjs/fake-timers`
@@ -271,3 +280,10 @@ reimplement them; that is how the suite stays consistent.
 `startDictation()` toasts and stays on Home, and the Words tab hides the list
 behind `#dictEmpty`. This is what a student sees if they install the PWA while
 GitHub is unreachable and no cached payload exists.
+
+---
+
+**Credits — preserved verbatim, EN and SI.**
+`CREDITS GOES TO Hansana` ·
+Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
+නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini

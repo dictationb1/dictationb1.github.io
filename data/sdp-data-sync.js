@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.a)
+/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.c)
  * Strict ES5, dependency free, no build step.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R1, §R7, §R8, §R9
  * contract: docs/ARCHITECTURE_MAP.md §R6 two-layer sync */
@@ -6,15 +6,15 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.1.b';
+  SDP.version = '0.0.1.c';
   SDP.build = '2026-11-01';
-  SDP.ver = 2;
+  SDP.ver = 3;
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.1.b';
-  var SCHEMA = 2;
-  var SETTINGS_REV = 2;
+  var APP_VERSION = '0.0.1.c';
+  var SCHEMA = 3;
+  var SETTINGS_REV = 3;
   /* D1 guard: the in-session upgrade reload fires at most once per version. */
   var appVersionChanged = false;
   /* D5 guard: visibilitychange is registered at most once per module load. */
@@ -130,7 +130,11 @@
       s.rate = Math.min(1.2, Math.max(0.7, Number(s.rate) || 0.95));
       s.volume = Math.min(1, Math.max(0, isNaN(Number(s.volume)) ? 1 : Number(s.volume)));
       if (s.lang !== 'si') s.lang = 'en';
-      if (s.theme !== 'light') s.theme = 'dark';
+      /* D-UI3: 'board' is a real theme, not a typo for 'dark'. */
+      if (s.theme !== 'light' && s.theme !== 'board') s.theme = 'dark';
+      /* R7: which settings the student changed by hand. A remote settingsRev
+         bump may adopt config.defaults only for keys NOT listed here. */
+      if (!isObj(s.touchedKeys)) s.touchedKeys = {};
       return s;
     },
     saveSettings: function (patch) {
@@ -345,6 +349,23 @@
     return out;
   }
   var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  /* Base64 -> UTF-8 text. GitHub's Contents API returns file bodies as base64
+     of the raw bytes, so Sinhala words survive only with a real UTF-8 decode. */
+  function b64decode(text) {
+    var clean = str(text).replace(/[^A-Za-z0-9+/=]/g, '');
+    var bytes = [], i, c0, c1, c2, c3;
+    for (i = 0; i < clean.length; i += 4) {
+      c0 = B64.indexOf(clean.charAt(i));
+      c1 = B64.indexOf(clean.charAt(i + 1));
+      c2 = B64.indexOf(clean.charAt(i + 2));
+      c3 = B64.indexOf(clean.charAt(i + 3));
+      if (c0 < 0 || c1 < 0) break;
+      bytes.push(((c0 << 2) | (c1 >> 4)) & 0xff);
+      if (c2 >= 0 && clean.charAt(i + 2) !== '=') bytes.push(((c1 << 4) | (c2 >> 2)) & 0xff);
+      if (c3 >= 0 && clean.charAt(i + 3) !== '=') bytes.push(((c2 << 6) | c3) & 0xff);
+    }
+    return new global.Uint8Array(bytes);
+  }
   function b64encode(bytes) {
     var out = '', i = 0, b0, b1, b2;
     while (i < bytes.length) {
@@ -592,7 +613,30 @@
     return list;
   }
 
+  /* R7: a teacher settingsRev bump adopts config.defaults on a student device
+   * ONLY for the keys the student has not touched by hand. */
+  function adoptRemoteSettings(cfg) {
+    var defaults = isObj(cfg) && isObj(cfg.defaults) ? cfg.defaults : null;
+    if (!defaults) return false;
+    var current = Data.settings();
+    var touched = isObj(current.touchedKeys) ? current.touchedKeys : {};
+    var patch = {}, changed = false, k;
+    for (k in defaults) {
+      if (!Object.prototype.hasOwnProperty.call(defaults, k)) continue;
+      if (k === 'touchedKeys' || k === 'cachedVault' || k === 'cachedVaultSyncRev') continue;
+      if (touched[k]) continue;
+      if (current[k] === defaults[k]) continue;
+      patch[k] = defaults[k];
+      changed = true;
+    }
+    if (!changed) return false;
+    Data.saveSettings(patch);
+    emit('sdp:teacher-updated', { settingsRev: Number(cfg.settingsRev || 0), applied: Object.keys(patch) });
+    return true;
+  }
+
   function applyPayloads(version, config, session) {
+    var prevSettingsRev = Number((state.version && state.version.settingsRev) || state.settingsRev || 0);
     state.version = version || state.version;
     state.config = config || state.config;
     state.session = session || state.session;
@@ -608,6 +652,9 @@
     state.classInfo = str((ses.session && ses.session.classInfo) || cfg.classInfo || '');
     state.announcement = ses.announcement || null;
     state.pastSessions = Array.isArray(ses.pastSessions) ? ses.pastSessions : [];
+    state.settingsRev = Number(ver.settingsRev || 0);
+    state.syncRev = Number(ver.syncRev || 0);
+    if (state.settingsRev > prevSettingsRev && prevSettingsRev > 0) adoptRemoteSettings(cfg);
     state.clips = {};
     var clipMap = (ses && ses.clips) || (list && list.clips) || null;
     if (Array.isArray(clipMap)) {
@@ -680,12 +727,14 @@
         finishBoot(new Error('no_fetch'));
         return;
       }
-      var pending = 3, results = {}, failed = 0;
+      var pending = 3, results = {}, failed = 0, settled = false;
       function settle(slot, err, data) {
+        if (settled) return; /* D-S11: a late fetch can never settle twice */
         if (err) failed += 1;
         results[slot] = data;
         pending -= 1;
         if (pending > 0) return;
+        settled = true;
         applyPayloads(results.version, results.config, results.session);
         state.source = failed === 3 ? 'offline' : 'network';
         finishBoot(state.ready ? null : new Error('no_words'), state);
@@ -699,10 +748,29 @@
     checkForUpdates: function (cb) {
       cb = cb || noop;
       if (typeof global.fetch !== 'function') { cb(null, { ok: false, error: 'no_fetch', changed: false }); return; }
-      fetchJSON('./data/version.json', function (err, remote) {
+      /* D-S6: read BOTH sources, then let the newest syncRev win. The CDN copy
+         can be up to two minutes stale; api.github.com is live immediately. */
+      var pending = 2, cdnVersion = null, cdnErr = null, rawVersion = null, rawFailed = false, settled = false;
+      function joined() {
+        if (settled) return;
+        pending -= 1;
+        if (pending > 0) return;
+        settled = true;
+        proceed();
+      }
+      fetchJSON('./data/version.json', function (err, data) { cdnErr = err; cdnVersion = err ? null : data; joined(); });
+      Sync.fetchRawGitHubJson('data/version.json', function (err, data) {
+        if (err || !data) rawFailed = true; else rawVersion = data;
+        joined();
+      });
+      function proceed() {
+        var rawRev = Number((rawVersion && rawVersion.syncRev) || 0);
+        var cdnRev = Number((cdnVersion && cdnVersion.syncRev) || 0);
+        var useRaw = rawRev > cdnRev;
+        var remote = useRaw ? rawVersion : cdnVersion;
         var result = { updated: false, session: null, appVersion: null };
-        if (err || !remote) {
-          var code = err && String(err.message) === 'timeout' ? 'timeout' : (err && err.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
+        if (!remote) {
+          var code = cdnErr && String(cdnErr.message) === 'timeout' ? 'timeout' : (cdnErr && cdnErr.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
           cb(null, { ok: false, error: code, changed: false }); return;
         }
         var local = state.version || {};
@@ -711,35 +779,59 @@
         var newer = Number(remote.syncRev || 0) > Number(local.syncRev || 0);
         var appChanged = !!(remote.version && remote.version.appVersion && str(remote.version.appVersion) !== APP_VERSION);
         state.lastCheck = nowMs();
+        state.lastCheckSource = useRaw ? 'raw' : 'cdn';
         result.session = str(remote.session);
         result.appVersion = str(remote.appVersion);
         result.appVersionChanged = appChanged;
         if (!sessionChanged && !settingsChanged && !newer && !appChanged) {
-          cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion });
+          cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion, source: state.lastCheckSource });
           return;
         }
         if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== str(remote.version.appVersion)) {
           appVersionChanged = true;
           Sync.triggerVersionUpgrade(str(remote.version.appVersion));
         }
+        /* D-S7: an envelope published a second ago must not be missed because
+           the CDN still serves yesterday's config.json. */
         var needSession = sessionChanged || newer;
-        var needConfig = settingsChanged || !state.config;
-        var pending = (needSession ? 1 : 0) + (needConfig ? 1 : 0);
-        var got = { version: remote };
+        var needConfig = settingsChanged || newer || !state.config;
+        var waiting = (needSession ? 1 : 0) + (needConfig ? 1 : 0) + 1;
+        var got = { version: remote, session: null, config: null };
+        /* D-S7: always pull from the same source the winning version came from,
+           so a brand-new encVault is never mixed with a stale CDN session. */
+        function pull(path, assign) {
+          if (useRaw) {
+            Sync.fetchRawGitHubJson(path, function (err, data) {
+              if (!err && data) assign(data);
+              settle();
+            });
+            return;
+          }
+          fetchJSON('./' + path, function (err, data) {
+            if (!err && data) assign(data);
+            settle();
+          });
+        }
         function settle() {
-          pending -= 1;
-          if (pending > 0) return;
+          waiting -= 1;
+          if (waiting > 0) return;
           applyPayloads(got.version, got.config, got.session);
           notify('update', {
             session: state.sessionNo, sessionChanged: sessionChanged,
-            settingsChanged: settingsChanged, syncRev: remote.syncRev, appVersionChanged: appChanged
+            settingsChanged: settingsChanged, syncRev: remote.syncRev,
+            appVersionChanged: appChanged, source: state.lastCheckSource
           });
           /* Student progress is never touched here (G8). */
-          cb(null, { ok: true, error: null, changed: true, updated: true, session: state.sessionNo, sessionChanged: sessionChanged, settingsRev: remote.settingsRev, appVersionChanged: appChanged });
+          cb(null, {
+            ok: true, error: null, changed: true, updated: true, session: state.sessionNo,
+            sessionChanged: sessionChanged, settingsRev: remote.settingsRev,
+            appVersionChanged: appChanged, source: state.lastCheckSource
+          });
         }
-        if (needSession) fetchJSON('./data/session.json', function (e, d) { if (!e) got.session = d; settle(); });
-        if (needConfig) fetchJSON('./data/config.json', function (e, d) { if (!e) got.config = d; settle(); });
-      });
+        if (needSession) pull('data/session.json', function (d) { got.session = d; });
+        if (needConfig) pull('data/config.json', function (d) { got.config = d; });
+        settle();
+      }
     },
 
     /* D1: in-session version upgrade — honest badge, toast, cache purge,
@@ -877,8 +969,125 @@
 
     /* D6: the keys relay never carries the lecturer PIN in the JSON body.
        Body: { action: 'publish', app: 'sdp', ver } only. */
-    buildKeysRelayPayload: function (pin) {
-      return JSON.stringify({ action: 'login', pin: str(pin), app: 'sdp', ver: APP_VERSION });
+    /* ══ D-S5: strictly sequential Contents API publisher ═══════════════
+     * v0.0.1.b fired three PUTs with Promise.all. GitHub moves the branch ref
+     * on every commit, so the 2nd and 3rd PUT arrived with a stale blob sha and
+     * failed with HTTP 409 Conflict — which is why a lecturer's session (and
+     * sometimes the encrypted keys) silently never reached the repository.
+     * Here one file is committed at a time: fresh sha -> PUT -> await the
+     * commit response -> next file, with exactly one 409 retry, and
+     * data/version.json always LAST so no device ever sees a version stamp
+     * pointing at a session that has not landed yet. */
+    publishFilesSequential: function (files, token, onFileStatus, cb) {
+      onFileStatus = onFileStatus || noop;
+      cb = cb || noop;
+      var list = Array.isArray(files) ? files.slice() : [];
+      if (!token) { cb(new Error('no_token'), { ok: false, published: 0, failed: list.length }); return false; }
+      if (typeof global.fetch !== 'function') { cb(new Error('no_fetch'), { ok: false, published: 0, failed: list.length }); return false; }
+      /* Hard ordering law: version.json last, everything else in given order. */
+      var head = [], tail = [], i;
+      for (i = 0; i < list.length; i++) {
+        var item = list[i] || {};
+        if (str(item.path).indexOf('data/version.json') >= 0) tail.push(item);
+        else head.push(item);
+      }
+      var queue = head.concat(tail);
+      var at = 0, published = 0, failedList = [];
+      function finish() {
+        cb(failedList.length ? new Error('publish_partial') : null, {
+          ok: failedList.length === 0,
+          published: published,
+          failed: failedList.slice(),
+          order: queue.map(function (f) { return str(f.path); })
+        });
+      }
+      function step() {
+        if (at >= queue.length) { finish(); return; }
+        var file = queue[at];
+        at += 1;
+        if (!file || !file.path) { step(); return; }
+        putOne(file, false);
+      }
+      function putOne(file, retried) {
+        Sync.getFileSha(file.path, token, function (err, sha) {
+          var body = Sync.buildContentsCommitPayload(file.path, str(file.content), file.message, err ? '' : sha);
+          global.fetch(Sync.contentsUrl(file.path), {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer ' + str(token),
+              Accept: 'application/vnd.github+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          }).then(function (res) {
+            var status = res && typeof res.status === 'number' ? res.status : (res && res.ok ? 200 : 0);
+            /* One fresh-sha retry on a branch-ref race. */
+            if (status === 409 && !retried) { putOne(file, true); return null; }
+            return res && res.json ? res.json() : null;
+          }).then(function (data) {
+            if (data === null) return; /* the 409 retry owns the continuation */
+            if (data && data.content && data.content.sha) {
+              published += 1;
+              onFileStatus(file.path, true, null);
+            } else {
+              failedList.push(file.path);
+              onFileStatus(file.path, false, new Error('commit_failed'));
+            }
+            step();
+          }, function (e) {
+            failedList.push(file.path);
+            onFileStatus(file.path, false, e || new Error('commit_failed'));
+            step();
+          });
+        });
+      }
+      step();
+      return true;
+    },
+
+    /* ══ D-S6 / D-S7: read straight from api.github.com ═════════════════
+     * GitHub Pages rebuilds its CDN in 30-120 s. A lecturer who saves keys on
+     * Device A must not wait that long on Device B, so the public Contents API
+     * (no token required for a public repository) is read in parallel and the
+     * newest syncRev always wins. */
+    fetchRawGitHubJson: function (path, cb, token) {
+      cb = cb || noop;
+      if (typeof global.fetch !== 'function') { cb(new Error('no_fetch')); return false; }
+      var repo = Sync.repo();
+      var url = 'https://api.github.com/repos/' + repo.owner + '/' + repo.name + '/contents/' +
+        str(path).replace(/^\/+/, '') + '?ref=main&t=' + nowMs();
+      var headers = { Accept: 'application/vnd.github+json' };
+      if (token) headers.Authorization = 'Bearer ' + str(token);
+      var done = false;
+      function finish(err, data) {
+        if (done) return;
+        done = true;
+        cb(err, data);
+      }
+      try {
+        global.fetch(url, { cache: 'no-store', headers: headers })
+          .then(function (res) { return res && res.ok && res.json ? res.json() : null; })
+          .then(function (data) {
+            if (!data || !data.content) { finish(new Error('raw_unavailable')); return; }
+            var text = '';
+            try {
+              text = utf8Decode(b64decode(str(data.content)));
+            } catch (e) { text = ''; }
+            if (!text) { finish(new Error('raw_unavailable')); return; }
+            var parsed = null;
+            try { parsed = JSON.parse(text); } catch (e) { finish(new Error('raw_bad_json')); return; }
+            finish(null, parsed);
+          }, function () { finish(new Error('raw_failed')); });
+      } catch (e) { finish(new Error('raw_failed')); return false; }
+      global.setTimeout(function () { finish(new Error('raw_timeout')); }, 5000);
+      return true;
+    },
+
+    /* D-S8: the PIN is a local unlock secret and must never enter a JSON body
+       that leaves the device. The parameter is accepted and deliberately
+       ignored so no caller can smuggle it back in. */
+    buildKeysRelayPayload: function (action) {
+      return JSON.stringify({ action: str(action || 'status'), app: 'sdp', ver: APP_VERSION });
     },
     publishWordsChunked: function (words, limitBytes) {
       var cap = Number(limitBytes) || 39000;

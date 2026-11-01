@@ -1,7 +1,25 @@
-# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.b
+# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.c
 
 One stylesheet, flat matte, no glass. If a component is not documented here, it
 does not belong in the app.
+
+---
+
+## 0. What changed in v0.0.1.c
+
+Five new surfaces, all flat matte, all real DOM:
+
+| Surface | Id | Rules |
+| --- | --- | --- |
+| Home journey card | `.journey-card` | three numbered steps, `1-2-3`, never a wall of text; the readiness badge next to it reads `Session 8 ready · 30 words` |
+| Smart Board bar | `#boardClassBar` | `display:flex` only at ≥ 1024 px (or `data-theme="board"`); 1..N chips, 64 px transport (Play/Pause, Repeat, Next), word toggle defaults to `••••••` (R10 no-spoiler) |
+| Board theme | `html[data-theme="board"]` | pure black, `#52525B` strokes, 18 px base type, 48 px `#beatSeconds`, 60 fps (no `backdrop-filter` anywhere) |
+| Retry / paper labels | `#wordPosBadge.badge-retry`, `#paperModeNotice` | a retry run says `Retry · Word n of N` and the results table keeps `S<n> #<k>` (`data-orig`) instead of renumbering; paper mode states `Paper Mode: Tap any word you missed to mark ✗` above `.table-wrap` |
+| Studio PIN pad | `#pinPad` | exactly twelve 56 px keys (1-9, Clear, 0, Unlock); ⌫ is `#pinPadBack`, outside the pad |
+
+`--stroke` is defined as `var(--border)` in `:root`, `[data-theme="light"]` and
+`[data-theme="board"]`, so every stroke follows its theme. The `.credits-pill`
+shimmer runs at most three iterations.
 
 ---
 
@@ -209,7 +227,7 @@ same `.credits-pill` (`CREDITS GOES TO Hansana`) and `.credit-line` used by
 `#creditFoot` on Home. The ids are unique; the *content* must stay byte-equal:
 
 ```
-Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu
+Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)
 ```
 
 Never render this as a `position: fixed` badge over the cockpit — G7.2c/G7.2d
@@ -247,3 +265,10 @@ It exists so a budget Android on 2G never flashes five stacked screens before
 layout rules — every real rule lives in the single stylesheet. The `/data`
 transparency page is a standalone document and keeps its own inline sheet
 (G9.3e).
+
+---
+
+**Credits — preserved verbatim, EN and SI.**
+`CREDITS GOES TO Hansana` ·
+Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
+නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini
