@@ -814,6 +814,7 @@
     }).catch(function () { Learn._offlineBusy = false; });
   }, 'v58.downloadOfflinePack');
   Learn.syncOfflineRow = guard(function () {
+    if (W.SDP_NEXTGEN_V60) return;
     var fill = $('#v58OfflineFill');
     var text = $('#v58OfflineText');
     if (!fill || !text) return;
@@ -1011,6 +1012,7 @@
      Workspace rail (4a) + mastery (5a)
      ========================================================= */
   Learn.buildRail = guard(function () {
+    if (W.SDP_NEXTGEN_V60) return;
     var rail = $('#v58Rail');
     if (!rail || rail.getAttribute('data-v58-built')) return;
     rail.setAttribute('data-v58-built', '1');
@@ -1024,6 +1026,7 @@
       '<div class="glass card"><div class="spread"><h3>Audio queue</h3><span class="chip">British 🇬🇧</span></div><div id="v58RailQueue"><p class="tiny muted">Start a session to see the next words.</p></div></div>';
   }, 'v58.buildRail');
   Learn.syncRail = guard(function () {
+    if (W.SDP_NEXTGEN_V60) return;
     Learn.buildRail();
     var eng = Eng();
     var total = 30, done = 0, correct = 0, missed = 0;
@@ -1988,6 +1991,7 @@
     weak: ['Drill until they graduate', 'දියුණු වන තුරු පුහුණු වන්න']
   };
   V59.ensureBentoTiles = guard(function () {
+    if (W.SDP_NEXTGEN_V60) return;
     var tiles = $$('.v58-tile[data-v58-practice]'), i;
     for (i = 0; i < tiles.length; i++) {
       try {
@@ -2787,6 +2791,7 @@
   }, 'v59.downloadOfflinePack');
 
   Learn.syncOfflineRow = guard(function () {
+    if (W.SDP_NEXTGEN_V60) return;
     var fill = $('#v58OfflineFill');
     var text = $('#v58OfflineText');
     if (!fill || !text) return;
@@ -3340,7 +3345,7 @@ V59.ready = true;
     if (!box) {
       box = mk('div', null, 'sdpLegacyKeeper');
       box.hidden = true;
-      box.style.display = 'none';
+      box.style.setProperty('display', 'none', 'important');
       (D.body || D.documentElement).appendChild(box);
     }
     if (n && n.parentNode !== box) box.appendChild(n);
@@ -3568,6 +3573,9 @@ V59.ready = true;
     l.push('#sdpDesktopRail .sdp-rail-title{font-size:13.5px!important;font-weight:750!important;color:#FAFAFA!important}');
     l.push('#sdpDesktopRail .sdp-rail-sub{font-size:10px!important;color:#71717A!important;display:block!important}');
     l.push('#creditDockedDesktop{font-size:10.5px!important;color:#71717A!important;font-weight:650!important;padding:0 6px!important}');
+    l.push(".topbar,.topbar.glass{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;height:56px!important;min-height:56px!important;margin:0!important;padding:0 14px!important;background:#09090B!important;border:none!important;border-bottom:1px solid rgba(255,255,255,0.09)!important;border-radius:0!important;box-shadow:0 4px 16px rgba(0,0,0,0.6)!important;z-index:120!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;box-sizing:border-box!important}");
+    l.push("#creditDocked{position:static!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:center!important;width:fit-content!important;margin:18px auto 6px!important;pointer-events:none!important}");
+    l.push("#staticFooter,.v58-footer,.v58-session-prog,.v58-offline-card,#v58OfflineRow,#screen-home>*:not(#homeAnn):not(#homeResume):not(#sdpHomeGreeting):not(#homeHero):not(#sdpHomeStatsRow):not(#sdpQuickPracticeGrid):not(#creditDocked){display:none!important}");
     return l;
   }
 
@@ -3631,6 +3639,34 @@ V59.ready = true;
   }
 
   /* -------------------------------------------------------- global chrome */
+  function normalizeSpeech() {
+    var c = core(), targets = [c && c.Speech, W.Speech];
+    for (var i = 0; i < targets.length; i++) {
+      var sp = targets[i];
+      if (!sp || typeof sp.say !== 'function' || sp.__v60ArraySay) continue;
+      (function (speech, origSay) {
+        speech.say = function (items, opts, cb) {
+          if (typeof items === "string") items = [items];
+          return origSay.call(this, items, opts, cb);
+        };
+        speech.__v60ArraySay = true;
+      })(sp, sp.say);
+    }
+  }
+  function testVoice() {
+    normalizeSpeech();
+    var sp = core() && core().Speech;
+    if (sp && sp.say) sp.say(["This is Alice, your UK English dictation voice."], { rate: 0.9, volume: 1 }, function () {});
+  }
+  function retireLegacyText() {
+    var nodes = $$('div,footer', D.body);
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i], text = String(el.textContent || '').replace(/^\s+/, '');
+      if (/^(app|screen-home|screen-dict|screen-comm|screen-set|sdpLegacyKeeper)$/.test(el.id || '')) continue;
+      if (/^(Session progress|Smart Dictation Player v58)/.test(text)) el.style.setProperty('display', 'none', 'important');
+    }
+  }
+  normalizeSpeech();
   function mountChrome() {
     if (!D.body) return;
     var bar = $('.topbar');
@@ -3662,9 +3698,9 @@ V59.ready = true;
         actions = mk('div', null, 'sdpTopActions');
         var mic = mk('button', null, 'sdpTopVoiceBtn');
         mic.type = 'button';
-        mic.setAttribute('aria-label', 'Start dictation by voice');
+        mic.setAttribute('aria-label', 'Test Alice voice');
         mic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" width="17" height="17"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12h-2Z"/></svg>';
-        on(mic, 'click', function () { startDictation(); });
+        on(mic, 'click', testVoice);
         var lang = mk('button', null, 'sdpTopLangPill');
         lang.type = 'button';
         refreshLangPill(lang);
@@ -3679,8 +3715,11 @@ V59.ready = true;
         actions.appendChild(cog);
         bar.appendChild(actions);
       }
-      var legacyControls = $('.topbar .row.top-controls');
-      if (legacyControls) keep(legacyControls);
+      var oldChildren = Array.prototype.slice.call(bar.childNodes);
+      for (var ci = 0; ci < oldChildren.length; ci++) {
+        var child = oldChildren[ci];
+        if (child.id !== 'sdpBrandCluster' && child.id !== 'sdpTopActions') keep(child);
+      }
     }
 
     var tabbar = $('#tabbar');
@@ -3760,8 +3799,12 @@ V59.ready = true;
     if (!$('#creditDocked')) {
       var cd = mk('div', null, 'creditDocked', T('creditDock'));
       cd.setAttribute('aria-hidden', 'true');
-      D.body.appendChild(cd);
+      var creditHome = $('#screen-home');
+      if (creditHome) creditHome.appendChild(cd);
     }
+    var homeCredit = $('#creditDocked'), homeScreen = $('#screen-home');
+    if (homeCredit && homeScreen) homeScreen.appendChild(homeCredit);
+    retireLegacyText();
     if (!$('#creditPill')) {
       var cp = mk('div', null, 'creditPill', T('creditPill'));
       cp.setAttribute('aria-hidden', 'true');
@@ -4041,8 +4084,8 @@ V59.ready = true;
   }
 
   /* ---------------------------------------------------------------- boot */
-  function boot() {
-    if (!D.body) { V.retries = (V.retries || 0) + 1; if (V.retries < 200) W.setTimeout(boot, 60); return; }
+  function mountNextGenUI() {
+    if (!D.body) { V.retries = (V.retries || 0) + 1; if (V.retries < 200) W.setTimeout(mountNextGenUI, 60); return; }
     if (V.mounted) return;
     V.mounted = true;
     V.bootedAt = Date.now();
@@ -4056,10 +4099,13 @@ V59.ready = true;
     wrapPaint();
     try { renderNextGenHome(); } catch (e) {}
     try { wrapSettings(); wrapDict(); wrapCockpit(); } catch (e) {}
+    normalizeSpeech();
+    retireLegacyText();
+    document.body.setAttribute("data-v60-ready", "1");
     W.setTimeout(showLoadToast, 700);
     W.setTimeout(showCreditPill, 1400);
   }
-  function kick() { W.setTimeout(boot, 30); }
+  function kick() { W.setTimeout(mountNextGenUI, 30); }
   if (D.readyState === 'loading') on(D, 'DOMContentLoaded', kick);
   kick();
   /* safety: if SDPCore appears later, re-wrap once */
@@ -4159,7 +4205,7 @@ V59.ready = true;
     try {
       var sp = core() && core().Speech;
       if (sp && typeof sp.speak === 'function') { sp.speak(String(text), slow ? { rate: 0.72 } : undefined); return; }
-      if (sp && typeof sp.say === 'function') { sp.say(String(text), slow ? 0.72 : 1); return; }
+      if (sp && typeof sp.say === 'function') { sp.say([String(text)], { rate: slow ? 0.72 : 0.9, volume: 1 }, function () {}); return; }
       if (W.speechSynthesis && W.SpeechSynthesisUtterance) {
         var u = new W.SpeechSynthesisUtterance(String(text));
         u.rate = slow ? 0.72 : 1;
@@ -4308,9 +4354,11 @@ V59.ready = true;
     vleft.appendChild(mk('span', 'sdp-hint', null, 'en-GB \u00B7 eleven_flash_v2_5'));
     var testBtn = mk('button', 'sdp-btn primary', 'sdpTestVoice', T4('test'));
     testBtn.type = 'button';
-    on(testBtn, 'click', function () { say('This is Alice. Your dictation voice is ready.', false); });
+    var testWrap = mk('span', null, 'sdpBtnTestVoice');
+    testWrap.appendChild(testBtn);
+    on(testWrap, 'click', testVoice);
     vrow.appendChild(vleft);
-    vrow.appendChild(testBtn);
+    vrow.appendChild(testWrap);
     card2.appendChild(vrow);
     var volBox = mk('div');
     volBox.style.display = 'flex';
