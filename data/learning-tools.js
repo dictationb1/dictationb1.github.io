@@ -3569,6 +3569,7 @@ V59.ready = true;
     l.push('#sdpDesktopRail .sdp-rail-sub{font-size:10px!important;color:#71717A!important;display:block!important}');
     l.push('#creditDockedDesktop{font-size:10.5px!important;color:#71717A!important;font-weight:650!important;padding:0 6px!important}');
     l.push('/* ---- v60 / 9.0.0.4 live-video audit fixes ---- */\n.topbar,.topbar.glass{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;height:56px!important;min-height:56px!important;margin:0!important;padding:0 14px!important;background:#09090B!important;border:0!important;border-bottom:1px solid rgba(255,255,255,0.09)!important;border-radius:0!important;box-shadow:0 4px 16px rgba(0,0,0,0.6)!important;z-index:120!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;box-sizing:border-box!important;overflow:hidden!important}\n#sdpBrandCluster{display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;min-width:0!important;flex:1 1 auto!important;position:static!important;background:transparent!important;border:0!important;box-shadow:none!important}\n#sdpBrandText{display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;line-height:1.15!important;gap:1px!important;position:static!important}\n#brandName{position:static!important;display:block!important;font-size:14px!important;font-weight:750!important;color:#FAFAFA!important;letter-spacing:-0.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin:0!important;padding:0!important;background:none!important;border:0!important}\n#brandSub{position:static!important;display:block!important;font-size:10px!important;font-weight:600!important;color:#A1A1AA!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin:0!important;padding:0!important}\n#sdpVerPill{position:static!important;font-size:9.5px!important;font-weight:800!important;letter-spacing:.04em!important;color:#38BDF8!important;background:#0C2D3E!important;border-radius:6px!important;padding:1px 5px!important;margin-left:6px!important;display:inline-block!important;line-height:1.3!important;vertical-align:middle!important}\n#creditDocked{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:center!important;width:-moz-fit-content!important;width:fit-content!important;margin:18px auto 6px!important;pointer-events:none!important;z-index:1!important;font-size:10.5px!important;font-weight:650!important;color:#71717A!important;background:#121215!important;border:1px solid rgba(255,255,255,0.08)!important;border-radius:999px!important;padding:4px 12px!important}\n#staticFooter,.v58-footer,.v58-home-footer,.v58-session-prog,.v58-offline-card,.v58-bento{display:none!important;visibility:hidden!important}\n[data-v60-legacy="1"]{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}');
+    l.push('/* ---- v60 / 9.0.0.4 words + settings + practice ---- */\n#screen-dict:not(.hidden){display:block!important;opacity:1!important;visibility:visible!important}\n#screen-dict #dictList,#dictList{display:flex!important;flex-direction:column!important;gap:10px!important;min-height:200px!important;opacity:1!important;visibility:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}\n#dictList .sdp-word-card,#dictList .wordcard,#dictList .v59-dict-card{display:flex!important;flex-direction:column!important;opacity:1!important;visibility:visible!important;background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;padding:12px 14px!important;box-shadow:none!important;min-height:64px!important}\n#sdpWordFilterRow{display:flex!important;gap:6px!important;flex-wrap:wrap!important;margin:8px 0 10px!important}\n#sdpWordFilterRow button{min-height:32px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,0.12)!important;background:#18181B!important;color:#A1A1AA!important;font-size:11.5px!important;font-weight:700!important;padding:4px 12px!important}\n#sdpWordFilterRow button[aria-pressed="true"]{background:#38BDF8!important;border-color:#38BDF8!important;color:#062530!important}\n#screen-set > *:not(#sdpNextGenSettings){display:none!important;visibility:hidden!important}\n#pasteHelper,#sdpPasteHelper{display:none!important}\n#sdpAppearanceAccordion{display:block!important;width:100%!important;margin-top:12px!important;background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;padding:0!important;overflow:hidden!important}\n#sdpAppearanceAccordion > summary{cursor:pointer!important;padding:14px 16px!important;font-size:11px!important;font-weight:800!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#A1A1AA!important;list-style:none!important}\n#sdpAppearanceAccordion[open] > summary{border-bottom:1px solid rgba(255,255,255,0.08)!important;color:#FAFAFA!important}\n#sdpAppearanceAccordion > *:not(summary){padding:0 14px!important}\n#sdpAppearanceAccordion > *:not(summary):last-child{padding-bottom:14px!important}\n.v58-mastery-card,.v58-session-prog,.v58-footer,.v58-home-footer{display:none!important;visibility:hidden!important}\n#screen-comm .card,#screen-comm .glass,#screen-comm .wordcard,#screen-comm .v58-tile{background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}\n#screen-comm .chip,#screen-comm .sdp-btn{background:#18181B!important;border:1px solid rgba(255,255,255,0.12)!important;color:#A1A1AA!important;box-shadow:none!important;border-radius:999px!important}\n#screen-comm .chip.on,#screen-comm .chip[aria-pressed="true"],#screen-comm .sdp-btn.primary,#screen-comm [aria-pressed="true"]{background:#38BDF8!important;border-color:#38BDF8!important;color:#062530!important}');
     return l;
   }
 
@@ -4059,6 +4060,28 @@ V59.ready = true;
       if (id === 'sdpBrandCluster' || id === 'sdpTopActions') continue;
       keep(n);
     }
+    try {
+      bar.style.setProperty('position', 'fixed', 'important');
+      bar.style.setProperty('top', '0', 'important');
+      bar.style.setProperty('left', '0', 'important');
+      bar.style.setProperty('right', '0', 'important');
+      bar.style.setProperty('width', '100%', 'important');
+      bar.style.setProperty('max-width', 'none', 'important');
+      bar.style.setProperty('height', '56px', 'important');
+      bar.style.setProperty('margin', '0', 'important');
+      bar.style.setProperty('padding', '0 14px', 'important');
+      bar.style.setProperty('background', '#09090B', 'important');
+      bar.style.setProperty('background-color', '#09090B', 'important');
+      bar.style.setProperty('background-image', 'none', 'important');
+      bar.style.setProperty('border', '0', 'important');
+      bar.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.09)', 'important');
+      bar.style.setProperty('border-radius', '0', 'important');
+      bar.style.setProperty('box-shadow', '0 4px 16px rgba(0,0,0,0.6)', 'important');
+      bar.style.setProperty('backdrop-filter', 'none', 'important');
+      bar.style.setProperty('transform', 'none', 'important');
+      bar.style.setProperty('z-index', '120', 'important');
+      bar.style.setProperty('box-sizing', 'border-box', 'important');
+    } catch (eStyle) {}
     var cluster = $('#sdpBrandCluster');
     if (!cluster) return;
     var textbox = $('#sdpBrandText');
@@ -4134,11 +4157,94 @@ V59.ready = true;
     };
     sp.__v604Say = true;
   }
+  /* Bug 7: nothing but #sdpNextGenSettings may render in #screen-set. */
+  function v604Settings() {
+    var host = $('#screen-set');
+    if (!host) return;
+    var ng = $('#sdpNextGenSettings');
+    var acc = $('#sdpAppearanceAccordion');
+    if (!ng) return;
+    if (!acc) {
+      acc = mk('details', null, 'sdpAppearanceAccordion');
+      acc.appendChild(mk('summary', null, null, T4('p3')));
+      ng.appendChild(acc);
+    }
+    var kids = [], i, n, id;
+    for (i = 0; i < host.children.length; i++) kids.push(host.children[i]);
+    for (i = 0; i < kids.length; i++) {
+      n = kids[i];
+      if (!n || n === ng) continue;
+      id = String(n.id || '');
+      if (id === 'sdpAppearanceAccordion') continue;
+      if (acc && n.parentNode !== acc) acc.appendChild(n);
+      try { n.style.display = 'none'; } catch (e1) {}
+      n.setAttribute('data-v60-legacy', '1');
+    }
+  }
+  /* Bug 8: climb from a legacy seed to the whole legacy block, then hide it. */
+  function v604HideBlock(seed) {
+    if (!seed || seed.nodeType !== 1) return;
+    var n = seed, best = seed, p, t;
+    while (n && n.parentNode && n.parentNode.nodeType === 1) {
+      p = n.parentNode;
+      if (!p || p === D.body) break;
+      if (p.id === 'app' || p.id === 'screen-home' || p.id === 'screen-dict' || p.id === 'screen-comm' || p.id === 'screen-set') break;
+      if (/\bscreen\b/.test(String(p.className || ''))) break;
+      t = String(p.textContent || '').replace(/^\s+/, '');
+      if (!/^(Session progress|Smart Dictation Player v58)/.test(t)) break;
+      best = p;
+      n = p;
+    }
+    best.setAttribute('data-v60-legacy', '1');
+    try { best.style.display = 'none'; } catch (e2) {}
+  }
+  function v604LegacyBlocks() {
+    var roots = ['#screen-home', '#screen-dict', '#screen-comm', '#screen-set'];
+    var i, j, all, n, first, txt;
+    for (i = 0; i < roots.length; i++) {
+      var host = $(roots[i]);
+      if (!host || !host.querySelectorAll) continue;
+      all = host.querySelectorAll('*');
+      for (j = 0; j < all.length; j++) {
+        n = all[j];
+        if (n.getAttribute && n.getAttribute('data-v60-legacy') === '1') continue;
+        first = '';
+        for (var k = 0; k < n.childNodes.length; k++) {
+          if (n.childNodes[k].nodeType === 3) { first = String(n.childNodes[k].nodeValue || '').replace(/^\s+/, ''); break; }
+          if (n.childNodes[k].nodeType === 1) break;
+        }
+        if (!first) continue;
+        txt = first.slice(0, 32);
+        if (/^(Session progress|Smart Dictation Player v58)/.test(txt)) v604HideBlock(n);
+      }
+    }
+    var stat = $('#staticFooter');
+    if (stat) stat.setAttribute('data-v60-legacy', '1');
+  }
+  /* Bug 4: the Words tab must always render synchronously. */
+  function v604Words() {
+    var tab = $('#tab-dict');
+    if (tab && !tab.__v604Dict) {
+      on(tab, 'click', function () {
+        try { var u = UI(); if (u && u.setTab) u.setTab('dict'); } catch (e1) {}
+        var sd = $('#screen-dict');
+        if (sd) {
+          try { sd.className = String(sd.className || '').replace(/\bhidden\b/g, '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, ''); } catch (e2) {}
+          try { sd.style.display = 'block'; sd.style.opacity = '1'; sd.style.visibility = 'visible'; } catch (e3) {}
+        }
+        try { var s = Screens(); if (s && s.dict) s.dict(); } catch (e4) {}
+      });
+      tab.__v604Dict = true;
+    }
+  }
   function v604All() {
     try { v604Speech(); } catch (e1) {}
     try { v604SweepTopbar(); } catch (e2) {}
     try { v604Credit(); } catch (e3) {}
     try { v604LegacyText(); } catch (e4) {}
+    try { v604Settings(); } catch (e6) {}
+    try { v604LegacyBlocks(); } catch (e7) {}
+    try { v604Words(); } catch (e8) {}
     try { if (D.body) D.body.setAttribute('data-v60-ready', '1'); } catch (e5) {}
   }
   /* ---------------------------------------------------------------- boot */

@@ -1,5 +1,12 @@
 # v60 (9.0.0.4) — PROGRESS
 
+## P3 — WORDS / SETTINGS / PRACTICE (done)
+- Chromium probe (.work/v60-9004/probe.cjs) evidence after P2/P3: `#app` opacity 1, cloak in head, `.topbar` fixed at top with width == innerWidth and exactly 2 visible children, `#creditDocked` position static inside #screen-home, Words tab renders 30 cards all > 60px tall.
+- Added CSS guards for #screen-dict/#dictList/#sdpWordFilterRow/#screen-comm and `#screen-set > *:not(#sdpNextGenSettings){display:none}`.
+- Added `v604Settings()` (moves every #screen-set sibling into #sdpAppearanceAccordion and hides it), `v604LegacyBlocks()`/`v604HideBlock()` (climbs to the legacy block then hides it), `v604Words()` (tab-dict click forces screen + Screens.dict()).
+- Added inline !important paint for `.topbar` because the legacy `.glass` gradient rule outranks stylesheet rules.
+- Cheap check PASS.
+
 ## P2 — CHROME + AUDIO FIXES (done)
 - Bug 6 root cause found in learning-tools `say(text, slow)`: `sp.say(String(text), slow ? 0.72 : 1)` -> now `sp.say([String(text)], { rate: ... }, function(){})`.
 - Added `v604Speech()` wrapper: `if (typeof items === 'string') items = [items];` on SDPCore.Speech.say.
@@ -40,7 +47,7 @@
 - [x] P0 preflight and helpers
 - [x] P1 version 9.0.0.4 + pre-paint FOUC cloak (index 485175 B; all stamps 9.0.0.4 incl. data-meter/learning-tools/studio/sw; cloak injected after #sdpSwBoot with 900ms fallback)
 - [x] P2 Speech.say/topbar/creditDocked/legacy timers (learning-tools 254801 B; .topbar now exactly 2 children; #creditDocked static inside #screen-home; say() passes arrays; Speech.say string wrapper; data-v60-ready set)
-- [ ] P3 blank Words tab, Settings leaks, Practice styling
+- [x] P3 blank Words tab, Settings leaks, Practice styling (learning-tools 262741 B; 30 word cards render; #screen-set shows only #sdpNextGenSettings; #pasteHelper hidden; topbar painted with inline !important solid #09090B)
 - [ ] P4 dictation cockpit split-screen + scroll lock
 - [ ] P5 regression gates
 - [ ] P6 docs, PR, merge
