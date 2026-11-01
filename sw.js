@@ -1,12 +1,12 @@
-/*! Smart Dictation Player — service worker (v0.0.1.a)
+/*! Smart Dictation Player — service worker (v0.0.1.c)
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
  * Network-first for the shell (so a publish lands immediately), cache-first
  * for audio and fonts, and two preserved caches that are never purged:
  * 'sdp-youdao-v1' (dictionary audio) and 'sdp-audio-clips' (lecturer/Alice). */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.1.b';
-var SHELL_CACHE = 'sdp-v0.0.1.b-shell';
+var SW_VERSION = 'sdp-v0.0.1.c';
+var SHELL_CACHE = 'sdp-v0.0.1.c-shell';
 var PRESERVE_CACHES = ['sdp-youdao-v1', 'sdp-audio-clips'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';
@@ -60,7 +60,28 @@ function cacheFirst(request, cacheName) {
   });
 }
 
+/* D-M2: only a real navigation may fall back to the HTML shell. A JSON fetch
+   that lands on index.html makes JSON.parse() throw and the whole boot fail
+   with a syntax error, so JSON/data requests get cached JSON or an honest
+   HTTP 503 JSON body instead. */
+function offlineJson() {
+  return new Response('{"ok":false,"error":"offline"}', {
+    status: 503,
+    statusText: 'Offline',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' }
+  });
+}
+function isNavigable(request) {
+  return !!request && request.mode === 'navigate';
+}
+function isJsonRequest(request, url) {
+  return /\.json(\?|$)/i.test(url || '') || (request && request.headers &&
+    String(request.headers.get('Accept') || '').indexOf('application/json') >= 0);
+}
 function networkFirst(request) {
+  var url = request && request.url ? request.url : '';
+  var navigable = isNavigable(request);
+  var jsonish = isJsonRequest(request, url);
   return caches.open(SHELL_CACHE).then(function (cache) {
     return new Promise(function (resolve) {
       var settled = false;
@@ -68,7 +89,9 @@ function networkFirst(request) {
         if (settled) return;
         settled = true;
         cache.match(request).then(function (hit) {
-          resolve(hit || cache.match('./index.html').then(function (shell) { return shell; }));
+          if (hit) { resolve(hit); return; }
+          if (navigable) { resolve(cache.match('./index.html').then(function (shell) { return shell || offlineJson(); })); return; }
+          resolve(jsonish ? offlineJson() : new Response('Offline', { status: 503, statusText: 'Offline' }));
         });
       }, NETWORK_TIMEOUT);
       fetch(request).then(function (res) {
@@ -85,9 +108,13 @@ function networkFirst(request) {
         clearTimeout(timer);
         cache.match(request).then(function (hit) {
           if (hit) { resolve(hit); return; }
-          cache.match('./index.html').then(function (shell) {
-            resolve(shell || new Response('Offline', { status: 503, statusText: 'Offline' }));
-          });
+          if (navigable) {
+            cache.match('./index.html').then(function (shell) {
+              resolve(shell || offlineJson());
+            });
+            return;
+          }
+          resolve(jsonish ? offlineJson() : new Response('Offline', { status: 503, statusText: 'Offline' }));
         });
       });
     });

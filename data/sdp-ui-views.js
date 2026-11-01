@@ -1362,6 +1362,17 @@
     bindSettings();
   }
 
+  /* D-S10/S11 (R7): the teacher republished class settings. Tell the student
+     plainly, and let SDP.Sync adopt only the keys they never touched. */
+  function bindTeacherUpdates() {
+    if (bindTeacherUpdates._bound || !doc || !doc.addEventListener) return false;
+    bindTeacherUpdates._bound = true;
+    doc.addEventListener('sdp:teacher-updated', function () {
+      showToast(t('teacherUpdatedToast'));
+    }, false);
+    return true;
+  }
+
   function onDataReady(err) {
     renderHome();
     renderWords();
@@ -1385,6 +1396,7 @@
     applyTheme(conf.theme === 'light' ? 'light' : 'dark', true);
     applyLang(conf.lang === 'si' ? 'si' : 'en', true);
     bindShell();
+    bindTeacherUpdates();
     try { if (SDP.Engine && SDP.Engine.bind) SDP.Engine.bind(); } catch (e) {}
     setText(byId('sdpVerPill'), 'v' + APP_VERSION);
     setText(byId('brandName'), 'Smart Dictation');

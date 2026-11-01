@@ -533,17 +533,19 @@
       }
     } catch (e) {}
     bindFirstGesture();
-    /* D-V5: a freshly published Alice pack must be visible without a reload. */
-    if (global.addEventListener) {
-      global.addEventListener('sdp:update', function (ev) {
-        var detail = (ev && ev.detail) || {};
-        var nextRev = Number(detail.syncRev || 0);
-        if (state.manifest && nextRev && nextRev <= Number(state.manifestSyncRev || 0)) return;
-        state.manifest = null;
-        state.manifestRequested = false;
-        loadManifest(noop, true);
-      }, false);
-    }
+    /* D-V5: a freshly published Alice pack must be visible without a reload.
+       SDP.Sync emits CustomEvents on `document` (non-bubbling), so listen
+       there as well as on `window`. */
+    var onUpdate = function (ev) {
+      var detail = (ev && ev.detail) || {};
+      var nextRev = Number(detail.syncRev || 0);
+      if (state.manifest && nextRev && nextRev <= Number(state.manifestSyncRev || 0)) return;
+      state.manifest = null;
+      state.manifestRequested = false;
+      loadManifest(noop, true);
+    };
+    try { if (doc && doc.addEventListener) doc.addEventListener('sdp:update', onUpdate, false); } catch (e) {}
+    try { if (global.addEventListener) global.addEventListener('sdp:update', onUpdate, false); } catch (e) {}
   })();
 
   SDP.Speech = Speech;
