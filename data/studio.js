@@ -1,3 +1,4 @@
+'use strict';
 var SDPC = window.SDPCore || {};
 
 var DB = SDPC.DB, Speech = SDPC.Speech, UI = SDPC.UI, U = SDPC.U, Lib = SDPC.Lib, Admin = SDPC.Admin, Cloud = SDPC.Cloud, CONFIG = SDPC.CONFIG, GUIDE = SDPC.GUIDE || [], Store = SDPC.Store, Screens = SDPC.Screens, DEFAULT_WALLPAPER_SRC = SDPC.DEFAULT_WALLPAPER_SRC, BUILD_DATE = SDPC.BUILD_DATE, wordRow = SDPC.wordRow, SAMPLE_WORDS = SDPC.SAMPLE_WORDS || [], WORD_BANK = SDPC.WORD_BANK || {}, Dict = SDPC.Dict, APP_VERSION = SDPC.APP_VERSION;
@@ -2322,7 +2323,7 @@ window.SDPCoreV54 = SDPC;
     window.AdminAutoEnrich = Q, window.F = window.F || F;
 })();
 /* ------------------------------------------------------------------
-   SDP_ENC_V2 vault helpers (v60 / 9.0.0.4)
+   SDP_ENC_V2 vault helpers (v61 / 9.0.1.0)
    PBKDF2-SHA256 with 250000 iterations; the AES-GCM envelope itself
    lives in index.html (window.EncryptedVault). These are the studio-side
    markers plus thin, fail-safe delegates so a locked student device never

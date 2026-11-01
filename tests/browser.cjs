@@ -415,7 +415,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const wk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
    while(wk.nextNode()){const n=wk.currentNode;if(!SIN.test(n.nodeValue||''))continue;
     let p2=n.parentElement,ok=false;
-    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||p2.id==='sdpTopLangPill'||/v59-si-chip|v59-si-text|sdp-si-pill|sdp-lang/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
+    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||p2.id==='sdpTopLangPill'||/sdp-si-chip|sdp-si-text|sdp-si-pill|sdp-lang/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
     if(!ok)straySi.push(String(n.nodeValue).slice(0,40));}
    return {height:Math.round(r.height),segBottom:Math.round(sr.bottom),
     kickerPx:px(document.getElementById('homeKicker')),titlePx:px(document.getElementById('homeTitle')),subPx:px(document.getElementById('homeSub')),
@@ -444,7 +444,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   /* language parity: every new string flips to Sinhala and back */
   const lang=await page.evaluate(()=>{
    const C=window.SDPCore;
-   const tile=document.querySelector('[data-v58-practice="flash"] b');
+   const tile=document.querySelector('[data-practice="flash"] b');
    const credit=document.getElementById('credit');
    const grab=()=>({tile:tile?tile.textContent:'',credit:credit?credit.textContent:''});
    C.UI.setLang('si');
@@ -476,13 +476,13 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const dict=await page.evaluate(()=>{
    const C=window.SDPCore;
    C.UI.setTab('dict');
-   const cards=Array.from(document.querySelectorAll('.v59-dict-card'));
+   const cards=Array.from(document.querySelectorAll('.sdp-word-card'));
    const first=cards[0];
    const pick=sel=>{const n=first?first.querySelector(sel):null;return n?n.textContent:'';};
-   const reveal=first?first.querySelector('.v59-si-text'):null;
-   const chip=first?first.querySelector('.v59-si-chip'):null;
+   const reveal=first?first.querySelector('.sdp-si-text'):null;
+   const chip=first?first.querySelector('.sdp-si-chip'):null;
    return {n:cards.length,filters:!!document.getElementById('sdpWordFilterRow'),
-    word:pick('.sdp-word-head b'),ipa:pick('.v59-ipa'),pos:pick('.v59-pos'),posSlot:!!(first&&first.querySelector('.v59-pos')),
+    word:pick('.sdp-word-head b'),ipa:pick('.sdp-word-ipa'),pos:pick('.sdp-word-pos'),posSlot:!!(first&&first.querySelector('.sdp-word-pos')),
     def:pick('.sdp-word-def'),ex:pick('.sdp-word-eg'),
     btns:first?first.querySelectorAll('button').length:0,
     siShown:/[\u0D80-\u0DFF]/.test(pick('.sdp-si-pill'))};
@@ -496,10 +496,10 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const rows=words.map(w=>({word:w.w,answer:'',state:'unknown',w:w}));
    const result={id:'qa-paper',mode:'paper',rows:rows,correct:0,half:0,total:rows.length,percent:0};
    const layerRef=C.Results.open(result);
-   const box=document.getElementById('v58SelfCheck');
+   const box=document.getElementById('selfCheck');
    const chip=document.getElementById('v58SelfScore');
    const before=chip?chip.textContent:'';
-   const btns=box?Array.from(box.querySelectorAll('.v58-selfbtns button')):[];
+   const btns=box?Array.from(box.querySelectorAll('.selfbtns button')):[];
    if(btns[0])btns[0].click();
    if(btns[2])btns[2].click();
    const after=chip?chip.textContent:'';
@@ -510,7 +510,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    else if(C.UI.closeTop){for(let i=0;i<4;i++){if(!C.UI.closeTop())break;}}
    if(document.querySelector('#layers .layer')&&C.UI.closeTop){C.UI.closeTop();}
    const stillOpen=!!document.querySelector('#layers .layer');
-   return {open:!!box,rows:box?box.querySelectorAll('.v58-selfrow').length:0,before,after,summary,coach,stillOpen};
+   return {open:!!box,rows:box?box.querySelectorAll('.selfrow').length:0,before,after,summary,coach,stillOpen};
   });
   results.push({test:'Chromium v59 paper self-check: 30 rows, live #v58SelfScore and #resSummary self-check total',
    status:selfcheck.open&&selfcheck.rows===30&&/^0 \/ 30 · 0%$/.test(selfcheck.before)&&/^2 \/ 30 · 7%$/.test(selfcheck.after)&&/self-check: 2\/30 \(7%\)/.test(selfcheck.summary)&&!selfcheck.coach&&errors.length===0?'PASS':'FAIL',
@@ -520,7 +520,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    C.UI.setTab('practice');
    const sc=C.Screens;sc.pracMode='context';sc.pracIndex=0;
    L.renderContextMode(sc);
-   const next=document.getElementById('v58ContextNextBtn');
+   const next=document.getElementById('sdpContextNextBtn');
    const before=(document.getElementById('pracCount')||{}).textContent||'';
    const stage=document.getElementById('pracStage');
    const clue=stage?stage.innerText:'';

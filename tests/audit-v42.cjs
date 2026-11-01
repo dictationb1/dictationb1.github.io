@@ -137,7 +137,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
     ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
     eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 9.0.0.1', voice.version, '9.0.0.4');
+    eq('the running build is 9.0.0.1', voice.version, '9.0.1.0');
     ok('the one-time ElevenLabs vault exists and is empty without an API key', voice.vault && voice.clips === 0 && voice.generated === 0, { clips: voice.clips, generated: voice.generated });
     ok('the vault cache key is deterministic and voice specific', voice.vaultKey === 'el_Xb7hH8MSUJpSbSDYk0k2_' + voice.vaultKey.replace(/^el_Xb7hH8MSUJpSbSDYk0k2_/, ''), voice.vaultKey);
     ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');
@@ -149,18 +149,18 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     await page.evaluate(() => document.getElementById('btnStart').click());
     await page.waitForTimeout(900);
     let clips = await clipsOf(page);
-    ok('the ready instruction requests remote audio', clips.some((c) => textOf(c.url).indexOf('Welcome.') === 0), clips.map((c) => textOf(c.url)));
-    await page.evaluate(() => document.getElementById('btnReadyTest').click());
+    ok('Start opens the cockpit and requests the first word remotely', clips.some((c) => /^Number%201$/.test(c.url) || textOf(c.url) === 'Number 1'), clips.map((c) => textOf(c.url)));
+    await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#sdpCockpitDock button')).find(x => x.textContent === 'Repeat'); if (b) b.click(); });
     await page.waitForTimeout(700);
     clips = await clipsOf(page);
-    ok('Test sound uses the same remote engine', clips.some((c) => /Sound%20check/.test(c.url)), clips.map((c) => textOf(c.url)));
+    ok('Repeat uses the same remote engine', clips.some((c) => /afraid/.test(c.url)), clips.map((c) => textOf(c.url)));
     eq('the debug voice pill stays removed', await page.locator('#voiceTestPill').count(), 0);
 
     await clickReady(page);
     // The number and word are separate clips in v51. Wait for both word passes
     // and the completed writing-phase transition rather than racing a fixed sleep.
     await page.waitForFunction((start) => window.__clips.length >= start + 6, startIndex, { timeout: 12000 });
-    await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 5000 });
+    await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 12000 });
     /* v60.4: the countdown starts on Start now, so the "Test sound" pair can
        land inside this window - drop the Sound check clip AND its companion. */
     const raw = (await clipsOf(page)).slice(startIndex);

@@ -12,6 +12,8 @@ const { harness } = require('./app-harness.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const INDEX = read('index.html');
+const CORE = fs.existsSync(path.join(ROOT,'data/app-core.js'))?read('data/app-core.js'):'';
+const APP_SRC=INDEX+'\n'+CORE;
 const STUDIO = read('data/studio.js');
 const TEST_PIN = require('./test-pin.cjs');
 const TEST_KEY = ['s', 'k_'].join('') + 'runtime_test_key_not_live';
@@ -38,11 +40,11 @@ function freshMeter(opts) {
 
 test('v59 metadata, ES5 single-file budget and identical transparency routes', () => {
   for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
-    const d = JSON.parse(read(f)); assert.equal(d.ver, 60, f); assert.equal(d.appVersion, '9.0.0.4', f);
+    const d = JSON.parse(read(f)); assert.equal(d.ver, 61, f); assert.equal(d.appVersion, '9.0.1.0', f);
     assert.ok(!d.adminPin && !d.vaultCiphertext, f + ' has no public PIN/vault');
   }
-  assert.ok(INDEX.includes('APP_VERSION="9.0.0.4"'));
-  assert.ok(Buffer.byteLength(INDEX) <= 600000);
+  assert.ok(APP_SRC.includes('APP_VERSION="9.0.1.0"'));
+  assert.ok(Buffer.byteLength(INDEX) <= 110000);
   assert.equal(read('data.html'), read('data/index.html'));
   assert.ok(read('data.html').includes('./data/data-meter.js'));
   assert.ok(!/<video[^>]*\bsrc=/.test(read('data.html')), '/data must not download video by default');
@@ -162,7 +164,7 @@ test('mode profiles come from the media manifest and LKR presets update cost', (
 
 test('service worker v59 slices cached full video responses into HTTP 206 ranges', async () => {
   const src = read('sw.js');
-  assert.ok(src.includes("VERSION = 'sdp-v60-9.0.0.4'"));
+  assert.ok(src.includes("VERSION = 'sdp-v61-9.0.1.0'"));
   const store = new Map();
   const caches = { open: async () => ({ match: async k => store.get(String(k)) || null, put: async (k, v) => { store.set(String(k), v); } }) };
   const listeners = {};
@@ -292,10 +294,10 @@ test('v58 meter: daily buckets prune to the newest 30 days', () => {
 test('v58 learning-tools: ES5, SDPLearning API and weak-word streak graduation', () => {
   const src = read('data/learning-tools.js');
   acorn.parse(src, { ecmaVersion: 5 });
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
-  const w = dom.window;
+  const app = harness(null, {});
+  const w = app.w;
   try {
-    vm.runInContext(src, dom.getInternalVMContext());
+    w.eval(src);
     const L = w.SDPLearning;
     assert.ok(L, 'window.SDPLearning exposed');
     for (const api of ['levenshteinOps', 'diffFeedback', 'markMissed', 'markCorrect', 'getWeakWords', 'renderPaperSelfCheck', 'printStudySheet', 'startSyllableSpotlight', 'recordAndCompare', 'downloadOfflinePack', 'renderMistakeCoach', 'openWeakWords', 'drillWeakWords']) {
@@ -327,10 +329,10 @@ test('v58 learning-tools: ES5, SDPLearning API and weak-word streak graduation',
 
 test('v59 learning-tools: SDPPerfGuard decides lite from slow frames and memoises it', () => {
   const src = read('data/learning-tools.js');
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
-  const w = dom.window;
+  const app = harness(null, {});
+  const w = app.w;
   try {
-    vm.runInContext(src, dom.getInternalVMContext());
+    w.eval(src);
     const PG = w.SDPPerfGuard;
     assert.ok(PG, 'window.SDPPerfGuard exposed');
     assert.equal(typeof PG.start, 'function');
@@ -339,7 +341,7 @@ test('v59 learning-tools: SDPPerfGuard decides lite from slow frames and memoise
     /* a 16.7ms frame budget is healthy */
     const fast = PG.decide({ avg: 16.666, med: 16.7, slow3: 0 });
     assert.equal(fast.lite, false, '60fps frames never downgrade');
-    assert.equal(w.document.body.getAttribute('data-perf'), null);
+    assert.equal(w.SDPCore.DB.data.settings.perf, 'auto');assert.equal(PG.stats.lite, false);
     /* simulated 30ms/frame rAF: avg > 22 && med > 25 && slow3 > 32 */
     const slow = PG.decide({ avg: 30, med: 30, slow3: 100 });
     assert.equal(slow.lite, true, 'slow frames downgrade to lite');
@@ -353,7 +355,7 @@ test('v59 learning-tools: SDPPerfGuard decides lite from slow frames and memoise
     assert.equal(r.frames, 5);
     assert.ok(r.avg < 22 && r.med <= 17);
     PG.sampler = null;
-  } finally { try { w.close(); } catch (e) {} }
+  } finally { app.close(); }
 });
 
 test('v59: zero canvas readback and pure-arithmetic WCAG contrast gauge', () => {
@@ -361,33 +363,34 @@ test('v59: zero canvas readback and pure-arithmetic WCAG contrast gauge', () => 
   assert.ok(!/\.drawImage\s*\(/.test(src), 'no drawImage call');
   assert.ok(!/\.getImageData\s*\(/.test(src), 'no getImageData call');
   assert.ok(!/_gaugeCanvas/.test(src), 'the readback canvas is gone');
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
-  const w = dom.window;
+  const app = harness(null, {});
+  const w = app.w;
   try {
-    vm.runInContext(src, dom.getInternalVMContext());
+    w.eval(src);
     const L = w.SDPLearning;
     const g = L.contrastRatio();
     assert.ok(g && g.ratio > 1, 'contrast ratio computed: ' + (g && g.ratio));
     assert.equal(L.sampleVideo(), null, 'no video sampling');
     assert.equal(typeof L.wallpaperLuminance(), 'number');
-  } finally { try { w.close(); } catch (e) {} }
+  } finally { app.close(); }
 });
 
 test('v59 paper self-check renders every word row and updates #v58SelfScore and #resSummary', () => {
   const src = read('data/learning-tools.js');
   const session = JSON.parse(read('data/session.json'));
   const rows = session.words.map(x => ({ word: x.w, answer: '', state: 'unknown', w: x }));
-  const dom = new JSDOM('<!doctype html><html><body><p id="resSummary">Well done! That is the end of the dictation.</p><div id="host"></div></body></html>', { url: 'https://example.test/', runScripts: 'outside-only' });
-  const w = dom.window;
+  const app = harness(null, {});
+  const w = app.w;
   try {
-    vm.runInContext(src, dom.getInternalVMContext());
+    const summaryNode=w.document.createElement('p');summaryNode.id='resSummary';summaryNode.textContent='Well done! That is the end of the dictation.';w.document.body.appendChild(summaryNode);const host=w.document.createElement('div');host.id='host';w.document.body.appendChild(host);
+    w.eval(src);
     const L = w.SDPLearning;
     const result = { mode: 'paper', rows: rows, correct: 0, half: 0, total: rows.length };
     const box = L.renderPaperSelfCheck(result, w.document.getElementById('host'));
     assert.ok(box, 'self-check rendered');
-    assert.equal(w.document.querySelectorAll('#v58SelfCheck .v58-selfrow').length, 30, 'all 30 rows');
+    assert.equal(w.document.querySelectorAll('#selfCheck .selfrow').length, 30, 'all 30 rows');
     assert.equal(w.document.getElementById('v58SelfScore').textContent, '0 / 30 · 0%');
-    const buttons = w.document.querySelectorAll('#v58SelfCheck .v58-selfbtns button');
+    const buttons = w.document.querySelectorAll('#selfCheck .selfbtns button');
     assert.equal(buttons.length, 60, 'each row offers Got It and Missed It');
     buttons[0].click();      /* row 1 got it */
     buttons[2].click();      /* row 2 got it */
@@ -398,12 +401,12 @@ test('v59 paper self-check renders every word row and updates #v58SelfScore and 
     assert.ok(/Well done/.test(summary), 'the original summary text is preserved');
     const weak = JSON.parse(w.localStorage.getItem('sdp.weakWords.v1') || '{}');
     assert.ok(weak[session.words[2].w.split('/')[0]], 'a missed word feeds the weak bank');
-  } finally { try { w.close(); } catch (e) {} }
+  } finally { app.close(); }
 });
 
 test('v59 dictionary card source contains the full English word content', () => {
   const src = read('data/learning-tools.js');
-  for (const marker of ['v59-dict-card', 'v59-ipa', 'v59-pos', 'v59-def', 'v59-ex', 'v59-si-chip', 'v59DictFilters', 'All 30 Words']) {
+  for (const marker of ['sdp-word-card', 'sdp-word-ipa', 'sdp-word-pos', 'sdp-word-def', 'sdp-word-ex', 'sdp-si-chip', 'sdpWordFilterRow', 'data-filter']) {
     assert.ok(src.includes(marker), marker);
   }
   const session = JSON.parse(read('data/session.json'));
@@ -417,9 +420,9 @@ test('v59 dictionary card source contains the full English word content', () => 
 
 test('v59 Sentence Context exposes a primary Next question button', () => {
   const src = read('data/learning-tools.js');
-  assert.ok(/v58ContextNextBtn/.test(src));
+  assert.ok(/sdpContextNextBtn/.test(src));
   assert.ok(/Next question/.test(src));
-  assert.ok(/v59-context-ok/.test(src), 'green Correct! confirmation');
+  assert.ok(/sdp-context-ok/.test(src), 'green Correct! confirmation');
   assert.ok(/advanceContext/.test(src));
 });
 
@@ -454,3 +457,6 @@ test('v58 fonts: Noto Sans Sinhala WOFF2 files ship under 60KB each', () => {
   assert.ok(INDEX.includes('NotoSansSinhala-Regular.woff2') && INDEX.includes('NotoSansSinhala-Bold.woff2'));
   assert.ok(!/<link[^>]*fonts/i.test(INDEX), 'no static font link tags');
 });
+
+test('v61 single mount exposes the extracted engine, all six tools and honest audio states',()=>{const app=harness(null,{learning:true});try{assert.equal(app.w.document.body.getAttribute('data-v61-ready'),'1');assert.ok(app.w.SDPCore.Eng);assert.ok(app.w.SDPLearning);assert.ok(app.w.document.getElementById('guideSheet'));assert.ok(learnMarkers());}finally{app.close();}function learnMarkers(){return ['Flashcards','4-Choice Quiz','Sentence Gap','Weak Words Drill','Speak & Compare','Audio List'].every(x=>read('data/learning-tools.js').includes(x));}});
+test('v61 Speech.say accepts whole-string input without spelling letters',()=>{const app=harness(null,{});try{let captured=[];app.q.Speech._speakInternal=function(text){captured.push(text);};app.q.Speech.say('hello',{},function(){});assert.deepEqual(captured,['hello']);}finally{app.close();}});

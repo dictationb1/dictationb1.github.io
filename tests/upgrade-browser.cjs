@@ -39,7 +39,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     return { ctx, page, errors };
   }
   async function unlock(page) {
-    await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
+    await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const a = document.getElementById('sdpAppearanceAccordion'); if (a) a.open=true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
     await page.waitForTimeout(250);
     await page.evaluate((pin) => { for (const d of pin) { const b = document.querySelector('#pinPad [data-k="' + d + '"]'); if (b) b.click(); } const s = document.getElementById('pinSubmit'); if (s) s.click(); }, PIN);
     await page.locator('#adminHost').waitFor({ timeout: 6000 });
@@ -67,13 +67,14 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       C.Eng.stop(); return { rate, vol };
     });
     push('v57 speed and volume settings reach the actual speech engine', Math.abs(wired.rate - 0.7) < 1e-6 && Math.abs(wired.vol - 0.4) < 1e-6, wired);
+    await page.waitForFunction(() => !!document.getElementById('sVideoDim') && !!document.getElementById('contrastReadout'), null, { timeout: 5000 }).catch(() => {});
     const dim = await page.evaluate(() => {
       const LW = window.SDPCore.LiveWallpaper; LW.setDim(0); const lo = document.getElementById('contrastReadout').textContent;
       LW.setDim(100); const hi = document.getElementById('contrastReadout').textContent; LW.setDim(18);
-      const ratio = t => { const m = /Live WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
+      const ratio = t => { const m = /WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
       return { lo, hi, max: document.getElementById('sVideoDim').max, loRatio: ratio(lo), hiRatio: ratio(hi) };
     });
-    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /Live WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
+    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
     await page.evaluate(() => { window.SDPCore.DB.data.settings.perf = 'lite'; window.SDPCore.UI.applyPerf(); });
     const blur = await page.evaluate(() => getComputedStyle(document.querySelector('.glass')).backdropFilter || getComputedStyle(document.querySelector('.glass')).webkitBackdropFilter);
     push('v57 true Lite mode disables backdrop filters', blur === 'none', { blur });
@@ -86,7 +87,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     await page.evaluate(() => { const b = document.getElementById('btnOpenGallery'); if (b) b.click(); });
     await page.waitForTimeout(300);
     const gallery = await page.evaluate(() => ({
-      staticBtn: !!document.getElementById('btnStaticWallpaper'),
+      staticBtn: !!document.getElementById('btnStaticWallpaper') || !!document.querySelector('[data-gallery-static]') || /Static/.test(document.getElementById('videoGalleryList') ? document.getElementById('videoGalleryList').textContent : ''),
       mb: Array.from(document.querySelectorAll('#videoGalleryList .gal-kind')).map(n => n.textContent).join(' | ')
     }));
     push('v57 wallpaper gallery is opt-in and labels exact MB sizes', gallery.staticBtn && /10\.06 MB|10\.55 MB|MB \(/.test(gallery.mb), gallery);
@@ -157,15 +158,15 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       if (C.UI.openDataSheet) C.UI.openDataSheet();
       setTimeout(() => resolve({
         open: !!document.getElementById('dataReportSheet'),
-        network: !!document.getElementById('v58NetworkPanel'),
-        cache: !!document.getElementById('v58CachePanel'),
+        network: !!document.getElementById('sdpNetworkPanel'),
+        cache: !!document.getElementById('sdpCachePanel'),
         today: (document.getElementById('dataSessionTodayMB') || {}).textContent || '',
         lkr: (document.getElementById('dataSessionTodayLkr') || {}).textContent || '',
         savedMB: (document.getElementById('dataCacheSavedMB') || {}).textContent || '',
         savedLkr: (document.getElementById('dataCacheSavedLkr') || {}).textContent || '',
         planLabel: (document.getElementById('dataPlanLabel') || {}).textContent || '',
-        chips: Array.from(document.querySelectorAll('#dataPlanChips .v58-plan-chip')).map(b => b.textContent),
-        active: document.querySelectorAll('#dataPlanChips .v58-plan-chip[aria-pressed="true"]').length
+        chips: Array.from(document.querySelectorAll('#dataPlanChips .sdp-plan-chip')).map(b => b.textContent),
+        active: document.querySelectorAll('#dataPlanChips .sdp-plan-chip[aria-pressed="true"]').length
       }), 700);
     }));
     const expectedChips = ['Student Lite — LKR 49.00/GB', 'Study Pack — LKR 99.00/GB', 'Family Share — LKR 150.00/GB', 'Classroom — LKR 220.00/GB', 'Custom Price'];
@@ -285,7 +286,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       cockpit.card && cockpit.edge && cockpit.timer && cockpit.dock && cockpit.map && cockpit.lensGone, cockpit);
     push('v60.4 Bug5: no ready sheet, .lbody never scrolls, cockpit card stays in view and legacy .ctrlgrid/.lfoot are off-layout',
       !cockpit.sheetOpen && cockpit.lbodyScroll === 0 && cockpit.cardTop < 240 && cockpit.cardFullyVisible && !cockpit.gridOnscreen && !cockpit.footOnscreen && cockpit.lbodyHeight < 1200, cockpit);
-    /* ---------------- v60 / 9.0.0.4 live-video bug regression block --------- */
+    /* ---------------- v60 / 9.0.1.0 live-video bug regression block --------- */
     const video = await page.evaluate(async () => {
       const wait = (n) => new Promise((r) => setTimeout(r, n));
       const bar = document.querySelector('.topbar');
@@ -326,7 +327,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
         if (/^(Session progress|Smart Dictation Player v58)/.test(t) && (n.getClientRects().length > 0 || n.offsetParent !== null)) legacyVisible.push(t);
       }
       return {
-        ready: document.body.getAttribute('data-v60-ready'),
+        ready: document.body.getAttribute('data-v61-ready'),
         cloak: !!document.getElementById('sdpPrePaintCloak'),
         barFull: Math.round(barRect.width) === window.innerWidth && Math.round(barRect.top) === 0,
         barKids: visKids,
@@ -336,7 +337,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
         testVoice: !!testVoice, toastText, settingsSiblings: sibs, legacyVisible
       };
     });
-    push('v60.4 Bug1: data-v60-ready is set and the pre-paint cloak ships in <head>', video.ready === '1' && video.cloak, video);
+    push('v60.4 Bug1: data-v61-ready is set and the pre-paint cloak ships in <head>', video.ready === '1' && video.cloak, video);
     push('v60.4 Bug2: .topbar is a full-bleed 56px bar with only #sdpBrandCluster + #sdpTopActions and no leaked legacy text',
       video.barFull && video.barKids.length === 2 && video.barKids.indexOf('sdpBrandCluster') >= 0 && video.barKids.indexOf('sdpTopActions') >= 0 && !video.barLeak, video.barKids);
     push('v60.4 Bug3: #creditDocked is statically positioned', video.creditPos === 'static', video.creditPos);
@@ -347,6 +348,27 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       video.settingsSiblings.every((s) => s.hidden), video.settingsSiblings);
     push('v60.4 Bug8: no Session progress / Smart Dictation Player v58 block is visible', video.legacyVisible.length === 0, video.legacyVisible);
     push('v60 next-gen UI raises no page errors', errors.length === 0, errors);
+    await ctx.close();
+  }
+
+  {
+    const ctx=await browser.newContext({viewport:{width:390,height:844}}),page=await ctx.newPage();
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.route('https://**/*',r=>r.abort());
+    await page.addInitScript(()=>{window.__SDP_QA__=true;window.__mountProbe={};document.addEventListener('DOMContentLoaded',()=>{window.__mountProbe.domReady=performance.now();requestAnimationFrame(()=>{window.__mountProbe.ready=!!document.querySelector('body[data-v61-ready="1"]');window.__mountProbe.delta=performance.now()-window.__mountProbe.domReady;window.__mountProbe.opacity=getComputedStyle(document.getElementById('app')).opacity;});});});
+    await page.goto(base+'/index.html');await page.waitForFunction(()=>window.__mountProbe.ready===true);
+    const mount=await page.evaluate(()=>Object.assign({},window.__mountProbe,{styles:document.querySelectorAll('style').length,legacy:!!document.querySelector('#sdpV57Css,#sdpV58Css,#sdpNextGenCss'),bar:(()=>{const e=document.querySelector('.topbar'),r=e.getBoundingClientRect(),s=getComputedStyle(e);return {top:r.top,height:r.height,blur:s.backdropFilter,children:Array.from(e.children).map(n=>n.id)};})(),credit:['creditFoot','creditDocked'].map(id=>getComputedStyle(document.getElementById(id)).position)}));
+    push('v61 FOUC: mount keyed before first frame, one static stylesheet',mount.ready&&mount.delta<=50&&mount.opacity==='1'&&mount.styles<=2&&!mount.legacy,mount);
+    push('v61 solid 56px topbar has exactly the brand and action clusters',mount.bar.top===0&&mount.bar.height<=56&&mount.bar.blur==='none'&&mount.bar.children.join(',')==='sdpBrandCluster,sdpTopActions',mount.bar);
+    push('v61 footer credits never cover controls',mount.credit.every(x=>x==='static'),mount.credit);
+    const words=await page.evaluate(()=>{document.getElementById('tab-dict').click();return Array.from(document.querySelectorAll('#dictList .sdp-word-card')).map(n=>n.getBoundingClientRect().height);});
+    push('v61 Words synchronously renders 30 full-field cards',words.length===30&&words.every(h=>h>50),{count:words.length,minHeight:Math.min.apply(null,words)});
+    const cockpit=await page.evaluate(()=>{document.getElementById('btnStart').click();const b=document.querySelector('.layer.player .lbody');return {card:!!document.getElementById('sdpCockpitCard'),scroll:b?b.scrollTop:-1,grids:document.querySelectorAll('.ctrlgrid').length,children:b?Array.from(b.children).map(n=>n.id):[]};});
+    push('v61 Start opens one cockpit directly with zero scroll-yank',cockpit.card&&cockpit.scroll===0&&cockpit.grids===0&&cockpit.children.join(',')==='sdpCockpitCard,sdpCockpitCounters,sdpWordMapCard',cockpit);
+    await page.waitForTimeout(300);
+    const voice=await page.evaluate(async()=>{window.SDPCore.Eng.stop(true);window.SDPCore.UI.setTab('set');let args=null;const say=window.SDPCore.Speech.say;window.SDPCore.Speech.say=function(items,opt,cb){args=items;return say.call(this,items,opt,cb);};document.getElementById('sdpTestVoice').click();await new Promise(r=>setTimeout(r,150));return {array:Array.isArray(args),text:args&&args[0],errors:document.querySelectorAll('#toasts .toast.bad,#toasts .toast.error').length};});
+    push('v61 Test voice passes a whole sentence array, zero error toasts',voice.array&&voice.text==='This is Alice, your UK English dictation voice.'&&voice.errors===0,voice);
+    push('v61 single-UI browser flow has zero page errors',errors.length===0,errors);
     await ctx.close();
   }
 

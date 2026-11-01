@@ -1,7 +1,7 @@
 const DEFAULT_PIN = require('./test-pin.cjs');
 'use strict';
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),acorn=require('acorn');
-const html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8');
+const html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8')+'\n'+(fs.existsSync(require('path').join(__dirname,'../data/app-core.js'))?fs.readFileSync(require('path').join(__dirname,'../data/app-core.js'),'utf8'):'');
 /* v46: the Apps Script source lives next to the page (data/gas-source.txt) and
    is fetched only when a lecturer unlocks admin, so the QA reads the file. */
 const inline=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];
@@ -54,14 +54,14 @@ test('Server failed multi-cell publish leaves committed words/version intact and
 
 test('v58 release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,60,f);assert.equal(d.appVersion,'9.0.0.4',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
+ for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,61,f);assert.equal(d.appVersion,'9.0.1.0',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
  const vault=read('data/elevenlabs-audio.json');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
  const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
- assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="9.0.0.4"'));assert.ok(html.includes('data/studio.js?v=9.0.0.4'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
+ assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="9.0.1.0"'));assert.ok(html.includes('data/studio.js?v=9.0.1.0'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(html),'index has no vault/audio relays');
  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(studio),'studio has no vault/audio relays');
  assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));
  assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));assert.ok(studio.includes('window.UniversalSync'));assert.ok(studio.includes('playOrFetchOnce'));assert.ok(studio.includes('isUnlockedOnThisDevice'));
- assert.ok(html.length < 600000, 'index.html stays under the published byte ceiling');
+ assert.ok(Buffer.byteLength(fs.readFileSync(require('path').join(__dirname,'../index.html'))) <= 110000, 'index.html stays under the published byte ceiling');
 });
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
