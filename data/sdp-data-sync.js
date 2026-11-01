@@ -799,6 +799,31 @@
           .catch(function (e) { cb(e || new Error('commit_failed')); });
       });
     },
+    /* Binary clip commit (base64 already in hand, e.g. a MediaRecorder blob). */
+    commitClipFile: function (path, base64, message, token, cb) {
+      cb = cb || noop;
+      if (!token) { cb(new Error('no_token')); return; }
+      if (typeof global.fetch !== 'function') { cb(new Error('no_fetch')); return; }
+      Sync.getFileSha(path, token, function (err, sha) {
+        var payload = { message: str(message || 'Smart Dictation clip'), content: str(base64), branch: 'main' };
+        if (sha && !err) payload.sha = str(sha);
+        global.fetch(Sync.contentsUrl(path), {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer ' + str(token),
+            Accept: 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        }).then(function (res) { return res && res.json ? res.json() : null; })
+          .then(function (data) {
+            if (data && data.content && data.content.sha) cb(null, data);
+            else cb(new Error('commit_failed'), data);
+          })
+          .then(null, function (e) { cb(e || new Error('commit_failed')); });
+      });
+    },
+
     /* CORS-simple relay payload: text/plain body, well under 600 bytes. */
     buildKeysRelayPayload: function (pin) {
       return JSON.stringify({ action: 'login', pin: str(pin), app: 'sdp', ver: APP_VERSION });

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#09090B">
+<meta name="description" content="Smart Dictation Player v0.0.1.a — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
+<title>Data &amp; Cache Transparency · Smart Dictation v0.0.1.a</title>
+<style>
+  :root {
+    --bg-app: #09090B; --bg-card: #121216; --bg-elev: #18181D; --border: #27272A;
+    --text: #FAFAFA; --text-muted: #A1A1AA; --accent: #38BDF8; --ok: #10B981;
+    --warn: #F59E0B; --danger: #EF4444; --radius: 14px; color-scheme: dark;
+  }
+  html[data-theme="light"] {
+    --bg-app: #FFFFFF; --bg-card: #F4F4F5; --bg-elev: #EDEDF0; --border: #E4E4E7;
+    --text: #09090B; --text-muted: #52525B; --accent: #0284C7; color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg-app); color: var(--text); }
+  body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px; line-height: 1.55; overflow-x: hidden;
+  }
+  @font-face {
+    font-family: "Noto Sans Sinhala";
+    src: url("/assets/fonts/NotoSansSinhala-Regular.woff2") format("woff2");
+   font-weight: 400; font-display: swap;
+  }
+  html[lang="si"] body, .si { font-family: "Noto Sans Sinhala", "Iskoola Pota", Inter, system-ui, sans-serif; }
+  a { color: var(--accent); }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    height: 54px; padding: 0 12px;
+    background: var(--bg-app); border-bottom: 1px solid var(--border);
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .brand strong { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 38px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text); background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 10px; cursor: pointer; text-decoration: none;
+  }
+  .pill:hover { border-color: var(--accent); }
+  .ver { font-size: 11px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; }
+  main { max-width: 1040px; margin: 0 auto; padding: 12px 12px 40px; }
+  h1 { font-size: 22px; margin: 6px 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 10px; }
+  h3 { font-size: 15px; margin: 0 0 6px; }
+  p { margin: 0 0 10px; }
+  .sub { color: var(--text-muted); font-size: 14px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px;
+  }
+  .grid { display: grid; gap: 10px; }
+  @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
+  .stat strong { display: block; font-size: 19px; }
+  .stat span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .chip {
+    min-height: 44px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text); background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 999px; cursor: pointer; text-align: left;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #04080D; }
+  .chip small { display: block; font-size: 10.5px; font-weight: 500; opacity: 0.8; }
+  .calc-out { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 34px; }
+  .muted { color: var(--text-muted); font-size: 12.5px; }
+  .ok { color: var(--ok); }
+  .warn { color: var(--warn); }
+  .foot { padding: 14px 2px 30px; text-align: center; font-size: 12px; color: var(--text-muted); }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--accent); border: 1px solid var(--border);
+    border-radius: 6px; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <strong>Smart Dictation</strong>
+    <span class="ver">v0.0.1.a</span>
+    <span class="badge">CCBE B1</span>
+  </div>
+  <div class="chips" style="margin:0">
+    <button type="button" class="pill" id="btnLang"><span id="langLabel">EN</span> | <span id="langAlt">SI</span></button>
+    <button type="button" class="pill" id="btnTheme" aria-label="Toggle theme"><span id="themeIcon">◐</span></button>
+    <a class="pill" id="backLink" href="./">← <span data-t="back">Back to the player</span></a>
+  </div>
+</header>
+
+<main>
+  <h1 data-t="title">Data &amp; cache transparency</h1>
+  <p class="sub" data-t="sub">Every byte this app asks your phone to download, kept visible. Nothing here is collected or sent anywhere; the numbers are read from your own device.</p>
+
+  <section class="card">
+    <h2 data-t="sessionTitle">This session on this device</h2>
+    <div class="stat-row">
+      <div class="stat"><strong id="statSession">0 KB</strong><span data-t="statSession">Session</span></div>
+      <div class="stat"><strong id="statToday">0 KB</strong><span data-t="statToday">Today</span></div>
+      <div class="stat"><strong id="statAll">0 KB</strong><span data-t="statAll">All time</span></div>
+    </div>
+    <p class="muted" id="meterState" style="margin-top:10px"></p>
+  </section>
+
+  <div class="grid two">
+    <section class="card">
+      <h2 data-t="bytesTitle">What the app is made of</h2>
+      <table>
+        <thead>
+          <tr><th data-t="colItem">Item</th><th class="num" data-t="colSize">Size</th><th class="num" data-t="colShare">Share</th></tr>
+        </thead>
+        <tbody id="byteTable"></tbody>
+        <tfoot>
+          <tr><th data-t="colTotal">Total first load</th><th class="num" id="byteTotal">—</th><th class="num"></th></tr>
+        </tfoot>
+      </table>
+      <p class="muted" data-t="bytesNote">The 30-word session file is cached once and normally re-used offline, so a repeat visit costs almost nothing.</p>
+    </section>
+
+    <section class="card">
+      <h2 data-t="cacheTitle">Caches on this device</h2>
+      <table>
+        <thead>
+          <tr><th data-t="colCache">Cache</th><th class="num" data-t="colEntries">Entries</th><th data-t="colRole">Role</th></tr>
+        </thead>
+        <tbody id="cacheTable"></tbody>
+      </table>
+      <p class="muted" id="swState"></p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2 data-t="calcTitle">Mobile data cost (Sri Lanka)</h2>
+    <div class="chips" id="planChips"></div>
+    <p class="sub" id="calcLine"></p>
+    <div class="calc-out" id="calcOut">LKR 0</div>
+    <p class="muted" id="calcNote"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-t="storageTitle">Storage audit</h2>
+    <table>
+      <thead>
+        <tr><th data-t="colKey">Key</th><th class="num" data-t="colSize">Size</th><th data-t="colWhat">What it holds</th></tr>
+      </thead>
+      <tbody id="storageTable"></tbody>
+    </table>
+    <p class="muted" data-t="storageNote">Only these five keys are ever written by the player. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.</p>
+  </section>
+
+  <section class="card">
+    <h2 data-t="offlineTitle">Offline behaviour</h2>
+    <ul class="sub" style="margin:0;padding-left:20px">
+      <li data-t="offline1">The shell, the fonts and the 30-word session are pre-cached, so the app opens without a network.</li>
+      <li data-t="offline2">A published session appears on your device the next time you open the app while online.</li>
+      <li data-t="offline3">Dictionary audio is cached after the first play in its own cache and replayed for zero data.</li>
+    </ul>
+  </section>
+
+  <footer class="foot">
+    <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player v0.0.1.a</p>
+  </footer>
+</main>
+
+<script src="/data/data-meter.js"></script>
+<script>
+(function () {
+  'use strict';
+  var T = {
+    en: {
+      back: 'Back to the player',
+      title: 'Data & cache transparency',
+      sub: 'Every byte this app asks your phone to download, kept visible. Nothing here is collected or sent anywhere; the numbers are read from your own device.',
+      sessionTitle: 'This session on this device', statSession: 'Session', statToday: 'Today', statAll: 'All time',
+      bytesTitle: 'What the app is made of', colItem: 'Item', colSize: 'Size', colShare: 'Share', colTotal: 'Total first load',
+      bytesNote: 'The 30-word session file is cached once and normally re-used offline, so a repeat visit costs almost nothing.',
+      cacheTitle: 'Caches on this device', colCache: 'Cache', colEntries: 'Entries', colRole: 'Role',
+      calcTitle: 'Mobile data cost (Sri Lanka)', storageTitle: 'Storage audit',
+      colKey: 'Key', colWhat: 'What it holds',
+      storageNote: 'Only these five keys are ever written by the player. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
+      offlineTitle: 'Offline behaviour',
+      offline1: 'The shell, the fonts and the 30-word session are pre-cached, so the app opens without a network.',
+      offline2: 'A published session appears on your device the next time you open the app while online.',
+      offline3: 'Dictionary audio is cached after the first play in its own cache and replayed for zero data.',
+      appShell: 'App shell (HTML + CSS + 6 modules)', sessionFile: 'Session 8 word bank (JSON)',
+      fonts: 'Sinhala fonts (2 woff2)', meterModule: 'Data meter module', manifestFile: 'Web manifest + version pointer',
+      youdao: 'Dictionary audio', clips: 'Lecturer / Alice clips', shellCache: 'App shell',
+      roleShell: 'Instant offline open', roleYoudao: 'Free replay of dictionary audio', roleClips: 'Free replay of studio clips',
+      perGb: 'LKR / GB', active: 'active',
+      calcLine: 'Choose your plan, then move the slider to the gigabytes you use each month.',
+      calcNote: 'Prices are the class reference rates used in Settings; a full session needs about 1 MB.',
+      entry: 'entries', noCaches: 'This browser has no Cache Storage (private mode or unsupported).',
+      meterOff: 'Live meter unavailable — showing the published file sizes instead.',
+      gb: 'GB / month', storageEmpty: 'empty', locked: 'not supported in this browser'
+    },
+    si: {
+      back: 'ක්‍රීඩකයට ආපසු',
+      title: 'දත්ත සහ උපස්ථ පාරදෘශ්‍යතාව',
+      sub: 'මෙම යෙදුම ඔබේ දුරකථනයෙන් බාගන්නා සෑම බයිටයක්ම මෙහි දැකිය හැක. කිසිවක් රැස් කර හෝ යවා නොගනී; සියලු සංඛ්‍යා ඔබේම උපාංගයෙන් කියවයි.',
+      sessionTitle: 'මෙම සැසිය, මෙම උපාංගයේ', statSession: 'සැසිය', statToday: 'අද', statAll: 'මුළු කාලය',
+      bytesTitle: 'යෙදුම සෑදී ඇත්තේ මෙසේය', colItem: 'අයිතමය', colSize: 'ප්‍රමාණය', colShare: 'කොටස', colTotal: 'පළමු පූරණයේ මුළු එකතුව',
+      bytesNote: 'වචන 30 ගොනුව එක් වරක් උපස්ථ වන අතර නොබැඳිව නැවත භාවිත වේ; දෙවන ගමනට වැය වන්නේ ඉතා අල්ප දත්ත ප්‍රමාණයකි.',
+      cacheTitle: 'මෙම උපාංගයේ උපස්ථ', colCache: 'උපස්ථය', colEntries: 'ඇතුළත්', colRole: 'කාර්යය',
+      calcTitle: 'ජංගම දත්ත වියදම (ශ්‍රී ලංකා)', storageTitle: 'ගබඩා විගණනය',
+      colKey: 'යතුර', colWhat: 'අඩංගු දේ',
+      storageNote: 'යෙදුම ලියන්නේ මෙම යතුරු පහ පමණි. සිංහල අකුරු සහ හඬ පටි ගබඩා වන්නේ සේවා සේවක උපස්ථයේය, localStorage හි නොවේ.',
+      offlineTitle: 'නොබැඳි හැසිරීම',
+      offline1: 'යෙදුම් කවචය, අකුරු සහ වචන 30 කල්තබා උපස්ථ වන බැවින් ජාලයක් නොමැතිව ද විවෘත වේ.',
+      offline2: 'ප්‍රකාශිත නව සැසියක් ඔබ අන්තර්ජාලය සමඟ යෙදුම විවෘත කරන විට ඔබේ උපාංගයට පැමිණේ.',
+      offline3: 'ශබ්දකෝෂ හඬ පළමු වරට වාදනය කළ පසු උපස්ථ වන අතර නැවත වාදනයට දත්ත වැය නොවේ.',
+      appShell: 'යෙදුම් කවචය (HTML + CSS + මොඩියුල 6)', sessionFile: 'සැසිය 8 වචන එකතුව (JSON)',
+      fonts: 'සිංහල අකුරු (woff2 2)', meterModule: 'දත්ත මීටර මොඩියුලය', manifestFile: 'වෙබ් මැනිෆෙස්ට් සහ අනුවාද ගොනුව',
+      youdao: 'ශබ්දකෝෂ හඬ', clips: 'කථිකාචාර්ය / Alice පටි', shellCache: 'යෙදුම් කවචය',
+      roleShell: 'නොබැඳිව ක්ෂණිකව විවෘත වීම', roleYoudao: 'ශබ්දකෝෂ හඬ නොමිලේ නැවත වාදනය', roleClips: 'ස්ටුඩියෝ පටි නොමිලේ නැවත වාදනය',
+      perGb: 'LKR / GB', active: 'ක්‍රියාකාරී',
+      calcLine: 'ඔබේ සැලැස්ම තෝරා, මසකට භාවිත කරන ගිගාබයිට් ප්‍රමාණයට සර්පණය කරන්න.',
+      calcNote: 'මිල ගණන් සැකසුම් තුළ භාවිත කරන පන්ති යොමු අනුපාතයයි; සම්පූර්ණ සැසියකට මෙගාබයිට් 1ක් පමණ අවශ්‍ය වේ.',
+      entry: 'ඇතුළත්', noCaches: 'මෙම බ්‍රවුසරයේ උපස්ථ ගබඩාවක් නොමැත.',
+      meterOff: 'සජීවී මීටරය නොමැත — ප්‍රකාශිත ගොනු ප්‍රමාණ පෙන්වයි.',
+      gb: 'GB / මාසය', storageEmpty: 'හිස්', locked: 'මෙම බ්‍රවුසරයේ නොමැත'
+    }
+  };
+
+  var lang = 'en';
+  var theme = 'dark';
+  var PLANS = [
+    { id: 'dialog', en: 'Dialog Prepaid', si: 'Dialog පෙරගෙවුම්', lkr: 98, active: true },
+    { id: 'mobitel', en: 'Mobitel Prepaid', si: 'Mobitel පෙරගෙවුම්', lkr: 105, active: false },
+    { id: 'hutch', en: 'Hutch Prepaid', si: 'Hutch පෙරගෙවුම්', lkr: 79, active: false },
+    { id: 'airtel', en: 'Airtel Prepaid', si: 'Airtel පෙරගෙවුම්', lkr: 89, active: false },
+    { id: 'slt', en: 'SLT Fibre', si: 'SLT ෆයිබර්', lkr: 42, active: false }
+  ];
+  var plan = PLANS[0];
+  var GB = 5;
+  var APP_BYTES = 120000;
+
+  function $(id) { return document.getElementById(id); }
+  function tr(key) { var table = T[lang] || T.en; return table[key] || T.en[key] || key; }
+  function kb(bytes) { return Math.round((Number(bytes) || 0) / 1024) + ' KB'; }
+  function pct(part, total) { return total ? Math.round((part / total) * 100) + '%' : '0%'; }
+
+  function applyLang(next) {
+    lang = next === 'si' ? 'si' : 'en';
+    document.documentElement.setAttribute('lang', lang);
+    var nodes = document.querySelectorAll('[data-t]');
+    for (var i = 0; i < nodes.length; i++) nodes[i].textContent = tr(nodes[i].getAttribute('data-t'));
+    $('langLabel').textContent = lang === 'si' ? 'SI' : 'EN';
+    $('langAlt').textContent = lang === 'si' ? 'EN' : 'SI';
+    render();
+  }
+  function applyTheme(next) {
+    theme = next === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    $('themeIcon').textContent = theme === 'light' ? '◑' : '◐';
+    try { localStorage.setItem('sdp.dataPage.theme', theme); } catch (e) {}
+  }
+
+  function readMeter() {
+    var meter = window.SDPDataMeter;
+    if (!meter || !meter.getLive) return null;
+    try { return meter.getLive(); } catch (e) { return null; }
+  }
+  function knownBytes() {
+    var meter = window.SDPDataMeter;
+    var out = {};
+    if (meter && meter.KNOWN_ASSETS) {
+      for (var key in meter.KNOWN_ASSETS) {
+        if (Object.prototype.hasOwnProperty.call(meter.KNOWN_ASSETS, key)) out[key] = Number(meter.KNOWN_ASSETS[key]) || 0;
+      }
+    }
+    return out;
+  }
+
+  function renderBytes() {
+    var live = readMeter();
+    var rows = [
+      { key: 'appShell', bytes: APP_BYTES },
+      { key: 'sessionFile', bytes: 46403 },
+      { key: 'fonts', bytes: 48520 + 48748 },
+      { key: 'meterModule', bytes: 21500 },
+      { key: 'manifestFile', bytes: 2200 }
+    ];
+    var total = 0, i;
+    for (i = 0; i < rows.length; i++) total += rows[i].bytes;
+    var html = '';
+    for (i = 0; i < rows.length; i++) {
+      html += '<tr><td>' + tr(rows[i].key) + '</td><td class="num">' + kb(rows[i].bytes) + '</td><td class="num">' + pct(rows[i].bytes, total) + '</td></tr>';
+    }
+    $('byteTable').innerHTML = html;
+    $('byteTotal').textContent = kb(total);
+    $('statSession').textContent = kb(live && live.sessionBytes ? live.sessionBytes : total);
+    $('statToday').textContent = kb(live && live.todayBytes ? live.todayBytes : total);
+    $('statAll').textContent = kb(live && live.allTimeBytes ? live.allTimeBytes : total);
+    $('meterState').textContent = live ? '' : tr('meterOff');
+  }
+
+  function renderCaches() {
+    var roles = { 'sdp-v0.0.1.a-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
+    function paint(entries) {
+      var html = '', i;
+      if (!entries) { $('cacheTable').innerHTML = '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>'; return; }
+      for (i = 0; i < entries.length; i++) {
+        var name = entries[i].name;
+        html += '<tr><td>' + name + '</td><td class="num">' + entries[i].count + '</td><td>' + tr(roles[name] || 'roleShell') + '</td></tr>';
+      }
+      $('cacheTable').innerHTML = html || '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>';
+    }
+    if (!window.caches || !window.caches.keys) { paint(null); return; }
+    window.caches.keys().then(function (names) {
+      var pending = names.length, out = [];
+      if (!pending) { paint([]); return; }
+      names.forEach(function (name) {
+        window.caches.open(name).then(function (cache) { return cache.keys(); }).then(function (keys) {
+          out.push({ name: name, count: keys.length });
+        }, function () { out.push({ name: name, count: 0 }); }).then(function () {
+          pending -= 1;
+          if (!pending) paint(out);
+        });
+      });
+    }, function () { paint(null); });
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        $('swState').textContent = regs && regs.length ? 'Service worker: sdp-v0.0.1.a ✓' : '';
+      }, function () {});
+    }
+  }
+
+  function renderPlans() {
+    var html = '', i;
+    for (i = 0; i < PLANS.length; i++) {
+      var p = PLANS[i];
+      var label = lang === 'si' ? p.si : p.en;
+      html += '<button type="button" class="chip" data-plan="' + p.id + '" aria-pressed="' + (p.id === plan.id) + '">' +
+        label + '<small>LKR ' + p.lkr + ' ' + tr('perGb') + '</small></button>';
+    }
+    $('planChips').innerHTML = html;
+    $('calcLine').textContent = tr('calcLine');
+    $('calcNote').textContent = tr('calcNote');
+    var lkr = Math.round(plan.lkr * GB);
+    $('calcOut').textContent = 'LKR ' + lkr;
+  }
+
+  function renderStorage() {
+    var keys = [
+      { k: 'sdp.progress', what: lang === 'si' ? 'ප්‍රගුණ කළ වචන, උත්සාහ, දුර්වල වචන, දින පෙළ' : 'mastered words, attempts, weak words, streak' },
+      { k: 'sdp.settings', what: lang === 'si' ? 'ආකාරය, වේගය, භාෂාව, තේමාව' : 'mode, pacing, language, theme' },
+      { k: 'sdp.session', what: lang === 'si' ? 'නවතා ඇති සැසියේ පිහිටීම' : 'in-flight resume position' },
+      { k: 'sdp.guide_seen', what: lang === 'si' ? 'උපදෙස් විවෘත කළ බව' : 'the student guide was opened' },
+      { k: 'sdp.migrated_from_legacy', what: lang === 'si' ? 'එක් වරක් පැරණි දත්ත ආනයනය' : 'one-time legacy import ran' }
+    ];
+    var html = '', i;
+    for (i = 0; i < keys.length; i++) {
+      var size = 0;
+      try {
+        var raw = localStorage.getItem(keys[i].k);
+        size = raw ? raw.length : 0;
+      } catch (e) { size = 0; }
+      html += '<tr><td><code>' + keys[i].k + '</code></td><td class="num">' + (size ? size + ' B' : tr('storageEmpty')) + '</td><td class="muted">' + keys[i].what + '</td></tr>';
+    }
+    $('storageTable').innerHTML = html;
+  }
+
+  function render() { renderBytes(); renderCaches(); renderPlans(); renderStorage(); }
+
+  function backHref() {
+    var path = String(location.pathname || '');
+    if (/\/data\/?$/.test(path) || /\/data\/index\.html$/.test(path)) return '../';
+    return './';
+  }
+
+  $('btnLang').addEventListener('click', function () { applyLang(lang === 'en' ? 'si' : 'en'); });
+  $('btnTheme').addEventListener('click', function () { applyTheme(theme === 'dark' ? 'light' : 'dark'); });
+  $('planChips').addEventListener('click', function (ev) {
+    var node = ev.target;
+    while (node && node !== $('planChips') && !(node.getAttribute && node.getAttribute('data-plan'))) node = node.parentNode;
+    if (!node || node === $('planChips') || !node.getAttribute) return;
+    var id = node.getAttribute('data-plan'), i;
+    for (i = 0; i < PLANS.length; i++) if (PLANS[i].id === id) plan = PLANS[i];
+    renderPlans();
+  });
+
+  try {
+    var savedTheme = localStorage.getItem('sdp.dataPage.theme');
+    if (savedTheme === 'light') theme = 'light';
+  } catch (e) {}
+  applyTheme(theme);
+  var params = String(location.search || '');
+  applyLang(params.indexOf('lang=si') >= 0 ? 'si' : 'en');
+  $('backLink').setAttribute('href', backHref());
+  if (window.SDPDataMeter && window.SDPDataMeter.start) {
+    try { window.SDPDataMeter.start({ interval: false }); } catch (e) {}
+  }
+})();
+</script>
+</body>
+</html>
