@@ -88,7 +88,7 @@ const TEST_FILES = [
   'tests/browser.cjs', 'tests/upgrade-browser.cjs', 'tests/e2e.cjs', 'tests/live-lab.cjs',
   'tests/audit-v42.cjs', 'tests/app-harness.cjs', 'tests/chromium-env.cjs',
   'tests/test-pin.cjs', 'tests/package.json',
-  /* v0.0.1.c registers three more gates: voice/guide, vault/sync, studio safety */
+  /* v0.0.1.d registers three more gates: voice/guide, vault/sync, studio safety */
   'tests/voice-guide.cjs', 'tests/vault-sync.cjs', 'tests/studio-safety.cjs'
 ];
 const TEST_BUDGET = 320000;
@@ -239,11 +239,11 @@ function pending(p) {
 (function versions() {
   if (exists('data/version.json')) {
     const v = JSON.parse(readText('data/version.json'));
-    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.c ships ver 3 / schema 3 / settingsRev 3
-    const ok = v.ver === 3 && v.appVersion === '0.0.1.c' && v.version === '0.0.1.c' &&
-      v.schema === 3 && v.settingsRev === 3 && String(v.session) === '8';
-    record('version.json carries the v0.0.1.c schema', ok, JSON.stringify(v).slice(0, 220));
-    record('version.json pins syncRev 1762000000002', Number(v.syncRev) === 1762000000002, JSON.stringify(v).slice(0, 200));
+    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.d ships ver 3 / schema 3 / settingsRev 3
+    const ok = v.ver === 4 && v.appVersion === '0.0.1.d' && v.version === '0.0.1.d' &&
+      v.schema === 4 && v.settingsRev === 4 && String(v.session) === '8';
+    record('version.json carries the v0.0.1.d schema', ok, JSON.stringify(v).slice(0, 220));
+    record('version.json pins syncRev 1762000000003', Number(v.syncRev) === 1762000000003, JSON.stringify(v).slice(0, 200));
     record('version.json stays slim (<= 2000 B)', bytes('data/version.json') <= 2000, bytes('data/version.json'));
   } else { pending('version.json'); }
 
@@ -256,14 +256,28 @@ function pending(p) {
       c.repoName === 'dictationb1.github.io' && c.defaults && c.classInfo,
       'preserved payload trimmed');
     record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
-    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.1.c bump set
-    record('config.json carries v0.0.1.c version fields',
-      c.ver === 3 && c.appVersion === '0.0.1.c' && c.version === '0.0.1.c' && c.schema === 3 && c.settingsRev === 3,
+    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.1.d bump set
+    record('config.json carries v0.0.1.d version fields',
+      c.ver === 4 && c.appVersion === '0.0.1.d' && c.version === '0.0.1.d' && c.schema === 4 && c.settingsRev === 4,
       JSON.stringify([c.ver, c.appVersion, c.schema, c.settingsRev]));
     record('config.json keeps the credits block verbatim',
       c.credits.en === 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini' &&
       /^නිර්මාණය: Hansana · අදහස: Ayya01 \(Lesandu\) · භාරකාර කථිකාචාර්ය: /.test(c.credits.si),
       JSON.stringify(c.credits && [c.credits.en, c.credits.si]));
+    /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.1 — the ten classroom keys */
+    const CLASSY = ['mode', 'writeSecs', 'repeats', 'pauseSecs', 'autoAdvance',
+      'pacingPreset', 'voiceLock', 'voiceSource', 'rate', 'theme'];
+    record('config.json ships classSettings with the ten classroom keys',
+      !!c.classSettings && CLASSY.every(function (k) { return c.classSettings[k] !== undefined; }) &&
+      Object.keys(c.classSettings).length === CLASSY.length,
+      JSON.stringify(c.classSettings || null).slice(0, 200));
+    /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.4 — the bootstrap PIN gate */
+    record('config.json ships a PBKDF2-SHA256 pinVerifier (250,000 iterations)',
+      !!c.pinVerifier && c.pinVerifier.algo === 'PBKDF2-SHA256' && c.pinVerifier.iterations === 250000 &&
+      String(c.pinVerifier.salt).length >= 16 && String(c.pinVerifier.hash).length >= 32,
+      JSON.stringify(c.pinVerifier || null));
+    record('pinVerifier carries only a salt and a hash (never the PIN)',
+      !!c.pinVerifier && !/246813/.test(JSON.stringify(c.pinVerifier)));
   } else { pending('config.json'); }
 
   /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 — secrets never land in git */
@@ -292,6 +306,27 @@ function pending(p) {
     });
   });
   record('no plaintext API secrets in tracked files', secrets.length === 0, secrets.join(', '));
+
+  /* contract: docs/DAILY_UPGRADE_PROMPT_TEMPLATE.md §v0.0.1.d — PIPE-01/03:
+     the three newest gates must exist, and both pipelines must chain all 12. */
+  ['voice-guide.cjs', 'vault-sync.cjs', 'studio-safety.cjs'].forEach(function (f) {
+    record('G10-G12 gate exists: tests/' + f, exists('tests/' + f));
+  });
+  const pkg = exists('tests/package.json') ? JSON.parse(readText('tests/package.json')) : {};
+  const gatesScript = String((pkg.scripts || {}).gates || '');
+  const chained = ['check.cjs', 'upgrade.test.cjs', 'phase1.cjs', 'server.cjs', 'browser.cjs',
+    'upgrade-browser.cjs', 'e2e.cjs', 'live-lab.cjs', 'audit-v42.cjs', 'voice-guide.cjs',
+    'vault-sync.cjs', 'studio-safety.cjs'];
+  record('tests/package.json chains all 12 gates',
+    chained.every(function (f) { return gatesScript.indexOf(f) >= 0; }), gatesScript.slice(0, 120));
+  const workflow = exists('.github/workflows/checks.yml') ? readText('.github/workflows/checks.yml') : '';
+  record('checks.yml runs G10, G11 and G12',
+    ['voice-guide.cjs', 'vault-sync.cjs', 'studio-safety.cjs'].every(function (f) { return workflow.indexOf(f) >= 0; }));
+  /* contract: docs/CHANGELOG_LEDGER.md §v0.0.1.d — PIPE-02: the app-written
+     voice pack must never be SHA-pinned in CI again. */
+  const shaStep = workflow.slice(workflow.indexOf('Preserved payloads must still match'));
+  record('CI no longer SHA-pins the app-written elevenlabs-audio.json',
+    shaStep.indexOf('elevenlabs-audio.json') < 0 && workflow.indexOf('153111d6') < 0);
 })();
 
 /* 7 ── retired ids, media and stubs are gone for good (W8) ---------------- */
@@ -346,7 +381,7 @@ function pending(p) {
   record('index.html loads the six modules in the fixed R10 order', ordered, JSON.stringify(positions));
   record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
   // contract: docs/ARCHITECTURE_MAP.md §R1 boot target is a single TARGET constant
-  record('index.html declares the v0.0.1.c boot target', html.indexOf("'0.0.1.c'") > 0 || html.indexOf('"0.0.1.c"') > 0);
+  record('index.html declares the v0.0.1.d boot target', html.indexOf("'0.0.1.d'") > 0 || html.indexOf('"0.0.1.d"') > 0);
   const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings'];
   record('index.html contains the five tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
   const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings'];
@@ -381,9 +416,9 @@ function pending(p) {
     record('index.html ships the studio quick launcher', html.indexOf('id="btnStudioQuick"') > 0);
     record('index.html ships guide narration controls (pause / next / replay)',
       /guidePauseVoice/.test(html) && /guideNextStep/.test(html) && /guideReplayStep/.test(html) && /guideResumeVoice/.test(views));
-    record('index.html boots at the v0.0.1.c target', /var TARGET = '0\.0\.1\.c'/.test(html));
-    record('service worker pins the v0.0.1.c shell caches',
-      /SW_VERSION = 'sdp-v0\.0\.1\.c'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.1\.c-shell'/.test(sw));
+    record('index.html boots at the v0.0.1.d target', /var TARGET = '0\.0\.1\.d'/.test(html));
+    record('service worker pins the v0.0.1.d shell caches',
+      /SW_VERSION = 'sdp-v0\.0\.1\.d'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.1\.d-shell'/.test(sw));
     /* W7: the studio must stamp whatever SDP.version says — never a frozen literal. */
     var studioCode = readText('data/studio.js').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     record('studio.js never hardcodes a release literal (reads SDP.version)',
@@ -403,12 +438,12 @@ function pending(p) {
     }
     var man = exists('manifest.webmanifest') ? readText('manifest.webmanifest') : '';
     record('manifest start_url carries the PWA source tag', /source=pwa/.test(man));
-    record('manifest start_url and shortcuts carry v0.0.1.c',
-      /"start_url": "\.\/\?v=0\.0\.1\.c/.test(man) && man.indexOf('?v=0.0.1.c') > 0 &&
-      (man.match(/v=0\.0\.1\.c/g) || []).length >= 3, (man.match(/v=0\.0\.1\.c/g) || []).length);
+    record('manifest start_url and shortcuts carry v0.0.1.d',
+      /"start_url": "\.\/\?v=0\.0\.1\.d/.test(man) && man.indexOf('?v=0.0.1.d') > 0 &&
+      (man.match(/v=0\.0\.1\.d/g) || []).length >= 3, (man.match(/v=0\.0\.1\.d/g) || []).length);
     var pack = JSON.parse(readText('data/elevenlabs-audio.json'));
-    record('voice pack carries the v0.0.1.c header',
-      pack.version === '0.0.1.c' && pack.appVersion === '0.0.1.c' && pack.ver === 3 && pack.schema === 3,
+    record('voice pack carries the v0.0.1.d header',
+      pack.version === '0.0.1.d' && pack.appVersion === '0.0.1.d' && pack.ver === 4 && pack.schema === 4,
       JSON.stringify([pack.version, pack.ver]));
   })();
 

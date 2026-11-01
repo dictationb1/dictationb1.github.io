@@ -63,7 +63,7 @@ async function newPage(browser, origin, opts) {
   opts = opts || {};
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
   await ctx.addInitScript(MOCK);
-  if (opts.guideSeen) await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.c'); } catch (e) {} });
+  if (opts.guideSeen) await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } catch (e) {} });
   if (opts.settings) await ctx.addInitScript((s) => { try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {} }, opts.settings);
   const page = await ctx.newPage();
   const errors = [];
@@ -77,7 +77,8 @@ async function newPage(browser, origin, opts) {
   return { ctx, page, errors };
 }
 
-const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' };
+/* appliedSettingsRev pins this pacing against a classSettings adoption (R11.2). */
+const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', appliedSettingsRev: 4 };
 
 (async function main() {
   const server = await start({ root: ROOT });
@@ -100,7 +101,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     await page.click('#btnGuideClose');
     await page.waitForTimeout(150);
     const afterGuide = await page.evaluate(() => localStorage.getItem('sdp.guide_seen'));
-    check('G7.1d closing the guide records the visit', afterGuide === '0.0.1.c', afterGuide);
+    check('G7.1d closing the guide records the visit', afterGuide === '0.0.1.d', afterGuide);
 
     /* ── 2. credits: on Home and in About, never floating ─────────────── */
     // contract: docs/ARCHITECTURE_MAP.md §R7 attribution placement
@@ -130,6 +131,47 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     });
     check('G7.2e About repeats the same attribution', aboutCredits.text.indexOf('Creator: Hansana') >= 0 && aboutCredits.text.indexOf('Ms. Sumodya Sewmini') >= 0, aboutCredits.text.slice(0, 120));
     check('G7.2f About carries the shimmer pill too', aboutCredits.hasPill === true);
+
+    /* ── 2b. VOX-07: the quick spoken walkthrough and its skip button ─── */
+    // contract: docs/UI_COMPONENT_GUIDE.md §Quick Walkthrough Mode
+    {
+      const { ctx, page } = await newPage(browser, server.origin, {
+        guideSeen: true,
+        settings: Object.assign({}, FAST, { guideAutoPlay: true, appliedSettingsRev: 4 })
+      });
+      await page.waitForTimeout(500);
+      /* Hold the narration open so the modal behaves like a real 20 s guide. */
+      await page.evaluate(() => {
+        Object.defineProperty(window, 'speechSynthesis', {
+          configurable: true,
+          value: { speak() {}, cancel() {}, pause() {}, resume() {}, getVoices() { return []; },
+            speaking: true, pending: false, paused: false, addEventListener() {}, removeEventListener() {} }
+        });
+      });
+      await page.click('#btnStart');
+      await page.waitForTimeout(250);
+      const quick = await page.evaluate(() => ({
+        open: document.getElementById('guideModal').hidden === false,
+        title: document.getElementById('guideTitle').textContent,
+        skipVisible: document.getElementById('btnGuideSkipStart').hidden === false,
+        skipLabel: document.getElementById('btnGuideSkipStart').textContent,
+        screen: document.querySelector('.screen.active').id
+      }));
+      check('G7.2g Start opens the quick voice guide before the cockpit', quick.open === true && quick.screen === 'screen-home', JSON.stringify(quick));
+      check('G7.2h the quick guide is titled and offers the skip button',
+        /Quick Voice Guide/.test(quick.title) && quick.skipVisible && /Skip Guide & Start Immediately/.test(quick.skipLabel),
+        JSON.stringify(quick));
+      await page.click('#btnGuideSkipStart');
+      await page.waitForTimeout(350);
+      const afterSkip = await page.evaluate(() => ({
+        screen: document.querySelector('.screen.active').id,
+        open: document.getElementById('guideModal').hidden === false,
+        state: document.getElementById('beatStateText').textContent
+      }));
+      check('G7.2i skipping starts the dictation immediately', afterSkip.screen === 'screen-player' && afterSkip.open === false, JSON.stringify(afterSkip));
+      check('G7.2j the beat is already running after the skip', afterSkip.state.length > 0, afterSkip.state);
+      await ctx.close();
+    }
 
     /* ── 3. paper dictation: five taps to listening ───────────────────── */
     // contract: docs/UI_COMPONENT_GUIDE.md §1 journey
@@ -303,7 +345,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     check('G7.6b the backup carries progress, settings and provenance',
       ['app', 'schema', 'exportedAt', 'progress', 'settings', 'appVersion'].every((k) => k in backup), Object.keys(backup).join(','));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — backups pin the current build
-    check('G7.6c the backup pins the running appVersion', backup.appVersion === '0.0.1.c', backup.appVersion);
+    check('G7.6c the backup pins the running appVersion', backup.appVersion === '0.0.1.d', backup.appVersion);
     fs.unlinkSync(savedTo);
 
     /* ── 7. the transparency pair is reachable ────────────────────────── */
