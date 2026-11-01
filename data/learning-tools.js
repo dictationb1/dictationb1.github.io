@@ -3576,6 +3576,10 @@ V59.ready = true;
     l.push(".topbar,.topbar.glass{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;height:56px!important;min-height:56px!important;margin:0!important;padding:0 14px!important;background:#09090B!important;border:none!important;border-bottom:1px solid rgba(255,255,255,0.09)!important;border-radius:0!important;box-shadow:0 4px 16px rgba(0,0,0,0.6)!important;z-index:120!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;box-sizing:border-box!important}");
     l.push("#creditDocked{position:static!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:center!important;width:fit-content!important;margin:18px auto 6px!important;pointer-events:none!important}");
     l.push("#staticFooter,.v58-footer,.v58-session-prog,.v58-offline-card,#v58OfflineRow,#screen-home>*:not(#homeAnn):not(#homeResume):not(#sdpHomeGreeting):not(#homeHero):not(#sdpHomeStatsRow):not(#sdpQuickPracticeGrid):not(#creditDocked){display:none!important}");
+    l.push("#screen-dict:not(.hidden){display:block!important;opacity:1!important;visibility:visible!important}#screen-dict #dictList{display:flex!important;flex-direction:column!important;gap:10px!important;min-height:200px!important;opacity:1!important;visibility:visible!important}");
+    l.push("#sdpWordSearchRow{position:sticky!important;top:66px!important;z-index:10!important;background:#09090B!important;padding:8px 0!important}#dictSearch{width:100%!important}#sdpWordFilterRow{margin-bottom:10px!important}");
+    l.push("#screen-set>*:not(#sdpNextGenSettings){display:none!important}");
+    l.push("#screen-comm .card,#screen-practice .card,#pracStage{background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;box-shadow:none!important;border-radius:16px!important}#screen-practice .seg,#screen-comm .seg{background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:12px!important}#screen-practice .seg button,#screen-comm .seg button{background:transparent!important;color:#A1A1AA!important;border-radius:999px!important}#screen-practice .seg button[aria-selected=\"true\"],#screen-practice .seg button[aria-pressed=\"true\"],#screen-comm .seg button[aria-selected=\"true\"]{background:#38BDF8!important;color:#062530!important}#screen-practice .seg .thumb,#screen-comm .seg .thumb{display:none!important}");
     return l;
   }
 
@@ -4048,7 +4052,16 @@ V59.ready = true;
       if (name === 'dictate') { startDictation(); return; }
       V.tab = name;
       var out = orig.apply(this, arguments);
-      try { mountChrome(); if (name === 'home') renderNextGenHome(); } catch (e) {}
+      try {
+        mountChrome();
+        if (name === 'home') renderNextGenHome();
+        if (name === 'dict') {
+          var dictScreen = $('#screen-dict');
+          if (dictScreen) { dictScreen.classList.remove('hidden'); dictScreen.style.display = 'block'; }
+          var dictScreens = Screens(); if (dictScreens && dictScreens.dict) dictScreens.dict();
+        } else { var inactiveDict = $('#screen-dict'); if (inactiveDict) inactiveDict.style.removeProperty('display'); }
+        if (name === 'set') rehomeSettings();
+      } catch (e) {}
       return out;
     };
     u.__v60SetTab = true;
@@ -4181,6 +4194,13 @@ V59.ready = true;
         }
       } catch (e2) {}
     }
+    if (!out.length) {
+      var raw = W.WORDS_DATA || [], publicDB = W.DB && W.DB.data;
+      var publicLists = publicDB && publicDB.lists;
+      if (publicLists && publicLists[0] && publicLists[0].words) out = publicLists[0].words.slice();
+      if (!out.length && Object.prototype.toString.call(raw) === '[object Array]') out = raw.slice();
+      if (!out.length && raw.words) out = raw.words.slice();
+    }
     return out;
   }
   function weakSet() {
@@ -4269,6 +4289,8 @@ V59.ready = true;
     if (!box) { box = mk('div', null, 'sdpNextGenSettings'); }
     if (host.firstElementChild !== box) host.insertBefore(box, host.firstChild);
     var st = settingsData();
+    var preservedAcc = $('#sdpAppearanceAccordion');
+    if (preservedAcc) host.appendChild(preservedAcc);
     while (box.firstChild) box.removeChild(box.firstChild);
 
     var card1 = mk('div', 'sdp-card', 'sdpPriority1');
@@ -4391,10 +4413,34 @@ V59.ready = true;
       box.appendChild(acc);
     }
     acc.open = false;
-    var setBody = $('#setBody');
-    if (setBody && setBody.parentNode !== acc) acc.appendChild(setBody);
+    rehomeSettings();
+    if (!host.__v60SettingsWatch && W.MutationObserver) {
+      host.__v60SettingsWatch = new W.MutationObserver(function () { rehomeSettings(); });
+      host.__v60SettingsWatch.observe(host, { childList: true });
+    }
   }
   W.SDP_NEXTGEN_SETTINGS_REFRESH = function () { try { renderNextGenSettings(); } catch (e) {} };
+
+  function rehomeSettings() {
+    var host = $('#screen-set'), box = $('#sdpNextGenSettings'), acc = $('#sdpAppearanceAccordion');
+    if (!host || !box || !acc) return;
+    var nodes = Array.prototype.slice.call(host.children);
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i] !== box && nodes[i] !== acc) acc.appendChild(nodes[i]);
+    }
+    var legacy = $$('#setBody > *', acc);
+    for (var j = 0; j < legacy.length; j++) {
+      var h = legacy[j].querySelector('h3'), title = String(h && h.textContent || '');
+      if (legacy[j].id !== 'lgStage' && !/Appearance|Wallpaper|Studio/i.test(title)) legacy[j].style.setProperty('display', 'none', 'important');
+    }
+    var extras = Array.prototype.slice.call(acc.children);
+    for (var k = 0; k < extras.length; k++) {
+      var ex = extras[k];
+      if (ex.tagName === 'SUMMARY' || ex.id === 'setBody' || /studio/i.test(ex.id)) continue;
+      var eh = ex.querySelector('h3');
+      if (!/Appearance|Wallpaper|Studio/i.test(String(eh && eh.textContent || ''))) ex.style.setProperty('display', 'none', 'important');
+    }
+  }
 
   function wrapSettings() {
     var s = Screens();
@@ -4424,8 +4470,16 @@ V59.ready = true;
   function ensureFilterRow() {
     var host = $('#screen-dict');
     if (!host) return null;
+    var searchInput = $('#dictSearch'), dictList = $('#dictList'), searchRow = $('#sdpWordSearchRow');
+    if (!searchRow) searchRow = mk('div', null, 'sdpWordSearchRow');
+    if (searchInput && searchInput.parentNode !== searchRow) searchRow.appendChild(searchInput);
+    if (dictList && dictList.parentNode !== host) host.appendChild(dictList);
+    host.insertBefore(searchRow, dictList || host.firstChild);
+    var legacyTabs = $('#dictTabs'); if (legacyTabs) keep(legacyTabs);
+    var oldStacks = $$('#screen-dict > .stack');
+    for (var si = 0; si < oldStacks.length; si++) keep(oldStacks[si]);
     var rowEl = $('#sdpWordFilterRow');
-    if (rowEl) return rowEl;
+    if (rowEl) { host.insertBefore(rowEl, dictList); return rowEl; }
     rowEl = mk('div', null, 'sdpWordFilterRow');
     rowEl.setAttribute('role', 'group');
     rowEl.setAttribute('aria-label', 'Word filters');
@@ -4445,11 +4499,7 @@ V59.ready = true;
         rowEl.appendChild(b);
       })(defs[i][0], defs[i][1]);
     }
-    var search = $('#dictSearch');
-    var anchor = null;
-    if (search) { var p = search; while (p && p !== host && p.parentNode !== host) p = p.parentNode; anchor = p; }
-    if (anchor && anchor.parentNode === host) host.insertBefore(rowEl, anchor.nextSibling);
-    else host.insertBefore(rowEl, host.firstChild);
+    host.insertBefore(rowEl, dictList || null);
     return rowEl;
   }
   function renderWordCards() {
@@ -4464,6 +4514,7 @@ V59.ready = true;
     var shown = [];
     for (var i = 0; i < words.length; i++) {
       var w = words[i] || {};
+      if (typeof w === 'string') w = { w: w };
       var key = String(w.w || '').toLowerCase();
       if (q && key.indexOf(q) < 0) continue;
       if (wordFilter === 'weak' && !weak[key]) continue;
@@ -4479,6 +4530,7 @@ V59.ready = true;
       var empty = mk('p', 'tiny muted', null, 'No words match this filter.');
       list.appendChild(empty);
     }
+    return shown.length;
   }
   function wordCard(w, num) {
     var card = mk('div', 'sdp-word-card wordcard v59-dict-card');
@@ -4524,12 +4576,8 @@ V59.ready = true;
   function wrapDict() {
     var s = Screens();
     if (!s || s.__v60Dict || typeof s.dict !== 'function') return;
-    var orig = s.dict;
-    s.dict = function () {
-      var out = orig.apply(this, arguments);
-      try { renderWordCards(); } catch (e) {}
-      return out;
-    };
+    s.__v60LegacyDict = s.dict;
+    s.dict = function () { return renderWordCards(); };
     s.__v60Dict = true;
   }
 
