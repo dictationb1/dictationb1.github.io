@@ -1,0 +1,1 @@
+'use strict';var h=require('../../tests/app-harness.cjs');var a=h.harness(null,{learning:true,voice:'en-GB'});console.log('errors',JSON.stringify(a.q.Errors.items.slice(0,4),null,1));console.log('homeHTML',a.w.document.getElementById('sdpNextGenHome').innerHTML.slice(0,200));console.log('Screens.home src',String(a.q.Screens.home).slice(0,120));a.close();

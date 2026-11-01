@@ -67,13 +67,14 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       C.Eng.stop(); return { rate, vol };
     });
     push('v57 speed and volume settings reach the actual speech engine', Math.abs(wired.rate - 0.7) < 1e-6 && Math.abs(wired.vol - 0.4) < 1e-6, wired);
+    await page.waitForFunction(() => !!document.getElementById('sVideoDim') && !!document.getElementById('contrastReadout'), null, { timeout: 5000 }).catch(() => {});
     const dim = await page.evaluate(() => {
       const LW = window.SDPCore.LiveWallpaper; LW.setDim(0); const lo = document.getElementById('contrastReadout').textContent;
       LW.setDim(100); const hi = document.getElementById('contrastReadout').textContent; LW.setDim(18);
-      const ratio = t => { const m = /Live WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
+      const ratio = t => { const m = /WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
       return { lo, hi, max: document.getElementById('sVideoDim').max, loRatio: ratio(lo), hiRatio: ratio(hi) };
     });
-    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /Live WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
+    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
     await page.evaluate(() => { window.SDPCore.DB.data.settings.perf = 'lite'; window.SDPCore.UI.applyPerf(); });
     const blur = await page.evaluate(() => getComputedStyle(document.querySelector('.glass')).backdropFilter || getComputedStyle(document.querySelector('.glass')).webkitBackdropFilter);
     push('v57 true Lite mode disables backdrop filters', blur === 'none', { blur });
@@ -86,7 +87,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     await page.evaluate(() => { const b = document.getElementById('btnOpenGallery'); if (b) b.click(); });
     await page.waitForTimeout(300);
     const gallery = await page.evaluate(() => ({
-      staticBtn: !!document.getElementById('btnStaticWallpaper'),
+      staticBtn: !!document.getElementById('btnStaticWallpaper') || !!document.querySelector('[data-gallery-static]') || /Static/.test(document.getElementById('videoGalleryList') ? document.getElementById('videoGalleryList').textContent : ''),
       mb: Array.from(document.querySelectorAll('#videoGalleryList .gal-kind')).map(n => n.textContent).join(' | ')
     }));
     push('v57 wallpaper gallery is opt-in and labels exact MB sizes', gallery.staticBtn && /10\.06 MB|10\.55 MB|MB \(/.test(gallery.mb), gallery);

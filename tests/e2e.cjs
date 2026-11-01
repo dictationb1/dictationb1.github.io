@@ -418,7 +418,7 @@ async function flow(browser, vp, label, seed) {
   await page.evaluate(() => { if (window.SDPCore && SDPCore.UI.closeSheet) SDPCore.UI.closeSheet(); });
   await page.waitForTimeout(300);
   /* Practice Hub bento tile opens the flashcard practice screen */
-  await page.evaluate(() => { const t = document.querySelector('[data-practice="flash"]'); if (t) t.click(); });
+  await page.evaluate(() => { const t = document.querySelector('[data-practice="flash"]') || document.querySelector('[data-tool="flash"]'); if (t) t.click(); });
   await page.waitForTimeout(500);
   const practice = await page.evaluate(() => ({
     tab: document.querySelector('#tab-practice') ? document.querySelector('#tab-practice').getAttribute('aria-selected') : '',
@@ -431,13 +431,13 @@ async function flow(browser, vp, label, seed) {
   await page.evaluate(() => { const C = window.SDPCore; if (C && C.UI && C.UI.setTab) C.UI.setTab('set'); else document.getElementById('tab-set').click(); });
   await page.waitForTimeout(400);
   const settingsBits = await page.evaluate(() => {
-    const presets = document.querySelectorAll('.v58-preset').length;
-    const about = document.getElementById('v58AboutPill');
+    const presets = document.querySelectorAll('#sdpNextGenSettings > details').length;
+    const about = document.getElementById('creditDocked');
     if (about) about.click();
-    const sheet = document.getElementById('aboutCreditsSheet');
+    const sheet = document.getElementById('creditFoot');
     const open = !!sheet && !sheet.classList.contains('hidden');
     const txt = sheet ? sheet.textContent : '';
-    const close = document.getElementById('v58AboutClose'); if (close) close.click();
+    
     return { presets, about: !!about, open,
       names: /Hansana/.test(txt) && /Ayya01/.test(txt) && /Sumodya Sewmini/.test(txt),
       closed: !sheet || sheet.classList.contains('hidden') };

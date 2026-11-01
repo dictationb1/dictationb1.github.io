@@ -118,7 +118,7 @@ function device(html, base) {
   w.HTMLCanvasElement.prototype.getContext = () => null;
   w.fetch = (url, opts) => fetch(String(url).replace(/^https?:\/\/ntfy\.sh/, base).replace(/^\.\//, base + '/'), opts);
   w.EventSource = makeEventSource(w, base);
-  const rawScript = Array.from(w.document.scripts).find(s => !s.type && s.textContent.includes('var APP_VERSION')).textContent;
+  const rawScript = require('node:fs').readFileSync(require('node:path').resolve(__dirname,'../data/app-core.js'),'utf8');
   const marker = rawScript.indexOf('window.SDP = {') >= 0 ? 'window.SDP = {' : 'window.SDP={';
   const script = rawScript.replace(marker, 'window.__lab = {Admin:Admin,DB:DB,Cloud:Cloud,UI:UI,Eng:Eng,Speech:Speech,Lib:Lib,CONFIG:CONFIG,defaultData:defaultData}; window.SDP = {');
   vm.runInContext(script, dom.getInternalVMContext());

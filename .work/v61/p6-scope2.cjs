@@ -1,0 +1,1 @@
+'use strict';var fs=require('fs'),p=require('./patchlib.cjs'),f='data/app-core.js',s=fs.readFileSync(f,'utf8'),n=(s.match(/U\.v61Get\(/g)||[]).length;if(n)p.rep(f,'U.v61Get(','U.$(',n);console.log('fixed U.$ occurrences',n);

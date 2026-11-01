@@ -1,0 +1,1 @@
+'use strict';var fs=require('fs'),p=require('./patchlib.cjs'),acorn=require('./node-acorn.cjs'),f='data/app-core.js',s=fs.readFileSync(f,'utf8'),n=(s.match(/U\.v61/g)||[]).length;if(n)p.rep(f,'U.v61','U.',n);s=fs.readFileSync(f,'utf8');acorn.parse(s,{ecmaVersion:5});new Function(s);console.log('restored U methods',n);
