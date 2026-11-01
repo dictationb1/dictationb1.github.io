@@ -481,7 +481,7 @@ test('5.2 v57: admin auto-completer parses typed words and ships no default PIN'
  assert.ok(current.includes('adminPin:""'));
 }));
 test('5.3 v59: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
- assert.ok(current.includes('APP_VERSION="9.0.0.1"'));
+ assert.ok(current.includes('APP_VERSION="9.0.0.3"'));
  assert.ok(current.includes('./data/data-meter.js'));
  assert.ok(!current.includes('id="sdpV56"'), 'fake depot removed');
  assert.ok(!current.includes('id="materialMixer"'), 'Material Mixer removed');
