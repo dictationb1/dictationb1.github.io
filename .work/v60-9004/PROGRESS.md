@@ -1,5 +1,11 @@
 # v60 (9.0.0.4) — PROGRESS
 
+## P1 — VERSION BUMP + FOUC CLOAK (done)
+- `#sdpPrePaintCloak` injected in `<head>` right after `#sdpSwBoot`; 900ms fallback timer added inside `#sdpSwBoot`.
+- Version 9.0.0.3 -> 9.0.0.4 in: data/{version,config,session,elevenlabs-audio,media-manifest}.json (2 each), sw.js (5), data/data-meter.js (1), data/learning-tools.js (3), data/studio.js (1), index.html (6), data.html (1) + data/index.html copy.
+- Version-string assertions updated in tests/check.cjs, upgrade.test.cjs, server.cjs, audit-v42.cjs, live-lab.cjs, phase1.cjs.
+- Cheap check PASS (G1 + G2).
+
 ## P0 — PREFLIGHT
 - Repo: dictationb1/dictationb1.github.io (verified via `gh api repos/... --jq .full_name`).
 - HEAD at start: `ef6cdfa` (Merge pull request #109) — expected baseline, OK.
@@ -21,7 +27,7 @@
 
 ## Phase status
 - [x] P0 preflight and helpers
-- [ ] P1 version 9.0.0.4 + pre-paint FOUC cloak
+- [x] P1 version 9.0.0.4 + pre-paint FOUC cloak (index 485175 B; all stamps 9.0.0.4 incl. data-meter/learning-tools/studio/sw; cloak injected after #sdpSwBoot with 900ms fallback)
 - [ ] P2 Speech.say/topbar/creditDocked/legacy timers
 - [ ] P3 blank Words tab, Settings leaks, Practice styling
 - [ ] P4 dictation cockpit split-screen + scroll lock

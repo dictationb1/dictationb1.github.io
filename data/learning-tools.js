@@ -3113,7 +3113,7 @@
      ============================================================ */
   window.SDPVersion = {
     family: '9.0',
-    current: '9.0.0.3',
+    current: '9.0.0.4',
     parse: function (v) {
       var m = /^9\.0\.(\d+)(?:\.(\d+))?$/.exec(String(v || '9.0.0.1'));
       return { major: 9, minor: 0, patch: Number(m && m[1] ? m[1] : 0), build: Number(m && m[2] ? m[2] : 1) };
@@ -3298,7 +3298,7 @@ V59.ready = true;
 })();
 
 /* ============================================================================
-   v60 Next-Gen "Hurubuhuti" UI - complete replacement layer (v60 / 9.0.0.3)
+   v60 Next-Gen "Hurubuhuti" UI - complete replacement layer (v60 / 9.0.0.4)
    ----------------------------------------------------------------------------
    Appended to data/learning-tools.js. ES5 only. Every label is ASCII in this
    source file (Sinhala / emoji are \uXXXX escapes) so the file stays safe to
@@ -3312,7 +3312,7 @@ V59.ready = true;
   var D = W && W.document;
   if (!W || !D) return;
 
-  var V = { id: '60', ver: '9.0.0.3', mounted: false, busy: false, lang: 'en', bootedAt: 0 };
+  var V = { id: '60', ver: '9.0.0.4', mounted: false, busy: false, lang: 'en', bootedAt: 0 };
   W.SDP_NEXTGEN_V60 = V;
 
   /* ---------------------------------------------------------------- helpers */
