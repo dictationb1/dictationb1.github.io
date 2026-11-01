@@ -5,8 +5,8 @@
  * 'sdp-youdao-v1' (dictionary audio) and 'sdp-audio-clips' (lecturer/Alice). */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.1.a';
-var SHELL_CACHE = 'sdp-v0.0.1.a-shell';
+var SW_VERSION = 'sdp-v0.0.1.b';
+var SHELL_CACHE = 'sdp-v0.0.1.b-shell';
 var PRESERVE_CACHES = ['sdp-youdao-v1', 'sdp-audio-clips'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';
@@ -134,5 +134,29 @@ self.addEventListener('message', function (event) {
   if (data === 'sdp:skip-waiting' || data.action === 'skipWaiting') self.skipWaiting();
   if (data.action === 'version' && event.ports && event.ports[0]) {
     event.ports[0].postMessage({ version: SW_VERSION, shell: SHELL_CACHE });
+  }
+  /* S4: cache the 30 word-audio URLs on demand (offline downloader, R6 §4).
+     Youdao dictionary audio goes into the preserved sdp-youdao-v1 cache;
+     lecturer/Alice clips go into sdp-audio-clips. Both caches are preserved
+     across upgrades and are never purged. */
+  if (data && data.type === 'sdp:cache-words' && Array.isArray(data.urls) && event.source) {
+    var urls = data.urls, done = 0;
+    function next() {
+      if (done >= urls.length) {
+        event.source.postMessage({ type: 'sdp:cache-progress', cached: done, total: urls.length });
+        return;
+      }
+      var url = String(urls[done++]);
+      var cacheName = isYoutubeAudio(url) ? YOUDAO_CACHE : CLIP_CACHE;
+      caches.open(cacheName).then(function (cache) {
+        return fetch(url).then(function (res) {
+          if (res && (res.ok || res.type === 'opaque')) {
+            try { cache.put(url, res.clone()); } catch (e) {}
+          }
+          return res;
+        }, function () { return null; }).then(next, next);
+      });
+    }
+    next();
   }
 });

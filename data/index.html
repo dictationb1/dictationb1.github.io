@@ -4,8 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#09090B">
-<meta name="description" content="Smart Dictation Player v0.0.1.a — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
-<title>Data &amp; Cache Transparency · Smart Dictation v0.0.1.a</title>
+<meta name="description" content="Smart Dictation Player v0.0.1.b — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
+<title>Data &amp; Cache Transparency · Smart Dictation v0.0.1.b</title>
+<script>
+(function () {
+  var vUrl = location.pathname.indexOf('/data/') !== -1 ? './version.json' : './data/version.json';
+  var TARGET = '0.0.1.b';
+  if (typeof fetch !== 'function') return;
+  fetch(vUrl + '?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r && r.ok ? r.json() : null; })
+    .then(function (v) {
+      if (!v || !v.appVersion || v.appVersion === TARGET) return;
+      if (sessionStorage.getItem('sdp_upgraded_to') === v.appVersion) return;
+      sessionStorage.setItem('sdp_upgraded_to', v.appVersion);
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) {
+            if (k.indexOf('sdp-') === 0 && k !== 'sdp-youdao-v1' && k !== 'sdp-audio-clips') {
+              return caches.delete(k);
+            }
+            return Promise.resolve(false);
+          }));
+        }).then(function () { location.reload(); }, function () { location.reload(); });
+      } else {
+        location.reload();
+      }
+    })
+    .catch(function () {});
+})();
+</script>
 <style>
   :root {
     --bg-app: #09090B; --bg-card: #121216; --bg-elev: #18181D; --border: #27272A;
@@ -90,7 +117,7 @@
 <header>
   <div class="brand">
     <strong>Smart Dictation</strong>
-    <span class="ver">v0.0.1.a</span>
+    <span class="ver">v0.0.1.b</span>
     <span class="badge">CCBE B1</span>
   </div>
   <div class="chips" style="margin:0">
@@ -170,8 +197,8 @@
   </section>
 
   <footer class="foot">
-    <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
-    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player v0.0.1.a</p>
+    <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
+    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player v0.0.1.b</p>
   </footer>
 </main>
 
@@ -190,7 +217,7 @@
       cacheTitle: 'Caches on this device', colCache: 'Cache', colEntries: 'Entries', colRole: 'Role',
       calcTitle: 'Mobile data cost (Sri Lanka)', storageTitle: 'Storage audit',
       colKey: 'Key', colWhat: 'What it holds',
-      storageNote: 'Only these five keys are ever written by the player. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
+      storageNote: 'The player writes only the five R8 keys above; the data meter and this page write their own six keys. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
       offlineTitle: 'Offline behaviour',
       offline1: 'The shell, the fonts and the 30-word session are pre-cached, so the app opens without a network.',
       offline2: 'A published session appears on your device the next time you open the app while online.',
@@ -206,7 +233,7 @@
       meterOff: 'Live meter unavailable — showing the published file sizes instead.',
       gb: 'GB / month', storageEmpty: 'empty', locked: 'not supported in this browser'
     },
-    si: {
+      si: {
       back: 'ක්‍රීඩකයට ආපසු',
       title: 'දත්ත සහ උපස්ථ පාරදෘශ්‍යතාව',
       sub: 'මෙම යෙදුම ඔබේ දුරකථනයෙන් බාගන්නා සෑම බයිටයක්ම මෙහි දැකිය හැක. කිසිවක් රැස් කර හෝ යවා නොගනී; සියලු සංඛ්‍යා ඔබේම උපාංගයෙන් කියවයි.',
@@ -236,6 +263,17 @@
 
   var lang = 'en';
   var theme = 'dark';
+  var SESSION_BYTES = 46403; /* accurate figure, derived below with this fallback */
+  var APP_BYTES = 120000;
+  function utf8Bytes(text) { try { return new TextEncoder().encode(str(text || '')).length; } catch (e) { return String(text || '').length; } }
+  function deriveSessionBytes() {
+    if (typeof fetch !== 'function') return;
+    fetch('./session.json', { cache: 'no-store' }).then(function (r) { return r && r.ok ? r.text() : ''; }).then(function (text) {
+      var n = utf8Bytes(text);
+      if (n > 0) { SESSION_BYTES = n; renderBytes(); }
+    }, function () {});
+  }
+  deriveSessionBytes();
   var PLANS = [
     { id: 'dialog', en: 'Dialog Prepaid', si: 'Dialog පෙරගෙවුම්', lkr: 98, active: true },
     { id: 'mobitel', en: 'Mobitel Prepaid', si: 'Mobitel පෙරගෙවුම්', lkr: 105, active: false },
@@ -288,7 +326,7 @@
     var live = readMeter();
     var rows = [
       { key: 'appShell', bytes: APP_BYTES },
-      { key: 'sessionFile', bytes: 46403 },
+      { key: 'sessionFile', bytes: SESSION_BYTES },
       { key: 'fonts', bytes: 48520 + 48748 },
       { key: 'meterModule', bytes: 21500 },
       { key: 'manifestFile', bytes: 2200 }
@@ -308,7 +346,7 @@
   }
 
   function renderCaches() {
-    var roles = { 'sdp-v0.0.1.a-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
+    var roles = { 'sdp-v0.0.1.b-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
     function paint(entries) {
       var html = '', i;
       if (!entries) { $('cacheTable').innerHTML = '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>'; return; }
@@ -333,7 +371,7 @@
     }, function () { paint(null); });
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
-        $('swState').textContent = regs && regs.length ? 'Service worker: sdp-v0.0.1.a ✓' : '';
+        $('swState').textContent = regs && regs.length ? 'Service worker: sdp-v0.0.1.b ✓' : '';
       }, function () {});
     }
   }
@@ -354,12 +392,21 @@
   }
 
   function renderStorage() {
+    /* I1 honest audit: the 5 player R8 keys, the 6 data-meter / media keys
+       and the /data theme key — 12 keys in total, nothing hidden. */
     var keys = [
-      { k: 'sdp.progress', what: lang === 'si' ? 'ප්‍රගුණ කළ වචන, උත්සාහ, දුර්වල වචන, දින පෙළ' : 'mastered words, attempts, weak words, streak' },
-      { k: 'sdp.settings', what: lang === 'si' ? 'ආකාරය, වේගය, භාෂාව, තේමාව' : 'mode, pacing, language, theme' },
-      { k: 'sdp.session', what: lang === 'si' ? 'නවතා ඇති සැසියේ පිහිටීම' : 'in-flight resume position' },
-      { k: 'sdp.guide_seen', what: lang === 'si' ? 'උපදෙස් විවෘත කළ බව' : 'the student guide was opened' },
-      { k: 'sdp.migrated_from_legacy', what: lang === 'si' ? 'එක් වරක් පැරණි දත්ත ආනයනය' : 'one-time legacy import ran' }
+      { k: 'sdp.progress', what: lang === 'si' ? 'ප්‍රගුණ කළ වචන, උත්සාහ, දුර්වල වචන, දින පෙළ' : 'mastered words, attempts, weak words, streak (player R8 key 1 of 5)' },
+      { k: 'sdp.settings', what: lang === 'si' ? 'ආකාරය, වේගය, භාෂාව, තේමාව' : 'mode, pacing, language, theme, voice presets (player R8 key 2 of 5)' },
+      { k: 'sdp.session', what: lang === 'si' ? 'නවතා ඇති සැසියේ පිහිටීම' : 'in-flight dictation resume position (player R8 key 3 of 5)' },
+      { k: 'sdp.guide_seen', what: lang === 'si' ? 'උපදෙස් අගයේ අනුව තිබේ නොවේ' : 'guide version stamp: "0.0.1.b" means the 0.0.1.b guide was seen (player R8 key 4 of 5)' },
+      { k: 'sdp.migrated_from_legacy', what: lang === 'si' ? 'එක් වරක් පැරණි දත්ත ආනයනය' : 'one-time legacy import already ran (player R8 key 5 of 5)' },
+      { k: 'sdp.dataMeter.daily', what: lang === 'si' ? 'දිවයක් දැයි දත්තය' : 'daily data-meter totals' },
+      { k: 'sdp.dataMeter.allTime', what: lang === 'si' ? 'මුළු කාලයේ තොරතුල්' : 'all-time data-meter totals' },
+      { k: 'sdp.dataPriceLkrPerGb', what: lang === 'si' ? 'පරදී ගිගාබයක් ප්‍රතිපත්තිය' : 'chosen mobile data plan rate (LKR per GB)' },
+      { k: 'sdp.dataPricePlan', what: lang === 'si' ? 'තෝරාගත෇ සැලසුම' : 'chosen plan id (Dialog/Mobitel/Hutch/Airtel/SLT)' },
+      { k: 'sdp.dataMeter.videoHW', what: lang === 'si' ? 'වීඩියෝ යන්ත්‍රය' : 'video hardware probe byte' },
+      { k: 'sdp.mediaManifest.v1', what: lang === 'si' : 'මාධ්‍ය ලක්ෂ්‍ය සංකේතය' : 'media manifest index (fonts, audio estimates)' },
+      { k: 'sdp.dataPage.theme', what: lang === 'si' ? 'තේමාව' : 'transparency page theme (dark/light)' }
     ];
     var html = '', i;
     for (i = 0; i < keys.length; i++) {

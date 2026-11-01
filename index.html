@@ -2,44 +2,14 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#09090B">
-<meta name="description" content="Smart Dictation Player v0.0.1.a — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
+<meta name="description" content="Smart Dictation Player v0.0.1.b — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
 <title>Smart Dictation · CCBE B1</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./assets/css/sdp-ui.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2309090B'/%3E%3Cpath d='M7 20c4-1 6-4 8-9 2 5 5 8 10 9' stroke='%2338BDF8' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style id="sdpCloak">html,body{margin:0;background:#09090B;color:#FAFAFA;font-family:Inter,system-ui,sans-serif}.screen{display:none!important}.screen.active{display:block!important}</style>
-<script>
-(function () {
-  var TARGET = '0.0.1.a';
-  window.__SDP_BOOT_VERSION__ = TARGET;
-  try {
-    if (typeof fetch !== 'function') return;
-    fetch('./data/version.json?t=' + Date.now(), { cache: 'no-store' })
-      .then(function (r) { return r && r.ok ? r.json() : null; })
-      .then(function (v) {
-        if (!v || !v.appVersion || v.appVersion === TARGET) return;
-        if (sessionStorage.getItem('sdp_upgraded_to') === v.appVersion) return;
-        sessionStorage.setItem('sdp_upgraded_to', v.appVersion);
-        var reloadNow = function () { location.reload(); };
-        if (window.caches && caches.keys) {
-          caches.keys().then(function (ks) {
-            return Promise.all(ks.map(function (k) {
-              if (k.indexOf('sdp-') === 0 && k !== 'sdp-youdao-v1' && k !== 'sdp-audio-clips') {
-                return caches.delete(k);
-              }
-              return Promise.resolve(false);
-            }));
-          }).then(reloadNow, reloadNow);
-        } else {
-          reloadNow();
-        }
-      })
-      .catch(function () {});
-  } catch (e) {}
-})();
-</script>
 </head>
 <body>
 
@@ -51,10 +21,12 @@
     </svg>
     <span id="brandName">Smart Dictation</span>
     <span class="b1badge">CCBE B1</span>
-    <span id="sdpVerPill">v0.0.1.a</span>
+    <span id="sdpVerPill">v0.0.1.b</span>
+    <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced · Session 8 · v0.0.1.b</button>
+    <button id="btnStudioQuick" class="hbtn hbtn-icon" type="button" aria-label="Open the Lecturer Studio from Settings">🔒</button>
   </div>
   <div class="header-actions">
-    <button id="btnGuideTop" type="button" class="hbtn" aria-label="Open the student guide">? Guide</button>
+    <button id="btnGuideTop" type="button" class="hbtn" data-i18n="guideBtn" aria-label="Open the student guide">? Guide</button>
     <button id="btnLang" type="button" class="hbtn" aria-label="Switch language between English and Sinhala"><span class="lang-on">EN</span><span class="lang-sep">|</span><span class="lang-off">SI</span></button>
     <button id="btnTheme" type="button" class="hbtn hbtn-icon" aria-label="Switch theme between dark and light"><span id="themeIcon" aria-hidden="true">◐</span></button>
   </div>
@@ -206,7 +178,7 @@
     <section id="screen-dict" class="screen" aria-labelledby="dictTitle">
       <div class="card">
         <h2 id="dictTitle" class="card-title" data-i18n="tabWords">30 Words</h2>
-        <input id="dictSearch" type="search" class="input" placeholder="Search words" aria-label="Search words" autocomplete="off">
+        <input id="dictSearch" type="search" class="input" placeholder="Search words" aria-label="Search words" data-i18n-placeholder="dictSearchPh" autocomplete="off">
         <div id="dictFilterRow" class="chip-row" role="group" aria-label="Word filters">
           <button type="button" class="pill" data-filter="all" aria-pressed="true" data-i18n="filterAll">All 30</button>
           <button type="button" class="pill" data-filter="weak" aria-pressed="false" data-i18n="weakWords">Weak Words</button>
@@ -307,7 +279,7 @@
           <p class="about-line" data-i18n="aboutBlurb">A free, offline-first dictation trainer for one class — no accounts, no ads, no tracking.</p>
           <p class="about-line about-audience" data-i18n="aboutAudience">Built for the CCBE Galle Branch — B1 English Class, Sri Lanka.</p>
           <ul class="about-list">
-            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.a</span></li>
+            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.b</span></li>
             <li><span data-i18n="aboutBuiltLabel">Built</span>: <span id="aboutBuilt">2026-11-01</span></li>
             <li><a id="aboutDataLink" href="./data/" data-i18n="aboutDataLink">See every byte this app stores</a></li>
           </ul>
@@ -345,13 +317,77 @@
     </div>
     <ol id="guideSteps" class="guide-steps"></ol>
     <div class="modal-foot">
+      <button id="guidePauseVoice" type="button" class="btn" data-i18n="guidePauseVoice">⏸ Pause Voice</button>
+      <button id="guideNextStep" type="button" class="btn" data-i18n="guideNextStep">⏭ Next Step</button>
+      <button id="guideReplayStep" type="button" class="btn" data-i18n="guideReplayStep">🔁 Replay Step</button>
       <button id="guideSpeak" type="button" class="btn" data-i18n="guideSpeakBtn">Listen to the steps (EN)</button>
-      <button id="btnGuideClose" type="button" class="btn btn-primary" data-i18n="guideCloseBtn">Got it, Start Learning</button>
+      <button id="btnGuideClose" type="button" class="btn btn-primary" data-i18n="guideCloseBtn">✅ Start Dictation Now</button>
     </div>
   </div>
 </div>
 
 <div id="sdpDataToast" class="toast toast-hidden" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var TARGET = '0.0.1.b';
+  window.__SDP_BOOT_VERSION__ = TARGET;
+  var doReload = function (remoteVersion) {
+    try { sessionStorage.setItem('sdp_upgraded_to', remoteVersion); } catch (e) {}
+    var node = document.getElementById && document.getElementById('sdpDataToast');
+    if (node) {
+      node.textContent = 'Update found — reloading…';
+      node.hidden = false;
+      try { node.classList.remove('toast-hidden'); } catch (e) {}
+    }
+    var reloadNow = function () { location.reload(); };
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (ks) {
+        return Promise.all(ks.map(function (k) {
+          if (k.indexOf('sdp-') === 0 && k !== 'sdp-youdao-v1' && k !== 'sdp-audio-clips') {
+            return caches.delete(k);
+          }
+          return Promise.resolve(false);
+        }));
+      }).then(reloadNow, reloadNow);
+    } else {
+      reloadNow();
+    }
+  };
+  var checkNow = function () {
+    try {
+      if (typeof fetch !== 'function') return;
+      fetch('./data/version.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r && r.ok ? r.json() : null; })
+        .then(function (v) {
+          if (!v || !v.appVersion || v.appVersion === TARGET) return;
+          if (sessionStorage.getItem('sdp_upgraded_to') === v.appVersion) return;
+          doReload(v.appVersion);
+        })
+        .catch(function () {});
+    } catch (e) {}
+  };
+  checkNow();
+  /* D1 in-session version watcher: a Smart Board or phone left open across
+     the school day still sees the 0.0.1.b reload within two minutes, and
+     again as soon as the tab becomes visible. */
+  var watcher = null;
+  function startWatcher() {
+    if (watcher) return;
+    watcher = setInterval(checkNow, 120000);
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') checkNow();
+    }, false);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      startWatcher();
+    } else {
+      document.addEventListener('DOMContentLoaded', startWatcher, false);
+    }
+  }
+})();
+</script>
 
 <script src="./data/data-meter.js" defer></script>
 <script src="./data/sdp-data-sync.js" defer></script>
