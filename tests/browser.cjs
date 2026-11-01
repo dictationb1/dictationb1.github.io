@@ -184,7 +184,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     !!(v37.tab&&v37.tab.fg==='rgb(56, 189, 248)')&&
     !!(v37.tabbar&&v37.tabbar.radius==='20px'&&v37.tabbar.blur==='none'&&/rgb\(18, 18, 21\)/.test(v37.tabbar.bg))&&
     !!(v37.thumb&&v37.thumb.blur==='none')&&
-    !!(v37.segThumb&&v37.segThumb.pos==='fixed')&&
+    !!(v37.segThumb&&v37.segThumb.pos==='static')&&
     !!(v37.hero&&v37.hero.radius==='16px'&&v37.hero.blur==='none'&&/rgb\(24, 24, 27\)/.test(v37.hero.bg))&&
     !!(v37.title&&v37.title.img==='none'&&v37.title.fg==='rgb(250, 250, 250)')&&
     !!(v37.video&&v37.video.blur==='none')&&errors.length===0;

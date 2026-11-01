@@ -196,6 +196,15 @@ if (!/guide-si-1\.mp3/.test(sw)) throw Error('sw.js must precache guide-si-1.mp3
 if (!/eleven_flash_v2_5/.test(studio) || !/eleven_flash_v2_5/.test(read('data/elevenlabs-audio.json'))) throw Error('eleven_flash_v2_5 must be the default model');
 if (!/iterations: ?250000/.test(INDEX)) throw Error('index.html must ship PBKDF2 iterations: 250000 (SDP_ENC_V2)');
 if (!/encVault/.test(read('data/config.json')) || !/SDP_ENC_V2:/.test(read('data/config.json'))) throw Error('config.json must carry encVault: SDP_ENC_V2:...');
+/* v60 / 9.0.0.4 - zero-FOUC cloak and the 8 live-video fixes. */
+if (!/id="sdpPrePaintCloak"/.test(INDEX)) throw Error('index.html must ship the #sdpPrePaintCloak zero-FOUC style');
+if (!/data-v60-ready/.test(INDEX) || !/data-v60-ready/.test(learn)) throw Error('the pre-paint cloak must be lifted by data-v60-ready');
+if (!/typeof items === ['"]string['"]/.test(learn)) throw Error('Speech.say must coerce a bare string into an array');
+if (!/v604PlayerChrome/.test(learn) || !/sdpLegacyPlayerDock/.test(learn)) throw Error('the cockpit must move the legacy .ctrlgrid/.lfoot out of layout');
+if (!/#creditDocked\{position:static/.test(learn.replace(/\s+/g, ''))) throw Error('#creditDocked must be statically positioned');
+if (!/sdpAppearanceAccordion/.test(learn)) throw Error('settings must keep #sdpAppearanceAccordion');
+if (!/sdpTestVoice/.test(learn)) throw Error('the Test voice control must exist');
+console.log('v60.4 FOUC/video-bug markers: PASS');
 console.log('v60 markers: PASS');
 console.log('v59 markers: PASS');
 /* ------------------------------------------------------------------

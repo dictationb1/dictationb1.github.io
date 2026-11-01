@@ -102,7 +102,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
   }
   const clipsOf = (page) => page.evaluate(() => (window.__clips || []).slice());
   const clickReady = async (page) => {
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('#sheets button')).some((x) => /I['\u2019]m ready/.test(x.textContent)), null, { timeout: 20000 });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('#sheets button')).some((x) => /I['\u2019]m ready/.test(x.textContent)), null, { timeout: 4000 }).catch(() => {});
     await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#sheets button')).find((x) => /I['\u2019]m ready/.test(x.textContent)); if (b) b.click(); });
   };
   const state = (page) => page.evaluate(() => ({
@@ -143,6 +143,9 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');
     ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
 
+    /* v60.4: the 3-2-1 countdown starts the moment Start dictation is tapped
+       (the "Are you ready?" sheet is gone), so the clip baseline is taken first. */
+    const startIndex = (await clipsOf(page)).length;
     await page.evaluate(() => document.getElementById('btnStart').click());
     await page.waitForTimeout(900);
     let clips = await clipsOf(page);
@@ -153,13 +156,21 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('Test sound uses the same remote engine', clips.some((c) => /Sound%20check/.test(c.url)), clips.map((c) => textOf(c.url)));
     eq('the debug voice pill stays removed', await page.locator('#voiceTestPill').count(), 0);
 
-    const startIndex = clips.length;
     await clickReady(page);
     // The number and word are separate clips in v51. Wait for both word passes
     // and the completed writing-phase transition rather than racing a fixed sleep.
     await page.waitForFunction((start) => window.__clips.length >= start + 6, startIndex, { timeout: 12000 });
     await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 5000 });
-    const marks = (await clipsOf(page)).slice(startIndex).filter((m) => !/^(Sound check|Welcome\.)/.test(textOf(m.url)));
+    /* v60.4: the countdown starts on Start now, so the "Test sound" pair can
+       land inside this window - drop the Sound check clip AND its companion. */
+    const raw = (await clipsOf(page)).slice(startIndex);
+    const marks = [];
+    for (let i = 0; i < raw.length; i++) {
+      const label = textOf(raw[i].url);
+      if (/^Sound check/.test(label)) { i++; continue; }
+      if (/^Welcome\./.test(label)) continue;
+      marks.push(raw[i]);
+    }
     eq('Three is the first spoken count', textOf(marks[0] && marks[0].url), 'Three');
     eq('Two follows', textOf(marks[1] && marks[1].url), 'Two');
     eq('One follows', textOf(marks[2] && marks[2].url), 'One');

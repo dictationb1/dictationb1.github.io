@@ -4194,6 +4194,7 @@ V59.ready = true;
       if (!p || p === D.body) break;
       if (p.id === 'app' || p.id === 'screen-home' || p.id === 'screen-dict' || p.id === 'screen-comm' || p.id === 'screen-set') break;
       if (/\bscreen\b/.test(String(p.className || ''))) break;
+      if (p.children && p.children.length > 3) break;
       t = String(p.textContent || '').replace(/^\s+/, '');
       if (!/^(Session progress|Smart Dictation Player v58)/.test(t)) break;
       best = p;
@@ -4212,11 +4213,8 @@ V59.ready = true;
       for (j = 0; j < all.length; j++) {
         n = all[j];
         if (n.getAttribute && n.getAttribute('data-v60-legacy') === '1') continue;
-        first = '';
-        for (var k = 0; k < n.childNodes.length; k++) {
-          if (n.childNodes[k].nodeType === 3) { first = String(n.childNodes[k].nodeValue || '').replace(/^\s+/, ''); break; }
-          if (n.childNodes[k].nodeType === 1) break;
-        }
+        if (n.children && n.children.length > 3) continue;
+        first = String(n.textContent || '').replace(/^\s+/, '');
         if (!first) continue;
         txt = first.slice(0, 32);
         if (/^(Session progress|Smart Dictation Player v58)/.test(txt)) v604HideBlock(n);
@@ -4254,7 +4252,11 @@ V59.ready = true;
       try { if (C && C.Speech && C.Speech.unlock) C.Speech.unlock(); } catch (e1) {}
       try { if (C && C.UI && C.UI.closeSheet) C.UI.closeSheet(); } catch (e2) {}
       W.setTimeout(function () {
-        try { if (self && (self.st === 'ready' || self.st === 'idle')) self.skipReady(); } catch (e3) {}
+        try {
+          if (!self || (self.st !== 'ready' && self.st !== 'idle')) return;
+          if (typeof self.readyGo === 'function') self.readyGo();
+          else if (typeof self.skipReady === 'function') self.skipReady();
+        } catch (e3) {}
       }, 150);
       return undefined;
     };
@@ -4381,6 +4383,8 @@ V59.ready = true;
     W.setTimeout(function () { try { v604All(); } catch (e1) {} }, 900);
     W.setTimeout(function () { try { v604All(); } catch (e2) {} }, 2000);
     W.setTimeout(function () { try { v604All(); } catch (e3) {} }, 4000);
+    W.setTimeout(function () { try { v604All(); } catch (e4) {} }, 5500);
+    W.setTimeout(function () { try { v604All(); } catch (e5) {} }, 7000);
     W.setTimeout(showLoadToast, 700);
     W.setTimeout(showCreditPill, 1400);
   }
@@ -4883,7 +4887,7 @@ V59.ready = true;
       var pause = mk('button', null, 'sdpPauseBtn', T4('pause'));
       pause.type = 'button';
       on(pause, 'click', function () { try { e3.playPause(); } catch (e) {} });
-      var skip = mk('button', null, 'sdpSkipBtn', T4('skip'));
+      var skip = mk('button', null, 'sdpSkipBtn', 'Next');
       skip.type = 'button';
       on(skip, 'click', function () { try { e3.next(); } catch (e) {} });
       acts.appendChild(pause);
