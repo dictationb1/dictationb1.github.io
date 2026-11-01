@@ -492,15 +492,6 @@ html[lang='si'] .credit-line { font-family: var(--font-si); }
   border-radius: var(--radius-sm);
 }
 .hint-chips { margin: 8px 0; }
-.hint-chip-out {
-  font-size: 13px;
-  color: var(--text);
-  background: var(--bg-elev);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
-  margin: 4px 0 0;
-}
 .cockpit-controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
 .cockpit-controls .btn { width: 100%; }
 #btnFinish { grid-column: 1 / -1; }
@@ -556,22 +547,24 @@ tr.is-missed td.r-word { color: var(--danger); }
 .dict-list { display: grid; gap: 8px; margin-top: 10px; }
 @media (min-width: 760px) { .dict-list { grid-template-columns: repeat(2, 1fr); } }
 .dict-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   padding: 11px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+.dict-card .d-body { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.dict-card .d-top { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
 .dict-card .d-idx { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .dict-card .d-w { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .dict-card .d-p { font-size: 13px; color: var(--accent); }
 .dict-card .d-pos { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 .dict-card .d-m { font-size: 13.5px; color: var(--text-muted); }
 .dict-card .word-si { font-size: 14px; color: var(--text); }
-.dict-card .d-s { grid-column: 1 / -1; font-size: 13px; color: var(--text-muted); font-style: italic; }
-.dict-card .d-play { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.dict-card .d-s { font-size: 13px; color: var(--text-muted); font-style: italic; }
+.dict-card .d-play { flex: 0 0 auto; align-self: center; }
 .dict-empty { padding: 18px; text-align: center; color: var(--text-muted); }
 
 /* ── Practice ──────────────────────────────────────────────────────────── */
@@ -601,6 +594,26 @@ tr.is-missed td.r-word { color: var(--danger); }
 .prac-option[data-state='ok'] { border-color: var(--ok); background: rgba(16, 185, 129, 0.16); }
 .prac-option[data-state='bad'] { border-color: var(--danger); background: rgba(239, 68, 68, 0.16); }
 .prac-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+
+/* ── Hint output & practice feedback ───────────────────────────────────── */
+.hint-output {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+}
+.hint-output[hidden] { display: none; }
+.hint-chip-out {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin: 4px 0 0;
+}
+html[lang='si'] .hint-chip-out { font-family: var(--font-si); }
+.prac-verdict { margin: 10px 0 0; font-weight: 700; font-size: 14px; color: var(--accent); }
 
 /* ── Settings ──────────────────────────────────────────────────────────── */
 #settingsSections { display: flex; flex-direction: column; }
@@ -671,6 +684,14 @@ tr.is-missed td.r-word { color: var(--danger); }
 .studio-msg[data-state='bad'] { color: var(--danger); }
 .pin-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pin-row input.input { max-width: 200px; }
+.for-only { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.studio-setup { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 8px; }
+.studio-setup > summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--accent); }
+.studio-preview { margin-top: 8px; overflow-x: auto; }
+.studio-preview-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.studio-preview-table th, .studio-preview-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.studio-preview-table th { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.studio-card textarea#studioEnvelope { min-height: 84px; }
 
 /* ── Guide modal ───────────────────────────────────────────────────────── */
 .modal {
