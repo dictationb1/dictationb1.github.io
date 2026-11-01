@@ -1049,3 +1049,51 @@ html[data-theme='board'] .board-word { font-size: 30px; }
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* ══ R1 — lecturer-only classroom sync bar (Settings section 1) ══════════
+   Sticky at the top of section 1 so a lecturer never scrolls past the one
+   button that pushes her ten classroom keys to every student device. */
+.lecturer-sync-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 12px;
+  padding: 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow);
+}
+.lecturer-sync-bar[hidden] { display: none !important; }
+.lecturer-sync-bar .btn { width: 100%; text-align: left; justify-content: flex-start; }
+#lecturerSyncLast { margin: 0; font-size: 12.5px; color: var(--text-muted); }
+#lecturerSyncLast[data-state='ok'] { color: var(--ok); }
+#lecturerSyncLast[data-state='bad'] { color: var(--danger); }
+
+/* ══ R5 — human-friendly touch targets in the cockpit and Settings ═══════
+   48px is the documented --tap floor; the older 40/44px exceptions below it
+   (small buttons, mark buttons, sync badge, range thumbs) are raised here
+   so a Smart Board tap and a thumb on a 390px phone both land first time. */
+#cockpitBar .btn,
+.cockpit-controls .btn,
+#resultsPanel .btn,
+#resultsPanel .mark-btn,
+#screen-settings .btn,
+#screen-settings .btn-sm,
+#screen-settings .seg-btn,
+#screen-settings select,
+#screen-settings .pill,
+#presetRow .pill,
+#presetRow .preset-pill,
+#screen-settings .checkline,
+.pin-key,
+#btnSyncClassSettings {
+  min-height: 48px;
+}
+#resultsPanel .mark-btn { min-height: 48px; }
+#inputtype,
+#screen-player .chip,
+#hintChips .chip { min-height: 48px; }

@@ -22,7 +22,7 @@
     <span id="brandName">Smart Dictation</span>
     <span class="b1badge">CCBE B1</span>
     <span id="sdpVerPill">v0.0.1.c</span>
-    <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced · Session 8 · v0.0.1.c</button>
+    <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced</button>
     <button id="btnStudioQuick" class="hbtn hbtn-icon" type="button" aria-label="Open the Lecturer Studio from Settings">🔒</button>
     <div id="quickJumper" class="quick-jumper" hidden>
       <label class="muted" for="setQuickWord">Jump to word:</label>
@@ -167,7 +167,7 @@
         </div>
         <div class="chip-row">
           <button id="btnMarkAll" type="button" class="btn btn-sm" data-i18n="markAll">Mark all correct</button>
-          <button id="btnToggleMissed" type="button" class="btn btn-sm" data-i18n="toggleMissed">Toggle missed</button>
+          <button id="btnToggleMissed" type="button" class="btn btn-sm" data-i18n="invertMarks" data-confirm-arm="0">Invert marks (tap twice)</button>
         </div>
         <div class="table-wrap">
           <table id="resultsTable">
@@ -222,6 +222,10 @@
 
         <section class="card set-card">
           <h3 class="set-head" data-i18n="setPacing">1 · Dictation pacing &amp; mode</h3>
+          <div id="lecturerSyncBar" class="lecturer-sync-bar" role="region" aria-live="polite" hidden>
+            <button type="button" class="btn btn-primary" id="btnSyncClassSettings" data-i18n="lecturerSyncBar">📡 Save &amp; Sync Current Settings to All Classroom Devices</button>
+            <p id="lecturerSyncLast" class="muted" data-i18n="lecturerSyncLast">Last synced to the class</p>
+          </div>
           <div class="field">
             <span class="lbl" data-i18n="modeLabel">Mode</span>
             <div class="seg" role="group" aria-label="Dictation mode">
@@ -367,6 +371,7 @@
     <div id="guideTapBanner" class="guide-tap-banner hidden" role="button" tabindex="0" aria-live="polite" data-i18n="guideTapToStart">🔊 Tap anywhere to start the voice guide</div>
     <ol id="guideSteps" class="guide-steps"></ol>
     <div class="modal-foot">
+      <button id="btnGuideSkipStart" type="button" class="btn btn-primary" data-i18n="guideSkipStart" hidden>⏩ Skip Guide &amp; Start Immediately</button>
       <button id="guidePauseVoice" type="button" class="btn" data-i18n="guidePauseVoice">⏸ Pause Voice</button>
       <button id="guideNextStep" type="button" class="btn" data-i18n="guideNextStep">⏭ Next Step</button>
       <button id="guideReplayStep" type="button" class="btn" data-i18n="guideReplayStep">🔁 Replay Step</button>

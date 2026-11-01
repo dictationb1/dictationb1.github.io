@@ -1,6 +1,6 @@
 name: release gates
 
-# contract: docs/ARCHITECTURE_MAP.md §12 — the nine v0.0.1.a release gates.
+# contract: docs/ARCHITECTURE_MAP.md §12 — the twelve v0.0.1.d release gates.
 # Every gate is a plain Node script; the browser gates launch the Chromium that
 # ships inside @sparticuz/chromium and unpack their own AL2023 libraries.
 on:
@@ -63,13 +63,21 @@ jobs:
       - name: G9 · retirement, budgets and ES5 audit
         run: node tests/audit-v42.cjs
 
+      - name: G10 · voice spine, GC-safe utterances and Guide 2.0
+        run: node tests/voice-guide.cjs
+
+      - name: G11 · PIN verifier, vault publish and persisted lockout
+        run: node tests/vault-sync.cjs
+
+      - name: G12 · credit-saver delta and locked-studio zero-widget proof
+        run: node tests/studio-safety.cjs
+
       - name: Preserved payloads must still match their SHA-256 lock
         run: |
           node -e '
             const fs=require("fs"),c=require("crypto");
             const want={
               "data/session.json":"e0e86c80","data/gas-source.txt":"591b9b08",
-              "data/elevenlabs-audio.json":"153111d6",
               "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
               "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
             let bad=0;

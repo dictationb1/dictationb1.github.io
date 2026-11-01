@@ -76,7 +76,18 @@
     guideSpeakBtn: 'Listen to the steps (EN)', guideCloseBtn: 'Got it, Start Learning',
     /* Table B additions — UI labels, badges, presets and studio controls */
     dictSearchPh: 'Search 30 words (English, Sinhala, IPA)...',
-    syncBadgeSynced: 'Synced · Session 8 · v0.0.1.c',
+    syncBadgeSynced: 'Synced',
+    syncShortSyncing: 'Syncing…',
+    lecturerSyncBar: '📡 Save & Sync Current Settings to All Classroom Devices',
+    lecturerSyncLast: 'Last synced to the class',
+    lecturerSyncedToast: '📡 Synced teacher\'s latest classroom settings (Rev #',
+    lecturerSyncNoToken: 'Add a GitHub token in Lecturer Studio to sync the class',
+    guideQuickTitle: 'Quick Voice Guide — How This Dictation Works',
+    guideSkipStart: '⏩ Skip Guide & Start Immediately',
+    studioAskLecturer: 'Ask your lecturer to unlock Lecturer Studio with the PIN.',
+    studioPinMismatch: 'The two PINs do not match — type the same 4–8 digits twice.',
+    invertMarks: 'Invert marks (tap twice)',
+    invertConfirmToast: 'Tap Invert marks again within 3s to confirm',
     syncBadgeOffline: 'Offline — showing cached session',
     syncBadgeUpdate: 'Update found — tap to reload',
     syncBadgeRetry: 'Check failed — retry',
@@ -209,7 +220,18 @@
     guideSpeakBtn: 'උපදෙස් හඬින් අසන්න (EN)', guideCloseBtn: 'තේරුණා, ආරම්භ කරමු',
     /* Table B additions — Sinhala UI labels, badges, presets and studio controls */
     dictSearchPh: 'වචන 30 සොයන්න (ඉංග්‍රීසි, සිංහල, උච්චාරණය)...',
-    syncBadgeSynced: 'සමමුහුර්තයි · 8 වන වාරය · v0.0.1.c',
+    syncBadgeSynced: 'සමමුහුර්තයි',
+    syncShortSyncing: 'සමමුහුර්ත වෙමින්…',
+    lecturerSyncBar: '📡 සියලු උපකරණවලට සැකසුම් සුරැකීම හා සමමුහුර්ත කිරීම',
+    lecturerSyncLast: 'පන්තියට සමමුහුර්ත කළ අවසන් වාරය',
+    lecturerSyncedToast: '📡 ගුරුවරයාගේ නවතම පන්ති සැකසුම් සමමුහුර්ත විය (අනුවාදය #',
+    lecturerSyncNoToken: 'පන්තිය සමමුහුර්ත කිරීමට කථිකාචාර්ය ස්ටූඩියෝවේ GitHub ටෝකනය එක් කරන්න',
+    guideQuickTitle: 'ක්ෂණික හඬ උපදෙස් — ඩික්ටේෂන් ක්‍රියා කරන ආකාරය',
+    guideSkipStart: '⏩ උපදෙස් මඟහැර දැන්ම ආරම්භ කරන්න',
+    studioAskLecturer: 'ස්ටූඩියෝ විවෘත කිරීමට ඔබේ කථිකාචාර්යවරයාගෙන් විමසන්න.',
+    studioPinMismatch: 'PIN දෙක නොගැළපේ — එකම ඉලක්කම් 4–8 දෙවරක් ලියන්න.',
+    invertMarks: 'ලකුණු මාරු කරන්න (දෙවරක් ස්පර්ශ කරන්න)',
+    invertConfirmToast: 'තහවුරු කිරීමට තත්පර 3ක් ඇතුළත නැවත ස්පර්ශ කරන්න',
     syncBadgeOffline: 'අන්තර්ජාලය නැත — සුරැකි වාරය පෙන්වයි',
     syncBadgeUpdate: 'නව යාවත්කාලීනයක් ඇත — නැවත පූරණයට ඔබන්න',
     syncBadgeRetry: 'පරීක්ෂාව අසාර්ථකයි — නැවත උත්සාහ කරන්න',
@@ -401,6 +423,12 @@
     renderBoardBar();
     return theme;
   }
+  /* ENG-05 / R1: the ten classroom keys the lecturer owns. Personal keys
+     (lang, guideAutoPlay, volume, hints) are never marked as touched. */
+  var CLASS_SETTING_KEYS = [
+    'mode', 'writeSecs', 'repeats', 'pauseSecs', 'autoAdvance',
+    'pacingPreset', 'voiceLock', 'voiceSource', 'rate', 'theme'
+  ];
   /* R7: remember that this student changed a setting by hand. */
   function touchedPatch(key) {
     var out = {};
@@ -410,6 +438,31 @@
     for (var k in current) if (Object.prototype.hasOwnProperty.call(current, k)) out[k] = current[k];
     out[key] = true;
     return out;
+  }
+  /* ENG-05: ONE writer for every classroom control. Marks every classroom key
+     in the patch as touched, answers with a toast, and — when the Lecturer
+     Studio is unlocked — keeps the classroom sync bar in front of her. */
+  function saveTouched(patch, label) {
+    var withTouch = {}, k, i;
+    var keys = [];
+    for (k in patch) {
+      if (!Object.prototype.hasOwnProperty.call(patch, k)) continue;
+      withTouch[k] = patch[k];
+      if (CLASS_SETTING_KEYS.indexOf(k) >= 0) keys.push(k);
+    }
+    if (keys.length) {
+      var merged = {};
+      var current = {};
+      try { current = settings().touchedKeys || {}; } catch (e) { current = {}; }
+      for (k in current) if (Object.prototype.hasOwnProperty.call(current, k)) merged[k] = current[k];
+      for (i = 0; i < keys.length; i++) merged[keys[i]] = true;
+      withTouch.touchedKeys = merged;
+    }
+    try { SDP.Data.saveSettings(withTouch); } catch (e) {}
+    var node = byId('settingsFeedback');
+    if (node) node.textContent = str(label) || '';
+    if (label) showToast(str(label));
+    return withTouch;
   }
   function toggleTheme() {
     var next = theme === 'dark' ? 'light' : (theme === 'light' ? 'board' : 'dark');
@@ -546,7 +599,20 @@
     if (segTyping) segTyping.setAttribute('aria-pressed', String(mode === 'typing'));
   }
 
+  /* VOX-07: the first Start of a session speaks a condensed two-step English
+     walkthrough with #btnGuideSkipStart, unless the student turned auto-play
+     off. The Cockpit opens as soon as the guide ends or is skipped. */
+  var sessionState = { introShown: false };
   function startDictation(mode) {
+    var chosen = mode || settings().mode;
+    var conf = settings();
+    if (!sessionState.introShown && conf.guideAutoPlay !== false && words().length) {
+      sessionState.introShown = true;
+      if (openGuideQuick(chosen)) return true;
+    }
+    return beginDictation(chosen);
+  }
+  function beginDictation(mode) {
     var chosen = mode || settings().mode;
     if (!words().length) {
       /* Never open an empty cockpit: retry the boot, then tell the student
@@ -573,7 +639,7 @@
   }
 
   /* ══ Guide 2.0 — version-stamped, auto-narrating student guide (R3, D3) ══ */
-  var guideState = { activeStep: 0, narrating: false, opener: null, watchdog: null };
+  var guideState = { activeStep: 0, narrating: false, opener: null, watchdog: null, quickMode: false, pendingMode: null };
   var guidePaused = false;
 
   function renderGuideSteps() {
@@ -647,13 +713,20 @@
     if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} guideState.watchdog = null; }
   }
 
-  function startGuideNarration(fromStep) {
+  function startGuideNarration(fromStep, lastStep) {
     if (guideState.narrating) return false;
     guideState.narrating = true;
     guideState.activeStep = Math.max(0, Math.min(3, Number(fromStep) || 0));
+    var last = lastStep === undefined ? 3 : Math.max(0, Math.min(3, Number(lastStep)));
     renderGuideSteps();
     function speakStep(idx) {
-      if (idx > 3) { guideState.narrating = false; clearGuideWatchdog(); return; }
+      if (idx > last) {
+        guideState.narrating = false;
+        clearGuideWatchdog();
+        /* VOX-07: the quick walkthrough starts the dictation by itself. */
+        if (guideState.quickMode) finishQuickGuide(true);
+        return;
+      }
       highlightGuideStep(idx);
       var title = t('guideStep' + (idx + 1) + 'Title');
       var body = t('guideStep' + (idx + 1) + 'Body');
@@ -716,10 +789,13 @@
     stopGuideNarration();
     startGuideNarration(guideState.activeStep);
   }
-  function openGuide(opener) {
+  function openGuide(opener, opts) {
+    opts = opts || {};
     var modal = byId('guideModal');
     if (!modal) return false;
-    guideState.opener = opener || null;
+    if (!opts.quick && !guideState.quickMode) restoreGuideTitle();
+    /* An event object is never a focus target. */
+    guideState.opener = opener && typeof opener.focus === 'function' ? opener : null;
     guidePaused = false;
     renderGuideSteps();
     var btn = byId('guidePauseVoice');
@@ -731,7 +807,7 @@
     /* R3: Step 1 is attempted immediately, then a 600 ms watchdog decides
        whether the browser blocked un-gestured audio (D-G2). */
     hideGuideTapBanner();
-    if (conf.guideAutoPlay !== false) startGuideNarration(0);
+    if (conf.guideAutoPlay !== false && !opts.quick) startGuideNarration(0);
     armGuideWatchdog();
     /* R3/D-V6: the student's first tap anywhere in the modal unlocks
        speechSynthesis + the shared <audio> element and narrates 1 -> 4. */
@@ -774,12 +850,59 @@
        stays prominent instead: #btnGuide on Home and #btnReplayGuide in
        Settings both reopen the narrated guide at any time. */
     try { SDP.Data.markGuideSeen(); } catch (e) {}
+    restoreGuideTitle();
     var opener = guideState.opener;
     if (opener && typeof opener.focus === 'function') { try { opener.focus({ preventScroll: true }); } catch (e) {} }
     guideState.opener = null;
     guideState.activeStep = 0;
     return true;
   }
+  /* ── VOX-07: Quick Walkthrough Mode ───────────────────────────────────── */
+  function quickSkipButton(show) {
+    var btn = byId('btnGuideSkipStart');
+    if (!btn) return false;
+    btn.hidden = !show;
+    btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+    if (show) btn.textContent = t('guideSkipStart');
+    return show;
+  }
+  function restoreGuideTitle() {
+    var title = byId('guideTitle');
+    if (title) title.textContent = t('howToUse');
+    guideState.quickMode = false;
+    guideState.pendingMode = null;
+    quickSkipButton(false);
+    return true;
+  }
+  function openGuideQuick(mode) {
+    var modal = byId('guideModal');
+    if (!modal) return false;
+    guideState.pendingMode = mode || settings().mode;
+    guideState.quickMode = true;
+    openGuide(null, { quick: true });
+    var title = byId('guideTitle');
+    if (title) title.textContent = t('guideQuickTitle');
+    quickSkipButton(true);
+    guideState.activeStep = 0;
+    renderGuideSteps();
+    if (settings().guideAutoPlay !== false) {
+      guideState.narrating = false;
+      try { if (SDP.Speech) SDP.Speech.stop(); } catch (e) {}
+      startGuideNarration(0, 1);
+    }
+    return true;
+  }
+  /* Called when the quick walkthrough ends or the student skips it. */
+  function finishQuickGuide(startNow) {
+    var mode = guideState.pendingMode || settings().mode;
+    var wasQuick = !!guideState.quickMode;
+    guideState.quickMode = false;
+    guideState.pendingMode = null;
+    closeGuide();
+    if (wasQuick && startNow !== false) beginDictation(mode);
+    return true;
+  }
+
   /* D-G4: "Listen to the steps (EN)" used to dump eight strings at once with
      no highlighting and no Pause/Next/Replay. It now runs through the exact
      same step state machine as openGuide(). */
@@ -971,7 +1094,8 @@
         while (node && node !== modeHost && !(node.getAttribute && node.getAttribute('data-prac'))) node = node.parentNode;
         if (!node || node === modeHost || !node.getAttribute) return;
         practice.mode = str(node.getAttribute('data-prac')) || 'flash';
-        practice.index = 0; practice.answered = ''; practice.flipped = false;
+        /* ENG-04: without this the first Listening Drill card stayed silent. */
+        practice.index = 0; practice.answered = ''; practice.flipped = false; practice.spoken = false;
         renderPractice();
       });
     }
@@ -1028,6 +1152,29 @@
     for (var n = 1; n <= 5; n++) html += '<option value="' + n + '">' + n + '×</option>';
     select.innerHTML = html;
   }
+  /* One call for every surface — used after a classroom settings adoption. */
+  function renderAll() {
+    renderHome(); renderWords(); renderPractice(); renderSettings();
+    renderGuideSteps(); renderBoardBar(); renderBoardJumper();
+    try { paintSyncBadge({ state: 'synced', session: str(SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8') }); } catch (e) {}
+    return true;
+  }
+  /* R1: the lecturer-only sticky bar at the top of Settings section 1. */
+  function paintLecturerBar() {
+    var bar = byId('lecturerSyncBar');
+    if (!bar) return false;
+    var unlocked = false;
+    try { unlocked = !!(SDP.Studio && SDP.Studio.isUnlocked && SDP.Studio.isUnlocked()); } catch (e) { unlocked = false; }
+    bar.hidden = !unlocked;
+    bar.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
+    if (unlocked) {
+      var btn = byId('btnSyncClassSettings');
+      if (btn) btn.textContent = t('lecturerSyncBar');
+      var hint = byId('lecturerSyncHint');
+      if (hint) hint.textContent = t('studioAskLecturer');
+    }
+    return unlocked;
+  }
   function renderSettings() {
     var conf = settings();
     buildRepeatsOptions(byId('setRepeats'));
@@ -1062,6 +1209,7 @@
       pills[pi].setAttribute('aria-pressed', String(pills[pi].getAttribute('data-preset') === str(conf.pacingPreset || 'standard')));
     }
     paintModePills();
+    paintLecturerBar();
     paintSyncBadge({ state: 'synced', session: str(SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8') });
     var storage = byId('storageStatus');
     if (storage) {
@@ -1076,19 +1224,10 @@
   }
   function bindSettings() {
     function save(patch) { try { SDP.Data.saveSettings(patch); } catch (e) {} }
-    /* P5: every manual change answers immediately, and is remembered as
-       "touched" so a teacher settingsRev bump cannot silently undo it (R7). */
-    function saveTouched(patch, label) {
-      var withTouch = {};
-      for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) { withTouch[k] = patch[k]; withTouch.touchedKeys = touchedPatch(k); }
-      save(withTouch);
-      var node = byId('settingsFeedback');
-      if (node) node.textContent = str(label) || '';
-      if (label) showToast(str(label));
-      return withTouch;
-    }
+    /* P5/ENG-05: every manual change answers immediately and is remembered as
+       "touched" (R7) through the one shared saveTouched() above. */
     window.__sdpSaveTouched = saveTouched;
-    function range(id, key, scale, format, label) {
+    function range(id, key, scale, format, label, personal) {
       var node = byId(id);
       if (!node || node._sdpBound) return;
       node._sdpBound = true;
@@ -1097,7 +1236,9 @@
         var value = scale ? raw / scale : raw;
         var patch = {};
         patch[key] = value;
-        saveTouched(patch, label ? label + ' → ' + (format ? format.fn(value) : value) : '');
+        var line = label ? label + ' → ' + (format ? format.fn(value) : value) : '';
+        /* Personal keys (volume) are saved but never marked as touched. */
+        if (personal) save(patch); else saveTouched(patch, line);
         if (format) setText(byId(format.out), format.fn(value));
         if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
       };
@@ -1116,7 +1257,7 @@
     range('setWriteSecs', 'writeSecs', 1, { out: 'outWriteSecs', fn: function (v) { return v + 's'; } }, t('writeTime'));
     range('setPause', 'pauseSecs', 1, { out: 'outPause', fn: function (v) { return v + 's'; } }, t('pauseBetween'));
     range('setRate', 'rate', 1, { out: 'outRate', fn: function (v) { return v + 'x'; } }, t('rate'));
-    range('setVolume', 'volume', 100, { out: 'outVolume', fn: function (v) { return Math.round(v * 100) + '%'; } }, t('volume'));
+    range('setVolume', 'volume', 100, { out: 'outVolume', fn: function (v) { return Math.round(v * 100) + '%'; } }, t('volume'), true);
     var repeats = byId('setRepeats');
     if (repeats && !repeats._sdpBound2) {
       repeats._sdpBound2 = true;
@@ -1128,21 +1269,27 @@
     var auto = byId('setAutoAdvance');
     if (auto && !auto._sdpBound) {
       auto._sdpBound = true;
-      auto.addEventListener('change', function () { save({ autoAdvance: !!auto.checked }); if (SDP.Engine) SDP.Engine.applySettings(); });
+      auto.addEventListener('change', function () {
+        saveTouched({ autoAdvance: !!auto.checked }, t('autoAdvance') + ' → ' + (auto.checked ? 'on' : 'off'));
+        if (SDP.Engine) SDP.Engine.applySettings();
+      });
     }
     var source = byId('setVoiceSource');
     if (source && !source._sdpBound) {
       source._sdpBound = true;
-      source.addEventListener('change', function () { save({ voiceSource: source.value }); });
+      source.addEventListener('change', function () {
+        saveTouched({ voiceSource: source.value }, t('voiceSource') + ' → ' + source.value);
+      });
     }
     var voiceLock = byId('setVoiceLock');
     if (voiceLock && !voiceLock._sdpBound) {
       voiceLock._sdpBound = true;
       voiceLock.addEventListener('change', function () {
         var val = voiceLock.value;
-        save({ voiceLock: val });
-        if (val === 'unified') { try { save({ voiceSource: 'auto' }); } catch (e) {} }
-        else if (str(source ? source.value : '') === 'auto') { try { save({ voiceSource: 'custom' }); } catch (e) {} }
+        var patch = { voiceLock: val };
+        if (val === 'unified') patch.voiceSource = 'auto';
+        else if (str(source ? source.value : '') === 'auto') patch.voiceSource = 'custom';
+        saveTouched(patch, t('voiceLockLabel') + ' → ' + val);
         if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
       });
     }
@@ -1191,10 +1338,8 @@
     if (themeSel && !themeSel._sdpBound) {
       themeSel._sdpBound = true;
       themeSel.addEventListener('change', function () {
-        var next = applyTheme(themeSel.value);
-        var node = byId('settingsFeedback');
-        if (node) node.textContent = t('theme') + ' → ' + next;
-        showToast(t('theme') + ' → ' + next);
+        var next = applyTheme(themeSel.value, true);
+        saveTouched({ theme: next }, t('theme') + ' → ' + next);
       });
     }
     [['setModePaper', 'paper'], ['setModeTyping', 'typing']].forEach(function (pair) {
@@ -1202,7 +1347,7 @@
       if (!node || node._sdpBound) return;
       node._sdpBound = true;
       node.addEventListener('click', function () {
-        save({ mode: pair[1] });
+        saveTouched({ mode: pair[1] }, t('modeLabel') + ' → ' + pair[1]);
         applyModePills(pair[1]);
         if (SDP.Engine && SDP.Engine.setMode) SDP.Engine.setMode(pair[1], true);
       });
@@ -1262,6 +1407,25 @@
       check._sdpBound = true;
       check.addEventListener('click', function () { checkForUpdate(); });
     }
+    /* R1 / SYNC-03: the lecturer's one button that moves the class. */
+    var syncBtn = byId('btnSyncClassSettings');
+    if (syncBtn && !syncBtn._sdpBound) {
+      syncBtn._sdpBound = true;
+      syncBtn.addEventListener('click', function () {
+        if (!SDP.Studio || !SDP.Studio.saveClassSettings) return;
+        var result = SDP.Studio.saveClassSettings(function (err) {
+          if (err) {
+            setUpdateStatus(err.message === 'no_token' ? t('lecturerSyncNoToken') : t('studioPublishFail'), 'bad');
+            showToast(err.message === 'no_token' ? t('lecturerSyncNoToken') : t('studioPublishFail'));
+            return;
+          }
+          setUpdateStatus(t('lecturerSyncLast'), 'ok');
+        });
+        if (result && result.ok === false && result.reason === 'no_token') {
+          showToast(t('lecturerSyncNoToken'));
+        }
+      });
+    }
   }
   function setUpdateStatus(text, state) {
     var node = byId('settingsUpdateStatus') || byId('updateStatus');
@@ -1279,11 +1443,16 @@
     var status = byId('settingsSyncStatus');
     var label;
     if (state.state === 'synced') {
-      label = t('syncBadgeSynced').replace('Session 8', 'Session ' + session).replace('8 වන වාරය', session + ' වන වාරය').replace('v0.0.1.c', 'v' + APP_VERSION);
+      /* ENG-06: no version or session literal lives in the string tables —
+         the badge is assembled here from the live values. */
+      var base = t('syncBadgeSynced');
+      label = lang === 'si'
+        ? base + ' · ' + session + ' වන වාරය · v' + APP_VERSION
+        : base + ' · Session ' + session + ' · v' + APP_VERSION;
     } else if (state.state === 'offline') {
       label = t('syncBadgeOffline');
     } else if (state.state === 'update') {
-      label = t('syncBadgeUpdate').replace('v0.0.1.c', 'v' + APP_VERSION);
+      label = t('syncBadgeUpdate');
     } else {
       label = t('syncBadgeRetry');
     }
@@ -1346,7 +1515,8 @@
     if (!p) return;
     var patch = { pacingPreset: p.pacingPreset, writeSecs: p.writeSecs, repeats: p.repeats, pauseSecs: p.pauseSecs, autoAdvance: p.autoAdvance };
     if (p.theme) patch.theme = p.theme;
-    try { SDP.Data.saveSettings(patch); } catch (e) {}
+    /* ENG-05: a preset is a classroom change like any other. */
+    saveTouched(patch, t('presetHeading') + ' → ' + id);
     renderSettings();
     if (p.theme) applyTheme(p.theme, true);
     if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
@@ -1527,6 +1697,7 @@
     on('btnGuideTop', 'click', openGuide);
     on('btnGuide', 'click', openGuide);
     on('btnGuideClose', 'click', closeGuide);
+    on('btnGuideSkipStart', 'click', function () { finishQuickGuide(true); });
     on('btnLang', 'click', toggleLang);
     on('guideLangPill', 'click', toggleLang);
     on('guideSpeak', 'click', speakGuide);
@@ -1577,10 +1748,10 @@
     /* D-L1: the header lock button was rendered on every screen and wired to
        nothing. It now opens Settings -> Lecturer Studio and focuses the PIN
        pad, and it mirrors the lock state (🔒 locked / 🔓 unlocked). */
-    var quick = byId('btnStudioQuick');
-    if (quick && !quick._sdpBound) {
-      quick._sdpBound = true;
-      quick.addEventListener('click', function () { openStudio(); }, false);
+    var quickBtn = byId('btnStudioQuick');
+    if (quickBtn && !quickBtn._sdpBound) {
+      quickBtn._sdpBound = true;
+      quickBtn.addEventListener('click', function () { openStudio(); }, false);
     }
     var modal = byId('guideModal');
     if (modal && !modal._sdpBound) {
@@ -1599,8 +1770,11 @@
   function bindTeacherUpdates() {
     if (bindTeacherUpdates._bound || !doc || !doc.addEventListener) return false;
     bindTeacherUpdates._bound = true;
-    doc.addEventListener('sdp:teacher-updated', function () {
-      showToast(t('teacherUpdatedToast'));
+    doc.addEventListener('sdp:teacher-updated', function (ev) {
+      var rev = Number(ev && ev.detail && ev.detail.settingsRev) || 0;
+      /* R1: the student is told exactly which revision arrived. */
+      showToast(rev ? t('lecturerSyncedToast') + rev + ')' : t('teacherUpdatedToast'));
+      renderAll();
     }, false);
     return true;
   }
@@ -1680,6 +1854,8 @@
     renderWords: renderWords,
     renderPractice: renderPractice,
     renderSettings: renderSettings,
+    renderAll: renderAll,
+    paintLecturerBar: paintLecturerBar,
     renderGuideSteps: renderGuideSteps,
     settingsOrder: settingsOrder,
     applyModePills: applyModePills,
@@ -1687,6 +1863,10 @@
     resumeDictation: resumeDictation,
     startPractice: startPractice,
     openGuide: openGuide,
+    openGuideQuick: openGuideQuick,
+    finishQuickGuide: finishQuickGuide,
+    beginDictation: beginDictation,
+    sessionIntroShown: function () { return !!sessionState.introShown; },
     openStudio: openStudio,
     renderBoardBar: renderBoardBar,
     renderBoardJumper: renderBoardJumper,

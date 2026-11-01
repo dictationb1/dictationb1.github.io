@@ -12,6 +12,7 @@
   function noop() {}
   function str(v) { return v === null || v === undefined ? '' : String(v); }
   function now() { return Date.now(); }
+  function isObj(v) { return !!v && typeof v === 'object'; }
   function byId(id) { return doc && doc.getElementById ? doc.getElementById(id) : null; }
   function setText(el, text) { if (el) el.textContent = str(text); }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -38,6 +39,10 @@
     repeats: 3,
     pauseSecs: 1.5,
     autoAdvance: true,
+    repeatsDone: 0,
+    repeatsTotal: 1,
+    phaseEnd: 0,
+    invertConfirmUntil: 0,
     phaseMs: 0,
     remainingMs: 0,
     deadline: 0,
@@ -271,8 +276,10 @@
   }
 
   /* ── phase machine ──────────────────────────────────────────────────── */
+  /* ENG-02: the 0.5 s slider position used to become a 2.0 s gap because of a
+     hard 1500 ms floor. 0.5 s → 800 ms, 1.5 s → 1800 ms, 3 s → 3300 ms. */
   function repeatGapMs() {
-    return Math.max(900, 1500 + Number(E.pauseSecs || 0) * 1000);
+    return Math.max(600, Math.round(Number(E.pauseSecs || 0) * 1000) + 300);
   }
   function listenMs() {
     return Math.max(1200, repeatGapMs() * Math.max(1, E.repeats));
@@ -297,7 +304,9 @@
          was already >2000 ms old on any listening phase longer than 2 s, so the
          grace window expired instantly and writing cut the final repeat off. */
       if (!E.waitSince) E.waitSince = now();
-      if (now() - E.waitSince >= 2000) { E.waitingForSpeech = false; E.waitSince = 0; enterWriting(); return; }
+      /* ENG-01: 8 s of grace (re-armed per repeat) instead of 2 s, so audio on
+         a slow 3G phone is never cut off mid-word. */
+      if (now() - E.waitSince >= 8000) { E.waitingForSpeech = false; E.waitSince = 0; enterWriting(); return; }
       if (SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()) {
         /* D-E3: paint the true remaining listening fraction, not a constant. */
         var leftMs = Math.max(0, E.deadline - now());
@@ -316,7 +325,27 @@
     E.remainingMs = left;
     paint(E.phaseMs ? left / E.phaseMs : 0);
     setStateText();
-    if (left <= 0) onPhaseEnd();
+    if (left <= 0) {
+      /* ENG-01: a pending repeat always buys the listening phase more time. */
+      if (E.phase === 'listening' && E.repeatsDone < E.repeatsTotal) {
+        extendListening();
+        return;
+      }
+      onPhaseEnd();
+    }
+  }
+
+  /* ENG-01: one shared extender so a repeat can never be truncated by the
+     original listening deadline (clip load + play + gap + 1.8 s of slack). */
+  function extendListening() {
+    var until = now() + repeatGapMs() + 1800;
+    if (until > E.deadline) {
+      E.deadline = until;
+      E.phaseMs = Math.max(E.phaseMs, E.deadline - (E.phaseStart || now()));
+      E.remainingMs = E.deadline - now();
+    }
+    E.phaseEnd = E.deadline;
+    return E.deadline;
   }
 
   function onPhaseEnd() {
@@ -350,6 +379,9 @@
     E.remainingMs = E.phaseMs;
     E.deadline = now() + E.phaseMs;
     E.repeatShown = 1;
+    E.repeatsDone = 0;
+    E.repeatsTotal = Math.max(1, Number(E.repeats) || 1);
+    E.phaseEnd = E.deadline;
     E.waitSince = 0;
     E.waitingForSpeech = false;
     paint(1);
@@ -378,7 +410,15 @@
       var item = current();
       if (!item) return;
       done += 1;
+      E.repeatsDone = done;
+      E.repeatsTotal = Math.max(1, Number(E.repeats) || 1);
       E.repeatShown = Math.min(done, E.repeats);
+      /* ENG-01: every pending repeat re-arms the grace window and pushes the
+         listening deadline out by one gap plus 1.8 s. */
+      if (E.repeatsDone < E.repeatsTotal) {
+        extendListening();
+        E.waitSince = 0;
+      }
       setStateText();
       var settled = false;
       var guard = global.setTimeout(function () { if (!settled) { settled = true; scheduleNext(); } }, Math.max(2600, gap + estimatePlayMs(item)));
@@ -386,6 +426,7 @@
         if (settled) return;
         settled = true;
         global.clearTimeout(guard);
+        if (E.repeatsDone < E.repeatsTotal) extendListening();
         scheduleNext();
       }
       try {
@@ -633,14 +674,35 @@
     renderResults();
     syncMastery();
   }
+  /* ENG-07: one stray Smart Board tap used to score 0/30. The first tap only
+     arms the action; the second one inside 3 s actually inverts every row. */
   function toggleMissed() {
     var i;
+    if (!E.invertConfirmUntil || E.invertConfirmUntil <= now()) {
+      E.invertConfirmUntil = now() + 3000;
+      var btn = byId('btnToggleMissed');
+      if (btn) {
+        btn.setAttribute('data-confirm-arm', '1');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+      if (SDP.Views && SDP.Views.showToast) {
+        try { SDP.Views.showToast(t('invertConfirmToast', 'Tap Invert marks again within 3s to confirm')); } catch (e) {}
+      }
+      return 'armed';
+    }
+    E.invertConfirmUntil = 0;
+    var armed = byId('btnToggleMissed');
+    if (armed) {
+      armed.setAttribute('data-confirm-arm', '0');
+      armed.setAttribute('aria-pressed', 'false');
+    }
     for (i = 0; i < E.items.length; i++) {
       E.items[i].marked = E.items[i].marked === 'missed' ? 'correct' : 'missed';
       E.items[i].correct = E.items[i].marked === 'correct';
     }
     renderResults();
     syncMastery();
+    return 'inverted';
   }
 
   /* After the first save, mark changes update mastery/weak words only: the
@@ -740,6 +802,15 @@
 
   function applySettings() {
     var conf = settings();
+    /* ENG-03: the student's saved default hint toggles used to be ignored. */
+    if (isObj(conf.hints)) {
+      E.hints = {
+        pos: conf.hints.pos !== false && conf.hints.pos !== undefined ? !!conf.hints.pos : false,
+        first: !!conf.hints.first,
+        si: !!conf.hints.si,
+        sentence: !!conf.hints.sentence
+      };
+    }
     E.writeSecs = Math.max(3, Number(conf.writeSecs) || 8);
     E.repeats = Math.min(5, Math.max(1, Number(conf.repeats) || 3));
     E.pauseSecs = Number(conf.pauseSecs) || 1.5;

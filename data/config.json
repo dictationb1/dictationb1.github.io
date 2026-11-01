@@ -690,5 +690,23 @@
   "repoName": "dictationb1.github.io",
   "syncRev": 1793385986993,
   "versionFamily": "9.0.0",
-  "encVault": "SDP_ENC_V2:AAA="
+  "encVault": "SDP_ENC_V2:AAA=",
+  "classSettings": {
+    "mode": "paper",
+    "writeSecs": 8,
+    "repeats": 3,
+    "pauseSecs": 1.5,
+    "autoAdvance": true,
+    "pacingPreset": "standard",
+    "voiceLock": "unified",
+    "voiceSource": "auto",
+    "rate": 0.95,
+    "theme": "dark"
+  },
+  "pinVerifier": {
+    "algo": "PBKDF2-SHA256",
+    "iterations": 250000,
+    "salt": "ISzHPhxESOW/5ZOl5hO4Gg==",
+    "hash": "FGfMBoTfB4lRLsU4SYVqtWXwdKNJMZ0ch+7PEgnaOic="
+  }
 }

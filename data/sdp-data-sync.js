@@ -51,14 +51,24 @@
      writes a retired sdp.v* name (W8). // legacy-import-readonly */
   var LEGACY_KEYS = ['sdp.v57_' + 'secure_local', 'sdp.v56_' + 'audit_verified', 'sdp.v55_' + 'guaranteed_device_sync'];
 
+  /* R1/R2 sub-keys: appliedSettingsRev, vaultLock, touchedKeys, cachedVault and
+     cachedVaultSyncRev all live INSIDE sdp.settings so the five-key R8
+     localStorage law stays 100% intact (W7). */
   function defaultSettings() {
     return {
       mode: 'paper', writeSecs: 8, repeats: 3, pauseSecs: 1.5, autoAdvance: true,
       voiceSource: 'auto', rate: 0.95, volume: 1, lang: 'en', theme: 'dark',
       guideAutoPlay: true, pacingPreset: 'standard', voiceLock: 'unified',
-      hints: { pos: true, first: false, si: false, sentence: false }
+      hints: { pos: true, first: false, si: false, sentence: false },
+      appliedSettingsRev: 0,
+      vaultLock: { fails: 0, lockUntil: 0, strikes: 0 }
     };
   }
+  /* The ten keys the lecturer's config.classSettings owns (R1). */
+  var CLASS_SETTING_KEYS = [
+    'mode', 'writeSecs', 'repeats', 'pauseSecs', 'autoAdvance',
+    'pacingPreset', 'voiceLock', 'voiceSource', 'rate', 'theme'
+  ];
   function defaultProgress() {
     return { mastered: {}, attempts: {}, weakWords: [], streak: { count: 0, lastDate: '' }, history: [], lastScore: null };
   }
@@ -133,8 +143,10 @@
       /* D-UI3: 'board' is a real theme, not a typo for 'dark'. */
       if (s.theme !== 'light' && s.theme !== 'board') s.theme = 'dark';
       /* R7: which settings the student changed by hand. A remote settingsRev
-         bump may adopt config.defaults only for keys NOT listed here. */
+         bump overrides touchedKeys for the ten classroom keys (R1/SYNC-01). */
       if (!isObj(s.touchedKeys)) s.touchedKeys = {};
+      s.appliedSettingsRev = Math.max(0, Number(s.appliedSettingsRev) || 0);
+      if (!isObj(s.vaultLock)) s.vaultLock = { fails: 0, lockUntil: 0, strikes: 0 };
       return s;
     },
     saveSettings: function (patch) {
@@ -349,23 +361,6 @@
     return out;
   }
   var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  /* Base64 -> UTF-8 text. GitHub's Contents API returns file bodies as base64
-     of the raw bytes, so Sinhala words survive only with a real UTF-8 decode. */
-  function b64decode(text) {
-    var clean = str(text).replace(/[^A-Za-z0-9+/=]/g, '');
-    var bytes = [], i, c0, c1, c2, c3;
-    for (i = 0; i < clean.length; i += 4) {
-      c0 = B64.indexOf(clean.charAt(i));
-      c1 = B64.indexOf(clean.charAt(i + 1));
-      c2 = B64.indexOf(clean.charAt(i + 2));
-      c3 = B64.indexOf(clean.charAt(i + 3));
-      if (c0 < 0 || c1 < 0) break;
-      bytes.push(((c0 << 2) | (c1 >> 4)) & 0xff);
-      if (c2 >= 0 && clean.charAt(i + 2) !== '=') bytes.push(((c1 << 4) | (c2 >> 2)) & 0xff);
-      if (c3 >= 0 && clean.charAt(i + 3) !== '=') bytes.push(((c2 << 6) | c3) & 0xff);
-    }
-    return new global.Uint8Array(bytes);
-  }
   function b64encode(bytes) {
     var out = '', i = 0, b0, b1, b2;
     while (i < bytes.length) {
@@ -401,6 +396,9 @@
     SALT: 16,
     IV: 12,
     MIN_BYTES: 29,
+    MAX_FAILS: 5,
+    LOCK_MS: 60000,
+    HARD_LOCK_MS: 300000,
     fails: 0,
     lockUntil: 0
   };
@@ -418,14 +416,117 @@
     return out;
   }
 
+  /* SEC-04: the brute-force lockout lives inside sdp.settings.vaultLock, so
+     reloading the page can never reset a 5-attempt / 60 s (or 300 s) timer. */
+  function persistedVaultLock() {
+    var out = { fails: 0, lockUntil: 0, strikes: 0 };
+    try {
+      var s = Data.settings();
+      var raw = isObj(s.vaultLock) ? s.vaultLock : {};
+      out.fails = Math.max(0, Number(raw.fails) || 0);
+      out.lockUntil = Math.max(0, Number(raw.lockUntil) || 0);
+      out.strikes = Math.max(0, Number(raw.strikes) || 0);
+    } catch (e) {}
+    if (out.fails > VAULT.fails) VAULT.fails = out.fails;
+    if (out.lockUntil > VAULT.lockUntil) VAULT.lockUntil = out.lockUntil;
+    if (out.fails < VAULT.fails) out.fails = VAULT.fails;
+    if (out.lockUntil < VAULT.lockUntil) out.lockUntil = VAULT.lockUntil;
+    return out;
+  }
+  function storeVaultLock(patch) {
+    var lock = persistedVaultLock(), k;
+    for (k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) lock[k] = patch[k];
+    VAULT.fails = Number(lock.fails) || 0;
+    VAULT.lockUntil = Number(lock.lockUntil) || 0;
+    try { Data.saveSettings({ vaultLock: lock }); } catch (e) {}
+    return lock;
+  }
+  function recordVaultFail() {
+    var lock = persistedVaultLock();
+    lock.fails = (Number(lock.fails) || 0) + 1;
+    if (lock.fails >= VAULT.MAX_FAILS) {
+      lock.strikes = (Number(lock.strikes) || 0) + 1;
+      lock.fails = 0;
+      lock.lockUntil = nowMs() + (lock.strikes >= 2 ? VAULT.HARD_LOCK_MS : VAULT.LOCK_MS);
+    }
+    storeVaultLock(lock);
+    return lock;
+  }
+  function vaultLockNow() { return persistedVaultLock(); }
+
+  /* SEC-03: PBKDF2-SHA256 pin verifier (250,000 iterations). The PIN itself
+     never leaves the device; config.json only carries salt + derived hash. */
+  function deriveVerifierHash(pin, saltB64, iterations) {
+    var api = subtle();
+    if (!api) return Promise.reject(new Error('webcrypto_unavailable'));
+    var salt = b64decode(str(saltB64));
+    var rounds = Number(iterations) || VAULT.ITERATIONS;
+    return api.importKey('raw', utf8Encode(str(pin)), { name: 'PBKDF2' }, false, ['deriveBits'])
+      .then(function (base) {
+        return api.deriveBits({ name: 'PBKDF2', salt: salt, iterations: rounds, hash: 'SHA-256' }, base, 256);
+      })
+      .then(function (bits) { return b64encode(new global.Uint8Array(bits)); });
+  }
+  function constantTimeEqual(a, b) {
+    var x = str(a), y = str(b);
+    if (!x || !y || x.length !== y.length) return false;
+    var diff = 0, i;
+    for (i = 0; i < x.length; i++) diff |= (x.charCodeAt(i) ^ y.charCodeAt(i));
+    return diff === 0;
+  }
+
   var Vault = {
     PREFIX: VAULT.PREFIX,
     ITERATIONS: VAULT.ITERATIONS,
     available: function () { return !!subtle() && typeof global.Uint8Array === 'function'; },
-    isLocked: function () { return nowMs() < VAULT.lockUntil; },
-    lockRemaining: function () { return Math.max(0, Math.ceil((VAULT.lockUntil - nowMs()) / 1000)); },
-    failures: function () { return VAULT.fails; },
-    resetLock: function () { VAULT.fails = 0; VAULT.lockUntil = 0; },
+    isLocked: function () { return nowMs() < persistedVaultLock().lockUntil; },
+    lockRemaining: function () { return Math.max(0, Math.ceil((persistedVaultLock().lockUntil - nowMs()) / 1000)); },
+    failures: function () { return persistedVaultLock().fails; },
+    strikes: function () { return persistedVaultLock().strikes; },
+    resetLock: function () {
+      VAULT.fails = 0;
+      VAULT.lockUntil = 0;
+      return storeVaultLock({ fails: 0, lockUntil: 0, strikes: 0 });
+    },
+    recordFail: recordVaultFail,
+
+    /* SEC-03: compute a { algo, iterations, salt, hash } verifier for a PIN. */
+    computePinVerifier: function (pin, saltB64) {
+      var salt = str(saltB64);
+      var fresh = !salt;
+      var saltBytes = fresh ? randomBytes(VAULT.SALT) : b64decode(salt);
+      var saltOut = fresh ? b64encode(saltBytes) : salt;
+      return deriveVerifierHash(pin, saltOut, VAULT.ITERATIONS).then(function (hash) {
+        return { algo: 'PBKDF2-SHA256', iterations: VAULT.ITERATIONS, salt: saltOut, hash: hash };
+      });
+    },
+    /* SEC-03 / SEC-04: constant-time verification; failures feed the lockout. */
+    verifyPinVerifier: function (pin, verifier) {
+      var v = isObj(verifier) ? verifier : null;
+      if (!v || !str(v.salt) || !str(v.hash)) return Promise.resolve(false);
+      if (Vault.isLocked()) {
+        var locked = new Error('locked');
+        locked.code = 'locked';
+        locked.retrySec = Vault.lockRemaining();
+        return Promise.reject(locked);
+      }
+      return deriveVerifierHash(pin, v.salt, Number(v.iterations) || VAULT.ITERATIONS).then(function (hash) {
+        var ok = constantTimeEqual(hash, str(v.hash));
+        if (ok) { Vault.resetLock(); return true; }
+        var lock = recordVaultFail();
+        if (lock.lockUntil > nowMs()) {
+          var err = new Error('locked');
+          err.code = 'locked';
+          err.retrySec = Math.ceil((lock.lockUntil - nowMs()) / 1000);
+          throw err;
+        }
+        var bad = new Error('bad_pin');
+        bad.code = 'bad_pin';
+        bad.triesLeft = Math.max(0, VAULT.MAX_FAILS - lock.fails);
+        throw bad;
+      }, function (e) { if (e && e.code) throw e; return false; });
+    },
+
     isEmptyEnvelope: function (text) {
       var s = str(text);
       if (!s) return true;
@@ -481,21 +582,21 @@
       return Vault.deriveKey(pin, salt).then(function (key) {
         return subtle().decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
       }).then(function (plain) {
-        VAULT.fails = 0;
+        Vault.resetLock();
         return JSON.parse(utf8Decode(new global.Uint8Array(plain)));
-      }, function () {
-        VAULT.fails += 1;
-        if (VAULT.fails >= 5) {
-          VAULT.lockUntil = nowMs() + 60000;
-          VAULT.fails = 0;
+      }, function (e) {
+        if (e && e.code === 'locked') throw e;
+        /* SEC-04: the counter is persisted, so a reload cannot clear it. */
+        var lock = recordVaultFail();
+        if (lock.lockUntil > nowMs()) {
           var lockErr = new Error('locked');
           lockErr.code = 'locked';
-          lockErr.retrySec = 60;
+          lockErr.retrySec = Math.ceil((lock.lockUntil - nowMs()) / 1000);
           throw lockErr;
         }
         var err = new Error('bad_pin');
         err.code = 'bad_pin';
-        err.triesLeft = 5 - VAULT.fails;
+        err.triesLeft = Math.max(0, VAULT.MAX_FAILS - lock.fails);
         throw err;
       });
     },
@@ -613,30 +714,39 @@
     return list;
   }
 
-  /* R7: a teacher settingsRev bump adopts config.defaults on a student device
-   * ONLY for the keys the student has not touched by hand. */
-  function adoptRemoteSettings(cfg) {
-    var defaults = isObj(cfg) && isObj(cfg.defaults) ? cfg.defaults : null;
-    if (!defaults) return false;
+  /* R1 / SYNC-01 / SYNC-02: a lecturer settingsRev bump overrides the student's
+   * touchedKeys for the ten classroom keys. Personal keys (lang, guideAutoPlay,
+   * volume, hints) and sdp.progress are NEVER touched here. */
+  function adoptRemoteSettings(remoteCfg, remoteSettingsRev) {
+    var cfg = isObj(remoteCfg) ? remoteCfg : {};
+    var source = isObj(cfg.classSettings) ? cfg.classSettings : (isObj(cfg.defaults) ? cfg.defaults : null);
+    if (!source) return false;
+    var rev = Number(remoteSettingsRev === undefined ? cfg.settingsRev : remoteSettingsRev) || 0;
     var current = Data.settings();
-    var touched = isObj(current.touchedKeys) ? current.touchedKeys : {};
-    var patch = {}, changed = false, k;
-    for (k in defaults) {
-      if (!Object.prototype.hasOwnProperty.call(defaults, k)) continue;
-      if (k === 'touchedKeys' || k === 'cachedVault' || k === 'cachedVaultSyncRev') continue;
-      if (touched[k]) continue;
-      if (current[k] === defaults[k]) continue;
-      patch[k] = defaults[k];
+    if (rev <= (Number(current.appliedSettingsRev) || 0)) return false;
+    var patch = { appliedSettingsRev: rev }, changed = false, k, key;
+    for (k = 0; k < CLASS_SETTING_KEYS.length; k++) {
+      key = CLASS_SETTING_KEYS[k];
+      if (source[key] === undefined || source[key] === null) continue;
+      if (current[key] === source[key]) continue;
+      patch[key] = source[key];
       changed = true;
     }
-    if (!changed) return false;
+    var touched = isObj(current.touchedKeys) ? current.touchedKeys : {};
+    var kept = {};
+    for (k in touched) {
+      if (!Object.prototype.hasOwnProperty.call(touched, k)) continue;
+      if (CLASS_SETTING_KEYS.indexOf(k) < 0) kept[k] = touched[k];
+    }
+    patch.touchedKeys = kept;
     Data.saveSettings(patch);
-    emit('sdp:teacher-updated', { settingsRev: Number(cfg.settingsRev || 0), applied: Object.keys(patch) });
+    try { if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings(); } catch (e) {}
+    try { if (SDP.Views && SDP.Views.renderAll) SDP.Views.renderAll(); } catch (e) {}
+    emit('sdp:teacher-updated', { settingsRev: rev, applied: Object.keys(patch), changed: changed });
     return true;
   }
 
   function applyPayloads(version, config, session) {
-    var prevSettingsRev = Number((state.version && state.version.settingsRev) || state.settingsRev || 0);
     state.version = version || state.version;
     state.config = config || state.config;
     state.session = session || state.session;
@@ -654,7 +764,11 @@
     state.pastSessions = Array.isArray(ses.pastSessions) ? ses.pastSessions : [];
     state.settingsRev = Number(ver.settingsRev || 0);
     state.syncRev = Number(ver.syncRev || 0);
-    if (state.settingsRev > prevSettingsRev && prevSettingsRev > 0) adoptRemoteSettings(cfg);
+    /* SYNC-02: adopt on the very first boot too (appliedSettingsRev starts at 0),
+       never gated on a previous revision being present. */
+    var appliedRev = 0;
+    try { appliedRev = Number(Data.settings().appliedSettingsRev) || 0; } catch (e) { appliedRev = 0; }
+    if (state.settingsRev > appliedRev) adoptRemoteSettings(cfg, state.settingsRev);
     state.clips = {};
     var clipMap = (ses && ses.clips) || (list && list.clips) || null;
     if (Array.isArray(clipMap)) {
@@ -777,7 +891,11 @@
         var sessionChanged = str(remote.session) !== str(local.session);
         var settingsChanged = Number(remote.settingsRev || 0) !== Number(local.settingsRev || 0);
         var newer = Number(remote.syncRev || 0) > Number(local.syncRev || 0);
-        var appChanged = !!(remote.version && remote.version.appVersion && str(remote.version.appVersion) !== APP_VERSION);
+        /* SYNC-04: remote.version is a STRING ('0.0.1.d') in version.json, so
+           reading only `.appVersion` off it made every upgrade invisible. */
+        var remoteAppVer = str(remote.version && (remote.version.appVersion || remote.version.version));
+        if (!remoteAppVer) remoteAppVer = str(remote.appVersion);
+        var appChanged = !!remoteAppVer && remoteAppVer !== APP_VERSION;
         state.lastCheck = nowMs();
         state.lastCheckSource = useRaw ? 'raw' : 'cdn';
         result.session = str(remote.session);
@@ -787,9 +905,10 @@
           cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion, source: state.lastCheckSource });
           return;
         }
-        if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== str(remote.version.appVersion)) {
+        try { remoteAppVer = str(remote.version && (remote.version.appVersion || remote.version.version)) || str(remote.appVersion); } catch (e) {}
+        if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== remoteAppVer) {
           appVersionChanged = true;
-          Sync.triggerVersionUpgrade(str(remote.version.appVersion));
+          Sync.triggerVersionUpgrade(remoteAppVer);
         }
         /* D-S7: an envelope published a second ago must not be missed because
            the CDN still serves yesterday's config.json. */
@@ -861,12 +980,16 @@
       return true;
     },
 
+    /* SYNC-05: one cheap raw.githubusercontent.com read every 30 s. The full
+       reconciliation (and any api.github.com traffic) only happens when the
+       pointer really moved, on visibilitychange, on a manual badge tap, or
+       while the Studio resolves its vault envelope. */
     startWatch: function (ms) {
       Sync.stopWatch();
       liveTimer = global.setInterval(function () {
         if (doc && doc.visibilityState === 'hidden') return;
-        Sync.checkForUpdates(function () {});
-      }, ms || 120000);
+        Sync.pollVersionTick(function () {});
+      }, ms || 30000);
       if (doc && doc.addEventListener && !watchVisBound) {
         watchVisBound = true;
         doc.addEventListener('visibilitychange', function () {
@@ -1043,6 +1166,62 @@
       }
       step();
       return true;
+    },
+
+    /* ══ SYNC-05: the 30 s watcher reads ONLY this file ═════════════════
+     * raw.githubusercontent.com is a static CDN edge with no rate limit, so a
+     * classroom of boards can poll it all day. api.github.com allows 60
+     * requests per hour per IP and is therefore never touched by the timer. */
+    fetchRawMainJson: function (relPath, cb) {
+      cb = cb || noop;
+      if (typeof global.fetch !== 'function') { cb(new Error('no_fetch')); return false; }
+      var repo = Sync.repo();
+      var path = str(relPath).replace(/^\.?\/+/, '');
+      var url = 'https://raw.githubusercontent.com/' + repo.owner + '/' + repo.name + '/main/' + path + '?t=' + nowMs();
+      var done = false;
+      function finish(err, data) {
+        if (done) return;
+        done = true;
+        cb(err, data);
+      }
+      try {
+        global.fetch(url, { cache: 'no-store' })
+          .then(function (res) { return res && res.ok && res.json ? res.json() : null; })
+          .then(function (data) { if (data) finish(null, data); else finish(new Error('raw_unavailable')); },
+            function () { finish(new Error('raw_failed')); });
+      } catch (e) { finish(new Error('raw_failed')); return false; }
+      global.setTimeout(function () { finish(new Error('raw_timeout')); }, 5000);
+      return true;
+    },
+
+    /* The timer tick: read version.json from raw main (CDN fallback) and only
+       escalate to a full checkForUpdates() when a pointer actually moved. */
+    pollVersionTick: function (cb) {
+      cb = cb || noop;
+      function compare(remote) {
+        if (!remote) { cb(null, { ok: false, error: 'bad_response', changed: false }); return; }
+        var local = state.version || {};
+        var applied = 0;
+        try { applied = Number(Data.settings().appliedSettingsRev) || 0; } catch (e) { applied = 0; }
+        var remoteAppVer = str(remote.appVersion || remote.version || '');
+        var moved = Number(remote.syncRev || 0) > Number(local.syncRev || 0) ||
+          Number(remote.settingsRev || 0) > applied ||
+          (!!remoteAppVer && remoteAppVer !== APP_VERSION);
+        if (!moved) {
+          state.lastCheck = nowMs();
+          state.lastCheckSource = 'raw';
+          cb(null, { ok: true, error: null, changed: false, checked: true, source: 'raw' });
+          return;
+        }
+        Sync.checkForUpdates(cb);
+      }
+      Sync.fetchRawMainJson('data/version.json', function (err, data) {
+        if (!err && data) { compare(data); return; }
+        fetchJSON('./data/version.json', function (err2, data2) {
+          if (err2 || !data2) { cb(err2 || err || new Error('bad_response'), { ok: false, changed: false }); return; }
+          compare(data2);
+        });
+      });
     },
 
     /* ══ D-S6 / D-S7: read straight from api.github.com ═════════════════
