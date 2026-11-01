@@ -410,7 +410,15 @@ select.input { cursor: pointer; }
 .stat strong { font-size: 19px; letter-spacing: -0.01em; }
 .stat span { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .ann p { margin: 0; font-size: 14px; }
-#creditFoot { padding: 8px 2px 18px; text-align: center; }
+#creditFoot, .credit-foot { padding: 8px 2px 18px; text-align: center; }
+.credit-foot { padding: 12px 0 2px; border-top: 1px solid var(--stroke); margin-top: 12px; }
+.empty-state { margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--stroke); border-radius: 12px; font-size: 13px; color: var(--text-muted); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.about-card .about-line { margin: 0 0 6px; font-size: 13px; color: var(--text-muted); }
+.about-card .about-audience { color: var(--text); }
+.about-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.about-list a { color: var(--accent); text-decoration: none; }
+.about-list a:hover, .about-list a:focus-visible { text-decoration: underline; }
 .credits-pill {
   display: inline-block;
   position: relative;

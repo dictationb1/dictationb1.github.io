@@ -228,6 +228,18 @@
     if (!input || typeof input.focus !== 'function') return;
     try { input.focus({ preventScroll: true }); } catch (e) { try { input.focus(); } catch (e2) {} }
   }
+  function submitTyped() {
+    /* Typing-mode submit: Enter works in listening or writing, because a fast
+       student may finish typing before the listening window closes. */
+    var input = byId('typeInput');
+    var item = current();
+    if (!input || !item) return false;
+    item.typed = input.value;
+    saveDraft();
+    if (E.index >= E.items.length - 1) { finish(); return true; }
+    goNext();
+    return true;
+  }
   function bindInput() {
     var input = byId('typeInput');
     if (!input || input._sdpBound) return;
@@ -236,6 +248,14 @@
       var item = current();
       if (item) item.typed = input.value;
       saveDraft();
+    });
+    input.addEventListener('keydown', function (ev) {
+      var key = ev && (ev.key || ev.keyCode);
+      if (key !== 'Enter' && key !== 13) return;
+      if (ev && ev.preventDefault) ev.preventDefault();
+      if (E.mode !== 'typing') return;
+      if (E.phase !== 'listening' && E.phase !== 'writing') return;
+      submitTyped();
     });
   }
 
@@ -513,6 +533,18 @@
         var item = E.items[i];
         var key = str(item.w).toLowerCase();
         if (!key) continue;
+        /* The first save counted one attempt per word; flipping a mark must
+           move the correct counter by exactly the delta, never add attempts. */
+        var attempt = progress.attempts[key];
+        if (attempt) {
+          var want = isCorrectItem(item) ? 1 : 0;
+          var have = item.attemptCorrect ? 1 : 0;
+          if (want !== have) {
+            attempt.correct = Math.max(0, (Number(attempt.correct) || 0) + want - have);
+            item.attemptCorrect = want === 1;
+            progress.attempts[key] = attempt;
+          }
+        }
         if (isCorrectItem(item)) {
           progress.mastered[key] = true;
           var at = progress.weakWords.indexOf(key);
@@ -555,6 +587,7 @@
         SDP.Data.recordResult(buildModel());
         SDP.Data.clearSession();
       }
+      for (var ai = 0; ai < E.items.length; ai++) E.items[ai].attemptCorrect = isCorrectItem(E.items[ai]);
     } catch (e) {}
     if (SDP.Views && SDP.Views.renderHome) { try { SDP.Views.renderHome(); } catch (e) {} }
     if (SDP.Views && SDP.Views.onFinished) { try { SDP.Views.onFinished(buildModel()); } catch (e) {} }
@@ -714,6 +747,7 @@
     toggleHint: toggleHint,
     cycleHint: cycleHint,
     setMode: setMode,
+    submitTyped: submitTyped,
     toggleMode: toggleMode,
     applySettings: applySettings,
     renderResults: renderResults,

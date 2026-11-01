@@ -75,6 +75,7 @@
       <div id="homeHero" class="card hero">
         <h1 id="homeTitle" data-i18n="homeTitle">Smart Dictation</h1>
         <p id="homeSub" data-i18n="homeSub">Listen, write, and check 30 B1 words with your class.</p>
+        <p id="bankEmpty" class="empty-state" role="status" data-i18n="emptyBank" hidden>No word list is available yet. Connect once, then tap "Check for session update" in Settings.</p>
         <div class="hero-actions">
           <button id="btnStart" type="button" class="btn btn-primary" data-i18n="startDictation">Start Dictation</button>
           <button id="btnGuide" type="button" class="btn" data-i18n="howToUse">How to Use</button>
@@ -211,6 +212,7 @@
           <button type="button" class="pill" data-filter="weak" aria-pressed="false" data-i18n="weakWords">Weak Words</button>
           <button type="button" class="pill" data-filter="mastered" aria-pressed="false" data-i18n="mastered">Mastered</button>
         </div>
+        <p id="dictEmpty" class="empty-state" role="status" data-i18n="emptyBank" hidden>No word list is available yet. Connect once, then tap "Check for session update" in Settings.</p>
         <div id="dictList" class="dict-list"></div>
       </div>
     </section>
@@ -274,8 +276,8 @@
           <div class="field">
             <label class="lbl" for="setLang" data-i18n="language">Language</label>
             <select id="setLang" class="input">
-              <option value="en">English</option>
-              <option value="si">සිංහල</option>
+              <option value="en" data-i18n="langEnglish">English</option>
+              <option value="si" data-i18n="langSinhala">Sinhala</option>
             </select>
           </div>
           <div class="field">
@@ -300,8 +302,23 @@
           <p id="storageStatus" class="muted"></p>
         </section>
 
+        <section id="aboutCard" class="card set-card about-card">
+          <h3 class="set-head" data-i18n="aboutTitle">5 · About this app</h3>
+          <p class="about-line" data-i18n="aboutBlurb">A free, offline-first dictation trainer for one class — no accounts, no ads, no tracking.</p>
+          <p class="about-line about-audience" data-i18n="aboutAudience">Built for the CCBE Galle Branch — B1 English Class, Sri Lanka.</p>
+          <ul class="about-list">
+            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.a</span></li>
+            <li><span data-i18n="aboutBuiltLabel">Built</span>: <span id="aboutBuilt">2026-11-01</span></li>
+            <li><a id="aboutDataLink" href="./data/" data-i18n="aboutDataLink">See every byte this app stores</a></li>
+          </ul>
+          <footer class="credit-foot">
+            <span class="credits-pill">CREDITS GOES TO Hansana</span>
+            <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+          </footer>
+        </section>
+
         <details id="studioAccordion" class="card set-card studio-card">
-          <summary class="set-head" data-i18n="studioTitle">5 · Lecturer Studio &amp; admin vault</summary>
+          <summary class="set-head" data-i18n="studioTitle">6 · Lecturer Studio &amp; admin vault</summary>
           <div id="studioBody" class="studio-body">
             <p class="muted" data-i18n="studioLocked">Enter the lecturer PIN to open the studio.</p>
           </div>

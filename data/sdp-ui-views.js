@@ -58,10 +58,16 @@
     voiceLecturer: 'Lecturer clips', voiceAlice: 'Alice (ElevenLabs UK)', voiceDevice: 'Device voice',
     rate: 'Speech rate', volume: 'Volume', testVoice: 'Test Voice',
     setLangTheme: '3 · Language & appearance', language: 'Language', theme: 'Theme',
-    themeDark: 'Dark', themeLight: 'Light',
+    themeDark: 'Dark', themeLight: 'Light', langEnglish: 'English', langSinhala: 'Sinhala',
+    aboutTitle: '5 · About this app',
+    aboutBlurb: 'A free, offline-first dictation trainer for one class — no accounts, no ads, no tracking.',
+    aboutAudience: 'Built for the CCBE Galle Branch — B1 English Class, Sri Lanka.',
+    aboutVersionLabel: 'Version', aboutBuiltLabel: 'Built',
+    aboutDataLink: 'See every byte this app stores',
+    emptyBank: 'No word list is available yet. Connect once, then tap "Check for session update" in Settings.',
     setProgress: '4 · Progress & offline storage', exportBackup: 'Export backup', importBackup: 'Import backup',
     resetStats: 'Reset local stats', checkUpdate: 'Check for session update',
-    studioTitle: '5 · Lecturer Studio & admin vault', studioLocked: 'Enter the lecturer PIN to open the studio.',
+    studioTitle: '6 · Lecturer Studio & admin vault', studioLocked: 'Enter the lecturer PIN to open the studio.',
     guideSpeakBtn: 'Listen to the steps (EN)', guideCloseBtn: 'Got it, Start Learning',
     guideStep1Title: '1. Choose how you learn',
     guideStep1Body: 'Paper Mode means writing each word in your exercise book as you hear it. Typing Mode means typing directly on your phone or laptop.',
@@ -121,10 +127,16 @@
     voiceLecturer: 'කථිකාචාර්ය පටිගත කිරීම්', voiceAlice: 'Alice (ElevenLabs UK)', voiceDevice: 'උපාංගයේ හඬ',
     rate: 'කථන වේගය', volume: 'හඬ පරිමාව', testVoice: 'හඬ පරීක්ෂා කරන්න',
     setLangTheme: '3 · භාෂාව සහ පෙනුම', language: 'භාෂාව', theme: 'තේමාව',
-    themeDark: 'අඳුරු', themeLight: 'දීප්ත',
+    themeDark: 'අඳුරු', themeLight: 'දීප්ත', langEnglish: 'English', langSinhala: 'සිංහල',
+    aboutTitle: '5 · මෙම යෙදුම ගැන',
+    aboutBlurb: 'එක් පන්තියක් සඳහා නොමිලේ සකසන ලද, අන්තර්ජාලය නොමැතිව ද ක්‍රියා කරන අක්ෂර වින්‍යාස පුහුණු යෙදුමක් — ගිණුම් නැත, දැන්වීම් නැත, ලුහුබැඳීම් නැත.',
+    aboutAudience: 'කොළඹ විශ්ව විද්‍යාලයීය ව්‍යාප්ත අධ්‍යයන මධ්‍යස්ථානය — ගාල්ල ශාඛාවේ B1 ඉංග්‍රීසි පන්තිය සඳහා.',
+    aboutVersionLabel: 'අනුවාදය', aboutBuiltLabel: 'නිර්මිත දිනය',
+    aboutDataLink: 'මෙම යෙදුම සුරකින සෑම දත්තයක්ම බලන්න',
+    emptyBank: 'තවම වචන ලැයිස්තුවක් නොමැත. එක් වරක් අන්තර්ජාලයට සම්බන්ධ වී, සැකසුම් තුළ "Check for session update" ඔබන්න.',
     setProgress: '4 · ප්‍රගතිය සහ නොබැඳි ගබඩාව', exportBackup: 'උපස්ථයක් අපනයනය', importBackup: 'උපස්ථයක් ආනයනය',
     resetStats: 'දේශීය සංඛ්‍යාලේඛන මකන්න', checkUpdate: 'වාර යාවත්කාලීනය පරීක්ෂා කරන්න',
-    studioTitle: '5 · කථිකාචාර්ය ස්ටුඩියෝ සහ පරිපාලන බඳුන', studioLocked: 'ස්ටුඩියෝ විවෘත කිරීමට කථිකාචාර්ය PIN ඇතුළත් කරන්න.',
+    studioTitle: '6 · කථිකාචාර්ය ස්ටුඩියෝ සහ පරිපාලන බඳුන', studioLocked: 'ස්ටුඩියෝ විවෘත කිරීමට කථිකාචාර්ය PIN ඇතුළත් කරන්න.',
     guideSpeakBtn: 'උපදෙස් හඬින් අසන්න (EN)', guideCloseBtn: 'තේරුණා, ආරම්භ කරමු',
     guideStep1Title: '1. ඔබේ ඉගෙනුම් ආකාරය තෝරන්න',
     guideStep1Body: 'පොතේ ලිවීම (Paper Mode) යනු අසන අතරේ වචන ඔබේ අභ්‍යාස පොතේ ලිවීමයි; ටයිප් කිරීම (Typing Mode) යනු දුරකථනයේ හෝ පරිගණකයේ කෙළින්ම ටයිප් කිරීමයි.',
@@ -279,8 +291,19 @@
   /* ══ Home ═══════════════════════════════════════════════════════════════ */
   function renderHome() {
     var s = stats();
-    var total = words().length || 30;
-    setText(byId('statMastered'), s.mastered + ' / ' + total);
+    var bank = words().length;
+    var total = bank || 30;
+    /* An empty bank is a real state (first run offline), so say so instead of
+       promising thirty words that do not exist. */
+    var empty = byId('bankEmpty');
+    if (empty) empty.hidden = bank > 0;
+    var start = byId('btnStart');
+    if (start) {
+      start.disabled = bank === 0;
+      if (bank === 0) start.setAttribute('aria-disabled', 'true');
+      else start.removeAttribute('aria-disabled');
+    }
+    setText(byId('statMastered'), bank ? s.mastered + ' / ' + total : '—');
     setText(byId('statAccuracy'), s.accuracy + '%');
     setText(byId('statStreak'), String(s.streak));
     var line = doc.querySelector ? doc.querySelector('#creditFoot .credit-line') : null;
@@ -322,8 +345,12 @@
   function startDictation(mode) {
     var chosen = mode || settings().mode;
     if (!words().length) {
+      /* Never open an empty cockpit: retry the boot, then tell the student
+         plainly what to do next. */
       try { SDP.Sync.boot({}, function () { startDictation(chosen); }); } catch (e) {}
-      showTab('player');
+      showToast(t('emptyBank'));
+      showTab('home');
+      renderHome();
       return false;
     }
     try { SDP.Data.saveSettings({ mode: chosen }); } catch (e) {}
@@ -416,7 +443,9 @@
         '<button type="button" class="btn btn-sm d-play" data-play="' + esc(w.w) + '" aria-label="' + esc(t('playAudio')) + ' ' + esc(w.w) + '">▶</button>' +
         '</article>';
     }
-    host.innerHTML = shown ? html : '<p class="dict-empty">' + esc(t('noWordsFound')) + '</p>';
+    var dictEmpty = byId('dictEmpty');
+    if (dictEmpty) dictEmpty.hidden = list.length > 0;
+    host.innerHTML = shown ? html : (list.length ? '<p class="dict-empty">' + esc(t('noWordsFound')) + '</p>' : '');
     return shown;
   }
   function bindWords() {

@@ -60,10 +60,11 @@
 
   var store = (function () {
     var ok = true;
+    /* Shape-only detection: the app never writes a probe key, so the five R8
+       keys stay the only writes this module can ever make. */
     try {
-      var probe = '__sdp_probe__';
-      global.localStorage.setItem(probe, '1');
-      global.localStorage.removeItem(probe);
+      ok = !!(global.localStorage && typeof global.localStorage.getItem === 'function' &&
+        typeof global.localStorage.setItem === 'function');
     } catch (e) { ok = false; }
     return {
       available: ok,
@@ -835,7 +836,9 @@
       for (i = 0; i < list.length; i++) {
         var item = list[i] || {};
         var line = JSON.stringify({ w: str(item.w), p: str(item.p), pos: str(item.pos), m: str(item.m), si: str(item.si), s: str(item.s) });
-        var added = line.length + 1;
+        /* Sinhala is 3 bytes per glyph in UTF-8, so the limit is measured in
+           encoded bytes, exactly like the Apps Script cell budget. */
+        var added = utf8Encode(line).length + 1;
         if (current.length && size + added > cap) {
           chunks.push(current);
           current = [];
