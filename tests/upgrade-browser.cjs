@@ -1,5 +1,5 @@
 'use strict';
-/* v58 / 7.0.0 Chromium upgrade gate. No live internet: every external request is
+/* v9.0.0.2 / build 60 Chromium upgrade gate (Next-Gen Hurubuhuti). No live internet: every external request is
  * aborted or mocked locally. Test PIN is constructed at runtime. */
 const { chromium } = require('playwright-core');
 const serverChromium = require('@sparticuz/chromium');
@@ -215,6 +215,141 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     }));
     push('v58 tapping a plan chip persists the plan, price and active state',
       /Study Pack/.test(chipClick.label) && chipClick.price === 99 && chipClick.pressed === 'true' && errors.length === 0, Object.assign({ errors }, chipClick));
+    await ctx.close();
+  }
+
+  /* ------------------------------------------------------------------
+     v9.0.0.2 / build 60 — Next-Gen Hurubuhuti visual contract (mockups 6.1-6.8).
+     Everything is measured on the real compositor: sizes, colours, visibility.
+     ------------------------------------------------------------------ */
+  {
+    const { ctx, page, errors } = await newPage({ viewport: { width: 390, height: 844 } });
+    const shell = await page.evaluate(() => {
+      const cs = (el) => (el ? getComputedStyle(el) : null);
+      const box = (el) => (el ? el.getBoundingClientRect().toJSON() : null);
+      const top = document.querySelector('.topbar');
+      const cluster = document.getElementById('sdpTopCluster');
+      const badge = document.getElementById('topDataBadge');
+      const tabs = Array.from(document.querySelectorAll('#tabbar button[data-tab]'));
+      const hero = document.getElementById('homeHero');
+      const grid = document.getElementById('sdpQuickPracticeGrid');
+      return {
+        topH: Math.round(box(top).height), topTop: Math.round(box(top).top),
+        cluster: cluster ? cluster.children.length : 0,
+        brandPill: (document.getElementById('sdpBrandPill') || {}).textContent,
+        brandSub: (document.getElementById('sdpBrandSub') || {}).textContent,
+        dataChip: badge ? cs(badge).display : 'missing',
+        tabH: Math.round(box(document.getElementById('tabbar')).height),
+        tabs: tabs.map((b) => b.textContent.trim()),
+        heroBg: cs(hero).backgroundColor, heroImg: cs(hero).backgroundImage, heroBlur: cs(hero).backdropFilter,
+        chips: (document.getElementById('sdpHeroConfigChips') || { children: [] }).children.length,
+        stats: (document.getElementById('sdpHomeStatsRow') || { children: [] }).children.length,
+        quick: grid ? grid.children.length : 0,
+        quickCols: grid ? cs(grid).gridTemplateColumns.split(' ').length : 0,
+        toast: !!document.getElementById('microToastLoad'), toastText: (document.getElementById('microToastLoad') || {}).textContent || '',
+        credit: !!document.getElementById('creditPill'), docked: !!document.getElementById('creditDocked'),
+        bodyBg: cs(document.body).backgroundColor, canvas: cs(document.documentElement).getPropertyValue('--bg-canvas').trim(),
+        topBarBg: cs(top).backgroundColor, blurs: Array.from(document.body.querySelectorAll('*')).filter((e) => { const b = cs(e).backdropFilter; return b && b !== 'none'; }).length,
+        legacy: { v57: !!document.getElementById('sdpV57Css') && document.getElementById('sdpV57Css').disabled, v58: !!document.getElementById('sdpV58Css') && document.getElementById('sdpV58Css').disabled }
+      };
+    });
+    push('v9.0.0.2 54px topbar, brand pill v60, exactly three utility controls, no LKR chip',
+      shell.topH === 54 && shell.topTop === 0 && shell.cluster === 3 && shell.brandPill === 'v60' && /CCBE Galle/.test(shell.brandSub) && shell.dataChip === 'none' && errors.length === 0,
+      { shell, errors });
+    push('v9.0.0.2 5-tab bar (Home · Words · Dictate · Practice · Settings) at 60px with the Dictate tab on Home',
+      shell.tabH === 60 && JSON.stringify(shell.tabs) === JSON.stringify(['Home', 'Words', 'Dictate', 'Practice', 'Settings']), shell.tabs);
+    push('v9.0.0.2 home: solid Zinc hero (no gradient/blur), 4 config chips, 3 stats, 2x2 quick practice',
+      /rgb\(24, 24, 27\)/.test(shell.heroBg) && shell.heroImg === 'none' && shell.heroBlur === 'none' &&
+      shell.chips === 4 && shell.stats === 3 && shell.quick === 4 && shell.quickCols === 2, shell);
+    push('v9.0.0.2 flat dark shell: Zinc-950 canvas, translucent 54px bar, zero backdrop blur anywhere',
+      shell.bodyBg === 'rgb(9, 9, 11)' && shell.canvas === '#09090B' && /rgba\(9, 9, 11/.test(shell.topBarBg) && shell.blurs === 0, shell);
+    push('v9.0.0.2 legacy sheets are neutralised and the whisper-quiet toast + credit pill are on screen',
+      shell.legacy.v57 && shell.legacy.v58 && shell.toast && /⚡/.test(shell.toastText) && shell.credit && shell.docked, shell);
+
+    /* the Dictate tab goes Home and focuses the cockpit CTA */
+    await page.evaluate(() => document.getElementById('tab-comm').click());
+    await page.waitForTimeout(350);
+    const dictate = await page.evaluate(() => ({
+      screen: document.getElementById('screen-home').className,
+      selected: document.getElementById('tab-home').getAttribute('aria-selected')
+    }));
+    push('v9.0.0.2 the Dictate tab opens Home instead of the community screen',
+      dictate.screen.indexOf('hidden') < 0 && dictate.selected === 'true', dictate);
+
+    /* settings: dictation first and visible without scrolling */
+    const settings = await page.evaluate(() => {
+      const C = window.SDPCore;
+      C.UI.setTab('set');
+      return new Promise((resolve) => setTimeout(() => {
+        const host = document.getElementById('sdpNextGenSettings');
+        const acc = document.getElementById('sdpAppearanceAccordion');
+        const rows = host ? host.querySelectorAll('.sdp-row').length : 0;
+        const vh = window.innerHeight;
+        const ids = ['sdpSegMode', 'sdpSegSpeed', 'sdpSegRepeats', 'sdpRangeWait', 'sdpToggleAutoSentence', 'sdpSegLang'];
+        const visible = ids.filter((id) => { const el = document.getElementById(id); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.top < vh; });
+        resolve({ first: document.getElementById('screen-set').firstElementChild === host, rows, visible: visible.length,
+          acc: acc ? acc.tagName.toLowerCase() : '', open: acc ? acc.open : null,
+          legacyInside: !!(acc && acc.contains(document.getElementById('setBody'))),
+          docH: document.documentElement.scrollHeight });
+      }, 300));
+    });
+    push('v9.0.0.2 settings are dictation-first: six wired rows above the fold, wallpapers collapsed in Priority 3',
+      settings.first && settings.rows >= 6 && settings.visible === 6 && settings.acc === 'details' && settings.open === false && settings.legacyInside,
+      settings);
+
+    /* cockpit: start a dictation and check the 4px edge bar, 34px timer pill and word map */
+    await page.evaluate(() => {
+      const C = window.SDPCore;
+      C.DB.data.settings.mode = 'paper';
+      C.UI.setTab('home');
+      C.Eng.start({});
+    });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => { const b = document.querySelector('#sheets button, #sheets [aria-label]'); const ready = Array.from(document.querySelectorAll('#sheets button')).find((x) => /ready/i.test(x.textContent || '')); if (ready) ready.click(); });
+    await page.waitForTimeout(1200);
+    const cockpit = await page.evaluate(() => {
+      const cs = (el) => (el ? getComputedStyle(el) : null);
+      const pill = document.getElementById('sdpTimerPill');
+      const bar = document.getElementById('sdpEdgeBar');
+      const map = document.getElementById('sdpWordMap');
+      return {
+        bar: bar ? Math.round(bar.getBoundingClientRect().height) : null,
+        fill: !!document.getElementById('sdpEdgeBarFill'),
+        pillH: pill ? Math.round(pill.getBoundingClientRect().height) : null,
+        inCard: !!(pill && pill.closest('.wordcard')),
+        cdInPill: !!(pill && pill.querySelector('#cdNum')),
+        dock: (document.getElementById('sdpHelperDock') || { children: [] }).children.length,
+        map: map ? map.children.length : 0,
+        counters: (document.getElementById('sdpLiveCounters') || { children: [] }).children.length,
+        ringHidden: cs(document.querySelector('#layers .lens')).display === 'none',
+        word: (document.getElementById('plWord') || {}).textContent || ''
+      };
+    });
+    push('v9.0.0.2 cockpit: 4px edge bar, 34px in-card timer pill, 4-button dock, 30-word map',
+      cockpit.bar === 4 && cockpit.fill && cockpit.pillH === 34 && cockpit.inCard && cockpit.cdInPill && cockpit.dock === 4 && cockpit.map === 30 && cockpit.counters === 3 && cockpit.ringHidden,
+      cockpit);
+    await ctx.close();
+  }
+
+  /* desktop rail (mockup 6.7 / 6.8) */
+  {
+    const { ctx, page, errors } = await newPage({ viewport: { width: 1280, height: 800 } });
+    const rail = await page.evaluate(() => {
+      const cs = (el) => (el ? getComputedStyle(el) : null);
+      const r = document.getElementById('sdpDesktopRail');
+      const rect = r ? r.getBoundingClientRect().toJSON() : null;
+      const app = document.getElementById('app').getBoundingClientRect();
+      return {
+        display: r ? cs(r).display : 'missing', width: rect ? Math.round(rect.width) : 0,
+        nav: r ? r.querySelectorAll('#sdpRailNav button').length : 0,
+        docked: !!document.getElementById('creditDockedDesktop'),
+        tabbar: cs(document.getElementById('tabbar')).display,
+        appLeft: Math.round(app.left), topLeft: Math.round(document.querySelector('.topbar').getBoundingClientRect().left)
+      };
+    });
+    push('v9.0.0.2 desktop >=1024px: 232px left rail, docked Hansana badge, tab bar retired, app offset',
+      rail.display === 'flex' && rail.width === 232 && rail.nav === 5 && rail.docked && rail.tabbar === 'none' && rail.appLeft === 232 && rail.topLeft === 232 && errors.length === 0,
+      rail);
     await ctx.close();
   }
 

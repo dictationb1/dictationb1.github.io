@@ -1,12 +1,12 @@
 {
   "ver": 60,
-  "appVersion": "9.0.0.1",
-  "version": "9.0.0.1",
+  "appVersion": "9.0.0.2",
+  "version": "9.0.0.2",
   "buildDate": "2026-10-31",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "settingsRev": 60,
-  "updatedAt": "2026-10-31T12:00:00.000Z",
+  "updatedAt": "2026-04-01T00:00:00.000Z",
   "updatedAtMs": 1793448000000,
   "features": {
     "passwordPopup": "none - #ansInput is type=text with autocomplete=off, never a password field",
@@ -414,6 +414,9 @@
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
   "syncRev": 1793385986993,
-  "versionFamily": "9.0.0",
-  "voiceModel": "eleven_flash_v2_5"
+  "versionFamily": "9.0.0.2",
+  "voiceModel": "eleven_flash_v2_5",
+  "codename": "Hurubuhuti-NextGen",
+  "released": "2026-04-01",
+  "notes": "v9.0.0.2 (v60) Next-Gen Hurubuhuti Complete Visual & Functional Rebuild — Mockups 6.1-6.8 exact DOM, Zinc-950/Sky-400 Solid Dark UI, 54px Topbar, 34px In-Card Timer Pill + 4px Edge Bar, 3-Tier Settings Hierarchy, Whisper-Quiet Load Micro-Toast, Animated Hansana Credit Pill, Full-Field Word Cards, 232px Desktop Left Rail + 2-Col Cockpit, IndexedDB + LRU Cache"
 }

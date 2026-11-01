@@ -3113,7 +3113,7 @@
      ============================================================ */
   window.SDPVersion = {
     family: '9.0',
-    current: '9.0.0.1',
+    current: '9.0.0.2',
     parse: function (v) {
       var m = /^9\.0\.(\d+)(?:\.(\d+))?$/.exec(String(v || '9.0.0.1'));
       return { major: 9, minor: 0, patch: Number(m && m[1] ? m[1] : 0), build: Number(m && m[2] ? m[2] : 1) };
@@ -3134,67 +3134,30 @@
      Includes navigation transferSize so the 485 KB document is counted.
      ============================================================ */
   Learn.microToastLoad = function () {
+    /* v9.0.0.2: the whisper-quiet pill is owned by the NextGen layer so the
+       measured bytes, the copy and the auto-dismiss timings stay in one place. */
     try {
-      var total = 0, entries, i, nav, mb, l, msg, pill;
-      entries = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType('resource') : [];
-      for (i = 0; i < entries.length; i++) total += Number(entries[i].transferSize || 0);
-      nav = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType("navigation") : [];
-      if (nav && nav.length) total += Number(nav[0].transferSize || 0);
-      mb = (total / 1048576);
-      l = lang();
-      msg = l === 'si' ? ('⏲ ' + mb.toFixed(2) + ' MB කලන්රග෍කරඪ෍දය෍ඪව්ඪ 0.34 MB വിഭ්ඪ േവර෍දඪ') : ('⚡ ' + mb.toFixed(2) + ' MB used on load');
-      pill = D.createElement('div');
-      pill.id = 'sdpMicroToast';
-      pill.className = 'sdp-micro-toast';
-      pill.setAttribute('aria-hidden', 'true');
-      pill.style.cssText = 'position:fixed;left:12px;bottom:calc(94px + env(safe-area-inset-bottom,0px));z-index:100;pointer-events:none;font-size:11.5px;padding:6px 10px;border-radius:10px;background:rgba(6,10,22,.82);color:#e2e8f0;border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .3s ease,transform .3s ease;transform:translateY(10px);white-space:nowrap';
-      pill.textContent = msg;
-      try { (D.body || D.documentElement).appendChild(pill); } catch (e) { return; }
-      setTimeout(function () { try { pill.style.opacity = '1'; pill.style.transform = 'translateY(0)'; } catch (e) {} }, 40);
-      setTimeout(function () { try { pill.style.opacity = '0'; pill.style.transform = 'translateY(-10px)'; } catch (e) {} }, 3500);
-      setTimeout(function () { try { if (pill.parentNode) pill.parentNode.removeChild(pill); } catch (e) {} }, 4000);
+      if (window.SDPNextGen && window.SDPNextGen.mountMicroToast) return window.SDPNextGen.mountMicroToast();
     } catch (e) {}
+    return null;
   };
 
   /* ============================================================
      SDP.creditPill — animated 🦢 Credits Goes To Hansana live pill
      ============================================================ */
   Learn.creditPill = function () {
+    /* v9.0.0.2: 🦢 CREDITS GOES TO Hansana — animated pill, then the quiet
+       docked footer badge (#creditDocked) takes over. */
     try {
-      var credit, reduced;
-      credit = $('#credit');
-      if (!credit) return;
-      reduced = W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      credit.className = (credit.className || '').replace(/v60-credit-dock/g, '') + ' v60-credit-live';
-      credit.style.cssText = 'position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:55;pointer-events:none!important;font-size:12px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#fbbf24,#38bdf8);color:#062530;font-weight:800;border:1px solid rgba(255,255,255,.4);box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;transform:translate(-50%,-14px) scale(0.88);transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .38s ease,border-color .38s ease';
-      credit.textContent = '�� CREDITS GOES TO Hansana';
-      credit.setAttribute('aria-hidden', 'true');
-      try { credit.offsetHeight; } catch (e) {}
-      credit.style.opacity = '1';
-      credit.style.transform = 'translate(-50%,0) scale(1)';
-      if (reduced) {
-        setTimeout(function () { Learn.dockCreditPill(); }, 50);
-        return;
-      }
-      setTimeout(function () {
-        try {
-          credit.style.borderColor = 'rgba(103,232,249,.6)';
-          credit.style.boxShadow = '0 0 20px rgba(103,232,249,.5),0 8px 24px rgba(0,0,0,.45)';
-        } catch (e) {}
-      }, 100);
-      setTimeout(function () { Learn.dockCreditPill(); }, 3800);
+      if (window.SDPNextGen && window.SDPNextGen.mountCredit) return window.SDPNextGen.mountCredit();
     } catch (e) {}
+    return null;
   };
   Learn.dockCreditPill = function () {
     try {
-      var credit = $('#credit');
-      if (!credit) return;
-      credit.className = (credit.className || '').replace(/v60-credit-live/g, '') + ' v60-credit-dock';
-      credit.style.cssText = 'position:static!important;transform:none!important;pointer-events:auto!important;z-index:1!important;font-size:12px;padding:6px 14px;border-radius:999px;background:rgba(6,10,22,.72);color:#e2e8f0;border:1px solid rgba(255,255,255,.18);font-weight:700';
-      credit.textContent = '�� Crafted by Hansana';
-      credit.setAttribute('aria-label', 'About & Credits');
-      credit.onclick = function () { try { Learn.openAbout(); } catch (e) {} };
+      if (window.SDPNextGen && window.SDPNextGen.showDockedCredit) return window.SDPNextGen.showDockedCredit();
     } catch (e) {}
+    return null;
   };
 
   /* ============================================================
@@ -3295,4 +3258,2349 @@ V59.ready = true;
 
   if (D.readyState === 'loading') on(D, 'DOMContentLoaded', boot);
   else setTimeout(boot, 0);
+})();
+/* ============================================================================
+   Smart Dictation Player — v9.0.0.2 (build 60) Next-Gen "Hurubuhuti" layer
+   ----------------------------------------------------------------------------
+   Mockups 6.1 – 6.8 (SDP_NextGen_Audit_Report pages 15–21):
+     6.1/6.7  Home: greeting, hero card, 3-stat strip, 2x2 quick practice
+     6.2/6.8  Cockpit: 4px edge bar, 34px timer pill, helper dock, 30-word map
+     6.3/6.4  Settings: dictation-first 3-tier hierarchy (EN + සිංහල)
+     6.5      Words explorer: full-field numbered cards, zero truncation
+     6.6      Whisper-quiet load micro-toast + animated Hansana credit pill
+   ----------------------------------------------------------------------------
+   STRICT ES5. No const/let/arrow/template literals/class/async/spread.
+   Runs as an additive IIFE after the learning-tools module so the legacy
+   engines (Eng / UI / Results / Store / Media / Screens) are untouched.
+   ========================================================================== */
+(function () {
+  'use strict';
+  var W = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+  if (!W) return;
+  var D = W.document;
+  var VERSION = '9.0.0.2';
+  var BUILD = 60;
+  var NG = {};
+  W.SDPNextGen = NG;
+
+  /* ---------------- tiny DOM helpers ---------------- */
+  function $(sel, root) { try { return (root || D).querySelector(sel); } catch (e) { return null; } }
+  function $$(sel, root) { try { return Array.prototype.slice.call((root || D).querySelectorAll(sel)); } catch (e) { return []; } }
+  function on(node, ev, fn, cap) {
+    if (!node || !node.addEventListener) return;
+    var passive = /^(scroll|touchstart|touchmove|wheel|mousewheel)$/i.test(String(ev));
+    try { node.addEventListener(ev, fn, passive ? { passive: true, capture: !!cap } : !!cap); }
+    catch (e) { try { node.addEventListener(ev, fn, !!cap); } catch (e2) {} }
+  }
+  function mk(tag, cls, text) {
+    var el = D.createElement(tag);
+    if (cls) el.className = cls;
+    if (text != null) el.textContent = String(text);
+    return el;
+  }
+  function core() { return W.SDPCore || null; }
+  function DB() { var c = core(); return c && c.DB ? c.DB : null; }
+  function UI() { var c = core(); return c && c.UI ? c.UI : null; }
+  function Screen() { var c = core(); return c && c.Screens ? c.Screens : null; }
+  function Learn() { return W.SDPLearning || null; }
+  function guard(fn, where) {
+    return function () {
+      try { return fn.apply(this, arguments); }
+      catch (err) { try { if (W.SDPCore && W.SDPCore.Errors) W.SDPCore.Errors.report(err, where); } catch (e) {} }
+    };
+  }
+  function settings() {
+    var d = DB();
+    try { if (d && d.data && d.data.settings) return d.data.settings; } catch (e) {}
+    return {};
+  }
+  function saveSettings() {
+    var d = DB();
+    try { if (d) { if (d.save) d.save(); else if (d.saveNow) d.saveNow(); } } catch (e) {}
+  }
+  function lang() {
+    try { return String(settings().lang || 'en') === 'si' ? 'si' : 'en'; } catch (e) { return 'en'; }
+  }
+  function lset(key) { return lang() === 'si' ? SDP_SI_DICT[key] : ''; }
+  function t(en, si) { return lang() === 'si' ? si : en; }
+  function toast(msg, opts) {
+    try { var u = UI(); if (u && u.toast) u.toast(msg, opts || {}); } catch (e) {}
+  }
+
+  /* ==========================================================================
+     0. migrateToV60 — preserve every byte of learner progress
+     ========================================================================== */
+  NG.migrateToV60 = guard(function () {
+    try {
+      if (W.localStorage.getItem('sdp_migrated_v60_2') === VERSION) return true;
+      /* the learner keys stay exactly as they are: sdp.v1 (DB), weak/mastered
+         banks, history. Nothing is renamed or dropped. */
+      var explicit = W.localStorage.getItem('sdp_wp_explicit_v60') === '1';
+      var d = DB();
+      if (d && d.data && d.data.settings) {
+        d.data.settings.theme = d.data.settings.theme || 'dark';
+        d.data.settings.nextGen = VERSION;
+        try { if (!explicit) d.data.settings.wallpaperOn = false; } catch (e) {}
+        try { saveSettings(); } catch (e) {}
+      }
+      if (!explicit && D.body) {
+        D.body.classList.remove('wallpaper-on');
+        D.body.classList.remove('photo-mode');
+      }
+      W.localStorage.setItem('sdp_migrated_v60_2', VERSION);
+      W.localStorage.setItem('sdp_migrated_v60', VERSION);
+      return true;
+    } catch (e) { return false; }
+  }, 'nextgen.migrateToV60');
+
+  function customWallpaperExplicit() {
+    try { return W.localStorage.getItem('sdp_wp_explicit_v60') === '1'; } catch (e) { return false; }
+  }
+
+  /* ==========================================================================
+     1. neutraliseLegacyStyles — #sdpV57Css / #sdpV58Css can never win again
+     ========================================================================== */
+  var LEGACY_STYLE_IDS = ['sdpV57Css', 'sdpV58Css'];
+
+  NG.neutraliseLegacyStyles = guard(function () {
+    var i, node, changed = 0;
+    for (i = 0; i < LEGACY_STYLE_IDS.length; i++) {
+      try {
+        node = D.getElementById(LEGACY_STYLE_IDS[i]);
+        if (!node) continue;
+        if (node.getAttribute('data-ng-off') !== VERSION) {
+          node.setAttribute('data-ng-off', VERSION);
+          node.setAttribute('media', 'not all');
+          node.textContent = '/* neutralised by v9.0.0.2 NextGen UI */';
+          node.disabled = true;
+          changed++;
+        }
+      } catch (e) {}
+    }
+    /* keep the Next-Gen sheet as the very last <style> in <head> */
+    try {
+      var ng = D.getElementById('sdpNextGenCss');
+      if (ng && D.head) {
+        var styles = D.head.getElementsByTagName('style');
+        if (styles.length && styles[styles.length - 1] !== ng) D.head.appendChild(ng);
+      }
+    } catch (e) {}
+    /* wallpaper is opt-in only */
+    try {
+      if (D.body && !customWallpaperExplicit()) {
+        if (D.body.classList.contains('wallpaper-on')) {
+          D.body.classList.remove('wallpaper-on');
+          changed++;
+        }
+        if (D.body.classList.contains('photo-mode')) D.body.classList.remove('photo-mode');
+      }
+    } catch (e) {}
+    return changed;
+  }, 'nextgen.neutraliseLegacyStyles');
+
+  /* the wallpaper is opt-in: applying one from Priority 3 records the explicit
+     choice and re-enables the wallpaper layers (whisper-quiet, never automatic) */
+  NG.markWallpaperExplicit = function () {
+    try {
+      W.localStorage.setItem('sdp_wp_explicit_v60', '1');
+      if (D.body) {
+        D.body.classList.add('sdp-custom-wp-active');
+        D.body.classList.add('wallpaper-on');
+      }
+    } catch (e) {}
+  };
+  NG.clearWallpaperExplicit = function () {
+    try {
+      W.localStorage.removeItem('sdp_wp_explicit_v60');
+      if (D.body) {
+        D.body.classList.remove('sdp-custom-wp-active');
+        D.body.classList.remove('wallpaper-on');
+      }
+    } catch (e) {}
+  };
+  NG.wireWallpaperChoice = function () {
+    try {
+      if (NG.__wiredWp) return;
+      NG.__wiredWp = true;
+      on(D, 'click', function (ev) {
+        var t = ev && ev.target;
+        if (!t || !t.closest) return;
+        if (t.closest('#btnStaticWallpaper,#btnResetVideo')) {
+          NG.clearWallpaperExplicit();
+          return;
+        }
+        if (t.closest('[data-gallery-select],[data-gallery-apply],#btnToggleVideo,#btnNextWallpaper,[data-wallpaper-apply],#btnPickVideoFile,#btnPickVideoFileSet')) NG.markWallpaperExplicit();
+      }, true);
+      /* a stored explicit choice re-enables the layers on boot */
+      if (customWallpaperExplicit() && D.body) D.body.classList.add('sdp-custom-wp-active');
+    } catch (e) {}
+  };
+
+  NG.observeLegacyStyles = function () {
+    try {
+      if (!W.MutationObserver || !D.head || NG.__observing) return;
+      NG.__observing = true;
+      var mo = new W.MutationObserver(function () { NG.neutraliseLegacyStyles(); });
+      mo.observe(D.head, { childList: true, subtree: true, characterData: true });
+      var bodyObs = new W.MutationObserver(function () {
+        if (!customWallpaperExplicit() && D.body && D.body.classList.contains('wallpaper-on')) {
+          D.body.classList.remove('wallpaper-on');
+        }
+      });
+      if (D.body) bodyObs.observe(D.body, { attributes: true, attributeFilter: ['class'] });
+    } catch (e) {}
+  };
+
+  /* ==========================================================================
+     2. #sdpNextGenCss — Zinc-950 / Sky-400 "හුරුබුහුටි" design system
+     ========================================================================== */
+  var NEXTGEN_CSS = [
+    /* ---- tokens ---- */
+    ':root{',
+    '  --bg-canvas:#09090B;--bg-card:#18181B;--bg-elevated:#27272A;--bg-glass:rgba(24,24,27,0.88);',
+    '  --border-subtle:rgba(255,255,255,0.08);--border-focus:#38BDF8;',
+    '  --text-primary:#FAFAFA;--text-secondary:#A1A1AA;--text-muted:#71717A;',
+    '  --accent-primary:#38BDF8;--accent-hover:#0EA5E9;--accent-soft:rgba(56,189,248,0.14);',
+    '  --status-listen:#38BDF8;--status-write:#FBBF24;--status-review:#4ADE80;--status-danger:#F87171;',
+    '  --radius-card:16px;--radius-ctl:12px;--radius-pill:9999px;',
+    '  --font-sans:"Plus Jakarta Sans","Inter","Noto Sans Sinhala",system-ui,-apple-system,sans-serif;',
+    '  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;',
+    '  --sdp-zinc-950:#09090B;--sdp-zinc-900:#18181B;--sdp-zinc-800:#27272A;',
+    '  --sdp-sky-400:#38BDF8;--sdp-emerald:#4ADE80;--sdp-amber:#FBBF24;--sdp-red:#F87171;',
+    '}',
+    /* ---- global reset / solid surfaces ---- */
+    'html,body{background:#09090B !important;color:#FAFAFA !important;font-family:var(--font-sans) !important;margin:0;padding:0;overflow-x:hidden !important;background-image:none !important;}',
+    'body{--fg:#FAFAFA;--muted:#A1A1AA;--ink-2:#A1A1AA;--ink-3:#71717A;--line:#ffffff14;--line-2:#ffffff0f;--bg1:#09090B;--bg2:#09090B;}',
+    'body.sdp-nextgen #bg,body.sdp-nextgen .bg-aurora,body.sdp-nextgen .bg-grid,body.sdp-nextgen .stripes,body.sdp-nextgen .disc{display:none !important;opacity:0 !important;}',
+    'body:not(.sdp-custom-wp-active) #wallpaperBg,body:not(.sdp-custom-wp-active) .wallpaper-layer,',
+    'body:not(.sdp-custom-wp-active) #bgLiveWrap,body:not(.sdp-custom-wp-active) #bgLiveVideo,',
+    'body:not(.sdp-custom-wp-active) #bgLivePhoto,body:not(.sdp-custom-wp-active) #v58EdgeVignette,',
+    'body:not(.sdp-custom-wp-active) #bgContrastScrim,body:not(.sdp-custom-wp-active) #bgLiveCanvas,',
+    'body:not(.sdp-custom-wp-active) #bgLivePhotoAmbilight,body:not(.sdp-custom-wp-active) .ambient-blobs,',
+    'body:not(.sdp-custom-wp-active) .bg-blobs{display:none !important;opacity:0 !important;visibility:hidden !important;}',
+    '.glass,.card,#homeHero,.sheet,.layer,.wordcard,.modal,.v58-tile,.v59-dict-card,#tabbar,.topbar{',
+    '  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;',
+    '}',
+    '.glass,.card,#homeHero,.sheet,.layer,.wordcard,.modal{',
+    '  background:#18181B !important;border:1px solid rgba(255,255,255,0.08) !important;',
+    '  border-radius:16px !important;box-shadow:0 4px 20px rgba(0,0,0,0.35) !important;color:#FAFAFA !important;',
+    '}',
+    '.glass:after,.glass:before{display:none !important;}',
+    'body.sdp-nextgen .btn,body.sdp-nextgen button{font-family:var(--font-sans) !important;box-shadow:none !important;transform:none !important;}',
+    'body.sdp-nextgen .btn.primary{background:#38BDF8 !important;color:#09090B !important;border:0 !important;font-weight:700 !important;}',
+    'body.sdp-nextgen .btn.soft,body.sdp-nextgen .btn.ghost{background:#27272A !important;color:#FAFAFA !important;border:1px solid rgba(255,255,255,0.10) !important;}',
+    'body.sdp-nextgen .chip{background:#18181B !important;border:1px solid rgba(255,255,255,0.10) !important;color:#A1A1AA !important;border-radius:999px !important;}',
+    '/* Sinhala typography */',
+    '[lang="si"] .si-text,body.lang-si .si-text,.sdp-si-pill,.sdp-si-meaning,.si-text,',
+    'html[lang="si"] .sdp-hero-title,html[lang="si"] .sdp-sec-title{line-height:1.62 !important;letter-spacing:0.01em !important;word-break:keep-all;overflow-wrap:anywhere;}',
+    '/* legacy chrome that must never show again */',
+    '#topDataBadge,#topDataBadge.chip{display:none !important;visibility:hidden !important;pointer-events:none !important;}',
+    '#app .topbar .top-controls{display:none !important;}',
+    '#app .topbar .brand{display:none !important;}',
+    '#v58EdgeVignette,#v58HomeFooter,#homeCredits,#v58VoiceBadge,#homeMeta{display:none !important;}',
+    '#v58PracticeBento,#v58ProgressArchiveCard,#v58ArchiveDisclosure,#v58CommunityDisclosure{display:none !important;}',
+    '#btnGuide,.hero-credit{display:none !important;}',
+    '#homeKicker,#homeTitle,#homeSub{position:absolute !important;width:1px !important;height:1px !important;overflow:hidden !important;clip:rect(0 0 0 0) !important;white-space:nowrap !important;}',
+    '#credit{display:none !important;position:static !important;transform:none !important;}',
+    '#v58KbdHud{display:none !important;}',
+    '/* ---- 54px topbar ---- */',
+    '.topbar,.topbar.glass{position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;',
+    '  height:54px !important;min-height:54px !important;max-height:54px !important;max-width:100% !important;',
+    '  padding:0 14px !important;border-radius:0 !important;display:flex !important;align-items:center !important;',
+    '  justify-content:space-between !important;background:rgba(9,9,11,0.92) !important;',
+    '  border:0 !important;border-bottom:1px solid rgba(255,255,255,0.07) !important;box-shadow:none !important;z-index:60 !important;}',
+    '#sdpBrand{display:flex;align-items:center;gap:9px;min-width:0;}',
+    '#sdpBrandMark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#38BDF8,#0284C7);',
+    '  display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;box-shadow:0 2px 10px rgba(56,189,248,0.28);}',
+    '#sdpBrandStack{display:flex;flex-direction:column;min-width:0;line-height:1.15;}',
+    '#sdpBrandRow{display:flex;align-items:center;gap:5px;}',
+    '#sdpBrandTitle{font-size:14px;font-weight:700;color:#FAFAFA;letter-spacing:-0.01em;white-space:nowrap;}',
+    '#sdpBrandPill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;background:rgba(56,189,248,0.16);color:#38BDF8;line-height:1.5;}',
+    '#sdpBrandSub{font-size:11px;color:#71717A;white-space:nowrap;}',
+    '#sdpTopCluster{display:flex;align-items:center;gap:7px;flex:none;}',
+    '#sdpTopVoiceBtn,#btnOpenSettingsTop{width:34px;height:34px;border-radius:10px;background:#18181B;',
+    '  border:1px solid rgba(255,255,255,0.10);color:#FAFAFA;display:inline-flex;align-items:center;justify-content:center;',
+    '  font-size:15px;cursor:pointer;padding:0;line-height:1;}',
+    '#sdpTopVoiceBtn{background:rgba(56,189,248,0.12) !important;border:1px solid rgba(56,189,248,0.35) !important;color:#38BDF8;}',
+    '#sdpTopLangPill{height:34px;padding:0 11px;border-radius:999px;background:#18181B;border:1px solid rgba(255,255,255,0.10);',
+    '  color:#A1A1AA;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;line-height:1;}',
+    '#sdpTopLangPill b{color:#FAFAFA;font-weight:700;}',
+    '#sdpTopLangPill[data-lang="si"] b:first-child{color:#A1A1AA;font-weight:600;}',
+    '#sdpTopLangPill[data-lang="si"] b:last-child{color:#FAFAFA;font-weight:700;}',
+    '#app{padding-top:66px !important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px)) !important;}',
+    /* ---- mobile 5-tab bar ---- */
+    '#tabbar,#tabbar.glass{position:fixed !important;left:0 !important;right:0 !important;bottom:0 !important;top:auto !important;',
+    '  height:60px !important;min-height:60px !important;max-height:60px !important;margin:0 !important;padding:0 !important;',
+    '  border-radius:0 !important;background:rgba(9,9,11,0.95) !important;border:0 !important;',
+    '  border-top:1px solid rgba(255,255,255,0.08) !important;display:grid !important;',
+    '  grid-template-columns:repeat(5,1fr) !important;z-index:60 !important;box-shadow:none !important;',
+    '  transform:none !important;width:100% !important;max-width:100% !important;}',
+    '#tabbar .tab-ind{display:none !important;}',
+    '#tabbar button{display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;',
+    '  gap:3px !important;background:transparent !important;border:0 !important;border-radius:0 !important;padding:0 !important;',
+    '  min-height:60px !important;color:#71717A !important;font-size:10px !important;font-weight:600 !important;line-height:1.1 !important;}',
+    '#tabbar button svg{width:20px !important;height:20px !important;opacity:0.9;}',
+    '#tabbar button[aria-selected="true"]{color:#38BDF8 !important;}',
+    '#tabbar button[aria-selected="true"] svg{color:#38BDF8;}',
+    '#tabbar button span{font-size:10px !important;white-space:nowrap;}',
+    '#commBadge{display:none !important;}',
+    /* ---- desktop 232px rail ---- */
+    '#sdpDesktopRail{display:none;}',
+    '@media (min-width:1024px){',
+    '  #tabbar,#tabbar.glass{display:none !important;}',
+    '  .topbar,.topbar.glass{left:232px !important;width:calc(100% - 232px) !important;}',
+    '  #sdpDesktopRail{display:flex !important;position:fixed;top:0;left:0;bottom:0;width:232px;background:#0D0D10;',
+    '    border-right:1px solid rgba(255,255,255,0.08);padding:18px 14px;flex-direction:column;justify-content:space-between;z-index:70;}',
+    '  #app{margin-left:232px !important;max-width:calc(100vw - 232px) !important;padding:72px 28px 36px !important;}',
+    '  /* full-screen reading layers start to the right of the rail so nothing is',
+    '     ever hidden behind it, and the rail itself sits under every overlay */',
+    '  #layers .layer{left:232px !important;right:0 !important;}',
+    '  #sdpDesktopRail{z-index:55 !important;}',
+    '}',
+    '#sdpRailBrand{display:flex;align-items:center;gap:9px;margin-bottom:18px;}',
+    '#sdpRailNav{display:flex;flex-direction:column;gap:4px;}',
+    '#sdpRailNav button{display:flex !important;align-items:center;gap:10px;width:100%;height:40px;padding:0 11px !important;',
+    '  border-radius:10px !important;background:transparent !important;border:1px solid transparent !important;',
+    '  color:#A1A1AA !important;font-size:13px !important;font-weight:600 !important;cursor:pointer;text-align:left;justify-content:flex-start !important;}',
+    '#sdpRailNav button[aria-current="true"]{background:rgba(56,189,248,0.14) !important;color:#38BDF8 !important;border:1px solid rgba(56,189,248,0.3) !important;}',
+    '#creditDockedDesktop{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#FDE68A;',
+    '  padding:7px 10px;border-radius:999px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.28);justify-content:center;}',
+    /* ---- home: greeting / hero / stats / quick practice ---- */
+    '#screen-home .v58-workspace{display:block !important;}',
+    '#sdpHomeGreeting{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 10px;}',
+    '#sdpGreetText{font-size:16px;font-weight:700;color:#FAFAFA;}',
+    '#sdpGreetSession{font-size:12px;color:#A1A1AA;white-space:nowrap;}',
+    '#homeHero{position:relative;padding:18px !important;margin-bottom:12px !important;border-radius:16px !important;}',
+    '.anatomy-stage{padding:0 !important;margin:0 !important;}',
+    '.lg-hero{margin:0 !important;}',
+    '#sdpHeroIdleView{display:block;}',
+    '.sdp-hero-kicker{display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.06em;color:#38BDF8;text-transform:uppercase;}',
+    '.sdp-hero-title{font-size:20px;font-weight:800;line-height:1.25;color:#FAFAFA;margin:6px 0 4px;letter-spacing:-0.01em;}',
+    '.sdp-hero-sub{font-size:12.5px;color:#A1A1AA;margin:0 0 12px;line-height:1.5;}',
+    '#sdpHeroConfigChips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}',
+    '#sdpHeroConfigChips .sdp-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:999px;',
+    '  background:#27272A;border:1px solid rgba(255,255,255,0.08);color:#A1A1AA;font-size:11.5px;font-weight:600;cursor:pointer;}',
+    '.hero-actions{display:flex !important;flex-direction:column !important;gap:8px !important;}',
+    '#btnStart{width:100% !important;height:48px !important;min-height:48px !important;border-radius:12px !important;',
+    '  background:#38BDF8 !important;color:#09090B !important;font-weight:700 !important;font-size:15px !important;',
+    '  display:flex !important;align-items:center !important;justify-content:space-between !important;padding:0 16px !important;',
+    '  border:0 !important;box-shadow:none !important;gap:10px !important;}',
+    '#btnStart svg{width:18px !important;height:18px !important;flex:none;color:#09090B;}',
+    '#btnStartText{flex:1 1 auto;text-align:left;}',
+    '#sdpStartEta{font-size:12px;font-weight:600;opacity:0.85;white-space:nowrap;}',
+    '#btnHowItWorks{width:100%;height:38px;min-height:38px;border-radius:10px;background:rgba(255,255,255,0.03);',
+    '  border:1px solid rgba(255,255,255,0.08);color:#A1A1AA;font-size:12.5px;font-weight:600;cursor:pointer;}',
+    '#segMode{display:none !important;}',
+    '#v58OfflineRow{display:none !important;}',
+    '#sdpHomeStatsRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}',
+    '.sdp-stat{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 11px;min-width:0;}',
+    '.sdp-stat-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#71717A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.sdp-stat-value{font-size:16px;font-weight:800;color:#FAFAFA;margin-top:2px;line-height:1.2;}',
+    '.sdp-stat.ok .sdp-stat-value{color:#4ADE80;}',
+    '.sdp-stat.warn .sdp-stat-value{color:#FBBF24;}',
+    '#sdpQuickWrap{margin-bottom:14px;}',
+    '.sdp-sec-title{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#71717A;font-weight:700;margin:4px 0 8px;}',
+    '#sdpQuickPracticeGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}',
+    '.sdp-qp{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:11px 12px;',
+    '  background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#FAFAFA;cursor:pointer;',
+    '  min-height:70px;justify-content:center;position:relative;}',
+    '.sdp-qp b{font-size:13px;font-weight:700;line-height:1.25;}',
+    '.sdp-qp i{font-style:normal;font-size:11px;color:#71717A;line-height:1.4;}',
+    '.sdp-qp-ico{font-size:16px;line-height:1;}',
+    '.sdp-qp .sdp-badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;color:#FBBF24;',
+    '  background:rgba(251,191,36,0.14);border:1px solid rgba(251,191,36,0.34);border-radius:999px;padding:0 6px;line-height:16px;}',
+    /* ---- cockpit ---- */
+    '#sdpEdgeBar{position:absolute;top:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.06);overflow:hidden;border-radius:16px 16px 0 0;z-index:3;}',
+    '#sdpEdgeBarFill{height:100%;width:0;background:#38BDF8;transition:width 0.15s linear,background-color 0.2s ease;}',
+    '#sdpEdgeBar.is-listen #sdpEdgeBarFill{background:#38BDF8;}',
+    '#sdpEdgeBar.is-write #sdpEdgeBarFill{background:#FBBF24;}',
+    '#sdpEdgeBar.is-review #sdpEdgeBarFill{background:#4ADE80;}',
+    '#sdpCockpitHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 10px;flex-wrap:nowrap;}',
+    '#sdpCockpitHead #plCount{font-size:13px;font-weight:700;color:#FAFAFA;font-variant-numeric:tabular-nums;margin:0;}',
+    '#sdpPhasePill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;',
+    '  background:rgba(56,189,248,0.14);color:#38BDF8;border:1px solid rgba(56,189,248,0.3);white-space:nowrap;}',
+    '#sdpPhasePill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;}',
+    '#sdpPhasePill.is-write{background:rgba(251,191,36,0.14);color:#FBBF24;border-color:rgba(251,191,36,0.3);}',
+    '#sdpPhasePill.is-review{background:rgba(74,222,128,0.14);color:#4ADE80;border-color:rgba(74,222,128,0.3);}',
+    '#sdpTimerPill{position:static !important;width:auto !important;height:34px !important;display:inline-flex !important;',
+    '  align-items:center !important;gap:7px !important;padding:0 10px !important;border-radius:999px !important;',
+    '  background:#27272A !important;border:1px solid rgba(255,255,255,0.10) !important;flex:none;}',
+    '#sdpTimerPill .countdown{position:static !important;width:auto !important;height:auto !important;display:inline-flex !important;',
+    '  align-items:center !important;gap:6px !important;background:none !important;border:0 !important;margin:0 !important;padding:0 !important;}',
+    '#sdpTimerPill .countdown svg{width:20px !important;height:20px !important;}',
+    '#sdpTimerPill #cdNum{font-family:var(--font-mono) !important;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;',
+    '  color:#FBBF24;position:static !important;margin:0 !important;padding:0 !important;line-height:1;}',
+    '#sdpTimerPill .countdown svg{display:none;}',
+    '#sdpTimerPill #cdNum{min-width:34px;text-align:right;}',
+    '.layer .lbody .wordcard{padding:14px !important;position:relative;overflow:hidden;}',
+    '.layer .lbody .wordcard #plStatus{display:none !important;}',
+    '#plStep,#plStepBadge,#plBars{display:none !important;}',
+    '#plWord{font-size:34px !important;font-weight:800 !important;color:#FAFAFA !important;letter-spacing:-0.01em;}',
+    '#plSub,#plHint,#plCategory{color:#A1A1AA !important;font-size:12.5px !important;}',
+    '#plProgText{display:none !important;}',
+    '#plFill{background:#38BDF8 !important;}',
+    '.layer .lbody .row:has(.lens){display:none !important;}',
+    '.lens{display:none !important;}',
+    '.countdown{display:none !important;}',
+    '#plProgressDots{display:none !important;}',
+    '#ansSlots{display:flex !important;flex-wrap:wrap;gap:6px;justify-content:center;}',
+    '#ansSlots .slot,.ans-slots .slot{width:36px !important;height:42px !important;border-radius:8px !important;',
+    '  border:1px solid rgba(255,255,255,0.14) !important;background:#09090B !important;color:#FAFAFA !important;font-size:19px !important;}',
+    '#ansInput{background:#09090B !important;border:1px solid rgba(255,255,255,0.14) !important;border-radius:12px !important;',
+    '  color:#FAFAFA !important;height:48px !important;font-size:19px !important;}',
+    '#sdpHelperDock{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}',
+    '#sdpHelperDock button{display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;',
+    '  gap:3px;height:46px;min-height:46px;border-radius:10px;background:#27272A !important;border:1px solid rgba(255,255,255,0.08) !important;',
+    '  color:#FAFAFA !important;font-size:10.5px !important;font-weight:600 !important;cursor:pointer;padding:0 4px !important;line-height:1.15;}',
+    '#sdpHelperDock button:active{background:#3f3f46 !important;}',
+    '#sdpCockpitFoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;}',
+    '#sdpCockpitFoot .sdp-voice{font-size:11px;color:#71717A;}',
+    '#sdpCockpitFoot .sdp-actions{display:flex;gap:6px;}',
+    '#sdpCockpitFoot .sdp-actions button{width:36px;height:36px;border-radius:10px;background:#27272A;border:1px solid rgba(255,255,255,0.10);',
+    '  color:#FAFAFA;font-size:14px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}',
+    '#sdpDictLivePanel{margin-top:12px;}',
+    '#sdpLiveCounters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}',
+    '.sdp-live{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 10px;text-align:center;}',
+    '.sdp-live i{display:block;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:0.06em;color:#71717A;text-transform:uppercase;}',
+    '.sdp-live b{display:block;font-size:15px;font-weight:800;color:#FAFAFA;margin-top:1px;}',
+    '.sdp-live.ok b{color:#4ADE80;}.sdp-live.warn b{color:#FBBF24;}',
+    '#sdpWordMapCard{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:11px;}',
+    '#sdpWordMapTitle{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#71717A;margin-bottom:8px;}',
+    '#sdpWordMap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;}',
+    '.sdp-wm{display:flex;align-items:center;justify-content:center;height:24px;border-radius:6px;background:#27272A;',
+    '  color:#71717A;font-size:10.5px;font-weight:700;border:1px solid transparent;font-variant-numeric:tabular-nums;}',
+    '.sdp-wm.done{color:#4ADE80;border-color:rgba(74,222,128,0.45);background:rgba(74,222,128,0.10);}',
+    '.sdp-wm.cur{border:1.5px solid #38BDF8;background:rgba(56,189,248,0.18);color:#FAFAFA;box-shadow:0 0 0 2px rgba(56,189,248,0.15);}',
+    '.sdp-wm.missed{color:#FBBF24;border-color:rgba(251,191,36,0.45);background:rgba(251,191,36,0.10);}',
+    /* ---- settings ---- */
+    '#screen-set{padding-bottom:24px;}',
+    '#sdpNextGenSettings{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;}',
+    '.sdp-set-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 2px 0;}',
+    '.sdp-set-title{font-size:20px;font-weight:800;color:#FAFAFA;letter-spacing:-0.01em;}',
+    '.sdp-set-sub{color:#38BDF8;font-size:12px;font-weight:600;}',
+    '.sdp-tier{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;}',
+    '.sdp-tier-head{display:flex;align-items:center;gap:8px;padding:12px 14px 6px;}',
+    '.sdp-tier-head b{font-size:10.5px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:#38BDF8;}',
+    '.sdp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-top:1px solid rgba(255,255,255,0.06);}',
+    '.sdp-row:first-of-type{border-top:0;}',
+    '.sdp-row-l{min-width:0;flex:1 1 auto;}',
+    '.sdp-row-t{font-size:13.5px;font-weight:600;color:#FAFAFA;line-height:1.35;}',
+    '.sdp-row-s{font-size:11.5px;color:#71717A;line-height:1.4;margin-top:1px;}',
+    '.sdp-row-r{flex:none;display:flex;align-items:center;gap:6px;}',
+    '.sdp-seg{display:inline-flex;background:#09090B;border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:3px;gap:2px;}',
+    '.sdp-seg button{border:0;background:transparent !important;color:#A1A1AA !important;font-size:11.5px !important;font-weight:600 !important;',
+    '  padding:5px 9px !important;border-radius:7px !important;cursor:pointer;white-space:nowrap;min-height:26px !important;line-height:1.2 !important;}',
+    '.sdp-seg button[aria-pressed="true"]{background:#38BDF8 !important;color:#09090B !important;font-weight:700 !important;}',
+    '.sdp-value{font-size:12px;font-weight:700;color:#38BDF8;white-space:nowrap;min-width:34px;text-align:right;}',
+    '#sdpRangeWait{width:100%;accent-color:#38BDF8;min-height:24px;}',
+    '.sdp-range-wrap{width:100%;max-width:220px;}',
+    '.sdp-scale{display:flex;justify-content:space-between;font-size:10px;color:#71717A;margin-top:-2px;}',
+    '.sdp-toggle{position:relative;width:42px;height:24px;border-radius:999px;background:#27272A;border:1px solid rgba(255,255,255,0.12);cursor:pointer;padding:0;flex:none;}',
+    '.sdp-toggle:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#A1A1AA;transition:transform 0.15s ease,background 0.15s ease;}',
+    '.sdp-toggle[aria-checked="true"]{background:rgba(56,189,248,0.30);border-color:#38BDF8;}',
+    '.sdp-toggle[aria-checked="true"]:after{transform:translateX(18px);background:#38BDF8;}',
+    '#sdpVoiceCard .sdp-voice-name{font-size:13px;font-weight:700;color:#FAFAFA;}',
+    '#sdpVoiceTestBtn{height:34px;border-radius:10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);',
+    '  color:#38BDF8;font-size:12px;font-weight:700;padding:0 12px;cursor:pointer;}',
+    '#sdpOfflineLine{font-size:11.5px;color:#4ADE80;}',
+    '#sdpAppearanceAccordion{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:16px;margin-top:4px;overflow:hidden;}',
+    '#sdpAppearanceAccordion>summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:12.5px;font-weight:700;color:#A1A1AA;display:flex;align-items:center;gap:8px;}',
+    '#sdpAppearanceAccordion>summary::-webkit-details-marker{display:none;}',
+    '#sdpAppearanceAccordion>summary::after{content:"▾";margin-left:auto;transition:transform .2s ease;}',
+    '#sdpAppearanceAccordion[open]>summary::after{transform:rotate(180deg);}',
+    '#sdpAppearanceAccordion>summary{border-bottom:1px solid transparent;}',
+    '#sdpAppearanceAccordion[open]>summary{border-bottom-color:rgba(255,255,255,0.08);}',
+    '#sdpAppearanceBody{padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px;}',
+    '#sdpAppearanceBody #btnAdmin{display:inline-flex !important;width:auto !important;height:36px;padding:0 12px;',
+    '  border-radius:10px;background:#27272A !important;color:#FAFAFA !important;border:1px solid rgba(255,255,255,0.12) !important;align-items:center;gap:6px;}',
+    '#sdpAppearanceBody #btnAdmin svg{width:16px;height:16px;}',
+    /* ---- words explorer ---- */
+    '#sdpWordsHead{background:#18181B;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;margin-bottom:10px;}',
+    '#sdpWordsTitle{font-size:18px;font-weight:800;color:#FAFAFA;letter-spacing:-0.01em;}',
+    '#sdpWordsSub{font-size:11.5px;color:#71717A;margin-top:2px;}',
+    '#sdpWordFilterRow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}',
+    '#sdpWordFilterRow button{height:28px;padding:0 11px;border-radius:999px;background:#27272A;border:1px solid rgba(255,255,255,0.08);',
+    '  color:#A1A1AA;font-size:11.5px;font-weight:600;cursor:pointer;}',
+    '#sdpWordFilterRow button[aria-pressed="true"]{background:rgba(56,189,248,0.16);border-color:rgba(56,189,248,0.4);color:#38BDF8;}',
+    '#dictSearch{background:#09090B !important;border:1px solid rgba(255,255,255,0.10) !important;border-radius:10px !important;',
+    '  color:#FAFAFA !important;height:40px;padding:0 12px;width:100%;}',
+    '#dictList>.v59-dict-card,.v59-dict-card{position:relative;padding:14px 14px 14px 46px !important;margin:8px 0 !important;',
+    '  border-radius:14px !important;background:#18181B !important;border:1px solid rgba(255,255,255,0.08) !important;',
+    '  box-shadow:none !important;white-space:normal !important;overflow:visible !important;text-overflow:unset !important;}',
+    '.v59-dict-card .v59-idx{position:absolute;top:14px;left:12px;width:28px;height:28px;border-radius:8px;background:#27272A;',
+    '  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#A1A1AA;padding:0;}',
+    '.v59-dict-card .v59-word{font-size:17px !important;font-weight:700 !important;color:#FAFAFA !important;}',
+    '.v59-dict-card .v59-ipa{font-family:var(--font-mono) !important;font-size:13px !important;color:#38BDF8 !important;',
+    '  background:none !important;border:0 !important;padding:0 !important;}',
+    '.v59-dict-card .v59-pos{font-size:12px !important;font-style:italic;color:#71717A !important;border:0 !important;background:none !important;padding:0 !important;}',
+    '.v59-dict-card .v59-def,.v59-dict-card .v59-ex{display:block !important;white-space:normal !important;overflow:visible !important;',
+    '  -webkit-line-clamp:unset !important;text-overflow:unset !important;max-height:none !important;}',
+    '.v59-dict-card .v59-def{font-size:13.5px !important;color:#D4D4D8 !important;line-height:1.48 !important;margin-top:4px !important;}',
+    '.v59-dict-card .v59-ex{font-size:13px !important;color:#A1A1AA !important;line-height:1.48 !important;font-style:normal !important;margin-top:4px !important;}',
+    '.v59-dict-card .v59-ex strong{color:#FAFAFA;font-weight:700;}',
+    '.v59-dict-card .v59-actions{margin-top:8px;gap:8px !important;flex-wrap:wrap !important;}',
+    '.v59-dict-card .v59-actions .btn{width:36px;height:36px;min-height:36px !important;padding:0 !important;border-radius:50% !important;',
+    '  font-size:0 !important;overflow:hidden;}',
+    '.v59-dict-card .v59-actions .btn svg{width:16px;height:16px;}',
+    '.v59-si-chip.button,.v59-si-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:999px;',
+    '  background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.30);color:#7dd3fc;font-size:11.5px;font-weight:600;line-height:1.62;}',
+    '.v59-si-text{font-size:13px !important;line-height:1.62 !important;color:#FDE68A !important;margin-top:6px !important;}',
+    '.sdp-si-pill{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:2px 10px;margin-top:8px;border-radius:999px;',
+    '  background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.30);color:#7dd3fc;font-size:11.5px;font-weight:600;cursor:pointer;line-height:1.62;}',
+    '.sdp-si-pill[aria-expanded="true"]{background:rgba(253,230,138,0.12);border-color:rgba(253,230,138,0.34);color:#FDE68A;}',
+    '.sdp-word-num{position:absolute;top:14px;left:12px;width:28px;height:28px;border-radius:8px;background:#27272A;',
+    '  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#A1A1AA;}',
+    /* ---- micro toast + credit pill ---- */
+    '#microToastLoad{position:fixed;left:14px;bottom:72px;z-index:90;max-width:220px;height:26px;padding:0 10px;border-radius:999px;',
+    '  background:rgba(24,24,27,0.92);border:1px solid rgba(255,255,255,0.09);font-size:11px;color:#A1A1AA;',
+    '  display:inline-flex;align-items:center;gap:6px;pointer-events:none;transition:opacity .4s ease,transform .4s ease;white-space:nowrap;}',
+    '#microToastLoad.out{opacity:0;transform:translateY(6px);}',
+    '#creditPill{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:85;pointer-events:none !important;',
+    '  padding:6px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(251,191,36,0.18),rgba(56,189,248,0.18),rgba(251,191,36,0.18));',
+    '  background-size:200% 100%;animation:sdpCreditShift 6s linear infinite;border:1px solid rgba(251,191,36,0.45);color:#FDE68A;',
+    '  font-size:11.5px;font-weight:800;letter-spacing:0.06em;box-shadow:0 6px 24px rgba(0,0,0,0.45);white-space:nowrap;',
+    '  transition:opacity .45s ease,transform .45s ease;}',
+    '#creditPill.out{opacity:0;transform:translate(-50%,8px) scale(0.92);}',
+    '#creditDocked{position:fixed;left:50%;bottom:68px;transform:translateX(-50%);z-index:84;pointer-events:none;',
+    '  font-size:10px;font-weight:700;letter-spacing:0.05em;color:#FDE68A;background:rgba(24,24,27,0.88);',
+    '  border:1px solid rgba(251,191,36,0.28);border-radius:999px;padding:3px 11px;opacity:0;transition:opacity .4s ease;white-space:nowrap;}',
+    '#creditDocked.on{opacity:1;}',
+    '@keyframes sdpCreditShift{0%{background-position:0% 50%}100%{background-position:200% 50%}}',
+    '@media (min-width:1024px){#creditPill{bottom:26px;}#creditDocked{display:none;}#microToastLoad{left:246px;bottom:20px;}}',
+    '#sdpConfettiCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:120;}',
+    /* ---- cascade enforcement -------------------------------------------------
+       index.html ships ID+pseudo-class !important gradients (#homeHero:not(#x),
+       .glass:not(#credit):not(#materialMixer)) that out-rank a plain #id rule.
+       Those rules stay in the document for the legacy engines, so the Next-Gen
+       surface is re-asserted here with (2,0,2) specificity and longhands. */
+    'html body #homeHero:not(#sdpCascadeGuard),html body .glass:not(#sdpCascadeGuard),',
+    'html body .card:not(#sdpCascadeGuard):not(#materialMixer),html body .sheet:not(#sdpCascadeGuard),',
+    'html body .layer:not(#sdpCascadeGuard),html body .wordcard:not(#sdpCascadeGuard),',
+    'html body .modal:not(#sdpCascadeGuard),html body .v58-tile:not(#sdpCascadeGuard),',
+    'html body .v59-dict-card:not(#sdpCascadeGuard),html body .sdp-qp:not(#sdpCascadeGuard),',
+    'html body .sdp-stat:not(#sdpCascadeGuard),html body .sdp-tier:not(#sdpCascadeGuard){',
+    '  background:#18181B !important;background-color:#18181B !important;background-image:none !important;',
+    '  border:1px solid rgba(255,255,255,0.08) !important;border-radius:16px !important;',
+    '  box-shadow:0 4px 20px rgba(0,0,0,0.35) !important;color:#FAFAFA !important;',
+    '  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;',
+    '}',
+    'html body #sdpWordMapCard:not(#sdpCascadeGuard),html body #sdpDictLivePanel .sdp-live:not(#sdpCascadeGuard){',
+    '  background:#18181B !important;background-image:none !important;border:1px solid rgba(255,255,255,0.08) !important;',
+    '  border-radius:12px !important;box-shadow:none !important;backdrop-filter:none !important;',
+    '}',
+    'html body #app .topbar:not(#sdpCascadeGuard){background:rgba(9,9,11,0.92) !important;background-image:none !important;',
+    '  border:0 !important;border-bottom:1px solid rgba(255,255,255,0.07) !important;border-radius:0 !important;',
+    '  box-shadow:none !important;backdrop-filter:none !important;}',
+    'html body #tabbar:not(#sdpCascadeGuard){background:rgba(9,9,11,0.95) !important;background-image:none !important;transform:none !important;',
+    '  border:0 !important;border-top:1px solid rgba(255,255,255,0.08) !important;border-radius:0 !important;',
+    '  box-shadow:none !important;backdrop-filter:none !important;}',
+    'html body #btnStart:not(#sdpCascadeGuard){background:#38BDF8 !important;background-image:none !important;color:#09090B !important;',
+    '  border:0 !important;box-shadow:none !important;}',
+    'html body .sdp-seg button[aria-pressed="true"]:not(#sdpCascadeGuard){background:#38BDF8 !important;background-image:none !important;color:#09090B !important;}',
+    '/* safety rule lost when #sdpV58Css is neutralised: a retry toast never blocks taps */',
+    'html body .sdp-retry-toast:not(#sdpCascadeGuard){pointer-events:none !important;z-index:45 !important;bottom:84px !important;}',
+    'html body .v58-tile:not(#sdpCascadeGuard){display:none !important;}',
+    'html body #app .topbar:not(#sdpCascadeGuard){transform:none !important;}',
+    'html body .v58-scrim:not(#sdpCascadeGuard),html body .scrim:not(#sdpCascadeGuard){backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}',
+    'html body .v59-si-chip:not(#sdpCascadeGuard),html body .sdp-si-pill:not(#sdpCascadeGuard){background:rgba(56,189,248,0.12) !important;background-image:none !important;}',
+    'html body #credit:not(#sdpCascadeGuard){display:none !important;}',
+    '/* ---- reward chip ---- */',
+    '.sdp-grad-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:#4ADE80;',
+    '  background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.34);border-radius:999px;padding:4px 10px;margin:6px 0;}',
+    '@media (max-width:480px){',
+    '  .sdp-seg button{padding:5px 6px !important;font-size:11px !important;}',
+    '  #sdpBrandSub{display:none;}',
+    '  #sdpWordMap{gap:3px;}.sdp-wm{height:21px;font-size:9.5px;}',
+    '}',
+    '@media (prefers-reduced-motion:reduce){*{animation-duration:0.001s !important;transition-duration:0.001s !important;}}'
+  ].join('\n');
+
+  NG.css = NEXTGEN_CSS;
+
+  NG.injectCss = guard(function () {
+    var st = D.getElementById('sdpNextGenCss');
+    if (!st) {
+      st = mk('style');
+      st.id = 'sdpNextGenCss';
+      st.setAttribute('data-build', String(BUILD));
+      st.textContent = NEXTGEN_CSS;
+    }
+    try { (D.head || D.documentElement).appendChild(st); } catch (e) {}
+    return st;
+  }, 'nextgen.injectCss');
+
+  /* ==========================================================================
+     3. Sinhala dictionary (natural, no broken strings)
+     ========================================================================== */
+  var SDP_SI_DICT = {
+    app_subtitle: 'CCBE ගාල්ල ශාඛාව · B1 අසා ලිවීමේ පුහුණුව',
+    nav_home: 'මුල් පිටුව',
+    nav_words: 'වචන 30',
+    nav_dictate: 'අසා ලිවීම',
+    nav_practice: 'පුහුණුව',
+    nav_settings: 'සැකසුම්',
+    cta_start_dictation: '▶ අසා ලිවීම අරඹන්න',
+    cta_how_it_works: 'භාවිතා කරන ආකාරය · තත් 60 මගපෙන්වීම',
+    mode_paper: '📝 කඩදාසියේ ලියන්න',
+    mode_typing: '⌨️ ඇප් එකේ ටයිප් කරන්න',
+    phase_listen: '● සවන් දෙන්න',
+    phase_write: '● දැන් ලියන්න',
+    phase_check: '● පිළිතුර පරීක්ෂා කරන්න',
+    word_counter: 'වචනය {cur} / {total}',
+    btn_repeat: 'නැවත අසන්න',
+    btn_slower: 'සෙමින් අසන්න',
+    btn_sentence: 'උදාහරණ වාක්‍යය',
+    btn_hint: 'අකුරු ඉඟිය',
+    btn_pause: 'විරාමය',
+    btn_resume: 'නැවත අරඹන්න',
+    btn_next: 'ඊළඟ වචනය',
+    btn_finish: 'අවසන් කරන්න',
+    stat_streak: 'දින පෙළ',
+    stat_mastered: 'ප්‍රගුණ කළ වචන',
+    stat_weak: 'දුර්වල වචන',
+    settings_title: 'සැකසුම්',
+    settings_sub: 'පළමුව අසා ලිවීම · සැමවිටම',
+    settings_p1: 'ප්‍රමුඛතාව 1 · අසා ලිවීම සහ ඉගෙනුම',
+    settings_p2: 'ප්‍රමුඛතාව 2 · හඬ සහ ශ්‍රව්‍ය පරීක්ෂාව',
+    settings_p3: 'ප්‍රමුඛතාව 3 · පෙනුම සහ අමතර සැකසුම්',
+    set_mode_label: 'ලියන ආකාරය',
+    set_mode_sub: 'ඔබ පිළිතුරු ලියන ආකාරය',
+    set_speed_label: 'හඬ වේගය',
+    set_repeats_label: 'වචනයක් කී වරදීද',
+    set_wait_label: 'එක් වචනයකට ලියන කාලය',
+    set_wait_sub: 'වචනය කියවූ පසු ලිවීමට ලැබෙන කාලය',
+    set_autosent_label: 'උදාහරණ වාක්‍ය කියවන්න',
+    set_autosent_sub: 'වචනය පෙන්වූ පසු උදාහරණ වාක්‍යය කියවන්න',
+    set_lang_label: 'භාෂාව',
+    set_lang_sub: 'බොත්තම් සහ විස්තර සඳහා භාෂාව',
+    speed_slow: '0.75× සෙමින්',
+    speed_clear: '0.90× පැහැදිලිව',
+    speed_normal: '1.0× සාමාන්‍ය',
+    toast_load_used: '⚡ පූරණය සඳහා {size} භාවිතා විය',
+    toast_load_cached: '⚡ 0 KB · ඔෆ්ලයින් සූදානම්'
+  };
+  W.SDP_SI_DICT = SDP_SI_DICT;
+
+  function siText(key, vars) {
+    var out = SDP_SI_DICT[key] || '';
+    if (vars) {
+      for (var k in vars) {
+        if (Object.prototype.hasOwnProperty.call(vars, k)) out = out.split('{' + k + '}').join(String(vars[k]));
+      }
+    }
+    return out;
+  }
+  NG.t = function (en, si) { return t(en, si); };
+  NG.si = siText;
+
+  /* ==========================================================================
+     4. window.SDP_applyLang — flips EVERY Next-Gen node + legacy data-i18n nodes
+     ========================================================================== */
+  NG.applyLang = guard(function (langCode) {
+    var l = langCode === 'si' ? 'si' : 'en', i, nodes;
+    try {
+      D.documentElement.setAttribute('lang', l);
+      D.documentElement.setAttribute('data-lang', l);
+      if (D.body) { D.body.className = String(D.body.className || '').replace(/\blang-(si|en)\b/g, '').trim() + ' lang-' + l; }
+    } catch (e) {}
+    /* Next-Gen nodes advertise their own bilingual pair */
+    nodes = $$('[data-ng-en]');
+    for (i = 0; i < nodes.length; i++) {
+      try {
+        nodes[i].textContent = l === 'si' ? (nodes[i].getAttribute('data-ng-si') || nodes[i].getAttribute('data-ng-en')) : nodes[i].getAttribute('data-ng-en');
+      } catch (e) {}
+    }
+    /* legacy nodes that follow the v58 pair */
+    nodes = $$('[data-v58-en]');
+    for (i = 0; i < nodes.length; i++) {
+      try {
+        var en = nodes[i].getAttribute('data-v58-en');
+        var si = nodes[i].getAttribute('data-v58-si');
+        if (en != null) nodes[i].textContent = l === 'si' && si ? si : en;
+      } catch (e) {}
+    }
+    /* legacy [data-i18n] nodes are owned by index.html's UI.applyLang */
+    try { var u = UI(); if (u && u.applyLang && !NG.__inApply) { NG.__inApply = true; u.applyLang(); NG.__inApply = false; } } catch (e) {}
+    /* topbar language pill + settings segment reflect the state */
+    try {
+      var pill = $('#sdpTopLangPill');
+      if (pill) {
+        pill.setAttribute('data-lang', l);
+        pill.setAttribute('aria-label', l === 'si' ? 'Switch to English' : 'සිංහල භාෂාවට මාරු වන්න');
+      }
+      var seg = $('#sdpSegLang');
+      if (seg) {
+        var bs = seg.getElementsByTagName('button');
+        for (i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-lang') === l ? 'true' : 'false');
+      }
+    } catch (e) {}
+    try { NG.refreshHome(); NG.refreshSettingsValues(); } catch (e) {}
+    return l;
+  }, 'nextgen.applyLang');
+
+  W.SDP_applyLang = function (l) { return NG.applyLang(l); };
+
+  NG.setLang = guard(function (l) {
+    var st = settings();
+    st.lang = l === 'si' ? 'si' : 'en';
+    st.guideLang = st.lang;
+    saveSettings();
+    NG.applyLang(st.lang);
+    toast(st.lang === 'si' ? 'භාෂාව සිංහල බවට වෙනස් විය' : 'Interface language: English', { ms: 1600 });
+    return st.lang;
+  }, 'nextgen.setLang');
+
+  /* ==========================================================================
+     5. Topbar — 54px single tier, brand + exactly 3 utility controls
+     ========================================================================== */
+  function speakSample() {
+    try {
+      var sp = core() && core().Speech;
+      var text = 'Alice studio voice ready';
+      if (sp && sp.speakSingle) { sp.speakSingle(text); return true; }
+      if (W.speechSynthesis && W.SpeechSynthesisUtterance) {
+        W.speechSynthesis.speak(new W.SpeechSynthesisUtterance(text));
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  NG.mountTopbar = guard(function () {
+    var bar = $('.topbar');
+    if (!bar) return false;
+    if (!$('#sdpBrand')) {
+      var brand = mk('div');
+      brand.id = 'sdpBrand';
+      var mark = mk('span');
+      mark.id = 'sdpBrandMark';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = '\uD83E\uDD62';
+      var stack = mk('div');
+      stack.id = 'sdpBrandStack';
+      var row = mk('div');
+      row.id = 'sdpBrandRow';
+      var title = mk('b');
+      title.id = 'sdpBrandTitle';
+      title.setAttribute('data-ng-en', 'Smart Dictation');
+      title.setAttribute('data-ng-si', 'Smart Dictation');
+      title.textContent = 'Smart Dictation';
+      var pill = mk('span', '', 'v60');
+      pill.id = 'sdpBrandPill';
+      row.appendChild(title);
+      row.appendChild(pill);
+      var sub = mk('span');
+      sub.id = 'sdpBrandSub';
+      sub.setAttribute('data-ng-en', 'CCBE Galle Branch');
+      sub.setAttribute('data-ng-si', 'CCBE \u0D9C\u0DCF\u0DBD\u0DCA\u0DBD \u0DC1\u0DCF\u0D9B\u0DCF\u0DC0');
+      sub.textContent = 'CCBE Galle Branch';
+      stack.appendChild(row);
+      stack.appendChild(sub);
+      brand.appendChild(mark);
+      brand.appendChild(stack);
+      bar.insertBefore(brand, bar.firstChild);
+    }
+    if (!$('#sdpTopCluster')) {
+      var cluster = mk('div');
+      cluster.id = 'sdpTopCluster';
+      var voice = mk('button');
+      voice.id = 'sdpTopVoiceBtn';
+      voice.type = 'button';
+      voice.textContent = '\uD83C\uDF99\uFE0F';
+      voice.setAttribute('aria-label', 'Voice check — play a sample in the active studio voice');
+      voice.setAttribute('title', 'Voice check');
+      on(voice, 'click', function () {
+        var ok = speakSample();
+        toast(ok ? '🎙️ Alice studio voice ready' : 'Voice engine is warming up…', { ms: 1800 });
+      });
+      var langPill = mk('button');
+      langPill.id = 'sdpTopLangPill';
+      langPill.type = 'button';
+      langPill.setAttribute('data-lang', 'en');
+      var bEn = mk('b', '', 'EN');
+      var sep = mk('span', '', '·');
+      sep.style.opacity = '0.5';
+      var bSi = mk('b', '', 'සිංහල');
+      langPill.appendChild(bEn);
+      langPill.appendChild(sep);
+      langPill.appendChild(bSi);
+      on(langPill, 'click', function () { NG.setLang(lang() === 'si' ? 'en' : 'si'); });
+      var gear = mk('button');
+      gear.id = 'btnOpenSettingsTop';
+      gear.type = 'button';
+      gear.textContent = '\u2699\uFE0F';
+      gear.setAttribute('aria-label', 'Open settings');
+      gear.setAttribute('title', 'Settings');
+      on(gear, 'click', function () {
+        try { var u = UI(); if (u && u.setTab) u.setTab('set'); } catch (e) {}
+      });
+      cluster.appendChild(voice);
+      cluster.appendChild(langPill);
+      cluster.appendChild(gear);
+      bar.appendChild(cluster);
+    }
+    return true;
+  }, 'nextgen.mountTopbar');
+
+  /* ==========================================================================
+     6. Navigation — 5 mobile tabs + 232px desktop rail
+     ========================================================================== */
+  var TABS = {
+    'tab-home': ['Home', 'මුල් පිටුව', 'home'],
+    'tab-dict': ['Words', 'වචන 30', 'dict'],
+    'tab-comm': ['Dictate', 'අසා ලිවීම', 'dictate'],
+    'tab-practice': ['Practice', 'පුහුණුව', 'practice'],
+    'tab-set': ['Settings', 'සැකසුම්', 'set']
+  };
+  var RAIL_ICONS = { home: '\uD83C\uDFE0', dict: '\uD83D\uDCD6', dictate: '\uD83C\uDFA7', practice: '\uD83C\uDFAF', set: '\u2699\uFE0F' };
+
+  function goto(tab) {
+    var u = UI();
+    try {
+      if (tab === 'dictate') {
+        if (u && u.setTab) u.setTab('home');
+        setTimeout(function () {
+          try {
+            var hero = $('#homeHero');
+            if (hero && hero.scrollIntoView) hero.scrollIntoView({ block: 'start' });
+            var start = $('#btnStart');
+            if (start && start.focus) start.focus();
+          } catch (e) {}
+        }, 60);
+        return;
+      }
+      if (u && u.setTab) u.setTab(tab);
+    } catch (e) {}
+  }
+
+  NG.mountTabs = guard(function () {
+    var i, btn, def, span, use;
+    for (var id in TABS) {
+      if (!Object.prototype.hasOwnProperty.call(TABS, id)) continue;
+      btn = D.getElementById(id);
+      if (!btn) continue;
+      def = TABS[id];
+      if (btn.getAttribute('data-ng-tab') !== VERSION) {
+        btn.setAttribute('data-ng-tab', VERSION);
+        span = btn.getElementsByTagName('span')[0];
+        if (span) {
+          span.removeAttribute('data-i18n');
+          span.setAttribute('data-ng-en', def[0]);
+          span.setAttribute('data-ng-si', def[1]);
+          span.textContent = lang() === 'si' ? def[1] : def[0];
+        }
+        if (def[2] === 'dictate') {
+          use = btn.getElementsByTagName('use')[0];
+          if (use) {
+            try { use.setAttribute('href', '#i-mic'); } catch (e) {}
+            try { use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#i-mic'); } catch (e) {}
+          }
+        }
+      }
+    }
+    /* mockup 6.1 order: Home · Words · Dictate · Practice · Settings */
+    var dictate = D.getElementById('tab-comm');
+    var practice = D.getElementById('tab-practice');
+    var tabbar = D.getElementById('tabbar');
+    if (dictate && practice && tabbar && dictate.nextElementSibling !== practice) {
+      try { tabbar.insertBefore(dictate, practice); } catch (e) {}
+    }
+    /* Dictate tab never opens the community screen */
+    var dt = D.getElementById('tab-comm');
+    if (dt && dt.getAttribute('data-ng-wired') !== VERSION) {
+      dt.setAttribute('data-ng-wired', VERSION);
+      on(dt, 'click', function (ev) {
+        try { if (ev && ev.preventDefault) ev.preventDefault(); if (ev && ev.stopPropagation) ev.stopPropagation(); } catch (e) {}
+        goto('dictate');
+      }, true);
+    }
+    return true;
+  }, 'nextgen.mountTabs');
+
+  NG.mountRail = guard(function () {
+    if ($('#sdpDesktopRail')) return true;
+    var rail = mk('aside');
+    rail.id = 'sdpDesktopRail';
+    rail.className = 'sdp-desktop-rail';
+    rail.setAttribute('aria-label', 'Main Navigation');
+    var top = mk('div');
+    var brand = mk('div');
+    brand.id = 'sdpRailBrand';
+    var m = mk('span');
+    m.id = 'sdpBrandMark';
+    m.textContent = '\uD83E\uDD62';
+    var bs = mk('div');
+    bs.id = 'sdpBrandStack';
+    var br = mk('div');
+    br.id = 'sdpBrandRow';
+    var bt = mk('b');
+    bt.id = 'sdpBrandTitle';
+    bt.textContent = 'Smart Dictation';
+    var bp = mk('span', '', 'v60');
+    bp.id = 'sdpBrandPill';
+    br.appendChild(bt);
+    br.appendChild(bp);
+    var bsub = mk('span');
+    bsub.id = 'sdpBrandSub';
+    bsub.setAttribute('data-ng-en', 'CCBE Galle Branch');
+    bsub.setAttribute('data-ng-si', 'CCBE \u0D9C\u0DCF\u0DBD\u0DCA\u0DBD \u0DC1\u0DCF\u0D9B\u0DCF\u0DC0');
+    bsub.textContent = 'CCBE Galle Branch';
+    bs.appendChild(br);
+    bs.appendChild(bsub);
+    brand.appendChild(m);
+    brand.appendChild(bs);
+    top.appendChild(brand);
+    var nav = mk('div');
+    nav.id = 'sdpRailNav';
+    var items = [['home', 'Home', 'මුල් පිටුව'], ['dict', 'Words', 'වචන 30'], ['dictate', 'Dictate', 'අසා ලිවීම'], ['practice', 'Practice', 'පුහුණුව'], ['set', 'Settings', 'සැකසුම්']];
+    for (var i = 0; i < items.length; i++) {
+      (function (it) {
+        var b = mk('button');
+        b.type = 'button';
+        b.setAttribute('data-rail', it[0]);
+        var ico = mk('span', 'sdp-rail-ico', RAIL_ICONS[it[0]]);
+        ico.style.fontSize = '15px';
+        var label = mk('span');
+        label.setAttribute('data-ng-en', it[1]);
+        label.setAttribute('data-ng-si', it[2]);
+        label.textContent = lang() === 'si' ? it[2] : it[1];
+        b.appendChild(ico);
+        b.appendChild(label);
+        on(b, 'click', function () { goto(it[0]); NG.syncRail(); });
+        nav.appendChild(b);
+      })(items[i]);
+    }
+    top.appendChild(nav);
+    rail.appendChild(top);
+    var bottom = mk('div');
+    bottom.id = 'creditDockedDesktop';
+    bottom.textContent = '\uD83E\uDD62 Crafted by Hansana';
+    rail.appendChild(bottom);
+    try { D.body.appendChild(rail); } catch (e) {}
+    return true;
+  }, 'nextgen.mountRail');
+
+  NG.syncRail = function () {
+    var tab = 'home';
+    try { var u = UI(); if (u && u.tab) tab = u.tab === 'comm' ? 'dictate' : u.tab; } catch (e) {}
+    var btns = $$('#sdpRailNav button'), i;
+    for (i = 0; i < btns.length; i++) btns[i].setAttribute('aria-current', btns[i].getAttribute('data-rail') === tab ? 'true' : 'false');
+  };
+
+  /* ==========================================================================
+     7. Home — greeting, next-gen hero, config chips, stats, quick practice
+     ========================================================================== */
+  function sessionNo() {
+    try {
+      var d = DB();
+      if (d && d.data && d.data.session && d.data.session.no) return String(d.data.session.no);
+    } catch (e) {}
+    return '8';
+  }
+  function wordCount() {
+    try {
+      var d = DB();
+      if (d && d.data && d.data.lists) {
+        for (var i = 0; i < d.data.lists.length; i++) {
+          if (d.data.lists[i].id === d.data.plan.defaultList) return (d.data.lists[i].words || []).length;
+        }
+        if (d.data.lists[0]) return (d.data.lists[0].words || []).length;
+      }
+    } catch (e) {}
+    return 30;
+  }
+  function greeting() {
+    var h = new Date().getHours();
+    if (h < 12) return ['Good morning, Student', 'සුභ උදෑසනක්, ශිෂ්‍යයා'];
+    if (h < 17) return ['Good afternoon, Student', 'සුභ දවසක්, ශිෂ්‍යයා'];
+    return ['Good evening, Student', 'සුභ සන්ධ්‍යාවක්, ශිෂ්‍යයා'];
+  }
+  function countMastered() {
+    var n = 0, k;
+    try {
+      var L = Learn();
+      if (L && L.loadMasteredWords) {
+        var m = L.loadMasteredWords() || {};
+        for (k in m) if (Object.prototype.hasOwnProperty.call(m, k)) n++;
+        return n;
+      }
+    } catch (e) {}
+    try {
+      var raw = W.localStorage.getItem('sdp.masteredWords.v1');
+      if (raw) { var o = JSON.parse(raw); for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)) n++; }
+    } catch (e) {}
+    return n;
+  }
+  function countWeak() {
+    try {
+      var L = Learn();
+      if (L && L.weakCount) return L.weakCount();
+      var raw = W.localStorage.getItem('sdp.weakWords.v1');
+      if (raw) {
+        var o = JSON.parse(raw), n = 0, k;
+        for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)) n++;
+        return n;
+      }
+    } catch (e) {}
+    return 0;
+  }
+  function streakDays() {
+    var keys = ['sdp_gam_v2', 'sdp.streak.v1'];
+    for (var i = 0; i < keys.length; i++) {
+      try {
+        var raw = W.localStorage.getItem(keys[i]);
+        if (!raw) continue;
+        var o = JSON.parse(raw);
+        if (o && typeof o.streak === 'number') return o.streak;
+        if (o && typeof o.days === 'number') return o.days;
+      } catch (e) {}
+    }
+    try {
+      var d = DB();
+      if (d && d.data && d.data.gam && typeof d.data.gam.streak === 'number') return d.data.gam.streak;
+    } catch (e) {}
+    return 0;
+  }
+
+  NG.mountHome = guard(function () {
+    var home = $('#screen-home');
+    var hero = $('#homeHero');
+    if (!home || !hero) return false;
+    /* greeting bar */
+    if (!$('#sdpHomeGreeting')) {
+      var g = mk('div');
+      g.id = 'sdpHomeGreeting';
+      var gt = mk('div');
+      gt.id = 'sdpGreetText';
+      var gs = mk('span');
+      gs.id = 'sdpGreetSession';
+      g.appendChild(gt);
+      g.appendChild(gs);
+      var stage = hero.parentNode || home;
+      stage.insertBefore(g, hero);
+    }
+    /* hero idle view */
+    if (!$('#sdpHeroIdleView')) {
+      var view = mk('div');
+      view.id = 'sdpHeroIdleView';
+      var kicker = mk('span', 'sdp-hero-kicker');
+      kicker.id = 'sdpHeroKicker';
+      var title = mk('h1', 'sdp-hero-title');
+      title.id = 'sdpHeroTitle';
+      var sub = mk('p', 'sdp-hero-sub');
+      sub.id = 'sdpHeroSub';
+      var chips = mk('div');
+      chips.id = 'sdpHeroConfigChips';
+      view.appendChild(kicker);
+      view.appendChild(title);
+      view.appendChild(sub);
+      view.appendChild(chips);
+      hero.insertBefore(view, hero.firstChild);
+      var mo = null;
+      try {
+        if (W.MutationObserver) {
+          mo = new W.MutationObserver(function () { NG.refreshHome(); });
+          ['homeKicker', 'homeTitle', 'homeSub'].forEach(function (id) {
+            var n = D.getElementById(id);
+            if (n) mo.observe(n, { childList: true, characterData: true, subtree: true });
+          });
+        }
+      } catch (e) {}
+    }
+    /* CTA extras */
+    var start = $('#btnStart');
+    if (start && !$('#sdpStartEta')) {
+      var eta = mk('span', '', '≈ 6 min');
+      eta.id = 'sdpStartEta';
+      start.appendChild(eta);
+    }
+    var actions = start && start.parentNode;
+    if (actions && !$('#btnHowItWorks')) {
+      var how = mk('button');
+      how.id = 'btnHowItWorks';
+      how.type = 'button';
+      how.setAttribute('data-ng-en', 'How it works · 60s guide');
+      how.setAttribute('data-ng-si', 'භාවිතා කරන ආකාරය · තත් 60 මගපෙන්වීම');
+      how.textContent = t('How it works · 60s guide', 'භාවිතා කරන ආකාරය · තත් 60 මගපෙන්වීම');
+      on(how, 'click', function () {
+        var gbtn = $('#btnGuide');
+        if (gbtn) { try { gbtn.click(); return; } catch (e) {} }
+        toast(t('Tip: listen, write, then check.', 'ඉඟිය: අසන්න, ලියන්න, පසුව පරීක්ෂා කරන්න.'), { ms: 2600 });
+      });
+      actions.insertBefore(how, start.nextSibling);
+    }
+    /* 3-stat strip */
+    if (!$('#sdpHomeStatsRow')) {
+      var row = mk('div');
+      row.id = 'sdpHomeStatsRow';
+      var defs = [
+        ['sdpStatStreak', '☆ STREAK', 'දින පෙළ', ''],
+        ['sdpStatMastered', 'MASTERED', 'ප්‍රගුණ කළ', 'ok'],
+        ['sdpStatWeak', 'WEAK WORDS', 'දුර්වල වචන', 'warn']
+      ];
+      for (var i = 0; i < defs.length; i++) {
+        (function (d0) {
+          var card = mk('div', 'sdp-stat ' + d0[3]);
+          card.id = d0[0];
+          var lab = mk('div', 'sdp-stat-label');
+          lab.setAttribute('data-ng-en', d0[1]);
+          lab.setAttribute('data-ng-si', d0[2]);
+          lab.textContent = lang() === 'si' ? d0[2] : d0[1];
+          var val = mk('div', 'sdp-stat-value', '–');
+          card.appendChild(lab);
+          card.appendChild(val);
+          row.appendChild(card);
+        })(defs[i]);
+      }
+      var host = hero.parentNode || home;
+      host.insertBefore(row, hero.nextSibling);
+    }
+    /* quick practice 2x2 */
+    if (!$('#sdpQuickPracticeGrid')) {
+      var wrap = mk('div');
+      wrap.id = 'sdpQuickWrap';
+      var head = mk('div', 'sdp-sec-title');
+      head.setAttribute('data-ng-en', 'QUICK PRACTICE');
+      head.setAttribute('data-ng-si', 'ඉක්මන් පුහුණුව');
+      head.textContent = t('QUICK PRACTICE', 'ඉක්මන් පුහුණුව');
+      var grid = mk('div');
+      grid.id = 'sdpQuickPracticeGrid';
+      var tiles = [
+        ['flash', '🃏', 'Flashcards', 'ෆ්ලෑෂ් කාඩ්', 'word → meaning', 'වචනය → තේරුම'],
+        ['quiz', '✨', 'Quiz', 'ප්‍රශ්නාවලිය', '4 choices', 'තේරීම් 4'],
+        ['context', '🧩', 'Sentence gap', 'වාක්‍ය හිස්තැන්', 'fill the blank', 'හිස්තැන පුරවන්න'],
+        ['weak', '⭐', 'Weak words', 'දුර්වල වචන', 'drill & graduate', 'පුහුණු වන්න']
+      ];
+      for (var j = 0; j < tiles.length; j++) {
+        (function (tl) {
+          var b = mk('button', 'sdp-qp');
+          b.type = 'button';
+          b.setAttribute('data-qp', tl[0]);
+          var ico = mk('span', 'sdp-qp-ico', tl[1]);
+          ico.style.color = tl[0] === 'quiz' ? '#4ADE80' : (tl[0] === 'context' ? '#C4B5FD' : (tl[0] === 'weak' ? '#FBBF24' : '#38BDF8'));
+          var bTitle = mk('b');
+          bTitle.setAttribute('data-ng-en', tl[2]);
+          bTitle.setAttribute('data-ng-si', tl[3]);
+          bTitle.textContent = lang() === 'si' ? tl[3] : tl[2];
+          var bSub = mk('i');
+          bSub.setAttribute('data-ng-en', tl[4]);
+          bSub.setAttribute('data-ng-si', tl[5]);
+          bSub.textContent = lang() === 'si' ? tl[5] : tl[4];
+          b.appendChild(ico);
+          b.appendChild(bTitle);
+          b.appendChild(bSub);
+          if (tl[0] === 'weak') {
+            var badge = mk('span', 'sdp-badge', '0');
+            badge.id = 'sdpQuickWeakBadge';
+            b.appendChild(badge);
+          }
+          on(b, 'click', function () { startPractice(tl[0]); });
+          grid.appendChild(b);
+        })(tiles[j]);
+      }
+      wrap.appendChild(head);
+      wrap.appendChild(grid);
+      var bento = $('#v58PracticeBento');
+      var host2 = bento ? bento.parentNode : (hero.parentNode || home);
+      host2.insertBefore(wrap, bento || null);
+    }
+    NG.refreshHome();
+    return true;
+  }, 'nextgen.mountHome');
+
+  function startPractice(kind) {
+    try {
+      if (kind === 'weak') {
+        var L = Learn();
+        if (L && L.openWeakWords) { L.openWeakWords(); return; }
+      }
+      var legacyKind = kind === 'context' ? 'audio' : kind;
+      var tile = $('[data-v58-practice="' + legacyKind + '"]');
+      if (tile) { tile.click(); if (kind !== 'context') return; }
+      if (kind === 'context') {
+        var u = UI();
+        if (u && u.setTab) u.setTab('practice');
+        var s = Screen();
+        if (s) {
+          s.pracMode = 'context';
+          try { if (u && u.segValue && $('#pracMode')) u.segValue($('#pracMode'), 'context'); } catch (e) {}
+          try { s.practice(); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+
+  NG.refreshHome = guard(function () {
+    var gt = $('#sdpGreetText'), gs = $('#sdpGreetSession');
+    var gr = greeting();
+    if (gt) gt.textContent = lang() === 'si' ? gr[1] : gr[0];
+    if (gs) gs.textContent = t('Session ' + sessionNo(), 'සැසිය ' + sessionNo());
+    var kicker = $('#sdpHeroKicker');
+    if (kicker) {
+      var kRaw = ($('#homeKicker') && $('#homeKicker').textContent) || '';
+      var bits = kRaw.split('·');
+      var tail = bits.length > 1 ? String(bits[bits.length - 1]).replace(/[●\s]+/g, ' ').trim() : 'CCBE Galle Branch';
+      kicker.textContent = '● SESSION ' + sessionNo() + ' · ' + wordCount() + ' ' + (lang() === 'si' ? 'විශේෂණ' : 'ADJECTIVES');
+      kicker.setAttribute('title', tail);
+    }
+    var title = $('#sdpHeroTitle');
+    var src = $('#homeTitle');
+    if (title && src) {
+      var txt = String(src.textContent || '').replace(/^Session\s*\d+\s*[-–]\s*/i, '').trim();
+      if (txt) title.textContent = txt;
+    }
+    var sub = $('#sdpHeroSub');
+    if (sub) {
+      var st = settings();
+      var rateTxt = Number(st.rate || 0.96).toFixed(2);
+      sub.textContent = lang() === 'si'
+        ? (wordCount() + ' වචන · බ්‍රිතාන්‍ය ඉංග්‍රීසි · 🇬🇧 Alice හඬ')
+        : (wordCount() + ' adjectives · UK English · 🇬🇧 Alice studio voice · ' + rateTxt + '×');
+    }
+    /* config chips */
+    var chips = $('#sdpHeroConfigChips');
+    if (chips) {
+      var st2 = settings();
+      var mode = st2.mode === 'type' ? 'type' : 'paper';
+      var items = [
+        ['m', mode === 'type' ? '⌨️ Typing mode' : '📝 Paper mode', mode === 'type' ? '⌨️ ටයිප් මාදිලිය' : '📝 කඩදාසි මාදිලිය'],
+        ['s', '🕓 ' + Number(st2.rate || 0.96).toFixed(2) + '×', '🕓 ' + Number(st2.rate || 0.96).toFixed(2) + '×'],
+        ['r', '↻ ×' + Number(st2.repeats || 2) + ' repeats', '↻ ×' + Number(st2.repeats || 2) + ' වරක්'],
+        ['w', Number(st2.writeFixed || 5) + 's write', Number(st2.writeFixed || 5) + 'ත ලියන්න']
+      ];
+      chips.innerHTML = '';
+      for (var i = 0; i < items.length; i++) {
+        (function (it) {
+          var c = mk('button', 'sdp-chip');
+          c.type = 'button';
+          c.setAttribute('data-chip', it[0]);
+          c.textContent = lang() === 'si' ? it[2] : it[1];
+          on(c, 'click', function () {
+            try { var u = UI(); if (u && u.setTab) u.setTab('set'); } catch (e) {}
+          });
+          chips.appendChild(c);
+        })(items[i]);
+      }
+    }
+    /* stats */
+    var masterEl = $('#sdpStatMastered .sdp-stat-value');
+    var weakEl = $('#sdpStatWeak .sdp-stat-value');
+    var streakEl = $('#sdpStatStreak .sdp-stat-value');
+    if (streakEl) streakEl.textContent = t(streakDays() + ' days', streakDays() + ' දින');
+    if (masterEl) masterEl.textContent = countMastered() + ' / ' + wordCount();
+    if (weakEl) weakEl.textContent = String(countWeak());
+    var qw = $('#sdpQuickWeakBadge');
+    if (qw) qw.textContent = String(countWeak());
+    var eta = $('#sdpStartEta');
+    if (eta) {
+      var mins = Math.max(3, Math.round(wordCount() * 0.2));
+      eta.textContent = t('≈ ' + mins + ' min', '≈ ' + mins + ' මිනි');
+    }
+    return true;
+  }, 'nextgen.refreshHome');
+
+  /* ==========================================================================
+     8. Cockpit — 4px edge bar, 34px timer pill, helper dock, 30-word map
+     ========================================================================== */
+  function eng() { var c = core(); return c && c.Eng ? c.Eng : null; }
+
+  function cockpitNumbers() {
+    var e = eng(), cur = 1, total = wordCount();
+    try {
+      if (e) {
+        if (e.words && e.words.length) total = e.words.length;
+        cur = (Number(e.idx) || 0) + 1;
+      }
+    } catch (x) {}
+    if (cur > total) cur = total;
+    return { cur: cur, total: total };
+  }
+
+  function setPhase(phase) {
+    var bar = $('#sdpEdgeBar'), pill = $('#sdpPhasePill'), fill = $('#sdpEdgeBarFill');
+    var cls = phase === 'write' ? 'write' : (phase === 'review' ? 'review' : 'listen');
+    if (bar) {
+      bar.className = 'is-' + cls;
+      bar.setAttribute('data-phase', cls);
+    }
+    if (pill) {
+      pill.className = cls === 'write' ? 'is-write' : (cls === 'review' ? 'is-review' : 'is-listen');
+      var label = pill.getElementsByTagName('span')[1] || pill;
+      var txt = cls === 'write' ? t('Writing time', 'දැන් ලියන්න') : (cls === 'review' ? t('Review', 'පිරික්සන්න') : t('Listening', 'සවන් දෙන්න'));
+      var dot = pill.querySelector('.dot');
+      pill.innerHTML = '';
+      var d = mk('span', 'dot');
+      d.setAttribute('aria-hidden', 'true');
+      pill.appendChild(d);
+      var lab = mk('span', '', txt);
+      lab.setAttribute('data-ng-en', cls === 'write' ? 'Writing time' : (cls === 'review' ? 'Review' : 'Listening'));
+      lab.setAttribute('data-ng-si', cls === 'write' ? 'දැන් ලියන්න' : (cls === 'review' ? 'පිරික්සන්න' : 'සවන් දෙන්න'));
+      pill.appendChild(lab);
+      pill.setAttribute('aria-live', 'polite');
+    }
+    if (fill) {
+      var e = eng();
+      var pct = 0;
+      try { pct = e && e.words && e.words.length ? Math.round(((Number(e.idx) || 0) / e.words.length) * 100) : 0; } catch (x) {}
+      fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    }
+  }
+
+  function buildWordMap(total) {
+    var map = $('#sdpWordMap');
+    if (!map) return null;
+    if (Number(map.getAttribute('data-total')) === Number(total)) return map;
+    map.setAttribute('data-total', String(total));
+    map.innerHTML = '';
+    for (var i = 1; i <= total; i++) {
+      var p = mk('span', 'sdp-wm', String(i));
+      p.setAttribute('data-i', String(i));
+      map.appendChild(p);
+    }
+    return map;
+  }
+
+  function syncWordMap(cur, total) {
+    var map = buildWordMap(total);
+    if (!map) return;
+    var pills = map.getElementsByTagName('span'), i, n;
+    for (i = 0; i < pills.length; i++) {
+      n = i + 1;
+      pills[i].className = 'sdp-wm' + (n < cur ? ' done' : (n === cur ? ' cur' : ''));
+    }
+    var counter = $('#sdpWordCounter');
+    if (counter) {
+      counter.textContent = lang() === 'si'
+        ? siText('word_counter', { cur: cur, total: total })
+        : 'Word ' + cur + ' of ' + total;
+    }
+  }
+
+  var PHASE_TICK = null;
+  function detectPhase() {
+    var e = eng();
+    var cd = $('#cdNum');
+    var txt = cd ? String(cd.textContent || '').trim() : '';
+    var numeric = /^\d/.test(txt);
+    if (e) {
+      try {
+        if (e.st === 'finished' || e.st === 'review') return 'review';
+        if (numeric) return 'write';
+        return 'listen';
+      } catch (x) {}
+    }
+    return numeric ? 'write' : 'listen';
+  }
+
+  NG.syncCockpit = guard(function () {
+    var head = $('#sdpCockpitHead');
+    if (!head) return false;
+    var nums = cockpitNumbers();
+    setPhase(detectPhase());
+    syncWordMap(nums.cur, nums.total);
+    var live = $('#sdpLiveCounters');
+    if (live) {
+      var okEl = $('#sdpLiveCorrect'), missEl = $('#sdpLiveMissed'), strEl = $('#sdpLiveStreak');
+      var okTxt = ($('#plCorrectCount') && $('#plCorrectCount').textContent) || '✓ 0 Correct';
+      var missTxt = ($('#plWrongCount') && $('#plWrongCount').textContent) || '✗ 0 Wrong';
+      var strTxt = ($('#plStreakCount') && $('#plStreakCount').textContent) || '🔥 0 Streak';
+      if (okEl) okEl.textContent = String(okTxt).replace(/[^\d]/g, '') || '0';
+      if (missEl) missEl.textContent = String(missTxt).replace(/[^\d]/g, '') || '0';
+      if (strEl) strEl.textContent = String(strTxt).replace(/[^\d]/g, '') || '0';
+    }
+    return true;
+  }, 'nextgen.syncCockpit');
+
+  function bindClick(id, fn) {
+    var n = D.getElementById(id);
+    if (!n || n.getAttribute('data-ng-bound') === VERSION) return;
+    n.setAttribute('data-ng-bound', VERSION);
+    on(n, 'click', function (ev) {
+      try { if (ev && ev.preventDefault) ev.preventDefault(); } catch (e) {}
+      fn(n);
+    });
+  }
+
+  NG.mountCockpit = guard(function () {
+    var layer = $('#layers .layer');
+    if (!layer) return false;
+    var card = $('.wordcard', layer) || $('.lbody .card', layer);
+    if (!card) return false;
+    /* legacy control grid gets stable ids for the helper dock */
+    var grid = $('.ctrlgrid', layer);
+    if (grid) {
+      var gb = grid.getElementsByTagName('button');
+      if (gb[1] && !gb[1].id) gb[1].id = 'btnSentence';
+      if (gb[2] && !gb[2].id) gb[2].id = 'btnSlow';
+      if (gb[3] && !gb[3].id) gb[3].id = 'btnSpell';
+      if (gb[0] && !gb[0].id) gb[0].id = 'btnRepeat';
+      if (gb[7] && !gb[7].id) gb[7].id = 'btnNextWord';
+    }
+    /* 4px edge bar */
+    if (!$('#sdpEdgeBar')) {
+      var bar = mk('div');
+      bar.id = 'sdpEdgeBar';
+      bar.className = 'is-listen';
+      var fill = mk('div');
+      fill.id = 'sdpEdgeBarFill';
+      bar.appendChild(fill);
+      card.insertBefore(bar, card.firstChild);
+    }
+    /* cockpit head: word X of N · phase pill · 34px timer pill */
+    if (!$('#sdpCockpitHead')) {
+      var head = mk('div');
+      head.id = 'sdpCockpitHead';
+      var counter = mk('div');
+      counter.id = 'sdpWordCounter';
+      counter.textContent = 'Word 1 of ' + wordCount();
+      var pill = mk('span');
+      pill.id = 'sdpPhasePill';
+      pill.className = 'is-listen';
+      var dot = mk('span', 'dot');
+      dot.setAttribute('aria-hidden', 'true');
+      var lab = mk('span', '', t('Listening', 'සවන් දෙන්න'));
+      lab.setAttribute('data-ng-en', 'Listening');
+      lab.setAttribute('data-ng-si', 'සවන් දෙන්න');
+      pill.appendChild(dot);
+      pill.appendChild(lab);
+      var timer = mk('div');
+      timer.id = 'sdpTimerPill';
+      var cd = $('.countdown', layer);
+      if (cd) timer.appendChild(cd);
+      head.appendChild(counter);
+      head.appendChild(pill);
+      head.appendChild(timer);
+      card.insertBefore(head, card.firstChild.nextSibling || null);
+    }
+    /* helper dock */
+    if (!$('#sdpHelperDock')) {
+      var dock = mk('div');
+      dock.id = 'sdpHelperDock';
+      var defs = [
+        ['repeat', '↻', 'Repeat', 'නැවත', 'btnRepeat'],
+        ['slow', '🐢', 'Slower', 'සෙමින්', 'btnSlow'],
+        ['sentence', '💬', 'Sentence', 'වාක්‍යය', 'btnSentence'],
+        ['spell', '🔤', 'Spell it', 'අකුරු ඉඟිය', 'btnSpell']
+      ];
+      for (var i = 0; i < defs.length; i++) {
+        (function (d0) {
+          var b = mk('button');
+          b.type = 'button';
+          b.setAttribute('data-helper', d0[0]);
+          var ico = mk('span', '', d0[1]);
+          ico.style.fontSize = '14px';
+          ico.style.lineHeight = '1';
+          var lb = mk('span');
+          lb.setAttribute('data-ng-en', d0[2]);
+          lb.setAttribute('data-ng-si', d0[3]);
+          lb.textContent = lang() === 'si' ? d0[3] : d0[2];
+          b.appendChild(ico);
+          b.appendChild(lb);
+          on(b, 'click', function () {
+            var target = D.getElementById(d0[4]);
+            if (target) { try { target.click(); } catch (e) {} }
+          });
+          dock.appendChild(b);
+        })(defs[i]);
+      }
+      card.appendChild(dock);
+    }
+    /* footer row */
+    if (!$('#sdpCockpitFoot')) {
+      var foot = mk('div');
+      foot.id = 'sdpCockpitFoot';
+      var voice = mk('div', 'sdp-voice');
+      var rateTxt = Number(settings().rate || 0.96).toFixed(2);
+      voice.textContent = '🇬🇧 Alice · studio voice · ' + rateTxt + '×';
+      var actions = mk('div', 'sdp-actions');
+      var play = $('#plPlay', layer);
+      if (play) actions.appendChild(play);
+      var skip = mk('button');
+      skip.id = 'sdpBtnNext';
+      skip.type = 'button';
+      skip.textContent = '⏭';
+      skip.setAttribute('aria-label', t('Next word', 'ඊළඟ වචනය'));
+      on(skip, 'click', function () {
+        var nx = $('#btnNextWord');
+        if (nx) { try { nx.click(); } catch (e) {} }
+      });
+      var end = mk('button');
+      end.id = 'sdpBtnEnd';
+      end.type = 'button';
+      end.textContent = '⏹';
+      end.setAttribute('aria-label', t('Finish', 'අවසන් කරන්න'));
+      on(end, 'click', function () {
+        var fe = $('#btnFinishEarly');
+        if (fe) { try { fe.click(); } catch (e) {} }
+      });
+      actions.appendChild(skip);
+      actions.appendChild(end);
+      foot.appendChild(voice);
+      foot.appendChild(actions);
+      card.appendChild(foot);
+    }
+    /* live counters + 30-word map, below the cockpit card */
+    var body = $('.lbody', layer);
+    if (body && !$('#sdpDictLivePanel')) {
+      var panel = mk('div');
+      panel.id = 'sdpDictLivePanel';
+      var live = mk('div');
+      live.id = 'sdpLiveCounters';
+      var liveDefs = [['sdpLiveCorrect', 'Correct', 'නිවැරදි', ''], ['sdpLiveMissed', 'Missed', 'මගහැරුණු', 'warn'], ['sdpLiveStreak', 'Streak', 'අඛණ්ඩ', 'ok']];
+      for (var k = 0; k < liveDefs.length; k++) {
+        (function (ld) {
+          var box = mk('div', 'sdp-live ' + ld[3]);
+          box.id = ld[0] + 'Box';
+          var i2 = mk('i');
+          i2.setAttribute('data-ng-en', ld[1]);
+          i2.setAttribute('data-ng-si', ld[2]);
+          i2.textContent = lang() === 'si' ? ld[2] : ld[1];
+          var b2 = mk('b', '', '0');
+          b2.id = ld[0];
+          box.appendChild(i2);
+          box.appendChild(b2);
+          live.appendChild(box);
+        })(liveDefs[k]);
+      }
+      var mapCard = mk('div');
+      mapCard.id = 'sdpWordMapCard';
+      var mapTitle = mk('div');
+      mapTitle.id = 'sdpWordMapTitle';
+      mapTitle.setAttribute('data-ng-en', 'Word map');
+      mapTitle.setAttribute('data-ng-si', 'වචන සිතියම');
+      mapTitle.textContent = t('Word map', 'වචන සිතියම');
+      var map = mk('div');
+      map.id = 'sdpWordMap';
+      mapCard.appendChild(mapTitle);
+      mapCard.appendChild(map);
+      panel.appendChild(live);
+      panel.appendChild(mapCard);
+      var stack = $('.stack', body);
+      if (stack && stack.parentNode) stack.parentNode.insertBefore(panel, stack.nextSibling);
+      else body.appendChild(panel);
+    }
+    NG.syncCockpit();
+    if (!PHASE_TICK) {
+      try {
+        PHASE_TICK = new W.MutationObserver(function () { NG.syncCockpit(); });
+        var cd2 = $('#cdNum');
+        if (cd2) PHASE_TICK.observe(cd2, { childList: true, characterData: true, subtree: true });
+        var layerNode = $('#layers');
+        if (layerNode) PHASE_TICK.observe(layerNode, { childList: true });
+      } catch (e) { PHASE_TICK = null; }
+    }
+    return true;
+  }, 'nextgen.mountCockpit');
+
+  /* ==========================================================================
+     9. Settings — dictation first, 3-tier hierarchy, wallpapers last
+     ========================================================================== */
+  function rowNode(labelEn, labelSi, subEn, subSi, right) {
+    var row = mk('div', 'sdp-row');
+    var left = mk('div', 'sdp-row-l');
+    var tt = mk('div', 'sdp-row-t');
+    tt.setAttribute('data-ng-en', labelEn);
+    tt.setAttribute('data-ng-si', labelSi);
+    tt.textContent = lang() === 'si' ? labelSi : labelEn;
+    left.appendChild(tt);
+    if (subEn) {
+      var ss = mk('div', 'sdp-row-s');
+      ss.setAttribute('data-ng-en', subEn);
+      ss.setAttribute('data-ng-si', subSi || subEn);
+      ss.textContent = lang() === 'si' ? (subSi || subEn) : subEn;
+      left.appendChild(ss);
+    }
+    var rr = mk('div', 'sdp-row-r');
+    if (right) rr.appendChild(right);
+    row.appendChild(left);
+    row.appendChild(rr);
+    return row;
+  }
+
+  function segNode(id, options, current, onPick) {
+    var seg = mk('div', 'sdp-seg');
+    seg.id = id;
+    seg.setAttribute('role', 'group');
+    for (var i = 0; i < options.length; i++) {
+      (function (opt) {
+        var b = mk('button');
+        b.type = 'button';
+        b.setAttribute('data-v', String(opt.v));
+        b.setAttribute('aria-pressed', String(opt.v) === String(current) ? 'true' : 'false');
+        b.setAttribute('data-ng-en', opt.en);
+        b.setAttribute('data-ng-si', opt.si || opt.en);
+        b.textContent = lang() === 'si' ? (opt.si || opt.en) : opt.en;
+        on(b, 'click', function () { onPick(opt.v, seg); });
+        seg.appendChild(b);
+      })(options[i]);
+    }
+    return seg;
+  }
+
+  function syncSeg(id, value) {
+    var seg = D.getElementById(id);
+    if (!seg) return;
+    var bs = seg.getElementsByTagName('button'), i;
+    for (i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute('data-v')) === String(value) ? 'true' : 'false');
+  }
+
+  NG.selectMode = function (mode) {
+    var m = mode === 'type' ? 'type' : 'paper';
+    var st = settings();
+    st.mode = m;
+    saveSettings();
+    var btn = $('#segMode button[data-mode="' + m + '"]');
+    if (btn) { try { btn.click(); } catch (e) {} }
+    syncSeg('sdpSegMode', m);
+    NG.refreshHome();
+    return m;
+  };
+
+  NG.mountSettings = guard(function () {
+    var screen = $('#screen-set');
+    if (!screen) return false;
+    if (!$('#sdpNextGenSettings')) {
+      var host = mk('div');
+      host.id = 'sdpNextGenSettings';
+      var head = mk('div', 'sdp-set-head');
+      var title = mk('div', 'sdp-set-title');
+      title.setAttribute('data-ng-en', 'Settings');
+      title.setAttribute('data-ng-si', SDP_SI_DICT.settings_title);
+      title.textContent = t('Settings', SDP_SI_DICT.settings_title);
+      var sub = mk('div', 'sdp-set-sub');
+      sub.setAttribute('data-ng-en', 'Dictation first · always');
+      sub.setAttribute('data-ng-si', SDP_SI_DICT.settings_sub);
+      sub.textContent = t('Dictation first · always', SDP_SI_DICT.settings_sub);
+      head.appendChild(title);
+      head.appendChild(sub);
+      host.appendChild(head);
+
+      /* ---- PRIORITY 1 ---- */
+      var tier1 = mk('div', 'sdp-tier');
+      tier1.id = 'sdpTier1';
+      var t1h = mk('div', 'sdp-tier-head');
+      var t1b = mk('b');
+      t1b.setAttribute('data-ng-en', 'PRIORITY 1 · DICTATION & LEARNING');
+      t1b.setAttribute('data-ng-si', SDP_SI_DICT.settings_p1);
+      t1b.textContent = t('PRIORITY 1 · DICTATION & LEARNING', SDP_SI_DICT.settings_p1);
+      t1h.appendChild(t1b);
+      tier1.appendChild(t1h);
+
+      var st = settings();
+      tier1.appendChild(rowNode(
+        'Practice mode', SDP_SI_DICT.set_mode_label,
+        'Where you write your answers', SDP_SI_DICT.set_mode_sub,
+        segNode('sdpSegMode', [
+          { v: 'paper', en: '📝 Paper', si: '📝 කඩදාසියේ' },
+          { v: 'type', en: '⌨️ Typing', si: '⌨️ ඇප් එකේ' }
+        ], st.mode === 'type' ? 'type' : 'paper', function (v) { NG.selectMode(v); })
+      ));
+
+      tier1.appendChild(rowNode(
+        'Voice speed', SDP_SI_DICT.set_speed_label, '', '',
+        segNode('sdpSegSpeed', [
+          { v: '0.75', en: '0.75× Slow', si: SDP_SI_DICT.speed_slow },
+          { v: '0.9', en: '0.90× Clear', si: SDP_SI_DICT.speed_clear },
+          { v: '1', en: '1.0× Normal', si: SDP_SI_DICT.speed_normal }
+        ], String(Number(st.rate || 0.96) >= 0.98 ? '1' : (Number(st.rate || 0.96) <= 0.8 ? '0.75' : '0.9')), function (v) {
+          var s2 = settings();
+          s2.rate = Number(v) >= 1 ? 1 : (Number(v) <= 0.8 ? 0.75 : 0.9);
+          saveSettings();
+          syncSeg('sdpSegSpeed', v);
+          NG.refreshHome();
+          var r = D.getElementById('rate');
+          if (r) { try { r.value = String(s2.rate); if (r.dispatchEvent) r.dispatchEvent(new W.Event('input', { bubbles: true })); } catch (e) {} }
+          toast(t('Voice speed ' + Number(v).toFixed(2) + '×', 'හඬ වේගය ' + Number(v).toFixed(2) + '×'), { ms: 1400 });
+        })
+      ));
+
+      tier1.appendChild(rowNode(
+        'Word repeats', SDP_SI_DICT.set_repeats_label, '', '',
+        segNode('sdpSegRepeats', [
+          { v: '1', en: '1×', si: '1× වරක්' },
+          { v: '2', en: '2×', si: '2× දෙවරක්' },
+          { v: '3', en: '3×', si: '3× තුන් වරක්' }
+        ], String(Number(st.repeats || 2)), function (v) {
+          var s3 = settings();
+          s3.repeats = Number(v) || 1;
+          saveSettings();
+          syncSeg('sdpSegRepeats', v);
+          NG.refreshHome();
+          var sel = D.getElementById('repeatsSelect');
+          if (sel) { try { sel.value = String(s3.repeats); if (sel.dispatchEvent) sel.dispatchEvent(new W.Event('change', { bubbles: true })); } catch (e) {} }
+        })
+      ));
+
+      var waitWrap = mk('div', 'sdp-range-wrap');
+      var waitValue = mk('div', 'sdp-value', Number(st.writeFixed || 5) + ' s');
+      waitValue.id = 'sdpWaitValue';
+      var range = mk('input');
+      range.type = 'range';
+      range.id = 'sdpRangeWait';
+      range.min = '3';
+      range.max = '15';
+      range.step = '1';
+      range.value = String(Number(st.writeFixed || 5));
+      range.setAttribute('aria-label', 'Writing time per word in seconds');
+      var scale = mk('div', 'sdp-scale');
+      scale.appendChild(mk('span', '', '3s'));
+      scale.appendChild(mk('span', '', '9s'));
+      scale.appendChild(mk('span', '', '15s'));
+      on(range, 'input', function () {
+        var s4 = settings();
+        s4.writeFixed = Math.max(3, Math.min(15, Number(range.value) || 5));
+        s4.writeMode = 'fixed';
+        saveSettings();
+        waitValue.textContent = s4.writeFixed + ' s';
+        NG.refreshHome();
+      });
+      on(range, 'change', function () {
+        var s5 = settings();
+        s5.writeFixed = Math.max(3, Math.min(15, Number(range.value) || 5));
+        saveSettings();
+        toast(t(s5.writeFixed + 's to write each word', 'එක් වචනයකට තත් ' + s5.writeFixed + 'ක්'), { ms: 1400 });
+      });
+      waitWrap.appendChild(waitValue);
+      waitWrap.appendChild(range);
+      waitWrap.appendChild(scale);
+      var waitRow = rowNode('Writing time per word', SDP_SI_DICT.set_wait_label, 'The pause after each word', SDP_SI_DICT.set_wait_sub, waitWrap);
+      waitRow.id = 'sdpRowWait';
+      tier1.appendChild(waitRow);
+
+      var toggle = mk('button', 'sdp-toggle');
+      toggle.id = 'sdpToggleAutoSentence';
+      toggle.type = 'button';
+      toggle.setAttribute('role', 'switch');
+      toggle.setAttribute('aria-checked', st.sentence ? 'true' : 'false');
+      on(toggle, 'click', function () {
+        var s6 = settings();
+        var on2 = !(s6.sentence === true);
+        s6.sentence = on2;
+        saveSettings();
+        toggle.setAttribute('aria-checked', on2 ? 'true' : 'false');
+        try {
+          var box = D.getElementById('sentence');
+          if (box && box.type === 'checkbox') { box.checked = on2; if (box.dispatchEvent) box.dispatchEvent(new W.Event('change', { bubbles: true })); }
+        } catch (e) {}
+      });
+      tier1.appendChild(rowNode('Auto-read example sentence', SDP_SI_DICT.set_autosent_label,
+        'After the word is revealed', SDP_SI_DICT.set_autosent_sub, toggle));
+
+      tier1.appendChild(rowNode('Interface language', SDP_SI_DICT.set_lang_label,
+        'Buttons & explanations', SDP_SI_DICT.set_lang_sub,
+        segNode('sdpSegLang', [
+          { v: 'en', en: 'English', si: 'English' },
+          { v: 'si', en: 'සිංහල', si: 'සිංහල' }
+        ], lang(), function (v) { NG.setLang(v); })));
+      host.appendChild(tier1);
+
+      /* ---- PRIORITY 2 ---- */
+      var tier2 = mk('div', 'sdp-tier');
+      tier2.id = 'sdpVoiceCard';
+      var t2h = mk('div', 'sdp-tier-head');
+      var t2b = mk('b');
+      t2b.setAttribute('data-ng-en', 'PRIORITY 2 · VOICE & AUDIO CHECK');
+      t2b.setAttribute('data-ng-si', SDP_SI_DICT.settings_p2);
+      t2b.textContent = t('PRIORITY 2 · VOICE & AUDIO CHECK', SDP_SI_DICT.settings_p2);
+      t2h.appendChild(t2b);
+      tier2.appendChild(t2h);
+      var testBtn = mk('button', '', '🔊 Test Voice');
+      testBtn.id = 'sdpVoiceTestBtn';
+      testBtn.type = 'button';
+      testBtn.setAttribute('data-ng-en', '🔊 Test Voice');
+      testBtn.setAttribute('data-ng-si', '🔊 හඬ පරීක්ෂා කරන්න');
+      testBtn.textContent = t('🔊 Test Voice', '🔊 හඬ පරීක්ෂා කරන්න');
+      on(testBtn, 'click', function () {
+        var legacy = D.getElementById('btnTestVoice') || D.getElementById('btnTestVoicePlayer');
+        if (legacy) { try { legacy.click(); return; } catch (e) {} }
+        speakSample();
+      });
+      var voiceRow = mk('div', 'sdp-row');
+      var voiceLeft = mk('div', 'sdp-row-l');
+      var vn = mk('div', 'sdp-voice-name', '🇬🇧 Alice · UK Studio Neural · Ready');
+      var ol = mk('div');
+      ol.id = 'sdpOfflineLine';
+      ol.textContent = wordCount() + ' / ' + wordCount() + ' words ready offline';
+      voiceLeft.appendChild(vn);
+      voiceLeft.appendChild(ol);
+      var voiceRight = mk('div', 'sdp-row-r');
+      voiceRight.appendChild(testBtn);
+      voiceRow.appendChild(voiceLeft);
+      voiceRow.appendChild(voiceRight);
+      tier2.appendChild(voiceRow);
+      host.appendChild(tier2);
+
+      screen.insertBefore(host, screen.firstChild);
+    }
+    /* legacy settings wall lives inside the collapsed Priority 3 accordion */
+    var accordion = D.getElementById('sdpAppearanceAccordion');
+    if (!accordion) {
+      accordion = mk('details');
+      accordion.id = 'sdpAppearanceAccordion';
+      var summary = mk('summary');
+      summary.setAttribute('data-ng-en', '🎨 Appearance, Themes, Wallpapers & Teacher Studio (Optional)');
+      summary.setAttribute('data-ng-si', '🎨 පෙනුම, පසුබිම් රූප සහ ගුරු මැදිරිය (අමතර)');
+      summary.textContent = t('🎨 Appearance, Themes, Wallpapers & Teacher Studio (Optional)', '🎨 පෙනුම, පසුබිම් රූප සහ ගුරු මැදිරිය (අමතර)');
+      var body = mk('div');
+      body.id = 'sdpAppearanceBody';
+      accordion.appendChild(summary);
+      accordion.appendChild(body);
+      var ng = $('#sdpNextGenSettings');
+      if (ng && ng.parentNode) ng.parentNode.insertBefore(accordion, ng.nextSibling);
+      else screen.appendChild(accordion);
+    }
+    var ab = D.getElementById('sdpAppearanceBody');
+    var setBody = D.getElementById('setBody');
+    if (ab && setBody && setBody.parentNode !== ab) ab.appendChild(setBody);
+    var adminBtn = D.getElementById('btnAdmin');
+    if (ab && adminBtn && adminBtn.parentNode !== ab) {
+      var adminRow = mk('div', 'sdp-row');
+      var al = mk('div', 'sdp-row-l');
+      var at = mk('div', 'sdp-row-t');
+      at.textContent = t('Lecturer admin & studio', 'ගුරු පරිපාලනය සහ මැදිරිය');
+      al.appendChild(at);
+      var ar = mk('div', 'sdp-row-r');
+      ar.appendChild(adminBtn);
+      adminRow.appendChild(al);
+      adminRow.appendChild(ar);
+      ab.insertBefore(adminRow, ab.firstChild);
+    }
+    /* class comments stay reachable without stealing one of the five tabs */
+    if (ab && !D.getElementById('sdpOpenCommunity')) {
+      var commRow = mk('div', 'sdp-row');
+      var commLeft = mk('div', 'sdp-row-l');
+      var commTitle = mk('div', 'sdp-row-t');
+      commTitle.setAttribute('data-ng-en', 'Class comments');
+      commTitle.setAttribute('data-ng-si', 'පන්ති සටහන්');
+      commTitle.textContent = t('Class comments', 'පන්ති සටහන්');
+      var commSub = mk('div', 'sdp-row-s');
+      commSub.setAttribute('data-ng-en', 'Read and post with your class');
+      commSub.setAttribute('data-ng-si', 'ඔබේ පන්තිය සමඟ කියවා සටහන් දමන්න');
+      commSub.textContent = t('Read and post with your class', 'ඔබේ පන්තිය සමඟ කියවා සටහන් දමන්න');
+      commLeft.appendChild(commTitle);
+      commLeft.appendChild(commSub);
+      var commRight = mk('div', 'sdp-row-r');
+      var commBtn = mk('button');
+      commBtn.id = 'sdpOpenCommunity';
+      commBtn.type = 'button';
+      commBtn.className = 'btn sm soft';
+      commBtn.textContent = t('Open', 'විවෘත කරන්න');
+      on(commBtn, 'click', function () { try { var u2 = UI(); if (u2 && u2.setTab) u2.setTab('comm'); } catch (e) {} });
+      commRight.appendChild(commBtn);
+      commRow.appendChild(commLeft);
+      commRow.appendChild(commRight);
+      ab.appendChild(commRow);
+    }
+    var offRow = D.getElementById('v58OfflineRow');
+    if (offRow && ab && offRow.parentNode !== ab) ab.appendChild(offRow);
+    NG.refreshSettingsValues();
+    return true;
+  }, 'nextgen.mountSettings');
+
+  NG.refreshSettingsValues = guard(function () {
+    var st = settings();
+    syncSeg('sdpSegMode', st.mode === 'type' ? 'type' : 'paper');
+    syncSeg('sdpSegSpeed', String(Number(st.rate || 0.96) >= 0.98 ? '1' : (Number(st.rate || 0.96) <= 0.8 ? '0.75' : '0.9')));
+    syncSeg('sdpSegRepeats', String(Number(st.repeats || 2)));
+    syncSeg('sdpSegLang', lang());
+    var range = D.getElementById('sdpRangeWait');
+    if (range) range.value = String(Number(st.writeFixed || 5));
+    var wv = D.getElementById('sdpWaitValue');
+    if (wv) wv.textContent = Number(st.writeFixed || 5) + ' s';
+    var tog = D.getElementById('sdpToggleAutoSentence');
+    if (tog) tog.setAttribute('aria-checked', st.sentence ? 'true' : 'false');
+    var ol = D.getElementById('sdpOfflineLine');
+    if (ol) ol.textContent = t(wordCount() + ' / ' + wordCount() + ' words ready offline', 'වචන ' + wordCount() + ' / ' + wordCount() + ' ඔෆ්ලයින් සූදානම්');
+    return true;
+  }, 'nextgen.refreshSettingsValues');
+
+  /* ==========================================================================
+     10. Words explorer — full-field numbered cards, zero truncation
+     ========================================================================== */
+  function applyWordFilter() {
+    var list = $('#dictList');
+    if (!list) return;
+    var cards = $$('.v59-dict-card', list);
+    var filter = NG.wordFilter || 'all';
+    var L = Learn();
+    var weak = {}, mastered = {};
+    try { if (L && L.loadWeakWords) weak = L.loadWeakWords() || {}; } catch (e) {}
+    try { if (L && L.loadMasteredWords) mastered = L.loadMasteredWords() || {}; } catch (e) {}
+    var arr = cards.slice();
+    if (filter === 'az') {
+      arr.sort(function (a, b) {
+        return String(a.getAttribute('data-word') || '').toLowerCase() < String(b.getAttribute('data-word') || '').toLowerCase() ? -1 : 1;
+      });
+      for (var s = 0; s < arr.length; s++) list.appendChild(arr[s]);
+    }
+    for (var i = 0; i < cards.length; i++) {
+      var w = String(cards[i].getAttribute('data-word') || '').toLowerCase();
+      var show = true;
+      if (filter === 'weak') show = Object.prototype.hasOwnProperty.call(weak, w);
+      else if (filter === 'mastered') show = Object.prototype.hasOwnProperty.call(mastered, w);
+      cards[i].style.display = show ? '' : 'none';
+      /* Sinhala reveal pill styling + copy */
+      var chip = $('.v59-si-chip', cards[i]);
+      if (chip) {
+        chip.classList.add('sdp-si-pill');
+        var expanded = chip.getAttribute('aria-expanded') === 'true';
+        if (!chip.getAttribute('data-ng-label')) {
+          chip.setAttribute('data-ng-label', VERSION);
+          chip.textContent = expanded ? 'සිංහල · තේරුම පෙන්වන්න' : 'සිංහල · Tap to reveal';
+        }
+      }
+    }
+  }
+  NG.wordFilter = 'all';
+  NG.applyWordFilter = guard(applyWordFilter, 'nextgen.applyWordFilter');
+
+  NG.mountWords = guard(function () {
+    var screen = $('#screen-dict');
+    if (!screen) return false;
+    var stack = $('.stack', screen) || screen;
+    if (!$('#sdpWordsHead')) {
+      var head = mk('div');
+      head.id = 'sdpWordsHead';
+      var title = mk('div');
+      title.id = 'sdpWordsTitle';
+      title.setAttribute('data-ng-en', 'Words');
+      title.setAttribute('data-ng-si', 'වචන මාලාව');
+      title.textContent = t('Words', 'වචන මාලාව');
+      var sub = mk('div');
+      sub.id = 'sdpWordsSub';
+      sub.textContent = t('Session ' + sessionNo() + ' · ' + wordCount() + ' adjectives', 'සැසිය ' + sessionNo() + ' · විශේෂණ ' + wordCount());
+      var filters = mk('div');
+      filters.id = 'sdpWordFilterRow';
+      var defs = [['all', 'All', 'සියල්ල'], ['weak', 'Weak', 'දුර්වල'], ['mastered', 'Mastered', 'ප්‍රගුණ කළ'], ['az', 'A–Z', 'A–Z']];
+      for (var i = 0; i < defs.length; i++) {
+        (function (d0) {
+          var b = mk('button');
+          b.type = 'button';
+          b.setAttribute('data-filter', d0[0]);
+          b.setAttribute('aria-pressed', d0[0] === 'all' ? 'true' : 'false');
+          b.setAttribute('data-ng-en', d0[1]);
+          b.setAttribute('data-ng-si', d0[2]);
+          b.textContent = lang() === 'si' ? d0[2] : d0[1];
+          on(b, 'click', function () {
+            NG.wordFilter = d0[0];
+            var bs = $$('#sdpWordFilterRow button'), j;
+            for (j = 0; j < bs.length; j++) bs[j].setAttribute('aria-pressed', bs[j] === b ? 'true' : 'false');
+            applyWordFilter();
+          });
+          filters.appendChild(b);
+        })(defs[i]);
+      }
+      head.appendChild(title);
+      head.appendChild(sub);
+      head.appendChild(filters);
+      stack.insertBefore(head, stack.firstChild);
+    }
+    var search = $('#dictSearch');
+    if (search) {
+      search.setAttribute('placeholder', t('🔍 Search a word, meaning or sentence…', 'වචනයක්, තේරුමක් හෝ වාක්‍යයක් සොයන්න…'));
+      search.setAttribute('aria-label', 'Search words');
+    }
+    var list = $('#dictList');
+    if (list && list.getAttribute('data-ng-obs') !== VERSION) {
+      list.setAttribute('data-ng-obs', VERSION);
+      try {
+        if (W.MutationObserver) {
+          var mo = new W.MutationObserver(function () { applyWordFilter(); });
+          mo.observe(list, { childList: true });
+        }
+      } catch (e) {}
+    }
+    applyWordFilter();
+    return true;
+  }, 'nextgen.mountWords');
+
+  /* ==========================================================================
+     11. Whisper-quiet load micro-toast + animated Hansana credit pill
+     ========================================================================== */
+  function loadBytes() {
+    var total = 0, entries, i, nav;
+    try {
+      entries = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType('resource') : [];
+      for (i = 0; i < entries.length; i++) {
+        total += Number(entries[i].transferSize || entries[i].encodedBodySize || 0);
+      }
+      nav = W.performance && W.performance.getEntriesByType ? W.performance.getEntriesByType("navigation") : [];
+      if (nav && nav.length) total += Number(nav[0].transferSize || nav[0].encodedBodySize || 0);
+    } catch (e) { total = 0; }
+    return total;
+  }
+
+  NG.mountMicroToast = guard(function () {
+    if ($('#microToastLoad')) return true;
+    var bytes = loadBytes();
+    var txt;
+    if (!bytes) {
+      var cached = false;
+      try { cached = !!(W.performance && W.performance.getEntriesByType && W.performance.getEntriesByType('resource').length); } catch (e) {}
+      bytes = cached ? 0 : 356352;
+    }
+    if (bytes <= 0) {
+      txt = t(SDP_SI_DICT.toast_load_cached.replace('⚡ ', '⚡ '), SDP_SI_DICT.toast_load_cached);
+      txt = lang() === 'si' ? SDP_SI_DICT.toast_load_cached : '⚡ 0 KB · Offline ready';
+    } else if (bytes < 1048576) {
+      var kb = (bytes / 1024).toFixed(0) + ' KB';
+      txt = lang() === 'si' ? siText('toast_load_used', { size: kb }) : '⚡ ' + kb + ' used on load';
+    } else {
+      var mb = (bytes / 1048576).toFixed(2) + ' MB';
+      txt = lang() === 'si' ? siText('toast_load_used', { size: mb }) : '⚡ ' + mb + ' used on load';
+    }
+    var pill = mk('div');
+    pill.id = 'microToastLoad';
+    pill.setAttribute('role', 'status');
+    pill.setAttribute('aria-live', 'polite');
+    pill.textContent = txt;
+    try { (D.body || D.documentElement).appendChild(pill); } catch (e) { return false; }
+    setTimeout(function () { try { pill.classList.add('out'); } catch (e) {} }, 3500);
+    setTimeout(function () { try { pill.hidden = true; } catch (e) {} }, 3900);
+    return true;
+  }, 'nextgen.mountMicroToast');
+
+  NG.mountCredit = guard(function () {
+    var reduced = false;
+    try { reduced = !!(W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) {}
+    if (!$('#creditPill')) {
+      var pill = mk('div');
+      pill.id = 'creditPill';
+      pill.setAttribute('aria-hidden', 'true');
+      pill.textContent = '\uD83E\uDD62 CREDITS GOES TO Hansana';
+      try { (D.body || D.documentElement).appendChild(pill); } catch (e) {}
+      setTimeout(function () {
+        try { pill.classList.add('out'); } catch (e) {}
+        NG.showDockedCredit();
+      }, reduced ? 60 : 3800);
+    }
+    if (!$('#creditDocked')) {
+      var dock = mk('div');
+      dock.id = 'creditDocked';
+      dock.textContent = '\uD83E\uDD62 Crafted by Hansana';
+      try { (D.body || D.documentElement).appendChild(dock); } catch (e) {}
+    }
+    return true;
+  }, 'nextgen.mountCredit');
+
+  NG.showDockedCredit = function () {
+    var dock = D.getElementById('creditDocked');
+    if (dock) dock.classList.add('on');
+  };
+
+  /* ==========================================================================
+     12. Session celebration — confetti + graduated chip + practice-missed
+     ========================================================================== */
+  NG.confetti = function (ms) {
+    try {
+      if (!D.body) return false;
+      var canvas = D.getElementById('sdpConfettiCanvas');
+      if (!canvas) {
+        canvas = mk('canvas');
+        canvas.id = 'sdpConfettiCanvas';
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.width = Math.max(320, W.innerWidth || 360);
+        canvas.height = Math.max(480, W.innerHeight || 640);
+        D.body.appendChild(canvas);
+      }
+      var ctx = canvas.getContext ? canvas.getContext('2d') : null;
+      if (!ctx || !ctx.fillRect) return false;
+      var colors = ['#38BDF8', '#4ADE80', '#FBBF24', '#F87171', '#FAFAFA'];
+      var parts = [], i;
+      for (i = 0; i < 90; i++) {
+        parts.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2.6,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.9) * 6,
+          r: 2 + Math.random() * 3,
+          c: colors[i % colors.length],
+          a: 1
+        });
+      }
+      var start = Date.now(), dur = Number(ms) || 1800;
+      function frame() {
+        var elapsed = Date.now() - start;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var k = 0; k < parts.length; k++) {
+          var p = parts[k];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.12;
+          p.a = Math.max(0, 1 - elapsed / dur);
+          ctx.globalAlpha = p.a;
+          ctx.fillStyle = p.c;
+          ctx.fillRect(p.x, p.y, p.r * 2, p.r * 2);
+        }
+        ctx.globalAlpha = 1;
+        if (elapsed < dur && W.requestAnimationFrame) W.requestAnimationFrame(frame);
+        else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+      }
+      if (W.requestAnimationFrame) W.requestAnimationFrame(frame);
+      return true;
+    } catch (e) { return false; }
+  };
+
+  NG.celebrate = guard(function (missed) {
+    NG.confetti(1800);
+    var host = $('#layers .layer .lbody') || $('#sheets .sheet .sbody') || $('#screen-home');
+    if (!host || $('#sdpGradChip')) return;
+    var chip = mk('div', 'sdp-grad-chip');
+    chip.id = 'sdpGradChip';
+    chip.textContent = t('🎓 Graduated today', '🎓 අද ප්‍රගුණ කළා');
+    host.insertBefore(chip, host.firstChild);
+    if (missed && missed.length) {
+      var btn = mk('button');
+      btn.id = 'sdpPracticeMissed';
+      btn.type = 'button';
+      btn.className = 'btn sm soft';
+      btn.textContent = t('Practice ' + missed.length + ' missed words now', 'මගහැරුණු වචන ' + missed.length + 'ක් දැන් පුහුණු වන්න');
+      on(btn, 'click', function () {
+        var L = Learn();
+        try {
+          if (L && L.openWeakWords) { L.openWeakWords(); return; }
+        } catch (e) {}
+        goto('practice');
+      });
+      chip.appendChild(document.createTextNode(' '));
+      chip.appendChild(btn);
+    }
+  }, 'nextgen.celebrate');
+
+  /* ==========================================================================
+     13. SDPOfflineDB — IndexedDB learner store (sdp_offline_v60) + LRU mirror
+     ========================================================================== */
+  W.SDPOfflineDB = {
+    DB_NAME: 'sdp_offline_v60',
+    DB_VERSION: 1,
+    STORES: ['kv', 'history'],
+    _db: null,
+    _open: function (cb) {
+      var self = this;
+      try {
+        if (!W.indexedDB) { cb(null); return; }
+        if (self._db) { cb(self._db); return; }
+        var req = W.indexedDB.open(self.DB_NAME, self.DB_VERSION);
+        req.onupgradeneeded = function (ev) {
+          var db = ev.target.result, i;
+          for (i = 0; i < self.STORES.length; i++) {
+            if (!db.objectStoreNames.contains(self.STORES[i])) db.createObjectStore(self.STORES[i], { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = function (ev) { self._db = ev.target.result; cb(self._db); };
+        req.onerror = function () { cb(null); };
+      } catch (e) { cb(null); }
+    },
+    _put: function (store, item, cb) {
+      var self = this;
+      self._open(function (db) {
+        if (!db) { self._lsPut(store, item); if (cb) cb(false); return; }
+        try {
+          var tx = db.transaction([store], 'readwrite');
+          tx.objectStore(store).put({ id: String(item.id), data: item, ts: Date.now() });
+          tx.oncomplete = function () { self._lsPut(store, item); if (cb) cb(true); };
+          tx.onerror = function () { if (cb) cb(false); };
+        } catch (e) { self._lsPut(store, item); if (cb) cb(false); }
+      });
+    },
+    put: function (store, item, cb) { this._put(store || 'kv', item, cb); },
+    get: function (store, id, cb) {
+      var self = this;
+      self._open(function (db) {
+        if (!db) { if (cb) cb(self._lsGet(store, id)); return; }
+        try {
+          var req = db.transaction([store], 'readonly').objectStore(store).get(String(id));
+          req.onsuccess = function () { if (cb) cb(req.result && req.result.data ? req.result.data : null); };
+          req.onerror = function () { if (cb) cb(self._lsGet(store, id)); };
+        } catch (e) { if (cb) cb(self._lsGet(store, id)); }
+      });
+    },
+    _lsKey: function (store, id) { return 'sdp.idb.v60.' + store + '.' + String(id); },
+    _lsPut: function (store, item) {
+      try { W.localStorage.setItem(this._lsKey(store, item.id), JSON.stringify({ data: item, ts: Date.now() })); } catch (e) {}
+    },
+    _lsGet: function (store, id) {
+      try { var raw = W.localStorage.getItem(this._lsKey(store, id)); if (!raw) return null; var o = JSON.parse(raw); return o && o.data ? o.data : null; } catch (e) { return null; }
+    },
+    /* mirror the learner keys so a cleared localStorage can be hydrated */
+    mirror: function () {
+      var keys = ['sdp_sr_v2', 'sdp_gam_v2', 'sdp_wrong_words', 'sdp_hist', 'sdp.weakWords.v1', 'sdp.masteredWords.v1'];
+      for (var i = 0; i < keys.length; i++) {
+        try {
+          var raw = W.localStorage.getItem(keys[i]);
+          if (raw == null) continue;
+          this._put('kv', { id: keys[i], raw: raw }, null);
+        } catch (e) {}
+      }
+    },
+    hydrate: function (cb) {
+      var self = this, keys = ['sdp_sr_v2', 'sdp_gam_v2', 'sdp_wrong_words', 'sdp_hist', 'sdp.weakWords.v1', 'sdp.masteredWords.v1'], done = 0;
+      function finish() { done++; if (done >= keys.length && cb) cb(done); }
+      for (var i = 0; i < keys.length; i++) {
+        (function (key) {
+          try {
+            if (W.localStorage.getItem(key) != null) { finish(); return; }
+          } catch (e) {}
+          self.get('kv', key, function (rec) {
+            try { if (rec && rec.raw) W.localStorage.setItem(key, rec.raw); } catch (e) {}
+            finish();
+          });
+        })(keys[i]);
+      }
+    },
+    history: function (entry, cb) { this._put('history', entry, cb); }
+  };
+
+  /* ==========================================================================
+     14. Boot + observers
+     ========================================================================== */
+  var BOOTED = false;
+
+  function hookEngines() {
+    try {
+      var e = eng();
+      if (e && !e.__ngOpen) {
+        e.__ngOpen = true;
+        var orig = e.openPlayer;
+        if (typeof orig === 'function') {
+          e.openPlayer = function () {
+            var r = orig.apply(this, arguments);
+            try { NG.mountCockpit(); } catch (x) {}
+            return r;
+          };
+        }
+        var origStart = e.startWord;
+        if (typeof origStart === 'function') {
+          e.startWord = function () {
+            var r = origStart.apply(this, arguments);
+            try { NG.mountCockpit(); NG.syncCockpit(); } catch (x) {}
+            return r;
+          };
+        }
+      }
+    } catch (e) {}
+    try {
+      var u = UI();
+      if (u && !u.__ngTab) {
+        u.__ngTab = true;
+        var origTab = u.setTab;
+        if (typeof origTab === 'function') {
+          u.setTab = function (tab) {
+            var r = origTab.apply(this, arguments);
+            try {
+              if (tab === 'set') NG.mountSettings();
+              if (tab === 'home') NG.mountHome();
+              if (tab === 'dict') NG.mountWords();
+              NG.syncRail();
+            } catch (x) {}
+            return r;
+          };
+        }
+        var origLang = u.applyLang;
+        if (typeof origLang === 'function') {
+          u.applyLang = function () {
+            var r = origLang.apply(this, arguments);
+            try { if (!NG.__inApply) NG.applyLang(lang()); } catch (x) {}
+            return r;
+          };
+        }
+      }
+    } catch (e) {}
+    try {
+      var res = core() && core().Results;
+      if (res && !res.__ngCelebrate) {
+        res.__ngCelebrate = true;
+        var origFinish = res.finish;
+        if (typeof origFinish === 'function') {
+          res.finish = function () {
+            var r = origFinish.apply(this, arguments);
+            try {
+              var missed = [];
+              var e2 = eng();
+              if (e2 && e2.words) {
+                for (var i = 0; i < e2.words.length; i++) {
+                  var rec = e2.words[i];
+                  if (rec && (rec.wrong || rec.missed)) missed.push(rec.w || rec.word);
+                }
+              }
+              NG.celebrate(missed);
+              var odb = W.SDPOfflineDB;
+              if (odb) {
+                try {
+                  odb.mirror();
+                  odb.history({ id: 'session-' + sessionNo() + '-' + Date.now(), ts: Date.now(), total: (e2 && e2.words ? e2.words.length : 0) }, null);
+                } catch (x) {}
+              }
+            } catch (x) {}
+            return r;
+          };
+        }
+      }
+    } catch (e) {}
+  }
+
+  function mountAll() {
+    NG.injectCss();
+    NG.neutraliseLegacyStyles();
+    NG.mountTopbar();
+    NG.mountTabs();
+    NG.mountRail();
+    NG.mountSettings();
+    NG.mountHome();
+    NG.mountWords();
+    NG.applyLang(lang());
+    NG.syncRail();
+    NG.mountCockpit();
+    try { hookEngines(); } catch (e) {}
+    return true;
+  }
+  NG.mountAll = guard(mountAll, 'nextgen.mountAll');
+
+  function boot() {
+    if (BOOTED) { mountAll(); return; }
+    BOOTED = true;
+    NG.migrateToV60();
+    NG.injectCss();
+    NG.neutraliseLegacyStyles();
+    NG.observeLegacyStyles();
+    NG.wireWallpaperChoice();
+    try { if (D.body) D.body.classList.add('sdp-nextgen'); } catch (e) {}
+    mountAll();
+    NG.mountMicroToast();
+    NG.mountCredit();
+    hookEngines();
+    try {
+      var odb = W.SDPOfflineDB;
+      if (odb) { odb.hydrate(function () {}); setTimeout(function () { try { odb.mirror(); } catch (e) {} }, 2500); }
+    } catch (e) {}
+    /* the app builds screens lazily — keep the Next-Gen layer in sync */
+    try {
+      if (W.MutationObserver && D.getElementById('layers')) {
+        var mo = new W.MutationObserver(function () { NG.mountCockpit(); });
+        mo.observe(D.getElementById('layers'), { childList: true });
+      }
+    } catch (e) {}
+    try {
+      if (W.MutationObserver && D.getElementById('screen-set')) {
+        var mo2 = new W.MutationObserver(function () { NG.mountSettings(); });
+        mo2.observe(D.getElementById('screen-set'), { childList: true });
+      }
+    } catch (e) {}
+    setTimeout(function () { try { NG.neutraliseLegacyStyles(); NG.mountCockpit(); NG.applyLang(lang()); } catch (e) {} }, 900);
+    setTimeout(function () { try { NG.neutraliseLegacyStyles(); } catch (e) {} }, 2500);
+  }
+
+  NG.version = VERSION;
+  NG.build = BUILD;
+  NG.boot = boot;
+  NG.loadBytes = loadBytes;
+
+  if (D.readyState === 'loading') {
+    on(D, 'DOMContentLoaded', function () { setTimeout(boot, 0); });
+  } else {
+    setTimeout(boot, 0);
+  }
+  on(W, 'load', function () {
+    try { NG.neutraliseLegacyStyles(); NG.mountCockpit(); } catch (e) {}
+  });
 })();

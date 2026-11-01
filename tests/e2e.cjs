@@ -1,3 +1,21 @@
+/* v9.0.0.2: wallpapers, themes, appearance and the advanced dictation toggles
+   live inside the collapsed Priority 3 accordion so the six dictation rows stay
+   above the fold. Legacy gates open it before touching those controls. */
+/* v9.0.0.2: below 1024px the five-tab bar is the navigation; at >=1024px the
+   232px left rail replaces it (mockups 6.1 / 6.7), so legacy gates pick whichever
+   control is actually on screen and fall back to the public UI API. */
+const goTab = async (page, tab) => {
+  const btn = page.locator('#tab-' + tab);
+  if (await btn.isVisible().catch(() => false)) { await btn.click(); return; }
+  const railKey = tab === 'comm' ? 'dictate' : tab;
+  const rail = page.locator('#sdpDesktopRail button[data-rail="' + railKey + '"]');
+  if (await rail.count() && await rail.first().isVisible().catch(() => false)) { await rail.first().click(); return; }
+  await page.evaluate((t) => window.SDPCore.UI.setTab(t), tab);
+};
+const openSettingsAccordion = (page) => page.evaluate(() => {
+  const a = document.getElementById('sdpAppearanceAccordion');
+  if (a) a.open = true;
+});
 const DEFAULT_PIN = require('./test-pin.cjs');
 /* End-to-end flow in a real browser (Chromium via @sparticuz/chromium).
    WebKit and Firefox are NOT exercised here: this sandbox has no WebKit or
@@ -157,12 +175,12 @@ async function flow(browser, vp, label, seed) {
     { pageerrors: errors, consoleErrors });
 
   /* build stamp */
-  await dismissTour(page); await page.locator('#tab-set').click();
+  await dismissTour(page); await goTab(page, 'set'); await openSettingsAccordion(page);
   const setTxt = await page.locator('#screen-set').textContent();
   rec(label + ' Settings shows the build stamp', setTxt.includes('v' + require('../data/version.json').appVersion + ' (' + require('../data/version.json').buildDate + ')'), { stamp: (setTxt.match(/v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)/) || ['none'])[0] });
 
   /* v57: the first valid unlock creates the local PIN; lock, then a wrong PIN is refused */
-  await dismissTour(page); await page.locator('#tab-home').click();
+  await dismissTour(page); await goTab(page, 'home');
   await unlock(page, DEFAULT_PIN);
   await page.getByRole('button', { name: 'Lock now', exact: true }).first().click();
   await unlock(page, '0000');
@@ -216,9 +234,9 @@ async function flow(browser, vp, label, seed) {
     /^session 12/.test(kicker) && /\d{1,2}\/\d{2}\/\d{4}/.test(kicker) && plan.session.day === 'Monday' && !await page.locator('#adminHost').isVisible(), { kicker });
 
   /* make the run quick and deterministic: manual advance */
-  await dismissTour(page); await page.locator('#tab-set').click();
+  await dismissTour(page); await goTab(page, 'set'); await openSettingsAccordion(page);
   await page.getByRole('button', { name: 'I tap Next', exact: true }).first().click();
-  await dismissTour(page); await page.locator('#tab-home').click();
+  await dismissTour(page); await goTab(page, 'home');
 
   /* ready screen + full dictation */
   await page.locator('#btnStart').click();
@@ -284,7 +302,7 @@ async function flow(browser, vp, label, seed) {
   await dismissTour(page);
 
   /* resume: reload mid-session */
-  await dismissTour(page); await page.locator('#tab-home').click();
+  await dismissTour(page); await goTab(page, 'home');
   await dismissTour(page);
   await page.locator('#btnStart').click();
   await page.getByRole('button', { name: "I'm ready", exact: true }).click();
@@ -332,7 +350,7 @@ async function flow(browser, vp, label, seed) {
   await page.waitForTimeout(400);
 
   /* community comment with badge */
-  await dismissTour(page); await page.locator('#tab-comm').click();
+  await dismissTour(page); await page.evaluate(()=>window.SDPCore.UI.setTab('comm'));
   await dismissTour(page);
   await page.locator('#btnCompose').click();
   await page.waitForSelector('#sheets textarea[aria-label="Comment text"]');
@@ -369,7 +387,7 @@ async function flow(browser, vp, label, seed) {
   await page.waitForSelector('#homeTitle', { state: 'attached' });
   await page.waitForTimeout(1200);
   await dismissTour(page);
-  await page.locator('#tab-comm').click();
+  await page.evaluate(()=>window.SDPCore.UI.setTab('comm'));
   await page.locator('#btnMsg').click();
   await page.waitForSelector('#sheets textarea[aria-label="Private message"]');
   await page.waitForTimeout(400);
@@ -387,7 +405,7 @@ async function flow(browser, vp, label, seed) {
 
   /* ---- v58: data report dashboard, Practice Hub entry and credits parity ---- */
   await dismissTour(page);
-  await page.locator('#tab-home').click();
+  await goTab(page, 'home');
   await dismissTour(page);
   await page.evaluate(() => { const b = document.getElementById('topDataBadge'); if (b) b.click(); });
   await page.waitForTimeout(700);
@@ -419,7 +437,7 @@ async function flow(browser, vp, label, seed) {
   rec(label + ' v58 Practice Hub tile jumps into the flashcard practice screen',
     practice.tab === 'true' && practice.stage > 0 && /\d+ \/ \d+/.test(practice.count), practice);
   /* Settings: three contrast presets + signature pill About sheet */
-  await page.locator('#tab-set').click();
+  await goTab(page, 'set'); await openSettingsAccordion(page);
   await page.waitForTimeout(400);
   const settingsBits = await page.evaluate(() => {
     const presets = document.querySelectorAll('.v58-preset').length;
@@ -515,7 +533,7 @@ async function flow(browser, vp, label, seed) {
     await p.waitForSelector('#homeTitle', { state: 'attached' });
     await p.waitForTimeout(1400);
     await dismissTour(p);
-    await p.locator('#tab-comm').click();
+    await p.evaluate(()=>window.SDPCore.UI.setTab('comm'));
     await p.locator('#btnCompose').click();
     await p.waitForSelector('#sheets textarea[aria-label="Comment text"]');
     await p.waitForTimeout(400);
@@ -548,7 +566,7 @@ async function flow(browser, vp, label, seed) {
       };
     });
     rec('v52: ElevenVault + AdminAutoEnrich ship and spend no credits on a fresh device',
-      vault.type === 'object' && vault.auto === 'object' && vault.voice === 'Xb7hH8MSUJpSbSDYk0k2' && vault.model === 'eleven_multilingual_v2' &&
+      vault.type === 'object' && vault.auto === 'object' && vault.voice === 'Xb7hH8MSUJpSbSDYk0k2' && vault.model === 'eleven_flash_v2_5' &&
       vault.clips === 0 && vault.generated === 0 && Array.isArray(vault.parsed) && vault.parsed.length === 2 && errs.length === 0,
       { vault, errs });
     await c.close();

@@ -19,10 +19,10 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.waitForTimeout(3500); /* the one-time guide opens about a second after boot */
   for(let i=0;i<24;i++){
    await closeSheet(page);
-   if(await page.locator('#btnLang').isVisible().catch(()=>false)&&await page.locator('#sheets .sheet').count()===0)return true;
+   if((await page.locator('#btnLang').isVisible().catch(()=>false)||await page.locator('#sdpTopLangPill').isVisible().catch(()=>false))&&await page.locator('#sheets .sheet').count()===0)return true;
    await page.waitForTimeout(250);
   }
-  return page.locator('#btnLang').isVisible().catch(()=>false);
+  return (await page.locator('#btnLang').isVisible().catch(()=>false))||(await page.locator('#sdpTopLangPill').isVisible().catch(()=>false));
  }
  async function unlockPin(page){
   let opened=false;
@@ -30,7 +30,15 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    await waitHome(page);
    try{
     if(await page.locator('#topOverflow').count()){await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=true;});}
+    /* v9.0.0.2: appearance/wallpaper/lecturer tools live inside the collapsed
+       Priority 3 accordion so dictation settings always stay above the fold.
+       The screen is revealed directly (not via UI.setTab) so the legacy settings
+       builder never re-renders underneath an open lecturer sheet. */
+    await page.evaluate(()=>{var sc=document.getElementById('screen-set');if(sc){window.__sdpSetClass=sc.className;sc.className='screen';}
+      var a=document.getElementById('sdpAppearanceAccordion');if(a)a.open=true;});
+    await page.waitForTimeout(120);
     await page.locator('#btnAdmin').click({timeout:4000});
+    await page.evaluate(()=>{var sc=document.getElementById('screen-set');if(sc&&window.__sdpSetClass!==undefined)sc.className=window.__sdpSetClass;});
     await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=false;});
     await page.locator('#pinPad').waitFor({timeout:3000});opened=true;
    }catch(e){await closeSheet(page);await page.waitForTimeout(300);}
@@ -146,11 +154,11 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    ok=state.readyState>=2&&state.paused===false&&state.videoWidth>0&&
     state.filter==='none'&&state.opacity==='1'&&
     state.src==='./assets/hooded_red_eyes_live_wallpaper_1080p_loop.mp4'&&state.wrap!=='none'&&
-    /linear-gradient/.test(state.heroImg)&&/8, 14, 28/.test(state.heroImg)&&
+    state.heroImg==='none'&&/rgb\(24, 24, 27\)/.test(state.heroBg)&&
     state.heroBlur==='none'&&
     errors.length===0;
   } catch(e){state.error=String(e);}
-  results.push({test:'Chromium v59 static default then opt-in hooded video decodes behind the top-bar glass',status:(ok&&staticDefault)?'PASS':'FAIL',detail:Object.assign({staticDefault},state),errors});
+  results.push({test:'Chromium v9.0.0.2 static default then opt-in hooded video decodes behind a solid Zinc hero',status:(ok&&staticDefault)?'PASS':'FAIL',detail:Object.assign({staticDefault},state),errors});
   await context.close();
  }
  {
@@ -177,22 +185,16 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
      hero:cs(document.getElementById('homeHero')),title:cs(document.getElementById('homeTitle')),
      credit:document.getElementById('credit')?cs(document.getElementById('credit')):null,video:cs(document.getElementById('bgLiveVideo')),perf:document.body.getAttribute('data-perf')};
    });
-   const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
-   ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
-      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='none')&&
-    !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
-    !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
-    !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
-    !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
-    !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!((gradient(v37.tabbar)||v37.perf==='lite')&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(14px) saturate(1.4)'||v37.perf==='lite'))&&
-    !!(v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='none'&&(gradient(v37.hero)||v37.hero.img==='none'||/rgba\(18, 27, 50/.test(v37.hero.bg)))&&
-    !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
-    !!(v37.credit&&v37.credit.pos==='static'&&v37.credit.z==='1')&&
-    !!(v37.video&&v37.video.blur==='none')&&
-    (v37.perf!=='lite'||v37.hero.blur==='none')&&errors.length===0;
+   /* v9.0.0.2 Next-Gen contract: solid Sky-400 primary, Zinc surfaces, zero blur. */
+   ok=!!(v37.primary&&v37.primary.bg==='rgb(56, 189, 248)'&&v37.primary.fg==='rgb(9, 9, 11)'&&
+      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.blur==='none')&&
+    !!(v37.ghost&&v37.ghost.bg==='rgb(39, 39, 42)'&&v37.ghost.radius==='12px'&&v37.ghost.blur==='none')&&
+    !!(v37.tabbar&&v37.tabbar.blur==='none'&&v37.tabbar.radius==='0px')&&
+    !!(v37.hero&&v37.hero.img==='none'&&v37.hero.blur==='none')&&
+    !!(v37.title&&v37.title.img==='none')&&
+    (v37.perf==='lite'||v37.perf==='full')&&errors.length===0;
   } catch(e){v37.error=String(e);}
-  results.push({test:'Chromium v59 liquid glass: gradients, specular shadows, rounded controls, readable text and blur only on the chrome',status:ok?'PASS':'FAIL',detail:v37,errors});
+  results.push({test:'Chromium v9.0.0.2 solid Zinc-950/Sky-400 system: flat surfaces, 12px controls, zero glass blur',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  for (const relative of ['data.html','data/index.html']) {
@@ -275,7 +277,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     adv:document.querySelectorAll('details.admin-advanced').length
   }));
   const cardOk=Object.keys(cards).filter(k=>['voice','model','lock','adv'].indexOf(k)<0).every(k=>cards[k]);
-  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_multilingual_v2'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
+  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
   await page.locator('#elApiKeyInput').fill('xi-test-key-53');
   await page.locator('#btnElVerify').click();
   await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
@@ -398,34 +400,37 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.waitForTimeout(300);await closeSheet(page);
   const home=await page.evaluate(()=>{
    const px=e=>e?parseFloat(getComputedStyle(e).fontSize):0;
-   const hero=document.getElementById('homeHero'),seg=document.getElementById('segMode');
+   const hero=document.getElementById('homeHero');
    const r=hero?hero.getBoundingClientRect():{height:9999};
-   const sr=seg?seg.getBoundingClientRect():{bottom:9999};
-   const tiles=Array.from(document.querySelectorAll('.v58-tile'));
+   const tiles=Array.from(document.querySelectorAll('#sdpQuickPracticeGrid .sdp-qp'));
    const blurs=Array.from(document.body.querySelectorAll('*')).filter(e=>{const cs=getComputedStyle(e);const b=cs.backdropFilter||cs.webkitBackdropFilter;return !!b&&b!=='none';}).length;
    const SIN=/[\u0D80-\u0DFF]/,straySi=[];
    const wk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
    while(wk.nextNode()){const n=wk.currentNode;if(!SIN.test(n.nodeValue||''))continue;
     let p2=n.parentElement,ok=false;
-    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||/v59-si-chip|v59-si-text/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
+    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||p2.id==='sdpTopLangPill'||p2.id==='sdpSegLang'||/sdp-si-pill|v59-si-chip|v59-si-text|sdp-hero|sdp-stat|sdp-qp|sdp-row|sdp-set|sdp-tier|sdp-seg|sdp-chip|sdp-wm|sdp-live/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
     if(!ok)straySi.push(String(n.nodeValue).slice(0,40));}
-   return {height:Math.round(r.height),segBottom:Math.round(sr.bottom),
-    kickerPx:px(document.getElementById('homeKicker')),titlePx:px(document.getElementById('homeTitle')),subPx:px(document.getElementById('homeSub')),
-    bento:tiles.length,tileMinH:tiles.length?Math.min.apply(null,tiles.map(t=>Math.round(t.getBoundingClientRect().height))):0,
+   const grid=document.getElementById('sdpQuickPracticeGrid');
+   return {height:Math.round(r.height),
+    kickerPx:px(document.getElementById('sdpHeroKicker')),titlePx:px(document.getElementById('sdpHeroTitle')),subPx:px(document.getElementById('sdpHeroSub')),
+    greeting:!!document.getElementById('sdpHomeGreeting'),
+    chips:document.getElementById('sdpHeroConfigChips')?document.getElementById('sdpHeroConfigChips').children.length:0,
+    tiles:tiles.length,tileMinH:tiles.length?Math.min.apply(null,tiles.map(t=>Math.round(t.getBoundingClientRect().height))):0,
     tileTitlePx:px(tiles[0]&&tiles[0].querySelector('b')),
     tileSubs:tiles.map(t=>((t.querySelector('i')||{}).textContent||'')),
+    gridCols:grid?getComputedStyle(grid).gridTemplateColumns:'',
     tabPx:px(document.querySelector('#tabbar button span')),
     blurCount:blurs,v59css:!!document.getElementById('sdpV59Css'),straySi,
     langBtn:(document.getElementById('btnLang')||{}).textContent,
     card3:!!document.getElementById('v58ProgressArchiveCard'),
-    stats:(document.getElementById('homeStats')||{children:[]}).children.length,
+    stats:(document.getElementById('sdpHomeStatsRow')||{children:[]}).children.length,
     offline:!!document.getElementById('v58OfflineRow'),
     voice:!!document.getElementById('v58VoiceBadge'),
-    railHidden:getComputedStyle(document.getElementById('v58Rail')).display==='none',
+    railHidden:getComputedStyle(document.getElementById('sdpDesktopRail')).display==='none',
     dockAtRest:!document.getElementById('v58Dock')};
   });
-  results.push({test:'Chromium v59 human-scale home: 460-1050px hero, kicker/title/sub floors, >=92px bento tiles with subtitles, <=4 blurred elements',
-   status:home.height>=460&&home.height<=1050&&home.segBottom<=780&&home.kickerPx>=11&&home.titlePx>=22&&home.subPx>=14&&home.tileMinH>=92&&home.tileTitlePx>=16&&home.tabPx>=13&&home.blurCount<=4&&home.v59css&&home.bento===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&home.tileSubs.every(t=>t.length>6)&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v9.0.0.2 home: greeting + hero + 4 config chips + 3-stat strip + 2x2 quick practice, zero blur',
+   status:home.height>=280&&home.height<=760&&home.greeting&&home.chips===4&&home.kickerPx>=10&&home.titlePx>=18&&home.subPx>=11&&home.tileMinH>=64&&home.tileTitlePx>=12&&home.tabPx>=10&&home.blurCount===0&&home.v59css&&home.tiles===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&home.tileSubs.every(t=>t.length>6)&&home.gridCols.split(" ").length===2&&errors.length===0?'PASS':'FAIL',
    detail:Object.assign({errors},home),errors});
   results.push({test:'Chromium v59 English default: zero Sinhala glyphs outside #btnLang and the collapsed reveal chips',
    status:home.straySi.length===0&&home.langBtn==='සිංහල'?'PASS':'FAIL',detail:{straySi:home.straySi,langBtn:home.langBtn}});
@@ -454,10 +459,10 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const txt=sheet?sheet.textContent:'';
    const close=document.getElementById('v58AboutClose');if(close)close.click();
    return {open,names:/Hansana/.test(txt)&&/Ayya01 \(Lesandu\)/.test(txt)&&/Sumodya Sewmini/.test(txt),
-    header:/Smart Dictation Player · v59 · 8\.0\.0/.test(txt),
+    header:/Smart Dictation Player · v9\.0\.0\.2 · v60/.test(txt),
     closedAfter:!sheet||sheet.classList.contains('hidden')};
   });
-  results.push({test:'Chromium v59 the inline signature pill opens About & Credits with all three credits',
+  results.push({test:'Chromium v9.0.0.2 the About & Credits showcase opens from the docked credit badge',
    status:about.open&&about.names&&about.header&&about.closedAfter&&errors.length===0?'PASS':'FAIL',detail:about,errors});
   /* v59: the full-English dictionary cards, paper self-check, sentence context,
      the lecturer writing timer and the zero-readback contrast gauge. */
@@ -612,15 +617,20 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.goto(require('url').pathToFileURL(path.join(root,'index.html')).href);
   await page.waitForTimeout(1500);await closeSheet(page);
   const desk=await page.evaluate(()=>{
-   const ws=document.querySelector('.v58-workspace');
+   const rail=document.getElementById('sdpDesktopRail');
+   const top=document.querySelector('.topbar');
    const hud=document.getElementById('v58KbdHud');
-   return {grid:ws?getComputedStyle(ws).gridTemplateColumns:'',
-    appW:Math.round(document.getElementById('app').getBoundingClientRect().width),
-    rail:document.getElementById('v58Rail')?getComputedStyle(document.getElementById('v58Rail')).display:'',
-    hud:hud?getComputedStyle(hud).display:''};
+   const app=document.getElementById('app');
+   return {rail:rail?getComputedStyle(rail).display:'',railW:rail?Math.round(rail.getBoundingClientRect().width):0,
+    appW:Math.round(app.getBoundingClientRect().width),appLeft:Math.round(app.getBoundingClientRect().left),
+    topLeft:Math.round(top.getBoundingClientRect().left),topH:Math.round(top.getBoundingClientRect().height),
+    tabs:getComputedStyle(document.getElementById('tabbar')).display,
+    hud:hud?getComputedStyle(hud).display:'',
+    railNav:rail?rail.querySelectorAll('#sdpRailNav button').length:0,
+    docked:!!document.getElementById('creditDockedDesktop')};
   });
-  results.push({test:'Chromium v58 desktop >=1024px renders the 2-column workspace with rail and keyboard HUD',
-   status:/336px/.test(desk.grid)&&desk.appW<=1181&&desk.rail==='flex'&&desk.hud==='flex'&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v9.0.0.2 desktop >=1024px renders the 232px left rail, 2-column cockpit and a 54px topbar',
+   status:desk.rail==='flex'&&desk.railW===232&&desk.topLeft===232&&desk.topH===54&&desk.tabs==='none'&&desk.appLeft===232&&desk.appW<=1049&&desk.railNav===5&&desk.docked&&desk.hud==='none'&&errors.length===0?'PASS':'FAIL',
    detail:desk,errors});
   await page.keyboard.press('r');
   await page.waitForTimeout(120);
@@ -633,30 +643,31 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   const menu=await page.evaluate(()=>{
    const d=document.getElementById('topOverflow');if(d)d.open=true;
    const titles=Array.from(document.querySelectorAll('.v58-menu-group-title')).map(n=>n.textContent.trim());
-   const admin=!!document.querySelector('#topOverflow #btnAdmin');
+   const adminInOverflow=!!document.querySelector('#topOverflow #btnAdmin');
+   const accordion=document.getElementById('sdpAppearanceAccordion');
+   const adminInAccordion=!!document.querySelector('#sdpAppearanceAccordion #btnAdmin');
    const practice=!!document.getElementById('v58MenuPractice');
    if(d)d.open=false;
-   return {titles,admin,practice};
+   return {titles,adminInOverflow,adminInAccordion,practice};
   });
   const want=['Study Tools','Appearance & Wallpaper','Audio & Data','Lecturer Studio'];
-  results.push({test:'Chromium v58 grouped overflow menu has the four group titles with admin inside',
-   status:JSON.stringify(menu.titles)===JSON.stringify(want)&&menu.admin&&menu.practice&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v9.0.0.2 settings hierarchy: lecturer studio sits inside the collapsed Priority 3 accordion',
+   status:JSON.stringify(menu.titles)===JSON.stringify(want)&&!menu.adminInOverflow&&menu.adminInAccordion&&menu.practice&&errors.length===0?'PASS':'FAIL',
    detail:menu,errors});
   const tiers=await page.evaluate(()=>{
    const top=document.querySelector('.topbar');
-   const card=document.querySelector('#v58ProgressArchiveCard .card');
-   const tile=document.querySelector('.v58-tile');
-   return {topBlur:getComputedStyle(top).backdropFilter||'',
-    cardBg:card?getComputedStyle(card).backgroundColor:'',
-    cardAlpha:card?(Number((String(getComputedStyle(card).backgroundColor).match(/rgba?\([^)]*,\s*([\d.]+)\s*\)/)||[])[1])||1):1,
+   const card=document.querySelector('#homeHero');
+   const tile=document.querySelector('#sdpQuickPracticeGrid .sdp-qp');
+   const root=getComputedStyle(document.documentElement);
+   return {topBlur:getComputedStyle(top).backdropFilter||'',topBg:getComputedStyle(top).backgroundColor,
+    cardBg:card?getComputedStyle(card).backgroundColor:'',cardImg:card?getComputedStyle(card).backgroundImage:'',
     perf:document.body.getAttribute('data-perf'),
-    tileImg:tile?getComputedStyle(tile).backgroundImage:'',
-    tileBlur:tile?(getComputedStyle(tile).backdropFilter||'none'):'none',
-    coreVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-core').trim(),
-    blurVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-glass-blur').trim()};
+    tileBg:tile?getComputedStyle(tile).backgroundColor:'',tileBlur:tile?(getComputedStyle(tile).backdropFilter||'none'):'none',
+    canvas:root.getPropertyValue('--bg-canvas').trim(),accent:root.getPropertyValue('--accent-primary').trim(),
+    cardVar:root.getPropertyValue('--bg-card').trim(),radius:root.getPropertyValue('--radius-card').trim()};
   });
-  results.push({test:'Chromium v59 single-blur chrome: only .topbar/#tabbar blur, every card a flat 92% reading core',
-   status:(tiers.perf==='lite'?tiers.topBlur==='none':/blur\(14px\) saturate\(1\.4\)/.test(tiers.topBlur))&&tiers.cardAlpha>=0.9&&tiers.tileBlur==='none'&&/\.94/.test(tiers.coreVar)&&/blur\(14px\)/.test(tiers.blurVar)&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v9.0.0.2 flat surface contract: zero backdrop blur, Zinc-950 canvas, Zinc-900 cards, Sky-400 accent',
+   status:tiers.topBlur==='none'&&/rgba\(9, 9, 11/.test(tiers.topBg)&&/rgb\(24, 24, 27\)/.test(tiers.cardBg)&&tiers.cardImg==='none'&&tiers.tileBlur==='none'&&tiers.canvas==='#09090B'&&tiers.accent==='#38BDF8'&&tiers.cardVar==='#18181B'&&tiers.radius==='16px'&&errors.length===0?'PASS':'FAIL',
    detail:tiers,errors});
   const presets=await page.evaluate(()=>new Promise(resolve=>{
    const C=window.SDPCore;

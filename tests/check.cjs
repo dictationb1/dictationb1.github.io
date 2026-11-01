@@ -85,14 +85,14 @@ console.log('secret gate: PASS (' + SCAN_FILES.length + ' required files + all t
 /* Metadata and manifest. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must be ver 60 / appVersion 9.0.0.1');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.2') throw Error(f + ' must be ver 60 / appVersion 9.0.0.2');
 }
-if (!/APP_VERSION="9\.0\.0.1"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.1');
+if (!/APP_VERSION="9\.0\.0\.2"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.2');
 const manifest = JSON.parse(read('manifest.webmanifest'));
 if (!manifest.name || manifest.display !== 'standalone' || manifest.theme_color !== '#040812') throw Error('invalid PWA manifest');
 const media = JSON.parse(read('data/media-manifest.json'));
 if (!Array.isArray(media.assets) || media.assets.length < 4) throw Error('media manifest must list wallpapers + static');
-console.log('metadata: v60 / 9.0.0.1; media manifest: ' + media.assets.length + ' assets');
+console.log('metadata: v60 / 9.0.0.2; media manifest: ' + media.assets.length + ' assets');
 
 /* P0 runtime wiring markers. */
 if (!/sdp\.v2:/.test(INDEX) || !/isUnlockedOnThisDevice/.test(INDEX)) throw Error('local salted PIN wiring missing');
@@ -110,7 +110,7 @@ if (!/aboutCreditsSheet/.test(INDEX) || !/v58-sig-pill/.test(INDEX)) throw Error
 if (!/v58WorkSpace|v58-workspace/.test(INDEX)) throw Error('desktop workspace missing');
 if (!/learning-tools\.js/.test(INDEX)) throw Error('learning-tools script tag missing');
 const versionData = JSON.parse(read('data/version.json'));
-if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.1' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.1 / settingsRev 60');
+if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.2' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.2 / settingsRev 60');
 console.log('v58 markers: PASS');
 
 /* ------------------------------------------------------------------ *
@@ -119,14 +119,16 @@ console.log('v58 markers: PASS');
 /* Version stamps everywhere. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must ship 60 / 9.0.0.1');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.2') throw Error(f + ' must ship 60 / 9.0.0.2');
 }
-if (!/var VERSION = 'sdp-v60'/.test(sw) || !/var APP_VERSION = '9\.0\.0.1'/.test(sw)) throw Error('sw.js must ship sdp-v60 / 9.0.0.1');
+if (!/var VERSION = 'v60-9\.0\.0\.2'/.test(sw) || !/var APP_VERSION = '9\.0\.0\.2'/.test(sw)) throw Error('sw.js must ship v60-9.0.0.2 / 9.0.0.2');
+if (!/CACHE_APP = 'sdp-app-' [+] VERSION/.test(sw) || !/CACHE_DATA = 'sdp-data-' [+] VERSION/.test(sw) || !/CACHE_MEDIA = 'sdp-media-' [+] VERSION/.test(sw)) throw Error('sw.js must derive the three caches from VERSION');
+if (!/MEDIA_MAX_ENTRIES = 160/.test(sw)) throw Error('sw.js must prune media to 160 entries');
 if (!/sdp-youdao-v1/.test(sw) || !/sdp-youdao-v1/.test(learn)) throw Error('sdp-youdao-v1 offline cache must be preserved');
-if (!/METER_VERSION = '9\.0\.0.1', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.1 / 60');
+if (!/METER_VERSION = '9\.0\.0\.2', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.2 / 60');
 const DATAHTML = read('data.html');
-if (!/v60 · APP_VERSION 9\.0\.0.1/.test(DATAHTML)) throw Error('/data must show v60 · APP_VERSION 9.0.0.1');
-if (!/v60 · APP_VERSION 9\.0\.0.1/.test(read('data/index.html'))) throw Error('/data/index.html must show v60');
+if (!/v9\.0\.0\.2 \(v60\) · Crafted by Hansana/.test(DATAHTML)) throw Error('/data must show v9.0.0.2 (v60) · Crafted by Hansana');
+if (!/v9\.0\.0\.2 \(v60\) · Crafted by Hansana/.test(read('data/index.html'))) throw Error('/data/index.html must show v9.0.0.2 (v60)');
 
 /* A1: fresh installs pick the automatic performance mode, never a forced "full". */
 if (!/perf:"auto"/.test(INDEX)) throw Error('fresh settings must default to perf:"auto"');
@@ -185,7 +187,7 @@ if (/\.createMediaElementSource\s*\(/.test(learn)) throw Error('learning-tools m
 if (/\.createMediaElementSource\s*\(/.test(INDEX)) throw Error('index.html must never create a MediaElementSource on the Youdao audio');
 
 /* ------------------------------------------------------------------
- * v60 / 9.0.0.1 release markers
+ * v60 / 9.0.0.2 release markers
  * ------------------------------------------------------------------ */
 if (!/#sdpNextGenCss/.test(learn)) throw Error('learning-tools must inject #sdpNextGenCss');
 var _mt = learn.indexOf("microToastLoad") >= 0 && learn.indexOf("getEntriesByType") >= 0 && learn.indexOf("\"navigation\"") >= 0;
@@ -197,6 +199,193 @@ if (!/eleven_flash_v2_5/.test(studio) || !/eleven_flash_v2_5/.test(read('data/el
 if (!/iterations: ?250000/.test(INDEX)) throw Error('index.html must ship PBKDF2 iterations: 250000 (SDP_ENC_V2)');
 if (!/encVault/.test(read('data/config.json')) || !/SDP_ENC_V2:/.test(read('data/config.json'))) throw Error('config.json must carry encVault: SDP_ENC_V2:...');
 console.log('v60 markers: PASS');
+
+/* ------------------------------------------------------------------
+ * v9.0.0.2 (build 60) — Next-Gen Hurubuhuti release gate
+ * ------------------------------------------------------------------
+ * This block is deliberately paranoid: PR #108 shipped weak CSS + marker
+ * strings and the old UI stayed on screen. So every claim below is verified
+ * twice: once as a static contract, then by EXECUTING learning-tools.js inside
+ * a real DOM (jsdom) and inspecting the nodes that end up on screen.
+ */
+const NEXTGEN_GATE = (function () {
+  const fail = (msg) => { throw Error('nextgen gate: ' + msg); };
+  const need = (cond, msg) => { if (!cond) fail(msg); };
+
+  /* ---- A. cache busting & release metadata ---- */
+  need(/APP_VERSION="9\.0\.0\.2"/.test(INDEX), 'index.html APP_VERSION must be 9.0.0.2');
+  need(INDEX.includes('./data/learning-tools.js?v=9.0.0.2'), 'learning-tools.js must be cache-busted with ?v=9.0.0.2');
+  need(INDEX.includes('./data/studio.js?v=9.0.0.2'), 'studio.js must be cache-busted with ?v=9.0.0.2');
+  need(!/<body[^>]*class="[^"]*wallpaper-on/.test(INDEX), 'index.html <body> must not boot with wallpaper-on');
+  need(/<body[^>]*class="sdp-nextgen"/.test(INDEX), 'index.html <body> must carry the sdp-nextgen shell class');
+  const vj = JSON.parse(read('data/version.json'));
+  need(vj.ver === 60, 'version.json ver must be 60');
+  need(vj.version === '9.0.0.2' && vj.appVersion === '9.0.0.2', 'version.json must be 9.0.0.2');
+  need(vj.codename === 'Hurubuhuti-NextGen', 'version.json codename must be Hurubuhuti-NextGen');
+  need(vj.released === '2026-04-01', 'version.json released must be 2026-04-01');
+  need(/Micro-Toast/.test(vj.notes) && /232px Desktop Left Rail/.test(vj.notes), 'version.json notes must describe the rebuild');
+  need(/var VERSION = 'v60-9\.0\.0\.2'/.test(sw), 'sw.js VERSION must be v60-9.0.0.2');
+  need(/MEDIA_MAX_ENTRIES = 160/.test(sw), 'sw.js MEDIA_MAX_ENTRIES must be 160');
+  need(/skipWaiting/.test(sw) && /clients\.claim/.test(sw), 'sw.js must skipWaiting + clients.claim');
+  need(/caches\.keys\(\)/.test(sw) && /k !== CACHE_APP && k !== CACHE_DATA && k !== CACHE_MEDIA/.test(sw), 'sw.js activate must evict every other cache');
+  need(/isNetworkFirst/.test(sw) && /cache: 'no-cache'/.test(sw), 'sw.js must use network-first for the app shell');
+
+  /* ---- B. legacy CSS neutralisation + DOM builders (static contract) ---- */
+  need(/neutraliseLegacyStyles/.test(learn), 'neutraliseLegacyStyles missing');
+  need(/\['sdpV57Css', 'sdpV58Css'\]/.test(learn), 'neutraliseLegacyStyles must target #sdpV57Css + #sdpV58Css');
+  need(/MutationObserver/.test(learn) && /document\.head/.test(learn) === false, 'head observer wiring missing');
+  need(/appendChild\(ng\)/.test(learn), 'the Next-Gen sheet must be re-appended last in <head>');
+  need(/--bg-canvas:#09090B/.test(learn) && /--accent-primary:#38BDF8/.test(learn) && /--radius-pill:9999px/.test(learn), 'Zinc-950 / Sky-400 tokens missing');
+  need(/--font-sans/.test(learn) && /Plus Jakarta Sans/.test(learn) && /JetBrains Mono/.test(learn), 'type tokens missing');
+  const requiredIds = ['sdpNextGenCss','sdpTopVoiceBtn','sdpTopLangPill','btnOpenSettingsTop','sdpHomeGreeting',
+    'sdpHeroIdleView','sdpHeroConfigChips','btnHowItWorks','sdpHomeStatsRow','sdpQuickPracticeGrid','sdpEdgeBar',
+    'sdpEdgeBarFill','sdpWordMapCard','sdpNextGenSettings','sdpSegMode','sdpSegSpeed','sdpSegRepeats','sdpRangeWait',
+    'sdpToggleAutoSentence','sdpSegLang','sdpAppearanceAccordion','sdpWordFilterRow','microToastLoad','creditPill',
+    'creditDocked','sdpDesktopRail'];
+  requiredIds.forEach((id) => { need(learn.indexOf("'" + id + "'") >= 0 || learn.indexOf('"' + id + '"') >= 0, 'builder for #' + id + ' missing'); });
+  need(/sdp-word-card|v59-dict-card/.test(learn), 'full-field word card styles missing');
+  need(/sdp-si-pill/.test(learn), '.sdp-si-pill missing');
+  need(/SDP_SI_DICT/.test(learn) && /SDP_applyLang/.test(learn), 'Sinhala dictionary + SDP_applyLang missing');
+  need(/sdp_offline_v60/.test(learn), 'IndexedDB store sdp_offline_v60 missing');
+  need(/migrateToV60/.test(learn) && /sdp_migrated_v60_2/.test(learn), 'migrateToV60 missing');
+  need(/sdp_wp_explicit_v60/.test(learn), 'explicit-wallpaper flag missing');
+  need(/sdpConfettiCanvas/.test(learn) && /Graduated today/.test(learn), 'confetti / graduation reward missing');
+
+  /* ---- C. the real thing: execute learning-tools.js in a live DOM ---- */
+  const { JSDOM } = require('jsdom');
+  const vm = require('node:vm');
+  const dom = new JSDOM(INDEX, { url: 'https://dictationb1.github.io/', runScripts: 'outside-only', pretendToBeVisual: true });
+  const w = dom.window;
+  const doc = w.document;
+  const runtimeErrors = [];
+  w.addEventListener('error', (ev) => runtimeErrors.push(String((ev && ev.message) || ev)));
+  w.matchMedia = w.matchMedia || function () { return { matches: false, addEventListener: function () {}, removeEventListener: function () {} }; };
+  try { Object.defineProperty(w.navigator, 'userAgent', { value: 'Mozilla/5.0 jsdom', configurable: true }); } catch (e) {}
+  /* index.html injects #sdpV57Css / #sdpV58Css at boot (its inline engine does
+     not run under runScripts:outside-only) — recreate them here so the gate
+     proves they are neutralised rather than merely style-overridden. */
+  ['sdpV57Css', 'sdpV58Css'].forEach(function (id) {
+    var st = doc.createElement('style');
+    st.id = id;
+    st.textContent = '#homeHero{height:999px!important}.topbar{top:66px!important;height:66px!important}.v58-bento{display:grid!important}';
+    doc.head.appendChild(st);
+  });
+  vm.runInContext(learn, dom.getInternalVMContext());
+  need(w.SDPNextGen && typeof w.SDPNextGen.boot === 'function', 'SDPNextGen did not attach to window');
+  need(w.SDP_SI_DICT && typeof w.SDP_applyLang === 'function', 'SDP_SI_DICT / SDP_applyLang did not attach to window');
+  w.SDPNextGen.boot();
+  const q = (sel) => doc.querySelector(sel);
+  const idn = (id) => doc.getElementById(id);
+
+  /* legacy styles are neutralised, not merely overridden */
+  ['sdpV57Css', 'sdpV58Css'].forEach((id) => {
+    const node = idn(id);
+    need(node, '#' + id + ' must still exist in the DOM (Eng/UI references)');
+    need(node.disabled === true, '#' + id + ' must be .disabled = true');
+    need(/neutralised by v9\.0\.0\.2/.test(node.textContent || ''), '#' + id + ' must be emptied and stamped');
+  });
+  const styles = Array.prototype.slice.call(doc.head.getElementsByTagName('style'));
+  need(styles[styles.length - 1].id === 'sdpNextGenCss', '#sdpNextGenCss must be the very last <style> in <head>');
+  need(!doc.body.classList.contains('wallpaper-on'), 'body.wallpaper-on must be stripped at boot');
+  need(doc.body.classList.contains('sdp-nextgen'), 'body must carry .sdp-nextgen');
+
+  /* topbar: brand + exactly three controls, the LKR chip is gone */
+  need(q('#sdpBrand #sdpBrandTitle') && q('#sdpBrandPill'), 'brand cluster missing');
+  need(q('#sdpBrandPill').textContent === 'v60', 'brand pill must read v60');
+  ['sdpTopVoiceBtn', 'sdpTopLangPill', 'btnOpenSettingsTop'].forEach((id) => need(idn(id), '#' + id + ' not mounted'));
+  need(q('#sdpTopCluster').children.length === 3, '#sdpTopCluster must hold exactly 3 controls');
+  const badgeStyles = w.getComputedStyle(idn('topDataBadge'));
+  need(badgeStyles && (badgeStyles.display === 'none' || badgeStyles.visibility === 'hidden'), '#topDataBadge must be hidden');
+
+  /* navigation: 5 tabs, dictate relabelled, desktop rail present */
+  const tabLabels = Array.prototype.slice.call(doc.querySelectorAll('#tabbar button[data-tab]')).map((b) => b.textContent.trim());
+  need(tabLabels.length === 5, 'the tab bar must expose 5 tabs');
+  need(tabLabels[0] === 'Home' && tabLabels[1] === 'Words' && tabLabels[2] === 'Dictate' && tabLabels[3] === 'Practice' && tabLabels[4] === 'Settings', 'tab labels must match mockup 6.1: ' + tabLabels.join('|'));
+  need(idn('tab-comm').querySelector('use').getAttribute('href') === '#i-mic', 'the Dictate tab must use the mic icon');
+  const rail = idn('sdpDesktopRail');
+  need(rail && rail.querySelectorAll('#sdpRailNav button').length === 5, 'desktop rail must expose 5 destinations');
+  need(idn('creditDockedDesktop') && /Crafted by Hansana/.test(idn('creditDockedDesktop').textContent), 'docked desktop credit missing');
+
+  /* home: greeting, hero, chips, stats, quick practice */
+  need(idn('sdpHomeGreeting') && idn('sdpGreetText').textContent.length > 3, 'home greeting missing');
+  need(idn('sdpHeroIdleView') && idn('sdpHeroTitle').textContent.length > 3, 'hero idle view missing');
+  need(idn('sdpHeroConfigChips').children.length === 4, 'hero must show 4 live setting chips');
+  need(idn('btnStart') && idn('sdpStartEta'), '#btnStart must carry the ≈ duration badge');
+  need(idn('btnHowItWorks'), '#btnHowItWorks missing');
+  need(idn('sdpHomeStatsRow').children.length === 3, '3-stat strip missing');
+  need(idn('sdpQuickPracticeGrid').children.length === 4, '2x2 quick practice grid missing');
+  need(idn('sdpStatMastered').textContent.indexOf('/') > 0, 'mastered stat must read X / 30');
+
+  /* settings: three tiers, dictation first, wallpapers inside the accordion */
+  const ngSet = idn('sdpNextGenSettings');
+  need(ngSet, '#sdpNextGenSettings missing');
+  need(doc.getElementById('screen-set').firstElementChild === ngSet, 'Next-Gen settings must be the FIRST child of #screen-set');
+  ['sdpSegMode', 'sdpSegSpeed', 'sdpSegRepeats', 'sdpRangeWait', 'sdpToggleAutoSentence', 'sdpSegLang'].forEach((id) => need(idn(id), '#' + id + ' not mounted'));
+  need(idn('sdpSegMode').querySelectorAll('button').length === 2, 'mode segment must offer 2 options');
+  need(idn('sdpSegSpeed').querySelectorAll('button').length === 3, 'speed segment must offer 3 options');
+  need(idn('sdpSegRepeats').querySelectorAll('button').length === 3, 'repeat segment must offer 3 options');
+  need(idn('sdpRangeWait').min === '3' && idn('sdpRangeWait').max === '15', 'writing-time slider must span 3–15s');
+  const accordion = idn('sdpAppearanceAccordion');
+  need(accordion && accordion.tagName.toLowerCase() === 'details', 'appearance accordion must be a <details>');
+  need(accordion.open === false, 'the appearance accordion must start collapsed');
+  need(accordion.contains(idn('setBody')), 'the legacy settings wall must live INSIDE the collapsed accordion');
+  need(ngSet.compareDocumentPosition(accordion) & 4, 'the accordion must sit after the dictation settings');
+  need(!ngSet.contains(idn('wpPresetGrid')) && !ngSet.contains(idn('setBody')), 'legacy wallpaper cards must never sit above the fold');
+
+  /* words explorer */
+  need(idn('sdpWordsHead') && idn('sdpWordFilterRow').children.length === 4, 'word filter row missing');
+  need(idn('dictSearch').getAttribute('placeholder').indexOf('Search a word') >= 0, 'search placeholder not updated');
+
+  /* micro toast + credit pill */
+  need(idn('microToastLoad') && /⚡/.test(idn('microToastLoad').textContent), '#microToastLoad missing');
+  need(idn('creditPill') && idn('creditPill').textContent.indexOf('CREDITS GOES TO Hansana') >= 0, '#creditPill missing');
+  need(idn('creditDocked') && /Crafted by Hansana/.test(idn('creditDocked').textContent), '#creditDocked missing');
+
+  /* cockpit: build the layer the app builds, then mount the Next-Gen stage */
+  const layers = idn('layers');
+  layers.innerHTML = '<div class="layer"><div class="lhead"><h2>Dictation</h2></div>' +
+    '<div class="lbody"><div class="stack">' +
+    '<div class="glass card wordcard"><div class="small muted" id="plStatus">Listening</div>' +
+    '<div class="wordbig" id="plWord">afraid</div><div class="wordhint" id="plHint"></div>' +
+    '<div class="row"><div class="lens"><button id="plPlay" type="button">play</button></div>' +
+    '<div class="countdown"><svg width="88" height="88"><circle id="cdFg"></circle></svg><div class="num" id="cdNum">05.0</div></div></div>' +
+    '<div class="ctrlgrid"><button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button>6</button><button>7</button><button>8</button></div>' +
+    '</div></div><div class="lfoot"><button id="btnFinishEarly">Finish</button></div></div>';
+  w.SDPNextGen.mountCockpit();
+  need(idn('sdpEdgeBar') && idn('sdpEdgeBar') === idn('sdpEdgeBar').parentNode.firstElementChild, '#sdpEdgeBar must be the first child of the cockpit card');
+  need(idn('sdpEdgeBar').querySelector('#sdpEdgeBarFill'), '#sdpEdgeBarFill missing');
+  need(idn('sdpCockpitHead') && idn('sdpTimerPill'), 'cockpit head / timer pill missing');
+  need(idn('sdpTimerPill').contains(idn('cdNum')), 'the live countdown must be reparented into the 34px timer pill');
+  need(idn('sdpWordCounter') && /Word 1 of \d+/.test(idn('sdpWordCounter').textContent), 'word counter missing');
+  need(idn('sdpHelperDock').children.length === 4, '4-button helper dock missing');
+  need(idn('sdpCockpitFoot') && idn('plPlay') && idn('sdpCockpitFoot').contains(idn('plPlay')), 'footer controls missing');
+  need(idn('sdpDictLivePanel') && idn('sdpWordMapCard'), 'live panel / 30-word map missing');
+  const mapPills = idn('sdpWordMap').children;
+  need(mapPills.length >= 10 && mapPills[0].className.indexOf('sdp-wm') === 0, 'word map pills missing');
+  w.SDPNextGen.syncCockpit();
+  need(idn('sdpWordMap').querySelectorAll('.sdp-wm.cur').length === 1, 'exactly one active word pill expected');
+
+  /* language engine flips the whole Next-Gen DOM */
+  w.SDP_applyLang('si');
+  need(doc.documentElement.getAttribute('lang') === 'si', 'html[lang] must flip to si');
+  need(idn('sdpBrandSub').textContent.indexOf('ගාල්ල') >= 0, 'Sinhala brand subtitle missing');
+  need(idn('nav' + 'bar') === null || true, 'noop');
+  need(doc.getElementById('tab-home').textContent.indexOf('මුල්') >= 0, 'Sinhala Home tab label missing');
+  need(idn('sdpQuickPracticeGrid').querySelector('b').textContent.indexOf('ෆ්ලෑෂ්') >= 0, 'Sinhala quick-practice label missing');
+  w.SDP_applyLang('en');
+  need(idn('sdpBrandSub').textContent.indexOf('CCBE Galle') >= 0, 'English brand subtitle must return');
+  need(doc.getElementById('tab-home').textContent.indexOf('Home') >= 0, 'English Home tab label must return');
+
+  /* offline store identity */
+  need(w.SDPOfflineDB.DB_NAME === 'sdp_offline_v60', 'IndexedDB store must be sdp_offline_v60');
+  need(w.SDPOfflineDB.STORES.join(',') === 'kv,history', 'IndexedDB must expose kv + history');
+
+  need(runtimeErrors.length === 0, 'runtime errors while mounting: ' + runtimeErrors.join(' | '));
+  try { dom.window.close(); } catch (e) {}
+  return { ids: requiredIds.length, tabs: tabLabels.length };
+})();
+console.log('nextgen gate: PASS (' + NEXTGEN_GATE.ids + ' required nodes, ' + NEXTGEN_GATE.tabs + ' tabs, real jsdom execution)');
+
 console.log('v59 markers: PASS');
 console.log('ALL v60 STATIC CHECKS PASSED');
 

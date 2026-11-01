@@ -38,10 +38,10 @@ function freshMeter(opts) {
 
 test('v59 metadata, ES5 single-file budget and identical transparency routes', () => {
   for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
-    const d = JSON.parse(read(f)); assert.equal(d.ver, 60, f); assert.equal(d.appVersion, '9.0.0.1', f);
+    const d = JSON.parse(read(f)); assert.equal(d.ver, 60, f); assert.equal(d.appVersion, '9.0.0.2', f);
     assert.ok(!d.adminPin && !d.vaultCiphertext, f + ' has no public PIN/vault');
   }
-  assert.ok(INDEX.includes('APP_VERSION="9.0.0.1"'));
+  assert.ok(INDEX.includes('APP_VERSION="9.0.0.2"'));
   assert.ok(Buffer.byteLength(INDEX) <= 600000);
   assert.equal(read('data.html'), read('data/index.html'));
   assert.ok(read('data.html').includes('./data/data-meter.js'));
@@ -160,9 +160,10 @@ test('mode profiles come from the media manifest and LKR presets update cost', (
 });
 
 
-test('service worker v59 slices cached full video responses into HTTP 206 ranges', async () => {
+test('service worker v9.0.0.2 slices cached full video responses into HTTP 206 ranges', async () => {
   const src = read('sw.js');
-  assert.ok(src.includes("VERSION = 'sdp-v60'"));
+  assert.ok(src.includes("VERSION = 'v60-9.0.0.2'"));
+  assert.ok(src.includes("CACHE_MEDIA = 'sdp-media-' + VERSION"));
   const store = new Map();
   const caches = { open: async () => ({ match: async k => store.get(String(k)) || null, put: async (k, v) => { store.set(String(k), v); } }) };
   const listeners = {};
@@ -453,4 +454,279 @@ test('v58 fonts: Noto Sans Sinhala WOFF2 files ship under 60KB each', () => {
   }
   assert.ok(INDEX.includes('NotoSansSinhala-Regular.woff2') && INDEX.includes('NotoSansSinhala-Bold.woff2'));
   assert.ok(!/<link[^>]*fonts/i.test(INDEX), 'no static font link tags');
+});
+
+/* ==========================================================================
+   v9.0.0.2 (build 60) — Next-Gen Hurubuhuti regression suite.
+   These tests do not trust marker strings: they run data/learning-tools.js
+   inside a real jsdom document (the shipped index.html) and inspect the DOM.
+   ========================================================================== */
+const { VirtualConsole } = require('jsdom');
+
+function nextGenHarness(opts) {
+  const options = opts || {};
+  const errors = [];
+  const vc = new VirtualConsole();
+  vc.on('jsdomError', (e) => errors.push(e && e.message ? e.message : String(e)));
+  const dom = new JSDOM(read('index.html'), {
+    url: 'https://dictationb1.github.io/',
+    runScripts: 'outside-only',
+    pretendToBeVisual: true,
+    virtualConsole: vc
+  });
+  const w = dom.window;
+  w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+  if (options.before) options.before(w);
+  /* the boot-time legacy sheets that index.html injects at runtime */
+  ['sdpV57Css', 'sdpV58Css'].forEach((id) => {
+    const st = w.document.createElement('style');
+    st.id = id;
+    st.textContent = '.topbar{top:66px!important;height:66px!important}.v58-bento{display:grid!important}';
+    w.document.head.appendChild(st);
+  });
+  vm.runInContext(read('data/learning-tools.js'), dom.getInternalVMContext());
+  w.SDPNextGen.boot();
+  return { w, dom, doc: w.document, errors, close() { try { dom.window.close(); } catch (e) {} } };
+}
+
+test('v9.0.0.2 ships cache-busted shell URLs, build 60 metadata and a network-first service worker', () => {
+  const vj = JSON.parse(read('data/version.json'));
+  assert.equal(vj.ver, 60);
+  assert.equal(vj.version, '9.0.0.2');
+  assert.equal(vj.appVersion, '9.0.0.2');
+  assert.equal(vj.codename, 'Hurubuhuti-NextGen');
+  assert.equal(vj.released, '2026-04-01');
+  for (const f of ['data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
+    const d = JSON.parse(read(f));
+    assert.equal(d.appVersion, '9.0.0.2', f);
+  }
+  assert.ok(INDEX.includes('APP_VERSION="9.0.0.2"'));
+  assert.ok(INDEX.includes('./data/learning-tools.js?v=9.0.0.2'));
+  assert.ok(INDEX.includes('./data/studio.js?v=9.0.0.2'));
+  assert.ok(INDEX.includes('./data/data-meter.js?v=9.0.0.2'));
+  assert.ok(!/<body[^>]*class="[^"]*wallpaper-on/.test(INDEX), 'the shell must not boot with a wallpaper');
+  assert.ok(/<body[^>]*class="sdp-nextgen"/.test(INDEX));
+  const sw = read('sw.js');
+  assert.ok(sw.includes("var VERSION = 'v60-9.0.0.2'"));
+  assert.ok(sw.includes("var CACHE_APP = 'sdp-app-' + VERSION"));
+  assert.ok(sw.includes("var CACHE_DATA = 'sdp-data-' + VERSION"));
+  assert.ok(sw.includes("var CACHE_MEDIA = 'sdp-media-' + VERSION"));
+  assert.ok(sw.includes('MEDIA_MAX_ENTRIES = 160'));
+  assert.ok(/isNetworkFirst/.test(sw), 'network-first shell strategy missing');
+  assert.ok(/cache: 'no-cache'/.test(sw), 'shell fetches must bypass the HTTP cache');
+  assert.ok(/self\.skipWaiting\(\)/.test(sw) && /clients\.claim\(\)/.test(sw));
+});
+
+test('v9.0.0.2 neutralises #sdpV57Css/#sdpV58Css and keeps #sdpNextGenCss last in <head>', () => {
+  const h = nextGenHarness();
+  try {
+    for (const id of ['sdpV57Css', 'sdpV58Css']) {
+      const node = h.doc.getElementById(id);
+      assert.ok(node, '#' + id + ' must survive (legacy engines reference it)');
+      assert.equal(node.disabled, true, '#' + id + ' must be disabled');
+      assert.ok(/neutralised by v9\.0\.0\.2/.test(node.textContent), '#' + id + ' must be emptied');
+    }
+    const styles = Array.prototype.slice.call(h.doc.head.getElementsByTagName('style'));
+    assert.equal(styles[styles.length - 1].id, 'sdpNextGenCss', 'the Next-Gen sheet must win the cascade');
+    assert.ok(!h.doc.body.classList.contains('wallpaper-on'));
+    assert.ok(h.doc.body.classList.contains('sdp-nextgen'));
+    /* idempotent: a second mount never duplicates nodes */
+    h.w.SDPNextGen.mountAll();
+    h.w.SDPNextGen.mountAll();
+    assert.equal(h.doc.querySelectorAll('#sdpHomeStatsRow').length, 1);
+    assert.equal(h.doc.querySelectorAll('#sdpQuickPracticeGrid').length, 1);
+    assert.equal(h.doc.querySelectorAll('#creditPill').length, 1);
+    assert.equal(h.doc.querySelectorAll('#sdpDesktopRail').length, 1);
+    assert.equal(h.doc.querySelectorAll('#sdpQuickPracticeGrid > *').length, 4);
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 mounts every mockup 6.1–6.8 surface in the live document', () => {
+  const h = nextGenHarness();
+  try {
+    const doc = h.doc, q = (s) => doc.querySelector(s), idn = (id) => doc.getElementById(id);
+    /* 6.1 / 6.7 — topbar + nav */
+    assert.equal(q('#sdpTopCluster').children.length, 3, 'exactly three utility controls');
+    assert.equal(idn('sdpBrandPill').textContent, 'v60');
+    const tabs = Array.prototype.slice.call(doc.querySelectorAll('#tabbar button[data-tab]'));
+    assert.deepEqual(tabs.map((b) => b.textContent.trim()), ['Home', 'Words', 'Dictate', 'Practice', 'Settings']);
+    assert.equal(idn('sdpDesktopRail').querySelectorAll('button').length, 5);
+    /* 6.1 / 6.7 — home */
+    assert.ok(idn('sdpHomeGreeting'));
+    assert.equal(idn('sdpHeroConfigChips').children.length, 4);
+    assert.equal(idn('sdpHomeStatsRow').children.length, 3);
+    assert.equal(idn('sdpQuickPracticeGrid').children.length, 4);
+    assert.ok(idn('btnHowItWorks'));
+    assert.ok(idn('sdpStartEta'));
+    /* 6.3 / 6.4 — settings hierarchy */
+    const set = idn('sdpNextGenSettings');
+    assert.equal(idn('screen-set').firstElementChild, set);
+    for (const id of ['sdpSegMode', 'sdpSegSpeed', 'sdpSegRepeats', 'sdpRangeWait', 'sdpToggleAutoSentence', 'sdpSegLang', 'sdpVoiceCard']) {
+      assert.ok(idn(id), '#' + id + ' must be mounted');
+    }
+    const accordion = idn('sdpAppearanceAccordion');
+    assert.equal(accordion.tagName.toLowerCase(), 'details');
+    assert.equal(accordion.open, false);
+    assert.ok(accordion.contains(idn('setBody')), 'the legacy wall must be collapsed inside Priority 3');
+    assert.ok(!set.contains(idn('setBody')));
+    /* 6.5 — words */
+    assert.equal(idn('sdpWordFilterRow').children.length, 4);
+    assert.ok(/Search a word/.test(idn('dictSearch').getAttribute('placeholder')));
+    /* 6.6 — toast + credit */
+    assert.ok(/⚡/.test(idn('microToastLoad').textContent));
+    assert.ok(idn('creditPill').textContent.includes('CREDITS GOES TO Hansana'));
+    assert.ok(/Crafted by Hansana/.test(idn('creditDocked').textContent));
+    assert.deepEqual(h.errors, []);
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 cockpit rebuilds the 4px edge bar, 34px timer pill, helper dock and 30-word map', () => {
+  const h = nextGenHarness();
+  try {
+    const doc = h.doc, idn = (id) => doc.getElementById(id);
+    idn('layers').innerHTML = '<div class="layer"><div class="lbody"><div class="stack">' +
+      '<div class="glass card wordcard"><div id="plStatus">Listening</div><div id="plWord">afraid</div>' +
+      '<div class="row"><div class="lens"><button id="plPlay" type="button">play</button></div>' +
+      '<div class="countdown"><svg><circle id="cdFg"></circle></svg><div class="num" id="cdNum">05.0</div></div></div>' +
+      '<div class="ctrlgrid"><button>a</button><button>b</button><button>c</button><button>d</button><button>e</button><button>f</button><button>g</button><button>h</button></div>' +
+      '</div></div></div></div>';
+    h.w.SDPNextGen.mountCockpit();
+    assert.equal(idn('sdpEdgeBar').parentNode.firstElementChild, idn('sdpEdgeBar'));
+    assert.ok(idn('sdpEdgeBarFill'));
+    assert.ok(idn('sdpTimerPill').contains(idn('cdNum')), 'the countdown must live inside the timer pill');
+    assert.ok(idn('sdpHelperDock').children.length === 4);
+    assert.equal(idn('sdpHelperDock').querySelectorAll('button').length, 4);
+    assert.ok(idn('sdpCockpitFoot').contains(idn('plPlay')));
+    assert.ok(idn('sdpDictLivePanel') && idn('sdpWordMapCard'));
+    assert.ok(idn('sdpWordMap').children.length >= 10);
+    h.w.SDPNextGen.syncCockpit();
+    assert.equal(idn('sdpWordMap').querySelectorAll('.sdp-wm.cur').length, 1);
+    assert.ok(/Word 1 of/.test(idn('sdpWordCounter').textContent));
+    /* phase colours follow the timer state */
+    idn('cdNum').textContent = '04.0';
+    h.w.SDPNextGen.syncCockpit();
+    assert.ok(idn('sdpPhasePill').className.indexOf('is-write') >= 0, 'a running countdown is writing time');
+    assert.ok(idn('sdpEdgeBar').className.indexOf('is-write') >= 0);
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 settings controls write straight through to DB.data.settings', () => {
+  let saves = 0;
+  const settings = { lang: 'en', mode: 'paper', rate: 0.96, repeats: 2, writeFixed: 5, sentence: false, theme: 'dark' };
+  const h = nextGenHarness({
+    before(w) {
+      w.SDPCore = {
+        DB: {
+          data: {
+            settings,
+            lists: [{ id: 's1', words: [] }],
+            plan: { defaultList: 's1' },
+            session: { no: '8' }
+          },
+          save() { saves++; },
+          saveNow() { saves++; }
+        },
+        UI: { toast() {}, setTab() {}, applyLang() {} },
+        Screens: {}, Eng: {}, Speech: {}, Results: {}, Lib: {}, Store: {}
+      };
+    }
+  });
+  try {
+    const doc = h.doc, click = (id, v) => doc.getElementById(id).querySelector('button[data-v="' + v + '"]').click();
+    click('sdpSegMode', 'type');
+    assert.equal(settings.mode, 'type');
+    click('sdpSegMode', 'paper');
+    assert.equal(settings.mode, 'paper');
+    click('sdpSegSpeed', '1');
+    assert.equal(settings.rate, 1);
+    click('sdpSegRepeats', '3');
+    assert.equal(settings.repeats, 3);
+    const range = doc.getElementById('sdpRangeWait');
+    range.value = '9';
+    range.dispatchEvent(new h.w.Event('input', { bubbles: true }));
+    assert.equal(settings.writeFixed, 9);
+    assert.equal(doc.getElementById('sdpWaitValue').textContent, '9 s');
+    const toggle = doc.getElementById('sdpToggleAutoSentence');
+    assert.equal(toggle.getAttribute('aria-checked'), 'false');
+    toggle.click();
+    assert.equal(settings.sentence, true);
+    assert.equal(toggle.getAttribute('aria-checked'), 'true');
+    click('sdpSegLang', 'si');
+    assert.equal(settings.lang, 'si');
+    assert.equal(doc.documentElement.getAttribute('lang'), 'si');
+    assert.ok(doc.getElementById('sdpBrandSub').textContent.indexOf('ගාල්ල') >= 0);
+    click('sdpSegLang', 'en');
+    assert.equal(settings.lang, 'en');
+    assert.ok(doc.getElementById('sdpBrandSub').textContent.indexOf('CCBE Galle') >= 0);
+    assert.ok(saves >= 6, 'every control must persist');
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 migrateToV60 preserves learner progress and disables unsolicited wallpapers', () => {
+  const h = nextGenHarness({
+    before(w) {
+      w.localStorage.setItem('sdp.weakWords.v1', JSON.stringify({ afraid: { n: 2 } }));
+      w.localStorage.setItem('sdp.masteredWords.v1', JSON.stringify({ calm: { box: 3 } }));
+      w.localStorage.setItem('sdp_hist', JSON.stringify([{ ts: 1 }]));
+      w.localStorage.setItem('sdp_sr_v2', JSON.stringify({ afraid: { box: 1 } }));
+      w.localStorage.setItem('sdp_gam_v2', JSON.stringify({ streak: 4 }));
+      w.localStorage.setItem('sdp_wrong_words', JSON.stringify(['brave']));
+      w.document.body.classList.add('wallpaper-on');
+    }
+  });
+  try {
+    const w = h.w;
+    w.SDPNextGen.migrateToV60();
+    assert.equal(w.localStorage.getItem('sdp_migrated_v60_2'), '9.0.0.2');
+    assert.equal(w.localStorage.getItem('sdp_migrated_v60'), '9.0.0.2');
+    assert.ok(w.localStorage.getItem('sdp.weakWords.v1').includes('afraid'));
+    assert.ok(w.localStorage.getItem('sdp.masteredWords.v1').includes('calm'));
+    assert.ok(w.localStorage.getItem('sdp_hist'));
+    assert.ok(w.localStorage.getItem('sdp_sr_v2'));
+    assert.ok(w.localStorage.getItem('sdp_gam_v2'));
+    assert.ok(w.localStorage.getItem('sdp_wrong_words'));
+    assert.ok(!w.document.body.classList.contains('wallpaper-on'), 'wallpaper must be off by default');
+    /* an explicit wallpaper choice survives the boot sweep */
+    w.localStorage.setItem('sdp_wp_explicit_v60', '1');
+    w.document.body.classList.add('wallpaper-on');
+    w.SDPNextGen.neutraliseLegacyStyles();
+    assert.ok(w.document.body.classList.contains('wallpaper-on'), 'an explicit wallpaper must be honoured');
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 SDPOfflineDB mirrors the learner keys into sdp_offline_v60', () => {
+  const h = nextGenHarness({
+    before(w) { w.localStorage.setItem('sdp.weakWords.v1', JSON.stringify({ afraid: { n: 1 } })); }
+  });
+  try {
+    const db = h.w.SDPOfflineDB;
+    assert.equal(db.DB_NAME, 'sdp_offline_v60');
+    assert.equal(Array.prototype.join.call(db.STORES, ','), 'kv,history');
+    db.mirror();
+    assert.ok(h.w.localStorage.getItem('sdp.idb.v60.kv.sdp.weakWords.v1'), 'mirror must fall back to localStorage');
+    assert.ok(h.w.SDP_SI_DICT && h.w.SDP_SI_DICT.cta_start_dictation.indexOf('අසා ලිවීම') > 0);
+  } finally { h.close(); }
+});
+
+test('v9.0.0.2 Sinhala dictionary is complete and every mandated string is natural', () => {
+  const keys = ['app_subtitle', 'nav_home', 'nav_words', 'nav_dictate', 'nav_practice', 'nav_settings',
+    'cta_start_dictation', 'cta_how_it_works', 'mode_paper', 'mode_typing', 'phase_listen', 'phase_write',
+    'phase_check', 'word_counter', 'btn_repeat', 'btn_slower', 'btn_sentence', 'btn_hint', 'btn_pause',
+    'btn_resume', 'btn_next', 'btn_finish', 'stat_streak', 'stat_mastered', 'stat_weak', 'settings_title',
+    'settings_sub', 'settings_p1', 'settings_p2', 'settings_p3', 'set_mode_label', 'set_mode_sub',
+    'set_speed_label', 'set_repeats_label', 'set_wait_label', 'set_wait_sub', 'set_autosent_label',
+    'set_autosent_sub', 'set_lang_label', 'speed_slow', 'speed_clear', 'speed_normal', 'toast_load_used',
+    'toast_load_cached'];
+  const h = nextGenHarness();
+  try {
+    const dict = h.w.SDP_SI_DICT;
+    for (const k of keys) {
+      assert.ok(dict[k] && dict[k].length > 1, 'SDP_SI_DICT.' + k + ' missing');
+      assert.ok(/[\u0D80-\u0DFF]/.test(dict[k]), 'SDP_SI_DICT.' + k + ' must be Sinhala: ' + dict[k]);
+    }
+    assert.ok(dict.word_counter.includes('{cur}') && dict.word_counter.includes('{total}'));
+    assert.ok(dict.toast_load_used.includes('{size}'));
+    /* no mojibake / broken glyph runs anywhere in the dictionary */
+    for (const k of keys) assert.ok(!/[\uFFFD]/.test(dict[k]), k + ' contains a replacement character');
+  } finally { h.close(); }
 });
