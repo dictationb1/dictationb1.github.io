@@ -33,7 +33,10 @@ failure, NOT ENV-BLOCKED (Chromium works).
   - data/data-meter.js METER_VERSION 9.0.0.3; data/learning-tools.js SDPVersion.current 9.0.0.3.
   - tests updated: check.cjs, upgrade.test.cjs, server.cjs, phase1.cjs, audit-v42.cjs, live-lab.cjs.
   - G1 PASS, G2 PASS (25/25), G4 PASS. G3 phase1.cjs: 1 FAIL - 5.1 asserts ElevenVault.modelId() == eleven_multilingual_v2 while studio ships eleven_flash_v2_5 (R9 mandates flash_v2_5); assertion updated in P2.
-- [ ] P2 index.html top-gap cleanup + studio flash/vault hardening
+- [x] P2 index.html top-gap cleanup + studio flash/vault hardening
+  - index.html already clean: zero `top:calc(68px`, zero `154px`, zero `iterations:15e4/150000`; `iterations:250000` already present (SDP_ENC_V2 in EncryptedVault); no `.createMediaElementSource(`. No index.html edit made (nothing to purge); the v60 top gap is enforced by #sdpNextGenCss in P3.
+  - data/studio.js: modelId eleven_flash_v2_5 and voiceId Xb7hH8MSUJpSbSDYk0k2 already default; appended an ES5 `SDP_ENC_V2` params block (PBKDF2 / SHA-256 / 250000 / AES-GCM 256) exposing `SDP_ENC_V2:` + saveVault/getVault delegates via window.SDPEncV2. 104567 -> 106144 bytes.
+  - tests/phase1.cjs 5.1: default-model assertion changed eleven_multilingual_v2 -> eleven_flash_v2_5 (R9 requirement).
 - [ ] P3 cascade supremacy, global chrome, wrapped Screens.home
 - [ ] P4 wrapped cockpit, priority-1 settings, words explorer, Sinhala i18n
 - [ ] P5 lockstep test gates + absence assertions
@@ -44,7 +47,7 @@ failure, NOT ENV-BLOCKED (Chromium works).
 |---|---|---|
 | G1 | node tests/check.cjs | PASS (P1) |
 | G2 | node --test tests/upgrade.test.cjs | PASS 25/25 (P1) |
-| G3 | node tests/phase1.cjs | |
+| G3 | node tests/phase1.cjs | PASS (P2) |
 | G4 | node tests/server.cjs | PASS (P1) |
 | G5 | node tests/browser.cjs | pre-existing FAIL x1 (baseline) |
 | G6 | node tests/upgrade-browser.cjs | |

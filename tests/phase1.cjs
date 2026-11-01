@@ -464,7 +464,7 @@ test('5.1 v57: ElevenLabs vault is admin-only, cache-first and credit safe', () 
  const v = a.w.ElevenVault;
  assert.equal(v.strictAdminOnly, true);
  assert.equal(v.voiceId(), 'Xb7hH8MSUJpSbSDYk0k2');
- assert.equal(v.modelId(), 'eleven_multilingual_v2');
+ assert.equal(v.modelId(), 'eleven_flash_v2_5');
  assert.equal(v.hasKey(), false, 'locked student has no key');
  assert.equal(v.fetchOnce('Number 31'), null, 'students cannot fetch paid clips');
  assert.equal(v.gen('Number 31', function(){}), false, 'students cannot generate');
