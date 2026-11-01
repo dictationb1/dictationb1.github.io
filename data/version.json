@@ -3,6 +3,7 @@
   "appVersion": "9.0.0.4",
   "version": "9.0.0.4",
   "buildDate": "2026-10-31",
+  "notes": "v9.0.0.4 (v60): Zero-FOUC pre-paint cloak + 8 live-video fixes (topbar, creditDocked, Words tab, Dictation Cockpit, Speech.say, Settings/Home v58 leaks)",
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "settingsRev": 60,
