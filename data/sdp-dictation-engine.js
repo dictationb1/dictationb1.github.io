@@ -281,15 +281,21 @@
        phase alive (polling on the 100ms ticker) so the writing countdown
        never starts mid-audio; hard cap at +2000 ms past phase end. */
     if (E.phase === 'listening' && E.waitingForSpeech) {
-      /* F2 hard cap: writing must start no later than 2000 ms after the
-         listening phase began, even if the final repeat is still speaking. */
-      if (now() - E.phaseStart >= 2000) { E.waitingForSpeech = false; enterWriting(); return; }
+      /* D-E1: one timestamp field only. onPhaseEnd() writes E.waitSince; this
+         path must read the same field. v0.0.1.b read E.phaseStart here, which
+         was already >2000 ms old on any listening phase longer than 2 s, so the
+         grace window expired instantly and writing cut the final repeat off. */
+      if (!E.waitSince) E.waitSince = now();
+      if (now() - E.waitSince >= 2000) { E.waitingForSpeech = false; E.waitSince = 0; enterWriting(); return; }
       if (SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()) {
-        paint(E.phaseMs ? 0 : 0);
+        /* D-E3: paint the true remaining listening fraction, not a constant. */
+        var leftMs = Math.max(0, E.deadline - now());
+        paint(E.phaseMs ? leftMs / E.phaseMs : 0);
         setStateText();
         return;
       }
       E.waitingForSpeech = false;
+      E.waitSince = 0;
       enterWriting();
       return;
     }
@@ -310,6 +316,7 @@
         E.waitSince = now();
         return;
       }
+      E.waitSince = 0;
       enterWriting();
       return;
     }
@@ -332,27 +339,54 @@
     E.remainingMs = E.phaseMs;
     E.deadline = now() + E.phaseMs;
     E.repeatShown = 1;
+    E.waitSince = 0;
+    E.waitingForSpeech = false;
     paint(1);
     setStateText();
     speakRepeats(E.epoch);
     startTicker();
   }
 
+  /* D-E2: repeats used to be scheduled by a blind timer, so a slow dictionary
+     clip or a long Alice clip overlapped the next repetition. Every repeat now
+     waits for the previous one to finish, then holds the configured gap.
+     A bounded fallback timer guarantees the chain never stalls if a speech
+     backend forgets to call back. */
   function speakRepeats(epoch) {
     var done = 0;
+    var gap = repeatGapMs();
+    function scheduleNext() {
+      if (epoch !== E.epoch || E.phase !== 'listening') return;
+      if (done >= E.repeats) return;
+      if (E.repeatTimer) { global.clearTimeout(E.repeatTimer); E.repeatTimer = null; }
+      E.repeatTimer = global.setTimeout(fire, gap);
+    }
     function fire() {
+      E.repeatTimer = null;
       if (epoch !== E.epoch || E.phase !== 'listening') return;
       var item = current();
       if (!item) return;
       done += 1;
       E.repeatShown = Math.min(done, E.repeats);
       setStateText();
+      var settled = false;
+      var guard = global.setTimeout(function () { if (!settled) { settled = true; scheduleNext(); } }, Math.max(2600, gap + estimatePlayMs(item)));
+      function after() {
+        if (settled) return;
+        settled = true;
+        global.clearTimeout(guard);
+        scheduleNext();
+      }
       try {
-        if (SDP.Speech && SDP.Speech.playWord) SDP.Speech.playWord(item.word, {}, noop);
-      } catch (e) {}
-      if (done < E.repeats) E.repeatTimer = global.setTimeout(fire, repeatGapMs());
+        if (SDP.Speech && SDP.Speech.playWord) SDP.Speech.playWord(item.word, {}, after);
+        else after();
+      } catch (e) { after(); }
     }
     fire();
+  }
+  function estimatePlayMs(item) {
+    var word = str(item && item.word ? (item.word.w || item.word) : '');
+    return 600 + 90 * word.length;
   }
 
   function enterWriting() {

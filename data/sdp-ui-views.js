@@ -125,7 +125,34 @@
     studioEnvelope: 'Encrypted vault envelope (SDP_ENC_V2)', studioCopy: 'Copy envelope',
     studioPublishOk: 'Session published', studioPublishFail: 'Publish failed',
     studioNoToken: 'Add a GitHub token (Contents API) in the vault first', studioWordsCount: 'words parsed',
-    studioElevenNote: 'ElevenLabs generation runs only while unlocked, using the Alice voice and flash_v2_5.'
+    studioElevenNote: 'ElevenLabs generation runs only while unlocked, using the Alice voice and flash_v2_5.',
+    /* ── v0.0.1.c Table B: Guide 2.0, Home journey, Smart Board bar, Studio ── */
+    guideTapToStart: '🔊 Tap anywhere to start the voice guide',
+    homeJourney1: '1. Listen & write',
+    homeJourney2: '2. Check your 30 words',
+    homeJourney3: '3. Train weak words',
+    homeReadyBadge: 'Session 8 ready · 30 words',
+    modePaperFull: '📒 Write in Exercise Book (Paper)',
+    modeTypingFull: '⌨️ Type on Screen',
+    voiceGuideBtn: '🔊 Voice Guide',
+    boardShowWord: '👁️ Show Word on Board',
+    boardHideWord: '🙈 Hide Word on Board',
+    quotaHeading: 'ElevenLabs Character Quota (Zero-Cost Check)',
+    costPreviewLabel: 'Estimated Generation Cost',
+    testOneWordBtn: '🔊 Test 1 Word (~8 chars)',
+    forceRegenLabel: 'Force re-generate existing clips',
+    genDeltaBtn: '⚡ Generate Missing Clips (Credit-Saver)',
+    teacherUpdatedToast: 'Your teacher updated the class settings',
+    vaultSavedToast: 'Vault saved · synced to GitHub',
+    guideVoiceFailed: 'Voice guide unavailable — tap to retry',
+    boardPlayPause: '▶ Play / Pause',
+    boardRepeat: '🔁 Repeat',
+    boardNext: '⏭ Next',
+    boardJumpLabel: 'Jump to word',
+    homeJourneyTitle: 'Your 3 steps today',
+    settingsSyncLabel: 'Sync',
+    settingsUpdateLabel: 'Update',
+    guiding: 'Guide'
   };
 
   /* contract: docs/UI_COMPONENT_GUIDE.md §H7 verified Sinhala strings */
@@ -227,7 +254,34 @@
     studioEnvelope: 'සංකේතිත බඳුන ලියුම (SDP_ENC_V2)', studioCopy: 'ලියුම පිටපත් කරන්න',
     studioPublishOk: 'වාරය ප්‍රකාශයට පත් විය', studioPublishFail: 'ප්‍රකාශනය අසාර්ථක විය',
     studioNoToken: 'පළමුව බඳුනට GitHub ටෝකනයක් එක් කරන්න', studioWordsCount: 'වචන විග්‍රහ කර ඇත',
-    studioElevenNote: 'ElevenLabs ජනනය සිදු වන්නේ අගුළු හැර ඇති විට පමණක්, Alice හඬ සහ flash_v2_5 සමඟය.'
+    studioElevenNote: 'ElevenLabs ජනනය සිදු වන්නේ අගුළු හැර ඇති විට පමණක්, Alice හඬ සහ flash_v2_5 සමඟය.',
+    /* ── v0.0.1.c Table B (සිංහල) ── */
+    guideTapToStart: '🔊 හඬ උපදෙස් ආරම්භ කිරීමට ඕනෑම තැනක ස්පර්ශ කරන්න',
+    homeJourney1: '1. අසා ලියන්න',
+    homeJourney2: '2. වචන 30 පරීක්ෂා කරන්න',
+    homeJourney3: '3. දුර්වල වචන පුහුණු වන්න',
+    homeReadyBadge: '8 වන වාරය සූදානම් · වචන 30',
+    modePaperFull: '📒 අභ්‍යාස පොතේ ලිවීම (Paper)',
+    modeTypingFull: '⌨️ තිරයේ ටයිප් කිරීම (Typing)',
+    voiceGuideBtn: '🔊 හඬ උපදෙස්',
+    boardShowWord: '👁️ පුවරුවේ වචනය පෙන්වන්න',
+    boardHideWord: '🙈 පුවරුවේ වචනය සඟවන්න',
+    quotaHeading: 'ElevenLabs අක්ෂර සීමාව (ගාස්තු රහිත පරීක්ෂාව)',
+    costPreviewLabel: 'ඇස්තමේන්තුගත අක්ෂර වැයවීම',
+    testOneWordBtn: '🔊 එක් වචනයක් පරීක්ෂා කරන්න (~අක්ෂර 8)',
+    forceRegenLabel: 'දැනට පවතින හඬපට නැවත උත්පාදනය කරන්න',
+    genDeltaBtn: '⚡ ඉතිරි හඬපට පමණක් සාදන්න (Credit-Saver)',
+    teacherUpdatedToast: 'ගුරුවරයා පන්තියේ සැකසුම් යාවත්කාලීන කරන ලදී',
+    vaultSavedToast: 'ආරක්ෂිත යතුරු සුරැකිණි · GitHub වෙත සමමුහුර්ත විය',
+    guideVoiceFailed: 'හඬ උපදෙස් නොමැත — නැවත උත්සාහ කිරීමට ස්පර්ශ කරන්න',
+    boardPlayPause: '▶ වාදනය / නවතන්න',
+    boardRepeat: '🔁 නැවත අසන්න',
+    boardNext: '⏭ ඊළඟ',
+    boardJumpLabel: 'වචනයට යන්න',
+    homeJourneyTitle: 'අද ඔබේ පියවර 3',
+    settingsSyncLabel: 'සමමුහුර්තය',
+    settingsUpdateLabel: 'යාවත්කාලීනය',
+    guiding: 'උපදෙස්'
   };
 
   var lang = 'en';
@@ -448,7 +502,7 @@
   }
 
   /* ══ Guide 2.0 — version-stamped, auto-narrating student guide (R3, D3) ══ */
-  var guideState = { activeStep: 0, narrating: false, opener: null };
+  var guideState = { activeStep: 0, narrating: false, opener: null, watchdog: null };
   var guidePaused = false;
 
   function renderGuideSteps() {
@@ -475,24 +529,91 @@
     if (steps[idx]) {
       steps[idx].classList.add('guide-active');
       guideState.activeStep = idx;
+      /* D-G3: keep the spoken card inside the viewport on a 390px phone. */
+      try {
+        if (steps[idx].scrollIntoView) steps[idx].scrollIntoView({ block: 'nearest' });
+      } catch (e) { try { steps[idx].scrollIntoView(false); } catch (e2) {} }
     }
   }
+
+  /* ── D-G2: the "tap to start" autoplay-unlock banner ──────────────────── */
+  function showGuideTapBanner() {
+    var banner = byId('guideTapBanner');
+    if (!banner) return false;
+    if (banner.classList) banner.classList.remove('hidden');
+    banner.hidden = false;
+    return true;
+  }
+  function hideGuideTapBanner() {
+    var banner = byId('guideTapBanner');
+    if (!banner) return false;
+    if (banner.classList) banner.classList.add('hidden');
+    banner.hidden = true;
+    return true;
+  }
+  function guideTapBannerVisible() {
+    var banner = byId('guideTapBanner');
+    if (!banner) return false;
+    if (banner.hidden) return false;
+    return !(banner.classList && banner.classList.contains('hidden'));
+  }
+  /* 600 ms after the guide opens, if nothing is audible the student is told to
+     tap. Mobile Chrome, iOS Safari and Smart Board browsers all block
+     un-gestured speechSynthesis, so silence is expected there — not a bug. */
+  function armGuideWatchdog() {
+    if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} }
+    guideState.watchdog = global.setTimeout(function () {
+      guideState.watchdog = null;
+      var modal = byId('guideModal');
+      if (!modal || modal.hidden) return;
+      var speaking = false;
+      try { speaking = !!(SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()); } catch (e) { speaking = false; }
+      if (!speaking && !guideState.narrating) showGuideTapBanner();
+      else if (!speaking) showGuideTapBanner();
+    }, 600);
+  }
+  function clearGuideWatchdog() {
+    if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} guideState.watchdog = null; }
+  }
+
   function startGuideNarration(fromStep) {
-    if (guideState.narrating) return;
+    if (guideState.narrating) return false;
     guideState.narrating = true;
     guideState.activeStep = Math.max(0, Math.min(3, Number(fromStep) || 0));
     renderGuideSteps();
     function speakStep(idx) {
-      if (idx > 3) { guideState.narrating = false; return; }
+      if (idx > 3) { guideState.narrating = false; clearGuideWatchdog(); return; }
       highlightGuideStep(idx);
       var title = t('guideStep' + (idx + 1) + 'Title');
       var body = t('guideStep' + (idx + 1) + 'Body');
       /* R3: narration always speaks English, even when the cards show SI. */
-      try { SDP.Speech.playGuideStep(title + '. ' + body, { lang: 'en-GB', rate: 0.94, pitch: 1.03 }, function () {
-        speakStep(idx + 1);
-      }); } catch (e) { guideState.narrating = false; }
+      try {
+        SDP.Speech.playGuideStep(idx, title + '. ' + body, { lang: 'en-GB', rate: 0.94, pitch: 1.03 }, function () {
+          speakStep(idx + 1);
+        });
+        hideGuideTapBanner();
+      } catch (e) {
+        /* D-G1: never swallow a narration failure — the v0.0.1.b `catch (e) {}`
+           is exactly what hid the pickVoice ReferenceError for a whole release. */
+        guideState.narrating = false;
+        try { console.error('[SDP] guide narration failed:', e); } catch (e2) {}
+        showToast(t('guideVoiceFailed'));
+        showGuideTapBanner();
+      }
     }
     speakStep(guideState.activeStep);
+    return true;
+  }
+  /* First tap/click inside the modal: unlock audio, hide the banner, narrate. */
+  function onGuideGesture() {
+    var modal = byId('guideModal');
+    if (!modal || modal.hidden) return false;
+    var fromBanner = guideTapBannerVisible();
+    hideGuideTapBanner();
+    try { if (SDP.Speech && SDP.Speech.unlockAudio) SDP.Speech.unlockAudio(); } catch (e) {}
+    if (fromBanner) { guideState.narrating = false; startGuideNarration(0); return true; }
+    if (!guideState.narrating) startGuideNarration(guideState.activeStep);
+    return true;
   }
   function stopGuideNarration() {
     guidePaused = false;
@@ -500,6 +621,7 @@
     if (btn) btn.textContent = t('guidePauseVoice');
     try { if (SDP.Speech) SDP.Speech.stop(); } catch (e) {}
     guideState.narrating = false;
+    clearGuideWatchdog();
   }
   function toggleGuidePause() {
     if (!guideState.narrating && !guidePaused) return;
@@ -535,13 +657,32 @@
     modal.setAttribute('aria-hidden', 'false');
     if (modal.classList) modal.classList.add('is-open');
     var conf = settings();
+    /* R3: Step 1 is attempted immediately, then a 600 ms watchdog decides
+       whether the browser blocked un-gestured audio (D-G2). */
+    hideGuideTapBanner();
     if (conf.guideAutoPlay !== false) startGuideNarration(0);
-    /* R3 fallback: if the browser blocks un-gestured speech, the student's
-       first tap inside the modal starts the English narration. */
+    armGuideWatchdog();
+    /* R3/D-V6: the student's first tap anywhere in the modal unlocks
+       speechSynthesis + the shared <audio> element and narrates 1 -> 4. */
     if (!modal._guideNarrationBound) {
       modal._guideNarrationBound = true;
-      modal.addEventListener('click', function () { if (!guideState.narrating) startGuideNarration(guideState.activeStep); }, false);
-      modal.addEventListener('touchstart', function () { if (!guideState.narrating) startGuideNarration(guideState.activeStep); }, false);
+      modal.addEventListener('click', onGuideGesture, false);
+      modal.addEventListener('touchstart', onGuideGesture, false);
+      modal.addEventListener('pointerup', onGuideGesture, false);
+    }
+    var banner = byId('guideTapBanner');
+    if (banner && !banner._sdpBound) {
+      banner._sdpBound = true;
+      banner.addEventListener('click', function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        onGuideGesture();
+      }, false);
+      banner.addEventListener('keydown', function (ev) {
+        if (ev && (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar')) {
+          if (ev.preventDefault) ev.preventDefault();
+          onGuideGesture();
+        }
+      }, false);
     }
     var close = byId('btnGuideClose');
     if (close && close.focus) { try { close.focus({ preventScroll: true }); } catch (e) {} }
@@ -555,7 +696,12 @@
       if (modal.classList) modal.classList.remove('is-open');
     }
     stopGuideNarration();
-    /* W7: write the version stamp so the guide re-opens on the next upgrade. */
+    clearGuideWatchdog();
+    hideGuideTapBanner();
+    /* W7: write the version stamp so the guide re-opens on the next upgrade.
+       D-G5: dismissing still counts as seen (G7.1d), so the replay affordance
+       stays prominent instead: #btnGuide on Home and #btnReplayGuide in
+       Settings both reopen the narrated guide at any time. */
     try { SDP.Data.markGuideSeen(); } catch (e) {}
     var opener = guideState.opener;
     if (opener && typeof opener.focus === 'function') { try { opener.focus({ preventScroll: true }); } catch (e) {} }
@@ -563,14 +709,22 @@
     guideState.activeStep = 0;
     return true;
   }
+  /* D-G4: "Listen to the steps (EN)" used to dump eight strings at once with
+     no highlighting and no Pause/Next/Replay. It now runs through the exact
+     same step state machine as openGuide(). */
   function speakGuide() {
-    var lines = [];
-    for (var i = 1; i <= 4; i++) {
-      lines.push(STRINGS_EN['guideStep' + i + 'Title']);
-      lines.push(STRINGS_EN['guideStep' + i + 'Body']);
+    var modal = byId('guideModal');
+    if (modal && modal.hidden) {
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      if (modal.classList) modal.classList.add('is-open');
     }
-    try { SDP.Speech.say(lines, { lang: 'en-GB', rate: 0.94, pitch: 1.03 }, noop); } catch (e) {}
-    return lines.length;
+    try { if (SDP.Speech && SDP.Speech.unlockAudio) SDP.Speech.unlockAudio(); } catch (e) {}
+    hideGuideTapBanner();
+    guideState.narrating = false;
+    startGuideNarration(0);
+    armGuideWatchdog();
+    return 4;
   }
   function trapGuideKeys() {
     if (doc.documentElement._sdpGuideKeys) return;
@@ -1276,6 +1430,9 @@
     openGuide: openGuide,
     closeGuide: closeGuide,
     speakGuide: speakGuide,
+    startGuideNarration: startGuideNarration,
+    showGuideTapBanner: showGuideTapBanner,
+    hideGuideTapBanner: hideGuideTapBanner,
     showToast: showToast,
     toastText: toastText,
     checkForUpdate: checkForUpdate,
