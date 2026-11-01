@@ -382,7 +382,7 @@ test('v59 paper self-check renders every word row and updates #v58SelfScore and 
   const app = harness(null, {});
   const w = app.w;
   try {
-    const summary=w.document.createElement('p');summary.id='resSummary';summary.textContent='Well done! That is the end of the dictation.';w.document.body.appendChild(summary);const host=w.document.createElement('div');host.id='host';w.document.body.appendChild(host);
+    const summaryNode=w.document.createElement('p');summaryNode.id='resSummary';summaryNode.textContent='Well done! That is the end of the dictation.';w.document.body.appendChild(summaryNode);const host=w.document.createElement('div');host.id='host';w.document.body.appendChild(host);
     w.eval(src);
     const L = w.SDPLearning;
     const result = { mode: 'paper', rows: rows, correct: 0, half: 0, total: rows.length };

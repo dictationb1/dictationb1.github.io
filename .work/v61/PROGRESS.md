@@ -83,3 +83,4 @@ No baseline source files changed in P0.
 - Added strict ES5/size checks, LEGACY_ABSENT, V61_PRESENT, exact static footer/settings checks, synchronous JSDOM mount, and seven real-browser single-UI probes.
 - Historical phase1 tests still use their historical source when available; existing shallow-clone skips remain unchanged. Current-engine assertions use the extracted source.
 - Static gate intentionally fails on baseline legacy CSS until surgery. Selected original security behavior tests remain green.
+- P1 syntax correction verified; selected encryption/meter/preview regressions rerun before surgery.
