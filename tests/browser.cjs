@@ -40,7 +40,7 @@ async function openPage(browser, origin, viewport, opts) {
      the guide itself is exercised by G7. */
   await context.addInitScript((seedGuide) => {
     window.__SDP_NO_LIVE__ = true;
-    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '1'); } catch (e) {}
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } catch (e) {}
   }, opts.guide !== true);
   const page = await context.newPage();
   const errors = [];
@@ -57,7 +57,7 @@ async function openPage(browser, origin, viewport, opts) {
 async function bootSettings(page, settings) {
   await page.evaluate((s) => {
     localStorage.setItem('sdp.settings', JSON.stringify(s));
-    localStorage.setItem('sdp.guide_seen', '1');
+    localStorage.setItem('sdp.guide_seen', '0.0.1.b');
   }, settings);
   await page.reload({ waitUntil: 'domcontentloaded' });
 }
@@ -305,8 +305,9 @@ async function bootSettings(page, settings) {
           hasTitle: /transparency/i.test(document.body.textContent),
           noVideo: document.querySelectorAll('video').length === 0
         }));
+        // contract: docs/ARCHITECTURE_MAP.md §I1 — the storage audit lists all 12 honest localStorage keys
         check('G5.9 [' + route + '] renders byte table, 5 plans and storage audit',
-          info.rows >= 4 && info.plans === 5 && info.storage === 5 && info.hasTitle && info.noVideo, JSON.stringify(info));
+          info.rows >= 4 && info.plans === 5 && info.storage === 12 && info.hasTitle && info.noVideo, JSON.stringify(info));
       }
       const si = await (async () => {
         await page.goto(server.origin + '/data/?lang=si', { waitUntil: 'domcontentloaded' });

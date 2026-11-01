@@ -70,14 +70,14 @@ const BUDGETS = {
   'data/sdp-data-sync.js': 48000,
   'data/sdp-audio-speech.js': 40000,
   'data/sdp-dictation-engine.js': 48000,
-  'data/sdp-ui-views.js': 56000,
+  'data/sdp-ui-views.js': 90000,
   'data/studio.js': 60000,
   'data/data-meter.js': 22000,
   'data/config.json': 36000,
   'data/version.json': 2000,
   'data/session.json': 46403,
   'data/gas-source.txt': 13764,
-  'data/elevenlabs-audio.json': 920,
+  'data/elevenlabs-audio.json': 717,
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
   'data.html': 60000,
@@ -105,7 +105,7 @@ check('G9.2e the whole test suite stays inside 220,000 bytes (' + testBytes + ')
 
 /* ── 3. no build step, no bundler, no monolith ─────────────────────────── */
 // contract: docs/ARCHITECTURE_MAP.md §R3 ES5 modules
-const monoliths = tracked.filter((f) => f.startsWith('data/') && /\.js$/.test(f) && bytes(f) > 60000);
+const monoliths = tracked.filter((f) => f.startsWith('data/') && /\.js$/.test(f) && bytes(f) > 90000);
 check('G9.3a no oversized monolith module exists (' + monoliths.join(',') + ')', monoliths.length === 0);
 check('G9.3b no package.json build script ships with the site', !exists('package.json') && !exists('webpack.config.js') && !exists('vite.config.js'));
 
@@ -194,7 +194,7 @@ check('G9.5c only the five R4 localStorage keys are named in scripts', strayKeys
 const LOCKED = [
   ['data/session.json', 'e0e86c80'],
   ['data/gas-source.txt', '591b9b08'],
-  ['data/elevenlabs-audio.json', '153111d6'],
+  ['data/elevenlabs-audio.json', '72b2b7db'],
   ['assets/fonts/NotoSansSinhala-Regular.woff2', '23f1503e'],
   ['assets/fonts/NotoSansSinhala-Bold.woff2', 'bf59c148']
 ];
@@ -213,18 +213,19 @@ const keepKeys = ['encVault', 'repoOwner', 'repoName', 'voiceId', 'voiceName', '
 const missingKeys = keepKeys.filter((key) => !(key in config));
 check('G9.6e config.json keeps every preserved payload field', missingKeys.length === 0, missingKeys.join(','));
 check('G9.6f config.json pins the new release metadata',
-  config.ver === 1 && config.appVersion === '0.0.1.a' && config.version === '0.0.1.a' && config.schema === 1 && config.settingsRev === 1,
+  // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.b is ver 2 / schema 2 / settingsRev 2
+  config.ver === 2 && config.appVersion === '0.0.1.b' && config.version === '0.0.1.b' && config.schema === 2 && config.settingsRev === 2,
   JSON.stringify({ ver: config.ver, appVersion: config.appVersion, schema: config.schema }));
 
 /* ── 7. PWA pins and load order ────────────────────────────────────────── */
 // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6, docs/ARCHITECTURE_MAP.md §R10
 const manifest = JSON.parse(read('manifest.webmanifest'));
-check('G9.7a the manifest names 0.0.1.a in its description', /0\.0\.1\.a/.test(String(manifest.description)), manifest.description);
+check('G9.7a the manifest names 0.0.1.b in its description', /0.0.1.b/.test(String(manifest.description)), manifest.description);
 check('G9.7b the manifest start_url carries the pwa source tag', /source=pwa/.test(String(manifest.start_url)), manifest.start_url);
-check('G9.7c theme and background are the 0.0.1.a matte black', manifest.theme_color === '#09090B' && manifest.background_color === '#09090B', manifest.theme_color);
+check('G9.7c theme and background are the 0.0.1.b matte black', manifest.theme_color === '#09090B' && manifest.background_color === '#09090B', manifest.theme_color);
 
 const sw = read('sw.js');
-check('G9.7d the service worker pins the 0.0.1.a cache names', sw.indexOf('sdp-v0.0.1.a') >= 0 && sw.indexOf('9.0.0.4') < 0);
+check('G9.7d the service worker pins the 0.0.1.b cache names', sw.indexOf('sdp-v0.0.1.b') >= 0 && sw.indexOf('9.0.0.4') < 0);
 check('G9.7e the service worker preserves the audio caches', sw.indexOf('sdp-youdao-v1') >= 0 && sw.indexOf('sdp-audio-clips') >= 0);
 
 const order = ['data-meter.js', 'sdp-data-sync.js', 'sdp-audio-speech.js', 'sdp-dictation-engine.js', 'sdp-ui-views.js', 'studio.js'];

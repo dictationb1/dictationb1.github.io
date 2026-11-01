@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* G6 — real Chromium upgrade journey: a v60 device becomes a 0.0.1.a device.
+/* G6 — real Chromium upgrade journey: a v60 device becomes a 0.0.1.b device.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
  * contract: docs/ARCHITECTURE_MAP.md §2 boot version check (single reload guard)
  * Preserved caches must survive; retired caches must not. Exactly one reload. */
@@ -12,7 +12,7 @@ const { start } = require('./static-server.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const STALE = 'sdp-v60-9.0.0.4';
-const SHELL = 'sdp-v0.0.1.a-shell';
+const SHELL = 'sdp-v0.0.1.b-shell';
 const YOUDAO = 'sdp-youdao-v1';
 const CLIPS = 'sdp-audio-clips';
 
@@ -51,14 +51,14 @@ async function launch() {
     }, { stale: STALE, youdao: YOUDAO, clips: CLIPS });
     check('G6.1a a stale v60 cache and both preserved caches are seeded',
       seeded.indexOf(STALE) >= 0 && seeded.indexOf(YOUDAO) >= 0 && seeded.indexOf(CLIPS) >= 0, seeded.join(','));
-    check('G6.1b the 0.0.1.a shell cache does not exist yet', seeded.indexOf(SHELL) < 0, seeded.join(','));
+    check('G6.1b the 0.0.1.b shell cache does not exist yet', seeded.indexOf(SHELL) < 0, seeded.join(','));
 
     /* ── 2 + 3. activating the new worker purges the retired cache ─────── */
     // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 activate handler
     const activated = await page.evaluate(async () => {
       const regs = await navigator.serviceWorker.getRegistrations();
       for (const reg of regs) await reg.unregister();
-      await caches.delete('sdp-v0.0.1.a-shell');
+      await caches.delete('sdp-v0.0.1.b-shell');
       const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       await new Promise((resolve) => {
         if (reg.active) return resolve();
@@ -70,7 +70,7 @@ async function launch() {
       await navigator.serviceWorker.ready;
       await new Promise((r) => setTimeout(r, 1200));
       const names = (await caches.keys()).sort();
-      const shell = await caches.open('sdp-v0.0.1.a-shell');
+      const shell = await caches.open('sdp-v0.0.1.b-shell');
       const shellNames = (await shell.keys()).map((req) => new URL(req.url).pathname);
       return { names, shellNames, controller: !!navigator.serviceWorker.controller };
     }, null);
@@ -78,7 +78,7 @@ async function launch() {
     check('G6.3a the retired sdp-v60 cache is deleted', activated.names.indexOf(STALE) < 0, activated.names.join(','));
     check('G6.3b the preserved dictionary-audio cache survives', activated.names.indexOf(YOUDAO) >= 0, activated.names.join(','));
     check('G6.3c the preserved lecturer-clip cache survives', activated.names.indexOf(CLIPS) >= 0, activated.names.join(','));
-    check('G6.2a the 0.0.1.a shell cache exists after install', activated.names.indexOf(SHELL) >= 0, activated.names.join(','));
+    check('G6.2a the 0.0.1.b shell cache exists after install', activated.names.indexOf(SHELL) >= 0, activated.names.join(','));
     check('G6.2b the shell precaches index.html, the CSS and all six modules',
       ['/index.html', '/assets/css/sdp-ui.css', '/data/sdp-data-sync.js', '/data/sdp-audio-speech.js',
         '/data/sdp-dictation-engine.js', '/data/sdp-ui-views.js', '/data/studio.js', '/data/data-meter.js',
@@ -97,7 +97,7 @@ async function launch() {
     /* ── 4. the boot version check reloads exactly once ────────────────── */
     // contract: docs/ARCHITECTURE_MAP.md §2 sessionStorage reload guard
     server.setOverride('/data/version.json', JSON.stringify({
-      ver: 1, appVersion: '0.0.1.b', version: '0.0.1.b', buildDate: '2026-11-02',
+      ver: 1, appVersion: '0.0.1.c', version: '0.0.1.c', buildDate: '2026-11-02',
       schema: 1, settingsRev: 1, session: '8',
       title: 'Session 8 - Personal Feelings, Opinions & Experiences (Adj)',
       updatedAt: '2026-11-02T00:00:00Z', syncRev: 1762000000001
@@ -126,8 +126,8 @@ async function launch() {
         homeActive: !!document.querySelector('#screen-home.active'),
         caches: null
       }));
-      check('G6.4a a published build mismatch records sdp_upgraded_to', state.upgradedTo === '0.0.1.b', state.upgradedTo);
-      check('G6.4b the boot target is still 0.0.1.a', state.target === '0.0.1.a', state.target);
+      check('G6.4a a published build mismatch records sdp_upgraded_to', state.upgradedTo === '0.0.1.c', state.upgradedTo);
+      check('G6.4b the boot target is now 0.0.1.b', state.target === '0.0.1.b', state.target);
       check('G6.4c the guard limits the upgrade to exactly ONE reload', state.navs === 2, state.navs);
       check('G6.4d the page is usable after the reload', state.homeActive === true);
       await ctx.close();

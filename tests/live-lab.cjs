@@ -56,7 +56,7 @@ async function newPage(browser, origin, opts) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript(MOCK);
   await ctx.addInitScript((seedGuide) => {
-    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '1'); } catch (e) {}
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } catch (e) {}
   }, opts.guideSeen !== false);
   if (opts.settings) await ctx.addInitScript((s) => {
     try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {}
@@ -141,7 +141,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
       await ctx.addInitScript(MOCK);
-      await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '1'); } catch (e) {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } catch (e) {} });
       await ctx.addInitScript((s) => { try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {} }, FAST);
       const page = await ctx.newPage();
       const errors = [];
