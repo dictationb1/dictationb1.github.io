@@ -1,249 +1,362 @@
-/* v59 / 8.0.0 static release gate: ES5, size, secrets, metadata and wiring. */
+#!/usr/bin/env node
 'use strict';
+/* G1 — Structure, byte-budget, ES5, preservation and forbidden-legacy gate.
+ *
+ * contract: docs/ARCHITECTURE_MAP.md §H1 target tree & byte budgets
+ * contract: docs/ARCHITECTURE_MAP.md §H2 structural DOM id contract
+ * contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 SDP_ENC_V2 wire format
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger (pinned byte sizes)
+ *
+ * Usage:
+ *   node tests/check.cjs                      strict release run (all files must exist)
+ *   node tests/check.cjs --allow-pending      phase runs while modules are still landing
+ *   node tests/check.cjs --json               machine readable output
+ */
 const fs = require('node:fs');
 const path = require('node:path');
-const cp = require('node:child_process');
+const crypto = require('node:crypto');
 const acorn = require('acorn');
+
 const ROOT = path.resolve(__dirname, '..');
-const dir = path.join(__dirname, 'artifacts');
-fs.mkdirSync(dir, { recursive: true });
-function read(rel) { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); }
-function parseES5(rel, label) {
-  const src = read(rel), file = path.join(dir, label + '.js');
-  fs.writeFileSync(file, src);
-  cp.execFileSync(process.execPath, ['--check', file], { stdio: 'inherit' });
-  acorn.parse(src, { ecmaVersion: 5 });
-  return src;
-}
-function inlineScripts(html) { return Array.from(html.matchAll(/<script>([\s\S]*?)<\/script>/g)).map(m => m[1]); }
-function checkInline(rel, artifact, budget) {
-  const html = read(rel), scripts = inlineScripts(html);
-  if (!scripts.length) throw Error(rel + ' has no inline application script');
-  scripts.forEach((script, i) => {
-    const file = path.join(dir, artifact + '-' + i + '.js');
-    fs.writeFileSync(file, script);
-    cp.execFileSync(process.execPath, ['--check', file], { stdio: 'inherit' });
-    acorn.parse(script, { ecmaVersion: 5 });
-  });
-  const bytes = Buffer.byteLength(html);
-  if (bytes > budget) throw Error(rel + ' exceeds the ' + budget + '-byte budget');
-  console.log(rel + ': node --check PASS; ES5 PASS; ' + bytes + ' / ' + budget + ' bytes');
-  return html;
-}
-const INDEX = checkInline('index.html', 'app', 600000);
-if (/<link\b(?![^>]*rel="manifest")/i.test(INDEX)) throw Error('index.html contains a non-manifest <link> tag');
-if (!/<link[^>]*rel="manifest"[^>]*href="\.\/manifest\.webmanifest"/i.test(INDEX)) throw Error('manifest link missing');
-checkInline('data.html', 'data-app', 65000);
-checkInline('data/index.html', 'data-route-app', 65000);
-if (read('data.html') !== read('data/index.html')) throw Error('data.html and data/index.html must remain identical');
-const studio = parseES5('data/studio.js', 'studio');
-const meterSrc = parseES5('data/data-meter.js', 'data-meter');
-const sw = parseES5('sw.js', 'sw');
-const learn = parseES5('data/learning-tools.js', 'learning-tools');
-/* v59: learning-tools is strict-ES5, wired and precached. */
-if (!/\.SDPLearning\s*=/.test(learn)) throw Error('learning-tools must expose window.SDPLearning');
-if (!/visualViewport/.test(learn)) throw Error('visualViewport docking missing from learning-tools');
-if (!/levenshteinOps/.test(learn) || !/markMissed/.test(learn) || !/markCorrect/.test(learn)) throw Error('learning-tools APIs missing');
-if (!/\.\/data\/learning-tools\.js/.test(sw)) throw Error('learning-tools missing from sw.js SHELL');
-if (!/\.\/assets\/fonts\/NotoSansSinhala-Regular\.woff2/.test(sw) || !/\.\/assets\/fonts\/NotoSansSinhala-Bold\.woff2/.test(sw)) throw Error('Sinhala fonts missing from sw.js SHELL');
-for (const f of ['assets/fonts/NotoSansSinhala-Regular.woff2', 'assets/fonts/NotoSansSinhala-Bold.woff2']) {
-  const b = fs.readFileSync(path.join(ROOT, f));
-  if (b.length > 60000) throw Error(f + ' exceeds 60KB');
-  if (b.slice(0, 4).toString('utf8') !== 'wOF2') throw Error(f + ' is not a WOFF2 file');
-}
-if (!/window\.ElevenVault\s*=/.test(studio)) throw Error('studio must expose ElevenVault');
-if (!/adminGenerateMissing/.test(studio)) throw Error('studio generator missing');
-if (!/SDPDataMeter\s*=/.test(meterSrc) || !/SDP_DATA_METER\s*=/.test(meterSrc)) throw Error('meter aliases missing');
-if (!/PerformanceObserver/.test(meterSrc) || !/transferSize/.test(meterSrc) || !/getModeProfiles/.test(meterSrc)) throw Error('meter timing/profile wiring missing');
-if (!/caches\.match/.test(sw)) throw Error('service worker cache strategy missing');
+const argv = process.argv.slice(2);
+const ALLOW_PENDING = argv.indexOf('--allow-pending') >= 0 || argv.indexOf('--allow-pending-modules') >= 0;
+const JSON_OUT = argv.indexOf('--json') >= 0;
 
-/* Secret/PIN gate: every shipped file, every test, and the rest of the repo. */
-const SCAN_FILES = [
-  'README.md', 'CHANGELOG.md', 'index.html', 'data.html', 'data/index.html',
-  'data/studio.js', 'data/data-meter.js', 'data/learning-tools.js', 'sw.js',
-  'data/config.json', 'data/session.json', 'data/version.json',
-  'data/elevenlabs-audio.json', 'data/media-manifest.json', 'tests/test-pin.cjs'
+const results = [];
+function record(name, ok, detail) {
+  results.push({ test: name, status: ok ? 'PASS' : 'FAIL', detail: ok ? '' : String(detail || '') });
+  return ok;
+}
+function read(p) { return fs.readFileSync(path.join(ROOT, p)); }
+function readText(p) { return read(p).toString('utf8'); }
+function exists(p) { return fs.existsSync(path.join(ROOT, p)); }
+function bytes(p) { return fs.statSync(path.join(ROOT, p)).size; }
+function sha256(p) { return crypto.createHash('sha256').update(read(p)).digest('hex'); }
+
+/* ── H1 byte budgets ───────────────────────────────────────────────────────
+ * contract: docs/ARCHITECTURE_MAP.md §H1 — every shipped file has an owner
+ * and an explicit ceiling; an unbudgeted file is a release blocker (W4). */
+const BUDGET = {
+  'index.html': 35000,
+  'assets/css/sdp-ui.css': 60000,
+  'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
+  'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
+  'data/sdp-data-sync.js': 48000,
+  'data/sdp-audio-speech.js': 40000,
+  'data/sdp-dictation-engine.js': 48000,
+  'data/sdp-ui-views.js': 56000,
+  'data/studio.js': 60000,
+  'data/data-meter.js': 22000,
+  'data/session.json': 46403,
+  'data/config.json': 36000,
+  'data/version.json': 2000,
+  'data/gas-source.txt': 13764,
+  'data/elevenlabs-audio.json': 920,
+  'data.html': 60000,
+  'data/index.html': 60000,
+  'sw.js': 12000,
+  'manifest.webmanifest': 4000,
+  'docs/ARCHITECTURE_MAP.md': 20000,
+  'docs/UI_COMPONENT_GUIDE.md': 20000,
+  'docs/SYNC_AND_DATA_CONTRACT.md': 20000,
+  'docs/CHANGELOG_LEDGER.md': 20000,
+  'docs/DAILY_UPGRADE_PROMPT_TEMPLATE.md': 8000
+};
+/* contract: docs/ARCHITECTURE_MAP.md §H1 — preserved read-only payloads are
+ * pinned to an exact byte count so an accidental editor save is caught. */
+const EXACT = [
+  'assets/fonts/NotoSansSinhala-Regular.woff2',
+  'assets/fonts/NotoSansSinhala-Bold.woff2',
+  'data/session.json',
+  'data/gas-source.txt',
+  'data/elevenlabs-audio.json'
 ];
-const COMPROMISED_PIN = ['78', '98', '78', '98'].join('');
-const COMPROMISED_HASH = ['17842399970b3f0f', 'a32f82c833a22477', 'd03223dfd6317d10', '31c123ab6ea38250'].join('');
-function scanFile(rel) {
-  const s = read(rel);
-  if (s.includes(COMPROMISED_PIN)) throw Error(rel + ' contains the compromised default PIN');
-  if (s.includes(COMPROMISED_HASH)) throw Error(rel + ' contains the seeded default PIN hash');
-  if (/"adminPin"\s*:\s*"[^"]+"/.test(s)) throw Error(rel + ' contains a non-empty adminPin JSON literal');
-  if (/(?:sk_|ghp_)[A-Za-z0-9_-]{16,}/.test(s)) throw Error(rel + ' contains a live-looking token literal');
+/* contract: docs/SYNC_AND_DATA_CONTRACT.md §Appendix A — hashes of the five
+ * irreplaceable classroom files. Update only after an intentional publish. */
+const PRESERVED_SHA = {
+  'data/session.json': 'e0e86c807fc667475dad43de7848d3b231642c99f913bdab8c48e24834b86a5f',
+  'data/gas-source.txt': '591b9b086f6d3723afb2604a837ffc495c69a481c490f11e58131c2222b0981e',
+  'data/elevenlabs-audio.json': '153111d6ace40026cb8941a919ac5d1d0a76aa25d144a1f555d8debc38ee1c64',
+  'assets/fonts/NotoSansSinhala-Regular.woff2': '23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280',
+  'assets/fonts/NotoSansSinhala-Bold.woff2': 'bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e'
+};
+/* contract: docs/ARCHITECTURE_MAP.md §H1 — release gates live in tests/ and
+ * are budgeted too, so a runaway suite cannot become an unbudgeted artifact. */
+const TEST_FILES = [
+  'tests/check.cjs', 'tests/upgrade.test.cjs', 'tests/phase1.cjs', 'tests/server.cjs',
+  'tests/browser.cjs', 'tests/upgrade-browser.cjs', 'tests/e2e.cjs', 'tests/live-lab.cjs',
+  'tests/audit-v42.cjs', 'tests/app-harness.cjs', 'tests/chromium-env.cjs',
+  'tests/test-pin.cjs', 'tests/package.json'
+];
+const TEST_BUDGET = 220000;
+
+/* contract: docs/ARCHITECTURE_MAP.md §H2 — retired v42–v60 ids/strings must be
+ * gone from every shipped byte, never merely hidden with display:none (W8). */
+const FORBIDDEN = [
+  'bgLiveWrap', 'bgLiveVideo', 'btnLiveVideo', 'liveVideoInput', 'dimTpl', 'dimHostSet',
+  'sVideoDim', 'topDataBadge', 'topDataMB', 'topDataLkr', 'btnDataSheet', 'dataSheet',
+  'guideSheet', 'btnReadyTest', 'screen-comm', 'tab-comm', 'commBadge', 'btnMsg',
+  'printview', 'v58Rail', 'sdpDesktopRail', 'sdpV56', 'materialMixer',
+  "I'm ready", 'Write the word now'
+];
+const SHIPPED = [
+  'index.html', 'data.html', 'data/index.html', 'sw.js',
+  'assets/css/sdp-ui.css',
+  'data/sdp-data-sync.js', 'data/sdp-audio-speech.js', 'data/sdp-dictation-engine.js',
+  'data/sdp-ui-views.js', 'data/studio.js', 'data/data-meter.js'
+];
+const DOCS = [
+  'docs/ARCHITECTURE_MAP.md', 'docs/UI_COMPONENT_GUIDE.md', 'docs/SYNC_AND_DATA_CONTRACT.md',
+  'docs/CHANGELOG_LEDGER.md', 'docs/DAILY_UPGRADE_PROMPT_TEMPLATE.md'
+];
+
+function pending(p) {
+  /* contract: W6 — phase runs verify everything that exists yet */
+  if (ALLOW_PENDING) { record('pending: ' + p, true); return true; }
+  return false;
 }
-SCAN_FILES.forEach(scanFile);
-const tracked = cp.execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).trim().split('\n');
-tracked.filter(f => /\.(?:html|js|cjs|json|md|webmanifest|txt)$/i.test(f)).forEach(scanFile);
-for (const f of ['data/config.json', 'data/session.json', 'data/version.json', 'data/elevenlabs-audio.json']) {
-  const d = JSON.parse(read(f));
-  if (d.adminPin || d.vaultCiphertext || d.keysTopic || d.wordsTopic || d.audioTopic) throw Error(f + ' still ships a PIN/vault/relay field');
-}
-console.log('secret gate: PASS (' + SCAN_FILES.length + ' required files + all tracked text files)');
 
-/* Metadata and manifest. */
-for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
-  const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.4') throw Error(f + ' must be ver 60 / appVersion 9.0.0.4');
-}
-if (!/APP_VERSION="9\.0\.0\.4"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.4');
-const manifest = JSON.parse(read('manifest.webmanifest'));
-if (!manifest.name || manifest.display !== 'standalone' || manifest.theme_color !== '#040812') throw Error('invalid PWA manifest');
-const media = JSON.parse(read('data/media-manifest.json'));
-if (!Array.isArray(media.assets) || media.assets.length < 4) throw Error('media manifest must list wallpapers + static');
-console.log('metadata: v60 / 9.0.0.4; media manifest: ' + media.assets.length + ' assets');
+/* 1 ── file tree, budgets and no unbudgeted overflow (W4) ------------------ */
+(function treeAndBudgets() {
+  let missing = 0, over = 0;
+  Object.keys(BUDGET).forEach(function (p) {
+    if (!exists(p)) { if (!pending(p)) missing += 1; return; }
+    const size = bytes(p);
+    if (size > BUDGET[p]) over += 1;
+    record('budget ' + p + ' <= ' + BUDGET[p] + 'B (' + size + 'B)', size <= BUDGET[p], size + ' > ' + BUDGET[p]);
+  });
+  record('H1 tree complete (' + (Object.keys(BUDGET).length - missing) + '/' + Object.keys(BUDGET).length + ' budgeted files)', missing === 0, missing + ' missing');
 
-/* P0 runtime wiring markers. */
-if (!/sdp\.v2:/.test(INDEX) || !/isUnlockedOnThisDevice/.test(INDEX)) throw Error('local salted PIN wiring missing');
-if (!/fetchOnce:function/.test(studio.replace(/\s/g, '')) || !/strictAdminOnly/.test(studio)) throw Error('paid fetch guard missing');
-if (/ntfy\.sh\/dictationb1_sdp_(keys|words|audio)/.test(studio)) throw Error('studio still contains a vault/audio relay');
-if (!/persistedSession/.test(meterSrc) || !/videoBufferedBytes/.test(meterSrc) || !/content-length/.test(meterSrc)) throw Error('meter truth fixes missing');
-if (!/data\/data-meter\.js/.test(read('data.html')) || !/liveSessionMB/.test(read('data.html')) || !/dataPlanPreset/.test(read('data.html'))) throw Error('/data live meter/preset wiring missing');
-console.log('P0 wiring markers: PASS');
-/* v59 markers: two-tier glass, fonts, dock, learning tools and signature pill. */
-if (!/sdpV58Css/.test(INDEX)) throw Error('sdpV58Css runtime style missing');
-if (!/Noto Sans Sinhala/.test(INDEX)) throw Error('Noto Sans Sinhala @font-face missing');
-if (!/v58-glass-blur/.test(INDEX) || !/v58-core/.test(INDEX)) throw Error('two-tier glass variables missing');
-if (!/v58Dock|v58-keyboard/.test(learn)) throw Error('keyboard dock wiring missing');
-if (!/aboutCreditsSheet/.test(INDEX) || !/v58-sig-pill/.test(INDEX)) throw Error('signature pill / about sheet missing');
-if (!/v58WorkSpace|v58-workspace/.test(INDEX)) throw Error('desktop workspace missing');
-if (!/learning-tools\.js/.test(INDEX)) throw Error('learning-tools script tag missing');
-const versionData = JSON.parse(read('data/version.json'));
-if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.4' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.4 / settingsRev 60');
-console.log('v58 markers: PASS');
+  /* W4: nothing shipped may exist outside the H1 table. */
+  const shippedDirs = ['assets', 'data'];
+  const strays = [];
+  shippedDirs.forEach(function (dir) {
+    const walk = function (rel) {
+      fs.readdirSync(path.join(ROOT, rel)).forEach(function (name) {
+        const p = rel + '/' + name;
+        if (fs.statSync(path.join(ROOT, p)).isDirectory()) { walk(p); return; }
+        if (!BUDGET[p]) strays.push(p + ' (' + bytes(p) + 'B)');
+      });
+    };
+    if (fs.existsSync(path.join(ROOT, dir))) walk(dir);
+  });
+  ['index.html', 'data.html', 'sw.js', 'manifest.webmanifest'].forEach(function (p) {
+    if (exists(p) && !BUDGET[p]) strays.push(p);
+  });
+  if (exists('data/index.html') && !BUDGET['data/index.html']) strays.push('data/index.html');
+  record('no unbudgeted shipped files', strays.length === 0, strays.join(', '));
+})();
 
-/* ------------------------------------------------------------------ *
- * v59 / 8.0.0 release markers                                       *
- * ------------------------------------------------------------------ */
-/* Version stamps everywhere. */
-for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json']) {
-  const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.4') throw Error(f + ' must ship 60 / 9.0.0.4');
-}
-if (!/var VERSION = 'sdp-v60-9\.0\.0\.4'/.test(sw) || !/var APP_VERSION = '9\.0\.0\.4'/.test(sw)) throw Error('sw.js must ship sdp-v60 / 9.0.0.4');
-if (!/sdp-youdao-v1/.test(sw) || !/sdp-youdao-v1/.test(learn)) throw Error('sdp-youdao-v1 offline cache must be preserved');
-if (!/METER_VERSION = '9\.0\.0\.4', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.4 / 60');
-const DATAHTML = read('data.html');
-if (!/v60 · APP_VERSION 9\.0\.0\.4/.test(DATAHTML)) throw Error('/data must show v60 · APP_VERSION 9.0.0.4');
-if (!/v60 · APP_VERSION 9\.0\.0\.4/.test(read('data/index.html'))) throw Error('/data/index.html must show v60');
-
-/* A1: fresh installs pick the automatic performance mode, never a forced "full". */
-if (!/perf:"auto"/.test(INDEX)) throw Error('fresh settings must default to perf:"auto"');
-if (!/perfChosenBy="user"/.test(INDEX)) throw Error('a manual perf click must record perfChosenBy="user"');
-if (/perf:"full"/.test(INDEX)) throw Error('index.html must not default to perf:"full"');
-/* D5: the lecturer writing timer is honoured. */
-var wsBody = /Eng\.writeSecs=function\(\)\{([^}]*)\}/.exec(INDEX);
-if (!wsBody || wsBody[1].indexOf('writeFixed') < 0 || !/Math\.max\(3,\s*Math\.min\(60/.test(wsBody[1])) throw Error('Eng.writeSecs must honour settings.writeFixed');
-if (!/writeFixed/.test(INDEX)) throw Error('writeFixed wiring missing');
-/* D1: paper mode maps every word into a self-check row. */
-if (!/rows:t\.map\(function\(w\)\{return\{word:/.test(INDEX)) throw Error('paper mode must emit one row per word');
-if (!/mode:"paper"/.test(INDEX)) throw Error('paper mode result stamp missing');
-
-/* C1/C2: every data-v58-en attribute is pure English. */
-const enAttrs = Array.from(INDEX.matchAll(/data-v58-en="([^"]*)"/g)).map(m => m[1]);
-if (enAttrs.length < 8) throw Error('expected the v58 English attribute set, found ' + enAttrs.length);
-for (const v of enAttrs) {
-  if (/[\u0D80-\u0DFF]/.test(v)) throw Error('data-v58-en must be pure English: ' + v);
-}
-if (!/guide:"User Guide"/.test(INDEX)) throw Error('STRINGS_EN.guide must be pure English');
-
-/* 3A: the v59 design system lives in learning-tools so index.html adds 0 CSS bytes. */
-if (!/sdpV59Css/.test(learn)) throw Error('learning-tools must inject #sdpV59Css');
-if (!/--fs-meta:14px/.test(learn) || !/--v59-card/.test(learn)) throw Error('v59 design tokens missing');
-if (!/CRUSH_MQ|max-width\s*:\s*560px/.test(learn)) throw Error('v57/v58 hero-crush runtime cleanup missing');
-if (!/backdrop-filter:none!important/.test(learn)) throw Error('v59 must neutralise chip/tile/button blur');
-if (!/passive: ?true/.test(learn)) throw Error('learning-tools must register passive listeners');
-if (!/v58-tile-t i/.test(learn)) throw Error('practice tile subtitles missing');
-
-/* 3B: one unified language engine. */
-if (!/applyLang/.test(learn) || !/syncI18n/.test(learn)) throw Error('unified UI.applyLang engine missing');
-if (!/puritySweep/.test(learn)) throw Error('English purity sweep missing');
-
-/* 3C: the full-English dictionary card. */
-if (!/v59-dict-card/.test(learn) || !/v59-ipa/.test(learn) || !/v59-pos/.test(learn)) throw Error('dictionary card renderer missing');
-if (!/v59-si-chip/.test(learn)) throw Error('collapsed Sinhala reveal chip missing');
-if (!/v59DictFilters/.test(learn)) throw Error('dictionary filter tabs missing');
-
-/* 3D: every broken tool is fixed. */
-if (!/v58SelfScore/.test(learn) || !/self-check: /.test(learn)) throw Error('paper self-check live score/summary missing');
-if (!/resSummary/.test(learn)) throw Error('#resSummary live update missing');
-if (!/English Meaning/.test(learn) || !/Sinhala Meaning/.test(learn)) throw Error('print sheet must carry all six columns');
-if (!/v58ContextNextBtn/.test(learn)) throw Error('Sentence Context Next question button missing');
-if (!/audio\/mp4/.test(learn)) throw Error('MediaRecorder MIME selection missing');
-if (!/Play my recording/.test(learn)) throw Error('explicit playback button for the student recording missing');
-if (!/offlineReadyCount = saved/.test(learn)) throw Error('offline pack must only count real cache writes');
-
-/* 3E: zero canvas readback, zero idle rAF. */
-if (/\.drawImage\s*\(|\.getImageData\s*\(/.test(learn)) throw Error('learning-tools must never call drawImage/getImageData');
-if (/_gaugeCanvas/.test(learn)) throw Error('the readback canvas must be gone');
-if (/setInterval\(function[\s\S]{0,400}?\}\s*,\s*(400|1000|1500)\s*\)/.test(learn)) throw Error('learning-tools must not run background intervals');
-if (!/clearInterval/.test(learn)) throw Error('the syllable spotlight timer must be cleared');
-if (!/SDPPerfGuard/.test(learn) || !/benchmark: function/.test(learn) || !/decide: function/.test(learn)) throw Error('SDPPerfGuard API missing');
-if (!/60 FPS Smooth Mode auto-enabled/.test(learn)) throw Error('PerfGuard toast missing');
-if (/\.createMediaElementSource\s*\(/.test(learn)) throw Error('learning-tools must never create a MediaElementSource');
-if (/\.createMediaElementSource\s*\(/.test(INDEX)) throw Error('index.html must never create a MediaElementSource on the Youdao audio');
-
-/* ------------------------------------------------------------------
- * v60 / 9.0.0.4 release markers
- * ------------------------------------------------------------------ */
-if (!/#sdpNextGenCss/.test(learn)) throw Error('learning-tools must inject #sdpNextGenCss');
-var _mt = learn.indexOf("microToastLoad") >= 0 && learn.indexOf("getEntriesByType") >= 0 && learn.indexOf("\"navigation\"") >= 0;
-if (learn.indexOf("microToastLoad") < 0) throw Error('microToastLoad missing');
-if (learn.indexOf('getEntriesByType("navigation")') < 0) throw Error('navigation transferSize missing');
-if (!/creditPill/.test(learn) || !/v60-credit-live/.test(learn) || !/v60-credit-dock/.test(learn)) throw Error('creditPill must toggle v60-credit-live / v60-credit-dock');
-if (!/guide-si-1\.mp3/.test(sw)) throw Error('sw.js must precache guide-si-1.mp3');
-if (!/eleven_flash_v2_5/.test(studio) || !/eleven_flash_v2_5/.test(read('data/elevenlabs-audio.json'))) throw Error('eleven_flash_v2_5 must be the default model');
-if (!/iterations: ?250000/.test(INDEX)) throw Error('index.html must ship PBKDF2 iterations: 250000 (SDP_ENC_V2)');
-if (!/encVault/.test(read('data/config.json')) || !/SDP_ENC_V2:/.test(read('data/config.json'))) throw Error('config.json must carry encVault: SDP_ENC_V2:...');
-/* v60 / 9.0.0.4 - zero-FOUC cloak and the 8 live-video fixes. */
-if (!/id="sdpPrePaintCloak"/.test(INDEX)) throw Error('index.html must ship the #sdpPrePaintCloak zero-FOUC style');
-if (!/data-v60-ready/.test(INDEX) || !/data-v60-ready/.test(learn)) throw Error('the pre-paint cloak must be lifted by data-v60-ready');
-if (!/typeof items === ['"]string['"]/.test(learn)) throw Error('Speech.say must coerce a bare string into an array');
-if (!/v604PlayerChrome/.test(learn) || !/sdpLegacyPlayerDock/.test(learn)) throw Error('the cockpit must move the legacy .ctrlgrid/.lfoot out of layout');
-if (!/#creditDocked\{position:static/.test(learn.replace(/\s+/g, ''))) throw Error('#creditDocked must be statically positioned');
-if (!/sdpAppearanceAccordion/.test(learn)) throw Error('settings must keep #sdpAppearanceAccordion');
-if (!/sdpTestVoice/.test(learn)) throw Error('the Test voice control must exist');
-console.log('v60.4 FOUC/video-bug markers: PASS');
-console.log('v60 markers: PASS');
-console.log('v59 markers: PASS');
-/* ------------------------------------------------------------------
- * v60 Next-Gen DOM wiring (JSDOM, no browser)
- * ------------------------------------------------------------------ */
-{
-  const { harness } = require('./app-harness.cjs');
-  const app = harness(null, {});
-  try {
-    app.w.eval(learn);
-    app.clock.tick(2500);
-    const doc = app.w.document;
-    const C = app.w.SDPCore;
-    for (const id of ['sdpHomeGreeting', 'sdpHeroConfigChips', 'sdpHomeStatsRow', 'sdpQuickPracticeGrid', 'microToastLoad', 'creditPill', 'creditDocked', 'sdpDesktopRail']) {
-      if (!doc.getElementById(id)) throw Error('v60 home chrome missing #' + id);
+/* 2 ── strict ES5 syntax on every shipped script (W3) --------------------- */
+(function es5() {
+  const files = Object.keys(BUDGET).filter(function (p) { return /\.js$/.test(p); });
+  let bad = [];
+  files.forEach(function (p) {
+    if (!exists(p)) return;
+    try { acorn.parse(readText(p), { ecmaVersion: 5, sourceType: 'script' }); }
+    catch (e) { bad.push(p + ': ' + e.message); }
+  });
+  /* contract: W3 — inline scripts in the three HTML entry points are ES5 too */
+  ['index.html', 'data.html', 'data/index.html'].forEach(function (p) {
+    if (!exists(p)) return;
+    const html = readText(p);
+    const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
+    let m, n = 0;
+    while ((m = re.exec(html)) !== null) {
+      const body = m[1];
+      if (!body.trim()) continue;
+      n += 1;
+      try { acorn.parse(body, { ecmaVersion: 5, sourceType: 'script' }); }
+      catch (e) { bad.push(p + ' inline#' + n + ': ' + e.message); }
     }
-    C.Screens.dict();
-    app.clock.tick(80);
-    if (!doc.getElementById('sdpWordFilterRow')) throw Error('v60 #sdpWordFilterRow missing after Screens.dict()');
-    if (!doc.querySelectorAll('#dictList .sdp-word-card.v59-dict-card').length) throw Error('v60 dictionary cards missing');
-    C.Screens.settings();
-    app.clock.tick(80);
-    const box = doc.getElementById('sdpNextGenSettings');
-    const body = doc.getElementById('setBody');
-    const acc = doc.getElementById('sdpAppearanceAccordion');
-    if (!box) throw Error('v60 #sdpNextGenSettings missing');
-    if (doc.getElementById('screen-set').firstElementChild !== box) throw Error('v60 settings must be the first child of #screen-set');
-    if (!body || !body.closest('details#sdpAppearanceAccordion')) throw Error('#setBody must be inside details#sdpAppearanceAccordion');
-    if (!acc || acc.open !== false) throw Error('the appearance accordion must start collapsed');
-    for (const id of ['sdpSegMode', 'sdpSegSpeed', 'sdpSegRepeats', 'sdpRangeWait', 'sdpToggleAutoSentence', 'sdpSegLang', 'rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect']) {
-      if (!doc.getElementById(id)) throw Error('v60 settings control missing #' + id);
-    }
-    const v57 = doc.getElementById('sdpV57Css'), v58 = doc.getElementById('sdpV58Css'), ng = doc.getElementById('sdpNextGenCss');
-    if (!v57 || !v57.disabled || v57.textContent !== '/* v60 neutralised */') throw Error('#sdpV57Css must be neutralised');
-    if (!v58 || !v58.disabled) throw Error('#sdpV58Css must be neutralised');
-    if (!ng || doc.head.lastElementChild !== ng) throw Error('#sdpNextGenCss must be the last style in <head>');
-    console.log('v60 next-gen DOM: PASS');
-  } finally { app.close(); }
+  });
+  record('every shipped script parses as strict ES5 (acorn ecmaVersion 5)', bad.length === 0, bad.join(' | '));
+})();
+
+/* 3 ── no minified/bundled monolith (W3 / PR #111 guard) ------------------ */
+(function unminified() {
+  const files = Object.keys(BUDGET).filter(function (p) { return /\.js$/.test(p); });
+  const offenders = [];
+  files.forEach(function (p) {
+    if (!exists(p)) return;
+    const lines = readText(p).split('\n');
+    let longest = 0;
+    lines.forEach(function (l) { if (l.length > longest) longest = l.length; });
+    if (longest > 900) offenders.push(p + ' longest line ' + longest);
+  });
+  record('no shipped script is minified (longest line <= 900 chars)', offenders.length === 0, offenders.join(', '));
+})();
+
+/* 4 ── /data transparency pair is byte identical --------------------------- */
+(function dataPair() {
+  if (!exists('data.html') || !exists('data/index.html')) { pending('data.html pair'); return; }
+  const a = read('data.html'), b = read('data/index.html');
+  record('data.html and data/index.html are byte identical', a.equals(b), a.length + ' vs ' + b.length);
+  record('transparency routes <= 60000 B', a.length <= 60000 && b.length <= 60000, a.length + '/' + b.length);
+})();
+
+/* 5 ── preserved classroom payloads -------------------------------------- */
+(function preserved() {
+  /* contract: docs/SYNC_AND_DATA_CONTRACT.md §Appendix A */
+  const sizeBad = EXACT.filter(function (p) { return exists(p) && bytes(p) !== BUDGET[p]; });
+  record('preserved files keep their exact pinned byte sizes', sizeBad.length === 0, sizeBad.map(function (p) { return p + '=' + bytes(p) + ' (want ' + BUDGET[p] + ')'; }).join(', '));
+  const shaBad = Object.keys(PRESERVED_SHA).filter(function (p) { return exists(p) && sha256(p) !== PRESERVED_SHA[p]; });
+  record('preserved files keep their SHA-256 (classroom data lock)', shaBad.length === 0, shaBad.join(', '));
+
+  const fonts = ['assets/fonts/NotoSansSinhala-Regular.woff2', 'assets/fonts/NotoSansSinhala-Bold.woff2'];
+  const fontBad = fonts.filter(function (p) { return !exists(p) || read(p).slice(0, 4).toString('latin1') !== 'wOF2'; });
+  record('both Sinhala fonts carry the wOF2 magic header', fontBad.length === 0, fontBad.join(', '));
+
+  if (exists('data/session.json')) {
+    const s = JSON.parse(readText('data/session.json'));
+    const active = (s.lists || []).filter(function (l) { return l.id === 'list_session_8_feelings'; })[0];
+    const archived = (s.lists || []).filter(function (l) { return l.id === 'list_session_7_travel'; })[0];
+    record('session.json keeps 30 Session 8 (feelings) words', !!active && active.words.length === 30, active ? active.words.length : 'no list');
+    record('session.json keeps 30 Session 7 (travel) archive words', !!archived && archived.words.length === 30, archived ? archived.words.length : 'no list');
+    const fields = ['w', 'p', 'pos', 'm', 'si', 's'];
+    const fieldBad = (active ? active.words : []).filter(function (w) {
+      return fields.some(function (f) { return !w[f]; });
+    });
+    record('all 30 active words carry w/p/pos/m/si/s', fieldBad.length === 0, fieldBad.length + ' incomplete');
+  } else { pending('session.json payload'); }
+
+  if (exists('data/elevenlabs-audio.json')) {
+    const v = JSON.parse(readText('data/elevenlabs-audio.json'));
+    record('voice pack pins Alice / eleven_flash_v2_5',
+      v.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && v.modelId === 'eleven_flash_v2_5' && typeof v.clips === 'object',
+      JSON.stringify({ voiceId: v.voiceId, modelId: v.modelId }));
+  }
+  if (exists('data/gas-source.txt')) {
+    record('Apps Script backend source keeps doGet/doPost handlers',
+      /function doGet/.test(readText('data/gas-source.txt')) && /function doPost/.test(readText('data/gas-source.txt')));
+  }
+})();
+
+/* 6 ── version, vault and secret hygiene ---------------------------------- */
+(function versions() {
+  if (exists('data/version.json')) {
+    const v = JSON.parse(readText('data/version.json'));
+    const ok = v.ver === 1 && v.appVersion === '0.0.1.a' && v.version === '0.0.1.a' &&
+      v.schema === 1 && v.settingsRev === 1 && String(v.session) === '8';
+    record('version.json carries the v0.0.1.a schema', ok, JSON.stringify(v).slice(0, 220));
+    record('version.json stays slim (<= 2000 B)', bytes('data/version.json') <= 2000, bytes('data/version.json'));
+  } else { pending('version.json'); }
+
+  if (exists('data/config.json')) {
+    const c = JSON.parse(readText('data/config.json'));
+    record('config.json keeps the preserved backend payload',
+      c.credits && c.credits.createdBy === 'Hansana' && c.credits.ideaBy === 'Ayya01 (Lesandu)' &&
+      c.tts && c.live && c.live.state && c.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && c.voiceName === 'Alice' &&
+      c.modelId === 'eleven_flash_v2_5' && c.repoOwner === 'dictationb1' &&
+      c.repoName === 'dictationb1.github.io' && c.defaults && c.classInfo,
+      'preserved payload trimmed');
+    record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
+    record('config.json carries v0.0.1.a version fields', c.ver === 1 && c.appVersion === '0.0.1.a' && c.schema === 1 && c.settingsRev === 1);
+  } else { pending('config.json'); }
+
+  /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 — secrets never land in git */
+  const tracked = [];
+  (function walk(rel) {
+    fs.readdirSync(path.join(ROOT, rel)).forEach(function (name) {
+      if (name === 'node_modules' || name === 'artifacts' || name === '.git') return;
+      const p = rel ? rel + '/' + name : name;
+      const full = path.join(ROOT, p);
+      if (fs.statSync(full).isDirectory()) { walk(p); return; }
+      if (!/\.(js|cjs|json|html|md|txt|webmanifest|css|yml)$/.test(name)) return;
+      tracked.push(p);
+    });
+  })('');
+  const secrets = [];
+  tracked.forEach(function (p) {
+    const text = readText(p);
+    /* build the needles from fragments so this file is not its own finding */
+    const needles = ['s' + 'k_', 'gh' + 'p_', 'github' + '_pat_'];
+    needles.forEach(function (n) {
+      const at = text.indexOf(n);
+      if (at >= 0 && text.slice(at).replace(/[A-Za-z0-9_\-]{16,}/, '').length < text.slice(at).length) {
+        const tail = text.slice(at + n.length, at + n.length + 24);
+        if (/^[A-Za-z0-9_\-]{16,}$/.test(tail)) secrets.push(p + ' -> ' + n + '…');
+      }
+    });
+  });
+  record('no plaintext API secrets in tracked files', secrets.length === 0, secrets.join(', '));
+})();
+
+/* 7 ── retired ids, media and stubs are gone for good (W8) ---------------- */
+(function retired() {
+  const hits = [];
+  SHIPPED.forEach(function (p) {
+    if (!exists(p)) return;
+    const text = readText(p);
+    FORBIDDEN.forEach(function (needle) {
+      if (text.indexOf(needle) >= 0) hits.push(p + ' -> ' + needle);
+    });
+  });
+  record('zero forbidden legacy ids/strings in shipped bytes', hits.length === 0, hits.join(', '));
+
+  const media = [];
+  (function walk(rel) {
+    if (!fs.existsSync(path.join(ROOT, rel))) return;
+    fs.readdirSync(path.join(ROOT, rel)).forEach(function (name) {
+      const p = rel + '/' + name;
+      if (fs.statSync(path.join(ROOT, p)).isDirectory()) { walk(p); return; }
+      if (/\.mp4$/i.test(name) || /^guide-si-\d+\.mp3$/.test(name)) media.push(p + ' (' + bytes(p) + 'B)');
+    });
+  })('assets');
+  record('zero wallpaper videos and zero fake guide-si mp3 stubs', media.length === 0, media.join(', '));
+
+  record('no retired build scripts directory', !fs.existsSync(path.join(ROOT, 'scripts')));
+})();
+
+/* 8 ── documentation ledger installed ----------------------------------- */
+(function docs() {
+  const bad = [];
+  DOCS.forEach(function (p) {
+    if (!exists(p)) { if (!ALLOW_PENDING) bad.push(p + ' missing'); return; }
+    if (bytes(p) < 400) bad.push(p + ' looks empty (' + bytes(p) + 'B)');
+  });
+  record('all five docs/*.md ledger files exist and are non-empty', bad.length === 0, bad.join(', '));
+  const unbudgeted = DOCS.filter(function (p) { return exists(p) && bytes(p) > (BUDGET[p] || 0); });
+  record('docs/*.md stay inside their budgets', unbudgeted.length === 0, unbudgeted.join(', '));
+})();
+
+/* 9 ── index.html shell wiring ------------------------------------------ */
+(function shell() {
+  if (!exists('index.html')) { pending('index.html'); return; }
+  const html = readText('index.html');
+  const order = [
+    './data/data-meter.js', './data/sdp-data-sync.js', './data/sdp-audio-speech.js',
+    './data/sdp-dictation-engine.js', './data/sdp-ui-views.js', './data/studio.js'
+  ];
+  const positions = order.map(function (src) { return html.indexOf(src); });
+  const ordered = positions.every(function (p, i) { return p > 0 && (i === 0 || p > positions[i - 1]); });
+  /* contract: docs/ARCHITECTURE_MAP.md §R10 fixed load order */
+  record('index.html loads the six modules in the fixed R10 order', ordered, JSON.stringify(positions));
+  record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
+  record('index.html declares the v0.0.1.a boot target', html.indexOf("'0.0.1.a'") > 0 || html.indexOf('"0.0.1.a"') > 0);
+  const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings'];
+  record('index.html contains the five tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
+  const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings'];
+  record('index.html contains the five screen ids', screens.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), screens.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
+})();
+
+/* 10 ── test suite files budgeted --------------------------------------- */
+(function tests() {
+  const bad = TEST_FILES.filter(function (p) {
+    if (!exists(p)) { if (ALLOW_PENDING) return false; return true; }
+    return bytes(p) > TEST_BUDGET;
+  });
+  record('release gate files present and inside budget', bad.length === 0, bad.join(', '));
+})();
+
+const failed = results.filter(function (r) { return r.status === 'FAIL'; });
+if (JSON_OUT) {
+  console.log(JSON.stringify({ passed: results.length - failed.length, failed: failed.length, results: results }, null, 2));
+} else {
+  results.forEach(function (r) {
+    if (r.status === 'PASS' && r.test.indexOf('pending:') === 0) return;
+    console.log((r.status === 'PASS' ? 'PASS  ' : 'FAIL  ') + r.test + (r.detail ? '  [' + r.detail + ']' : ''));
+  });
+  console.log('\nG1 check.cjs — ' + (results.length - failed.length) + ' PASS / ' + failed.length + ' FAIL');
 }
-
-console.log('ALL v60 STATIC CHECKS PASSED');
-
+process.exitCode = failed.length ? 1 : 0;
