@@ -2,7 +2,15 @@
 
 Smart Dictation Player is a self-contained English dictation app for CCBE Galle Branch. The player is `index.html`; the interactive bilingual data report is available at `/data` and `/data.html`.
 
-## Release 8.0.0 — v59
+## Release 9.0.0.3 — v60
+
+v60 replaces the entire student-facing UI with a next-gen Zinc/Sky design system rendered from `data/learning-tools.js` (zero new CSS in `index.html`, which stays at 484,800 bytes): a compact data-driven hero, three stat cards, a 2×2 quick-practice grid, a five-slot tab bar, a 232px desktop rail, priority-first settings with the whole technical body collapsed, a dictation cockpit that replaces the lens player, and 30 flat word cards with UK IPA, POS, meaning, example and Sinhala.
+
+- Legacy `#sdpV57Css` / `#sdpV58Css` are neutralised at boot and `#sdpNextGenCss` is pinned last in `<head>`; every surface is flat (`backdrop-filter:none`) in Full and Lite.
+- `sw.js` is `sdp-v60-9.0.0.3` with per-entry caching, network-first html/js/json, `skipWaiting` and `activate` eviction; `sdp-youdao-v1` audio is preserved.
+- Storage key remains `sdp.v57_secure_local` (ver/schema/settingsRev 60), offline words use `sdp_offline_v60`.
+- `APP_VERSION`: `9.0.0.3`; voice Alice `Xb7hH8MSUJpSbSDYk0k2`; model `eleven_flash_v2_5`; vault PBKDF2 250,000.
+## Historical release 8.0.0 — v59 (superseded by v60)
 
 v59 is the human-scale usability release: a spacious, readable design system that lives entirely in `data/learning-tools.js` (so `index.html` adds **0 bytes of CSS** and stays at 484,758 bytes), a strictly **100% English default**, full-English dictionary word cards (word · UK IPA · part of speech · meaning · example), one unified `UI.applyLang()`, `window.SDPPerfGuard` auto-selecting Lite when frames drop, an O(1) arithmetic WCAG gauge with zero canvas readbacks, and all eight learning tools fixed (paper self-check rows, live `#resSummary`, six-column A4 sheet, Sentence Context **Next question →** with a green correct state, iOS-safe Speak & Compare, honest offline pack counting).
 
