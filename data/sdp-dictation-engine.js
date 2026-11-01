@@ -83,7 +83,8 @@
       var item = E.items[i];
       out.push({
         i: item.i, w: item.w, typed: item.typed, correct: isCorrectItem(item),
-        marked: item.marked, si: item.word ? item.word.si : '', pos: item.word ? item.word.pos : ''
+        marked: item.marked, si: item.word ? item.word.si : '', pos: item.word ? item.word.pos : '',
+        origIndex: item.origIndex
       });
     }
     return { mode: E.mode, items: out, retryOnly: E.retryOnly, sessionNo: E.sessionNo };
@@ -132,7 +133,17 @@
     var item = current();
     setText(el('cockpitProgress'), (E.index + 1) + ' / ' + (E.items.length || 30));
     var badge = el('wordPosBadge');
-    setText(badge, item && item.word && item.word.pos ? item.word.pos : '—');
+    /* D-E4: a retry run is labelled as a retry, and still shows the original
+       Session # so a student can find the word in their exercise book. */
+    if (E.retryOnly) {
+      var pos = item && item.word && item.word.pos ? ' · ' + item.word.pos : '';
+      var orig = item && item.origIndex !== undefined ? ' · Session ' + str(E.sessionNo) + ' #' + (Number(item.origIndex) + 1) : '';
+      setText(badge, 'Retry · Word ' + (E.index + 1) + ' of ' + (E.items.length || 0) + pos + orig);
+      badge.className = 'badge badge-retry';
+    } else {
+      setText(badge, item && item.word && item.word.pos ? item.word.pos : '—');
+      badge.className = 'badge';
+    }
     var title = el('sessionTitle');
     if (title && SDP.Sync && SDP.Sync.sessionTitle) setText(title, SDP.Sync.sessionTitle());
   }
@@ -538,9 +549,31 @@
     }
   }
 
+  function paintPaperNotice() {
+    var panel = el('resultsPanel');
+    if (!panel) return false;
+    var node = el('paperModeNotice');
+    if (!node && panel.querySelector && doc.createElement) {
+      node = doc.createElement('p');
+      node.id = 'paperModeNotice';
+      node.className = 'paper-notice';
+      node.setAttribute('role', 'status');
+      var table = panel.querySelector('.table-wrap');
+      if (table && table.parentNode) table.parentNode.insertBefore(node, table);
+      else panel.appendChild(node);
+    }
+    if (!node) return false;
+    /* D-E5: paper mode starts every word as "correct" because nothing was
+       typed. Say so, instead of silently handing out a perfect score. */
+    node.hidden = E.mode !== 'paper';
+    node.textContent = E.mode === 'paper' ? 'Paper Mode: Tap any word you missed to mark ✗' : '';
+    return true;
+  }
+
   function renderResults() {
     var body = doc && doc.querySelector ? doc.querySelector('#resultsTable tbody') : null;
     if (!body) return;
+    paintPaperNotice();
     var html = '', i;
     for (i = 0; i < E.items.length; i++) {
       var item = E.items[i];
@@ -550,8 +583,14 @@
       var yourWord = '—';
       if (typed) yourWord = typed;
       if (E.mode === 'typing' && typed && !correct) diff = '<span class="r-diff">' + escapeHtml(typed) + '</span>';
-      html += '<tr data-row="' + i + '" class="' + (correct ? 'is-correct' : 'is-missed') + '">' +
-        '<td class="r-idx">' + (i + 1) + '</td>' +
+      /* D-E4: in a retry run the row number alone is meaningless — show the
+         original Session # so the word can be found in the book. */
+      var idxLabel = E.retryOnly && item.origIndex !== undefined
+        ? 'S' + str(E.sessionNo) + ' #' + (Number(item.origIndex) + 1)
+        : str(i + 1);
+      html += '<tr data-row="' + i + '" class="' + (correct ? 'is-correct' : 'is-missed') + '"' +
+        (E.retryOnly && item.origIndex !== undefined ? ' data-orig="' + (Number(item.origIndex) + 1) + '"' : '') + '>' +
+        '<td class="r-idx">' + idxLabel + '</td>' +
         '<td class="r-word">' + (diff || escapeHtml(yourWord)) + '</td>' +
         '<td class="r-correct">' + escapeHtml(item.w) + (item.word && item.word.si ? ' <span class="word-si">' + escapeHtml(item.word.si) + '</span>' : '') + '</td>' +
         '<td><button type="button" class="mark-btn" data-mark="correct" data-row-index="' + i + '" aria-pressed="' + (item.marked === 'correct') + '">✅ ' + escapeHtml(t('markCorrect', 'Correct')) + '</button> ' +
@@ -717,9 +756,20 @@
     E.sessionNo = SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8';
     E.items = [];
     var i;
+    /* D-E4: keep the word's position in the live session so a retry run can
+       show "Session 8 #12" instead of renumbering 1..N and losing the place. */
+    var sessionWords = SDP.Sync && SDP.Sync.words ? SDP.Sync.words() : [];
+    var sessionIndexOf = {};
+    for (i = 0; i < sessionWords.length; i++) {
+      var key = str(sessionWords[i] && sessionWords[i].w).toLowerCase();
+      if (key && sessionIndexOf[key] === undefined) sessionIndexOf[key] = i;
+    }
     for (i = 0; i < words.length; i++) {
       var word = words[i] || {};
-      E.items.push({ i: i + 1, w: str(word.w), typed: '', correct: null, marked: null, word: word });
+      var wkey = str(word.w).toLowerCase();
+      var origIndex = (word.i && !opts.retryOnly) ? (Number(word.i) - 1) : sessionIndexOf[wkey];
+      if (origIndex === undefined) origIndex = i;
+      E.items.push({ i: i + 1, w: str(word.w), typed: '', correct: null, marked: null, word: word, origIndex: origIndex });
     }
     if (opts.answers && typeof opts.answers === 'object') {
       /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R8 — sdp.session resume */

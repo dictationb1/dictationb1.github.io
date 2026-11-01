@@ -54,16 +54,26 @@
         <p id="bankEmpty" class="empty-state" role="status" data-i18n="emptyBank" hidden>No word list is available yet. Connect once, then tap "Check for session update" in Settings.</p>
         <div class="hero-actions">
           <button id="btnStart" type="button" class="btn btn-primary" data-i18n="startDictation">Start Dictation</button>
-          <button id="btnGuide" type="button" class="btn" data-i18n="howToUse">How to Use</button>
+          <button id="btnGuide" type="button" class="btn btn-accent" data-i18n="voiceGuideBtn">🔊 Voice Guide</button>
         </div>
         <div id="homeModePills" class="pill-row" role="group" aria-label="Dictation mode">
-          <button type="button" class="pill" data-mode="paper" aria-pressed="true" data-i18n="paperMode">Paper</button>
-          <button type="button" class="pill" data-mode="typing" aria-pressed="false" data-i18n="typingMode">Typing</button>
+          <button type="button" class="pill" data-mode="paper" aria-pressed="true" data-i18n="modePaperFull">📒 Write in Exercise Book (Paper)</button>
+          <button type="button" class="pill" data-mode="typing" aria-pressed="false" data-i18n="modeTypingFull">⌨️ Type on Screen</button>
         </div>
         <div id="resumeBanner" class="resume" hidden>
           <span id="resumeText" data-i18n="resumeSession">Continue where you stopped</span>
           <button id="btnResume" type="button" class="btn btn-sm" data-i18n="resumeSession">Resume</button>
         </div>
+      </div>
+
+      <div id="homeJourneyCard" class="card journey">
+        <h2 class="card-title" data-i18n="homeJourneyTitle">Your 3 steps today</h2>
+        <p id="homeReadyBadge" class="ready-badge" role="status" data-i18n="homeReadyBadge">Session 8 ready · 30 words</p>
+        <ol class="journey-list">
+          <li data-i18n="homeJourney1">1. Listen &amp; write</li>
+          <li data-i18n="homeJourney2">2. Check your 30 words</li>
+          <li data-i18n="homeJourney3">3. Train weak words</li>
+        </ol>
       </div>
 
       <div id="homeStatsRow" class="stats-row">
@@ -90,10 +100,23 @@
       <footer id="creditFoot">
         <span class="credits-pill">CREDITS GOES TO Hansana</span>
         <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+        <p class="credit-line credit-line-si" lang="si">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
       </footer>
     </section>
 
     <section id="screen-player" class="screen" aria-labelledby="sessionTitle">
+      <div id="boardClassBar" class="card board-class-bar" role="toolbar" aria-label="Smart Board classroom controls" hidden>
+        <div class="board-transport">
+          <button id="boardPlayPause" type="button" class="btn board-btn" data-i18n="boardPlayPause">▶ Play / Pause</button>
+          <button id="boardRepeat" type="button" class="btn board-btn" data-i18n="boardRepeat">🔁 Repeat</button>
+          <button id="boardNext" type="button" class="btn board-btn" data-i18n="boardNext">⏭ Next</button>
+        </div>
+        <div id="boardJumper" class="board-jumper" role="group" aria-label="Jump to word"></div>
+        <div class="board-word-row">
+          <p id="boardWordDisplay" class="board-word" aria-live="polite">••••••</p>
+          <button id="btnBoardToggleWord" type="button" class="btn board-btn" aria-pressed="false" data-i18n="boardHideWord">🙈 Hide Word on Board</button>
+        </div>
+      </div>
       <div id="cockpitBar" class="card cockpit">
         <div class="cockpit-head">
           <div>
@@ -294,7 +317,8 @@
           </div>
           <p id="settingsSyncStatus" class="muted" role="status" aria-live="polite"></p>
           <span id="downloadClipsStatus" class="muted"></span>
-          <p id="updateStatus" class="muted" role="status" aria-live="polite"></p>
+          <p id="settingsUpdateStatus" class="muted" role="status" aria-live="polite"></p>
+          <p id="settingsFeedback" class="muted" role="status" aria-live="polite"></p>
           <p id="storageStatus" class="muted"></p>
         </section>
 
@@ -310,6 +334,7 @@
           <footer class="credit-foot">
             <span class="credits-pill">CREDITS GOES TO Hansana</span>
             <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+            <p class="credit-line credit-line-si" lang="si">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
           </footer>
         </section>
 

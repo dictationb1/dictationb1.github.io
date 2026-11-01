@@ -29,7 +29,8 @@
   function loadManifest() {
     if (state.manifest) return state.manifest;
     try { var cached = JSON.parse(safeGet(STORAGE.manifest) || 'null'); if (cached && cached.assets) state.manifest = cached; } catch (e) {}
-    if (canNetwork()) {
+    /* D-UI12: no 404 probe on boot — the retired manifest is off. */
+    if (MANIFEST_FETCH_ENABLED && canNetwork()) {
       try {
         global.fetch(manifestUrl(), { cache: 'no-cache' }).then(function (r) { return r && r.ok ? r.json() : null; }).then(function (m) {
           if (m && m.assets) { state.manifest = m; safeSet(STORAGE.manifest, JSON.stringify(m)); indexManifest(); }
@@ -42,6 +43,8 @@
   function canNetwork() {
     try { return !!global.fetch && global.location.protocol !== 'file:' && !/HeadlessChrome|jsdom/i.test(global.navigator.userAgent || ''); } catch (e) { return false; }
   }
+  /* D-UI12: data/media-manifest.json is retired; one switch, off. */
+  var MANIFEST_FETCH_ENABLED = false;
   function manifestUrl() {
     return './data/media-manifest.json';
   }

@@ -149,6 +149,10 @@
     boardRepeat: '🔁 Repeat',
     boardNext: '⏭ Next',
     boardJumpLabel: 'Jump to word',
+    syncShortSynced: 'Synced ✓',
+    syncShortOffline: 'Offline',
+    syncShortUpdate: 'Update',
+    syncShortRetry: 'Retry',
     homeJourneyTitle: 'Your 3 steps today',
     settingsSyncLabel: 'Sync',
     settingsUpdateLabel: 'Update',
@@ -278,6 +282,10 @@
     boardRepeat: '🔁 නැවත අසන්න',
     boardNext: '⏭ ඊළඟ',
     boardJumpLabel: 'වචනයට යන්න',
+    syncShortSynced: 'සමමුහුර්තයි ✓',
+    syncShortOffline: 'නොබැඳි',
+    syncShortUpdate: 'යාවත්කාලීන',
+    syncShortRetry: 'නැවත',
     homeJourneyTitle: 'අද ඔබේ පියවර 3',
     settingsSyncLabel: 'සමමුහුර්තය',
     settingsUpdateLabel: 'යාවත්කාලීනය',
@@ -361,26 +369,47 @@
   }
   function toggleLang() { return applyLang(lang === 'en' ? 'si' : 'en'); }
 
+  var THEMES = ['dark', 'light', 'board'];
+  function normalizeTheme(next) {
+    var wanted = str(next).toLowerCase();
+    return THEMES.indexOf(wanted) >= 0 ? wanted : 'dark';
+  }
+  /* D-UI2: 'board' used to be coerced to 'dark' on line 311, and line 324 read
+     an undefined `name` variable, so the Smart Board mode could never work. */
   function applyTheme(next, quiet) {
-    theme = next === 'light' ? 'light' : 'dark';
+    theme = normalizeTheme(next);
     if (doc && doc.documentElement) doc.documentElement.setAttribute('data-theme', theme);
     if (doc && doc.body) doc.body.setAttribute('data-theme', theme);
     var meta = doc.querySelector ? doc.querySelector('meta[name="theme-color"]') : null;
-    if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#09090B');
-    if (!quiet) { try { SDP.Data.saveSettings({ theme: theme }); } catch (e) {} }
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : (theme === 'board' ? '#000000' : '#09090B'));
+    if (!quiet) { try { SDP.Data.saveSettings({ theme: theme, touchedKeys: touchedPatch('theme') }); } catch (e) {} }
     var select = byId('setTheme');
     if (select) select.value = theme;
     var icon = byId('themeIcon');
-    if (icon) setText(icon, theme === 'light' ? '◑' : '◐');
+    if (icon) setText(icon, theme === 'light' ? '◑' : (theme === 'board' ? '▣' : '◐'));
     /* R7 / H5: Smart Board shows a clean quick-word jumper in the cockpit header. */
     var jumper = byId('quickJumper');
     if (jumper) {
-      if (name === 'board') { jumper.hidden = false; renderQuickJumper(); }
+      if (theme === 'board') { jumper.hidden = false; renderQuickJumper(); }
       else jumper.hidden = true;
     }
+    renderBoardBar();
     return theme;
   }
-  function toggleTheme() { return applyTheme(theme === 'dark' ? 'light' : 'dark'); }
+  /* R7: remember that this student changed a setting by hand. */
+  function touchedPatch(key) {
+    var out = {};
+    if (!key) return out;
+    var current = {};
+    try { current = settings().touchedKeys || {}; } catch (e) { current = {}; }
+    for (var k in current) if (Object.prototype.hasOwnProperty.call(current, k)) out[k] = current[k];
+    out[key] = true;
+    return out;
+  }
+  function toggleTheme() {
+    var next = theme === 'dark' ? 'light' : (theme === 'light' ? 'board' : 'dark');
+    return applyTheme(next);
+  }
 
   /* ══ router ═════════════════════════════════════════════════════════════ */
   /* contract: docs/ARCHITECTURE_MAP.md §R3 exactly one active screen */
@@ -410,6 +439,8 @@
     if (target === 'home') renderHome();
     if (target === 'practice') renderPractice();
     if (target === 'settings') renderSettings();
+    if (target === 'player') { renderBoardJumper(); }
+    renderBoardBar();
     if (target === 'player' && SDP.Engine && SDP.Engine.refreshEls) SDP.Engine.refreshEls();
     return target;
   }
@@ -443,6 +474,8 @@
     if (line) setText(line, t('creditsLine'));
     var pill = doc.querySelector ? doc.querySelector('#creditFoot .credits-pill') : null;
     if (pill) setText(pill, 'CREDITS GOES TO Hansana');
+    paintCredits();
+    paintReadiness(bank);
     var banner = byId('resumeBanner');
     var draft = null;
     try { draft = SDP.Data.session(); } catch (e) {}
@@ -456,6 +489,39 @@
     if (ann) ann.hidden = !annText;
     setText(byId('homeAnnText'), annText);
     paintModePills();
+  }
+  /* R1: all three credit lines are preserved verbatim in the markup, but the
+     English chrome must stay Sinhala-free (G3.5c), so only the active language
+     is rendered into the DOM at any moment. */
+  function paintCredits() {
+    if (!doc || !doc.querySelectorAll) return false;
+    var enText = lang === 'si' ? '' : STRINGS_EN.creditsLine;
+    var siText = lang === 'si' ? STRINGS_SI.creditsLine : '';
+    var enNodes = doc.querySelectorAll('.credit-line:not(.credit-line-si)');
+    var siNodes = doc.querySelectorAll('.credit-line-si');
+    var i;
+    for (i = 0; i < enNodes.length; i++) setText(enNodes[i], enText);
+    for (i = 0; i < siNodes.length; i++) setText(siNodes[i], siText);
+    return true;
+  }
+
+  /* P5: "Session 8 ready · 30 words" — the student knows the bank is loaded
+     before they tap Start, instead of discovering an empty cockpit. */
+  function paintReadiness(bank) {
+    var badge = byId('homeReadyBadge');
+    if (!badge) return false;
+    var count = Number(bank);
+    if (isNaN(count)) count = boardWordCount();
+    var sessionNo = '8';
+    try { sessionNo = str(SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8'); } catch (e) { sessionNo = '8'; }
+    var label = t('homeReadyBadge')
+      .replace('Session 8', 'Session ' + sessionNo)
+      .replace('8 වන වාරය', sessionNo + ' වන වාරය')
+      .replace('30 words', count + ' words')
+      .replace('වචන 30', 'වචන ' + count);
+    badge.textContent = label;
+    badge.setAttribute('data-ready', count > 0 ? 'true' : 'false');
+    return true;
   }
   function paintModePills() {
     var mode = settings().mode === 'typing' ? 'typing' : 'paper';
@@ -1005,10 +1071,32 @@
   }
   function bindSettings() {
     function save(patch) { try { SDP.Data.saveSettings(patch); } catch (e) {} }
-    function range(id, key, scale, format) {
+    /* P5: every manual change answers immediately, and is remembered as
+       "touched" so a teacher settingsRev bump cannot silently undo it (R7). */
+    function saveTouched(patch, label) {
+      var withTouch = {};
+      for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) { withTouch[k] = patch[k]; withTouch.touchedKeys = touchedPatch(k); }
+      save(withTouch);
+      var node = byId('settingsFeedback');
+      if (node) node.textContent = str(label) || '';
+      if (label) showToast(str(label));
+      return withTouch;
+    }
+    window.__sdpSaveTouched = saveTouched;
+    function range(id, key, scale, format, label) {
       var node = byId(id);
       if (!node || node._sdpBound) return;
       node._sdpBound = true;
+      var commit = function () {
+        var raw = Number(node.value);
+        var value = scale ? raw / scale : raw;
+        var patch = {};
+        patch[key] = value;
+        saveTouched(patch, label ? label + ' → ' + (format ? format.fn(value) : value) : '');
+        if (format) setText(byId(format.out), format.fn(value));
+        if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
+      };
+      /* 'change' is the moment a range settles: toast once, never per pixel. */
       node.addEventListener('input', function () {
         var raw = Number(node.value);
         var value = scale ? raw / scale : raw;
@@ -1018,15 +1106,19 @@
         if (format) setText(byId(format.out), format.fn(value));
         if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
       });
+      node.addEventListener('change', commit);
     }
-    range('setWriteSecs', 'writeSecs', 1, { out: 'outWriteSecs', fn: function (v) { return v + 's'; } });
-    range('setPause', 'pauseSecs', 1, { out: 'outPause', fn: function (v) { return v + 's'; } });
-    range('setRate', 'rate', 1, { out: 'outRate', fn: function (v) { return v + 'x'; } });
-    range('setVolume', 'volume', 100, { out: 'outVolume', fn: function (v) { return Math.round(v * 100) + '%'; } });
+    range('setWriteSecs', 'writeSecs', 1, { out: 'outWriteSecs', fn: function (v) { return v + 's'; } }, t('writeTime'));
+    range('setPause', 'pauseSecs', 1, { out: 'outPause', fn: function (v) { return v + 's'; } }, t('pauseBetween'));
+    range('setRate', 'rate', 1, { out: 'outRate', fn: function (v) { return v + 'x'; } }, t('rate'));
+    range('setVolume', 'volume', 100, { out: 'outVolume', fn: function (v) { return Math.round(v * 100) + '%'; } }, t('volume'));
     var repeats = byId('setRepeats');
     if (repeats && !repeats._sdpBound2) {
       repeats._sdpBound2 = true;
-      repeats.addEventListener('change', function () { save({ repeats: Number(repeats.value) }); if (SDP.Engine) SDP.Engine.applySettings(); });
+      repeats.addEventListener('change', function () {
+        saveTouched({ repeats: Number(repeats.value) }, t('repeats') + ' → ' + repeats.value);
+        if (SDP.Engine) SDP.Engine.applySettings();
+      });
     }
     var auto = byId('setAutoAdvance');
     if (auto && !auto._sdpBound) {
@@ -1093,7 +1185,12 @@
     var themeSel = byId('setTheme');
     if (themeSel && !themeSel._sdpBound) {
       themeSel._sdpBound = true;
-      themeSel.addEventListener('change', function () { applyTheme(themeSel.value); });
+      themeSel.addEventListener('change', function () {
+        var next = applyTheme(themeSel.value);
+        var node = byId('settingsFeedback');
+        if (node) node.textContent = t('theme') + ' → ' + next;
+        showToast(t('theme') + ' → ' + next);
+      });
     }
     [['setModePaper', 'paper'], ['setModeTyping', 'typing']].forEach(function (pair) {
       var node = byId(pair[0]);
@@ -1162,7 +1259,7 @@
     }
   }
   function setUpdateStatus(text, state) {
-    var node = byId('updateStatus');
+    var node = byId('settingsUpdateStatus') || byId('updateStatus');
     if (!node) return;
     node.textContent = str(text);
     if (state) node.setAttribute('data-state', state); else node.removeAttribute('data-state');
@@ -1172,7 +1269,9 @@
     state = state || {};
     var session = str(state.session || '8');
     var badge = byId('syncBadge');
-    var status = byId('settingsSyncStatus') || byId('updateStatus');
+    /* D-UI10: the badge owns #settingsSyncStatus and NOTHING else; the update
+       line keeps #settingsUpdateStatus so a sync tick can never erase it. */
+    var status = byId('settingsSyncStatus');
     var label;
     if (state.state === 'synced') {
       label = t('syncBadgeSynced').replace('Session 8', 'Session ' + session).replace('8 වන වාරය', session + ' වන වාරය').replace('v0.0.1.b', 'v' + APP_VERSION);
@@ -1183,7 +1282,21 @@
     } else {
       label = t('syncBadgeRetry');
     }
-    if (badge) { badge.textContent = label; badge.setAttribute('data-sync-state', state.state || 'synced'); badge.setAttribute('title', label); }
+    if (badge) {
+      /* D-UI6: on a 390px phone the badge speaks a two-word summary; the full
+         sentence still lives in #settingsSyncStatus below. */
+      var vw = Number(global.innerWidth || 0);
+      var shortLabel = label;
+      if (vw > 0 && vw < 480) {
+        if (state.state === 'offline') shortLabel = t('syncShortOffline');
+        else if (state.state === 'update') shortLabel = t('syncShortUpdate');
+        else if (state.state === 'error') shortLabel = t('syncShortRetry');
+        else shortLabel = t('syncShortSynced');
+      }
+      badge.textContent = shortLabel;
+      badge.setAttribute('data-sync-state', state.state || 'synced');
+      badge.setAttribute('title', label);
+    }
     if (status) { status.textContent = label; status.setAttribute('data-state', state.state || 'synced'); status.setAttribute('title', label); }
   }
   function checkForUpdate() {
@@ -1235,11 +1348,116 @@
     setUpdateStatus(t('presetApplied'), 'ok');
   }
 
-  /* ══ Smart Board quick-word jumper (R7 / H5) ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+  /* ══ Smart Board Classroom Bar (D-UI4, D-UI5, R10) ═══════════════════════ */
+  var boardState = { wordShown: false };
+  function boardWordCount() {
+    var n = 0;
+    try { n = Number(SDP.Sync && SDP.Sync.wordCount ? SDP.Sync.wordCount() : 0) || 0; } catch (e) { n = 0; }
+    return n;
+  }
+  function boardBarShouldShow() {
+    /* R10/D-UI4: decoupled from theme coercion. A projector-sized viewport gets
+       the bar as soon as a session exists; the board theme always shows it. */
+    if (boardWordCount() <= 0) return false;
+    if (theme === 'board') return true;
+    var vw = Number(global.innerWidth || (doc && doc.documentElement && doc.documentElement.clientWidth) || 0);
+    return vw >= 1024;
+  }
+  function renderBoardBar() {
+    var bar = byId('boardClassBar');
+    if (!bar) return false;
+    var show = boardBarShouldShow();
+    if (bar.classList) {
+      if (show) bar.classList.add('is-active'); else bar.classList.remove('is-active');
+    }
+    bar.hidden = !show;
+    if (show) renderBoardJumper();
+    paintBoardWord();
+    return show;
+  }
+  function renderBoardJumper() {
+    var host = byId('boardJumper');
+    if (!host) return 0;
+    /* D-UI5: 1..N from the live session, never a hardcoded 1..30. */
+    var count = boardWordCount();
+    var active = -1;
+    try { active = Number(SDP.Engine && SDP.Engine.config ? SDP.Engine.config().index : -1); } catch (e) { active = -1; }
+    var html = '', i;
+    for (i = 0; i < count; i++) {
+      html += '<button type="button" class="board-chip" data-board-jump="' + i + '" aria-pressed="' +
+        (i === active ? 'true' : 'false') + '">' + (i + 1) + '</button>';
+    }
+    host.innerHTML = html;
+    return count;
+  }
+  function currentWordText() {
+    try {
+      if (SDP.Engine && SDP.Engine.current) {
+        var c = SDP.Engine.current();
+        if (c && c.word) return str(c.word.w || c.word);
+      }
+    } catch (e) {}
+    var idx = 0;
+    try { idx = Number(SDP.Engine && SDP.Engine.config ? SDP.Engine.config().index : 0) || 0; } catch (e) { idx = 0; }
+    var w = null;
+    try { w = SDP.Sync && SDP.Sync.word ? SDP.Sync.word(idx) : null; } catch (e) { w = null; }
+    return w ? str(w.w) : '';
+  }
+  /* R10 — the board NEVER spoils the spelling during dictation by default. */
+  function paintBoardWord() {
+    var node = byId('boardWordDisplay');
+    if (!node) return false;
+    var text = currentWordText();
+    node.textContent = boardState.wordShown ? text : '••••••';
+    node.setAttribute('data-revealed', boardState.wordShown ? 'true' : 'false');
+    var btn = byId('btnBoardToggleWord');
+    if (btn) {
+      btn.textContent = boardState.wordShown ? t('boardHideWord') : t('boardShowWord');
+      btn.setAttribute('aria-pressed', boardState.wordShown ? 'true' : 'false');
+    }
+    return true;
+  }
+  function toggleBoardWord() {
+    boardState.wordShown = !boardState.wordShown;
+    paintBoardWord();
+    return boardState.wordShown;
+  }
+  function bindBoardBar() {
+    var bar = byId('boardClassBar');
+    if (!bar || bar._sdpBound) return false;
+    bar._sdpBound = true;
+    bar.addEventListener('click', function (ev) {
+      var node = ev && ev.target;
+      while (node && node !== bar && !(node.getAttribute && node.getAttribute('data-board-jump') !== null)) node = node.parentNode;
+      if (node && node !== bar) {
+        if (ev.preventDefault) ev.preventDefault();
+        var jump = Number(node.getAttribute('data-board-jump'));
+        if (isFinite(jump)) {
+          try { if (SDP.Engine && SDP.Engine.jumpTo) SDP.Engine.jumpTo(jump); } catch (e) {}
+          renderBoardJumper();
+          paintBoardWord();
+        }
+        return;
+      }
+      var id = ev && ev.target && ev.target.id;
+      if (id === 'btnBoardToggleWord') { toggleBoardWord(); return; }
+      var engine = SDP.Engine;
+      if (!engine) return;
+      if (id === 'boardPlayPause') { try { engine.togglePlayPause(); } catch (e) {} }
+      else if (id === 'boardRepeat') { try { engine.repeat(); } catch (e) {} }
+      else if (id === 'boardNext') { try { engine.next(); } catch (e) {} }
+      renderBoardJumper();
+      paintBoardWord();
+    }, false);
+    return true;
+  }
+
+  /* ══ Smart Board quick-word jumper (R7 / H5) ═══════════════════════════ */
   function renderQuickJumper() {
     var sel = byId('setQuickWord');
     if (!sel) return;
-    var count = 30;
+    /* D-UI5: live word count, never a hardcoded 30. */
+    var count = boardWordCount() || 30;
     var i, html = '';
     for (i = 1; i <= count; i++) html += '<option value="' + i + '">' + str(i) + '</option>';
     sel.innerHTML = html;
@@ -1365,6 +1583,7 @@
       modal.addEventListener('click', function (ev) { if (ev && ev.target === modal) closeGuide(); });
     }
     trapGuideKeys();
+    bindBoardBar();
     bindWords();
     bindPractice();
     bindSettings();
@@ -1397,6 +1616,7 @@
 
   function onDataReady(err) {
     renderHome();
+    renderBoardBar();
     renderWords();
     renderPractice();
     renderSettings();
@@ -1415,7 +1635,7 @@
     if (initialized) return false;
     initialized = true;
     var conf = settings();
-    applyTheme(conf.theme === 'light' ? 'light' : 'dark', true);
+    applyTheme(normalizeTheme(conf.theme), true);
     applyLang(conf.lang === 'si' ? 'si' : 'en', true);
     bindShell();
     bindTeacherUpdates();
@@ -1463,6 +1683,10 @@
     startPractice: startPractice,
     openGuide: openGuide,
     openStudio: openStudio,
+    renderBoardBar: renderBoardBar,
+    renderBoardJumper: renderBoardJumper,
+    toggleBoardWord: toggleBoardWord,
+    paintBoardWord: paintBoardWord,
     closeGuide: closeGuide,
     speakGuide: speakGuide,
     startGuideNarration: startGuideNarration,
