@@ -277,6 +277,20 @@
   }
 
   function tick() {
+    /* F2: while the final repetition is still speaking, keep the listening
+       phase alive (polling on the 100ms ticker) so the writing countdown
+       never starts mid-audio; hard cap at +2000 ms past phase end. */
+    if (E.phase === 'listening' && E.waitingForSpeech) {
+      if (SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()) {
+        if (now() - E.waitSince > 2000) { E.waitingForSpeech = false; enterWriting(); return; }
+        paint(E.phaseMs ? 0 : 0);
+        setStateText();
+        return;
+      }
+      E.waitingForSpeech = false;
+      enterWriting();
+      return;
+    }
     if (E.phase !== 'listening' && E.phase !== 'writing') return;
     var left = E.deadline - now();
     if (left < 0) left = 0;
@@ -287,7 +301,16 @@
   }
 
   function onPhaseEnd() {
-    if (E.phase === 'listening') { enterWriting(); return; }
+    if (E.phase === 'listening') {
+      /* F2: wait for in-flight speech before the writing window opens. */
+      if (SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()) {
+        E.waitingForSpeech = true;
+        E.waitSince = now();
+        return;
+      }
+      enterWriting();
+      return;
+    }
     if (E.phase === 'writing') {
       saveDraft();
       if (E.autoAdvance) {
@@ -368,20 +391,32 @@
     setStateText();
   }
 
+  /* F1: resume into 'writing' remounts/binds #typeInput and preserves any
+     partial typed text; resume into 'listening' bumps the epoch and
+     restarts the current word's repeat schedule from repeat 1 with a fresh
+     listening deadline. */
   function resume() {
-    if (E.phase !== 'paused') {
-      if (E.phase === 'idle' || E.phase === 'finished') return;
-      return;
-    }
+    if (E.phase !== 'paused') return;
     var back = E.pausedPhase === 'writing' ? 'writing' : 'listening';
     E.phase = back;
-    E.deadline = now() + E.remainingMs;
-    startTicker();
-    paint(E.phaseMs ? E.remainingMs / E.phaseMs : 1);
-    setStateText();
-    if (back === 'listening') {
-      var item = current();
-      if (item && SDP.Speech) SDP.Speech.playWord(item.word, {}, noop);
+    if (back === 'writing') {
+      E.deadline = now() + E.remainingMs;
+      startTicker();
+      paint(E.phaseMs ? E.remainingMs / E.phaseMs : 1);
+      setStateText();
+      mountInput();
+      bindInput();
+      focusInputOnce();
+    } else {
+      E.epoch += 1;
+      E.phaseMs = listenMs();
+      E.remainingMs = E.phaseMs;
+      E.deadline = now() + E.phaseMs;
+      E.repeatShown = 1;
+      paint(1);
+      setStateText();
+      startTicker();
+      speakRepeats(E.epoch);
     }
   }
 
