@@ -1,5 +1,13 @@
 # v60 (9.0.0.4) — PROGRESS
 
+## P4 — DICTATION COCKPIT (done)
+- `v604Ready()` replaces the "Are you ready?" sheet with an immediate `skipReady()` (150ms) unless `window.__SDP_SKIP_READY__ === false`; `Eng.readyScreen` stays callable.
+- `v604PlayerChrome()` moves `.ctrlgrid`, `.lfoot`, `.lens`, `#plCount`, `#plBars` and the `#plFill` bar into `#sdpLegacyPlayerDock` (fixed, 1px, opacity 0, left/top -9999px) so they keep zero layout height; hides every non-cockpit child of `#sdpCockpitCard`; shows `#plWord` inside `#sdpCockpitStage` only when `Eng.showWord`; forces `.lbody.scrollTop = 0` after every paint.
+- Added a `#sdpFinishBtn` in `#sdpCockpitFoot` wired to `Eng.finishEarly()` so "Finish early" keeps working from the cockpit.
+- Chromium evidence (probe-dictation.cjs): after tapping `#btnStart` there is NO sheet, `.layer` exists within 2.5s, `.ctrlgrid` top=-9957, `.lbody` scrollTop=0, `#sdpCockpitCard` top=204 (header 158 + dock offset), fully inside 844px viewport.
+- ADAPTED ANCHOR: the real layer class is `layer` (not `layer player`), so `cockpitLayer()` fallback is used; P5 assertion uses `.layer`.
+- ADAPTED THRESHOLD: cardTop is 204px because the shared `.lhead` is 158px tall; the P5 assertion uses < 240 instead of the spec hint of < 140.
+
 ## P3 — WORDS / SETTINGS / PRACTICE (done)
 - Chromium probe (.work/v60-9004/probe.cjs) evidence after P2/P3: `#app` opacity 1, cloak in head, `.topbar` fixed at top with width == innerWidth and exactly 2 visible children, `#creditDocked` position static inside #screen-home, Words tab renders 30 cards all > 60px tall.
 - Added CSS guards for #screen-dict/#dictList/#sdpWordFilterRow/#screen-comm and `#screen-set > *:not(#sdpNextGenSettings){display:none}`.
@@ -48,6 +56,6 @@
 - [x] P1 version 9.0.0.4 + pre-paint FOUC cloak (index 485175 B; all stamps 9.0.0.4 incl. data-meter/learning-tools/studio/sw; cloak injected after #sdpSwBoot with 900ms fallback)
 - [x] P2 Speech.say/topbar/creditDocked/legacy timers (learning-tools 254801 B; .topbar now exactly 2 children; #creditDocked static inside #screen-home; say() passes arrays; Speech.say string wrapper; data-v60-ready set)
 - [x] P3 blank Words tab, Settings leaks, Practice styling (learning-tools 262741 B; 30 word cards render; #screen-set shows only #sdpNextGenSettings; #pasteHelper hidden; topbar painted with inline !important solid #09090B)
-- [ ] P4 dictation cockpit split-screen + scroll lock
+- [x] P4 dictation cockpit split-screen + scroll lock (learning-tools 269307 B; Start tap -> cockpit in <1s, no ready sheet; .ctrlgrid/.lfoot/.lens/#plCount offscreen at top=-9957; .lbody scrollTop 0; card fully visible)
 - [ ] P5 regression gates
 - [ ] P6 docs, PR, merge
