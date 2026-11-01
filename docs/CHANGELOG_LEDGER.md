@@ -352,3 +352,114 @@ counts are reproducible offline. Suite total: 151 KB of `tests/*.cjs`
 (cap 220,000 B).
 
 Released under: `Release Smart Dictation Player v0.0.1.a (Clean-Slate Rebuild)`.
+
+---
+
+## v0.0.1.d — 2026-11-01 — Guaranteed Lecturer Sync, PIN Gate & Unified Voice
+
+Pill: `CREDITS GOES TO Hansana`
+Line: `Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)`
+SI: `නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini`
+
+36 verified production defects were closed: SYNC-01..11, SEC-01..05,
+VOX-01..09, ENG-01..08, PIPE-01..03.
+
+### Priority #1 — guaranteed multi-device lecturer settings (SYNC-01..11)
+
+| ID | Fix |
+| --- | --- |
+| SYNC-01 | `config.classSettings` overrides `touchedKeys` for the ten classroom keys whenever `remote.settingsRev > appliedSettingsRev` |
+| SYNC-02 | `appliedSettingsRev` persists in `sdp.settings` (default `0`), so a brand-new device adopts on its very first boot |
+| SYNC-03 | `#lecturerSyncBar` + `#btnSyncClassSettings` + `Studio.saveClassSettings()` publish the class settings from the Settings screen |
+| SYNC-04 | `remote.version` is a string; the upgrade test now reads `version.appVersion \|\| version.version` |
+| SYNC-05 | `startWatch(30000)` reads only `raw.githubusercontent.com/…/data/version.json`; `api.github.com` is reserved for visibility/manual/vault |
+| SYNC-06 | `setup()` reuses `buildVersionPayload()`, so publish keeps the live session number and title |
+| SYNC-07 | `saveKeys()` commits `data/config.json` + `data/version.json` immediately (`Vault saved · synced to GitHub`) |
+| SYNC-08 | the duplicate dead `b64decode()` is deleted |
+| SYNC-09 | the unauthenticated `pushLiveState()` relay call is removed from `publish()` |
+| SYNC-10 | `loadManifest()` resets `manifestRequested` on failure and retries on `online` / `visibilitychange` |
+| SYNC-11 | `loadVoicePack()` runs on Studio unlock and before every `generateClips()` delta check |
+
+### Priority #2 — 100% PIN-gated Lecturer Studio (SEC-01..05)
+
+`#studioFirstTimePanel` is **deleted**; the locked body is only `#studioPin`,
+`#pinDots`, the 56 px 12-key `#pinPad`, `#studioMsg` and the ask-lecturer hint.
+`config.pinVerifier` (PBKDF2-SHA256, 250,000 iterations) authenticates the
+bootstrap PIN `246813` while `encVault` is `SDP_ENC_V2:AAA=`. A new PIN requires
+the 2-step `#newPinInput` / `#confirmPinInput` confirmation, and the lockout
+(`5` fails → `60 s`, `strikes >= 2` → `300 s`) now lives in
+`sdp.settings.vaultLock`, so a reload cannot reset it.
+
+### Priority #3 — GC-safe unified professor voice + speaking guide
+
+`state.activeUtter` / `state.activeQueue` hold the live utterance (VOX-01),
+`onend` is the primary driver with a single 1.8 s guard extension (VOX-02), a
+10 s `speechSynthesis.resume()` keepalive runs while narrating (VOX-03), the
+unified lock returns `[1, 2, 4]` and never plays Youdao's third-party voices
+(VOX-04), concurrent `selectProfessorVoice()` callers queue (VOX-06),
+`testVoice()` reports the tier that actually played (VOX-08), and `speak()` is
+deferred 200 ms after `cancel()` (VOX-09). `#btnStart` opens the Quick
+Walkthrough (`#btnGuideSkipStart`) that auto-starts the dictation (VOX-07).
+
+### Priority #4 — repeat-safe cockpit and honest controls
+
+The listening deadline extends by one repeat gap + 1.8 s per pending repeat and
+the speech grace cap is 8 s (ENG-01); `repeatGapMs()` is
+`max(600, pauseSecs × 1000 + 300)` so 0.5 s means 800 ms (ENG-02);
+`conf.hints` loads into `E.hints` (ENG-03); switching practice mode resets
+`practice.spoken` (ENG-04); every classroom control goes through one
+`saveTouched()` and personal keys stay untouched (ENG-05); the sync badge is
+composed from live values (ENG-06); **Invert marks (tap twice)** needs a second
+tap inside 3 s (ENG-07); the duplicate `var quick` is now `quickBtn` (ENG-08).
+
+### Priority #5 — human-friendly UI and the green 12-gate pipeline
+
+All cockpit and Settings controls are ≥ 48 px, settings changes toast
+immediately, `tests/package.json` and `.github/workflows/checks.yml` chain
+`G1`–`G12` (PIPE-01), CI no longer pins the app-written
+`data/elevenlabs-audio.json` (PIPE-02), and G1 really asserts the existence of
+the G10–G12 files (PIPE-03).
+
+### Test-side realignment (the same release, `gate-align` commit)
+
+Every gate was re-anchored to the new contracts rather than the old
+expectations; no production file was relaxed to make a gate pass.
+
+| Gate | File | Assertions | Result |
+| --- | --- | --- | --- |
+| G1 | `tests/check.cjs` | 85 | 85 PASS / 0 FAIL |
+| G2 | `tests/upgrade.test.cjs` | 10 | 10 pass / 0 fail |
+| G3 | `tests/phase1.cjs` | 76 | 76 PASS / 0 FAIL |
+| G4 | `tests/server.cjs` | 8 | 8 PASS / 0 FAIL |
+| G5 | `tests/browser.cjs` | 46 | 46 PASS / 0 FAIL |
+| G6 | `tests/upgrade-browser.cjs` | 15 | 15 PASS / 0 FAIL |
+| G7 | `tests/e2e.cjs` | 52 | 52 PASS / 0 FAIL |
+| G8 | `tests/live-lab.cjs` | 39 | 39 PASS / 0 FAIL |
+| G9 | `tests/audit-v42.cjs` | 47 | 47 PASS / 0 FAIL |
+| G10 | `tests/voice-guide.cjs` | 21 | 21 PASS / 0 FAIL |
+| G11 | `tests/vault-sync.cjs` | 28 | 28 PASS / 0 FAIL |
+| G12 | `tests/studio-safety.cjs` | 33 | 33 PASS / 0 FAIL |
+
+New intents added by the realignment: G1 asserts the ten `classSettings` keys,
+`config.pinVerifier` (PBKDF2-SHA256 / 250,000 iterations / no PIN literal), the
+G10–G12 files, the twelve-gate chain and a CI that no longer hash-pins
+`data/elevenlabs-audio.json`; G3 adds §7 (a newer `settingsRev` beats
+`touchedKeys`), §8 (first-boot adoption) and §9 (Quick Walkthrough, Skip and a
+second Start); G5 adds the 48 px touch-target sweeps; G7 adds the spoken guide
+journey; **G8 adds the end-to-end two-device scenario** — a lecturer unlocks
+Studio on device A, saves `writeSecs 12 / repeats 4`, taps
+`#btnSyncClassSettings`, and device B (with every key in `touchedKeys`) adopts
+the pacing on its next boot while its own `sdp.progress` survives untouched.
+
+### Preservation & budgets
+
+`data/session.json`, `data/gas-source.txt` and both Noto Sans Sinhala faces were
+re-verified byte-identical (`shasum -a 256 -c`) before and after every phase.
+Every shipped file is inside its cap: `index.html` 28,658 B,
+`assets/css/sdp-ui.css` 38,520 B, `data/sdp-data-sync.js` 63,848 B,
+`data/sdp-audio-speech.js` 29,694 B, `data/sdp-dictation-engine.js` 36,597 B,
+`data/sdp-ui-views.js` 101,044 B, `data/studio.js` 68,381 B,
+`data/data-meter.js` 21,740 B, `data.html` = `data/index.html` 27,565 B,
+`sw.js` 7,335 B.
+
+Released under: `Release Smart Dictation Player v0.0.1.d (Guaranteed Lecturer Sync, PIN Gate & Unified Voice)`.

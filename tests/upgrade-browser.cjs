@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* G6 — real Chromium upgrade journey: a v60 device becomes a 0.0.1.c device.
+/* G6 — real Chromium upgrade journey: a v60 device becomes a 0.0.1.d device.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
  * contract: docs/ARCHITECTURE_MAP.md §2 boot version check (single reload guard)
  * Preserved caches must survive; retired caches must not. Exactly one reload. */
@@ -13,7 +13,7 @@ const { start } = require('./static-server.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const STALE = 'sdp-v60-9.0.0.4';
-const SHELL = 'sdp-v0.0.1.c-shell';
+const SHELL = 'sdp-v0.0.1.d-shell';
 const YOUDAO = 'sdp-youdao-v1';
 const CLIPS = 'sdp-audio-clips';
 
@@ -53,14 +53,14 @@ async function launch() {
     }, { stale: STALE, youdao: YOUDAO, clips: CLIPS });
     check('G6.1a a stale v60 cache and both preserved caches are seeded',
       seeded.indexOf(STALE) >= 0 && seeded.indexOf(YOUDAO) >= 0 && seeded.indexOf(CLIPS) >= 0, seeded.join(','));
-    check('G6.1b the 0.0.1.c shell cache does not exist yet', seeded.indexOf(SHELL) < 0, seeded.join(','));
+    check('G6.1b the 0.0.1.d shell cache does not exist yet', seeded.indexOf(SHELL) < 0, seeded.join(','));
 
     /* ── 2 + 3. activating the new worker purges the retired cache ─────── */
     // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 activate handler
     const activated = await page.evaluate(async () => {
       const regs = await navigator.serviceWorker.getRegistrations();
       for (const reg of regs) await reg.unregister();
-      await caches.delete('sdp-v0.0.1.c-shell');
+      await caches.delete('sdp-v0.0.1.d-shell');
       const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       await new Promise((resolve) => {
         if (reg.active) return resolve();
@@ -72,7 +72,7 @@ async function launch() {
       await navigator.serviceWorker.ready;
       await new Promise((r) => setTimeout(r, 1200));
       const names = (await caches.keys()).sort();
-      const shell = await caches.open('sdp-v0.0.1.c-shell');
+      const shell = await caches.open('sdp-v0.0.1.d-shell');
       const shellNames = (await shell.keys()).map((req) => new URL(req.url).pathname);
       return { names, shellNames, controller: !!navigator.serviceWorker.controller };
     }, null);
@@ -80,7 +80,7 @@ async function launch() {
     check('G6.3a the retired sdp-v60 cache is deleted', activated.names.indexOf(STALE) < 0, activated.names.join(','));
     check('G6.3b the preserved dictionary-audio cache survives', activated.names.indexOf(YOUDAO) >= 0, activated.names.join(','));
     check('G6.3c the preserved lecturer-clip cache survives', activated.names.indexOf(CLIPS) >= 0, activated.names.join(','));
-    check('G6.2a the 0.0.1.c shell cache exists after install', activated.names.indexOf(SHELL) >= 0, activated.names.join(','));
+    check('G6.2a the 0.0.1.d shell cache exists after install', activated.names.indexOf(SHELL) >= 0, activated.names.join(','));
     check('G6.2b the shell precaches index.html, the CSS and all six modules',
       ['/index.html', '/assets/css/sdp-ui.css', '/data/sdp-data-sync.js', '/data/sdp-audio-speech.js',
         '/data/sdp-dictation-engine.js', '/data/sdp-ui-views.js', '/data/studio.js', '/data/data-meter.js',

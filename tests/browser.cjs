@@ -40,7 +40,7 @@ async function openPage(browser, origin, viewport, opts) {
      the guide itself is exercised by G7. */
   await context.addInitScript((seedGuide) => {
     window.__SDP_NO_LIVE__ = true;
-    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.c'); } catch (e) {}
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } catch (e) {}
   }, opts.guide !== true);
   const page = await context.newPage();
   const errors = [];
@@ -55,10 +55,14 @@ async function openPage(browser, origin, viewport, opts) {
 }
 
 async function bootSettings(page, settings) {
+  /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.2 — appliedSettingsRev pins
+     the test's own pacing against a classSettings adoption, and guideAutoPlay
+     keeps Start on the fast path (the quick guide is G3/G7's job). */
+  const seed = Object.assign({ appliedSettingsRev: 4, guideAutoPlay: false }, settings);
   await page.evaluate((s) => {
     localStorage.setItem('sdp.settings', JSON.stringify(s));
-    localStorage.setItem('sdp.guide_seen', '0.0.1.c');
-  }, settings);
+    localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+  }, seed);
   await page.reload({ waitUntil: 'domcontentloaded' });
 }
 
@@ -264,6 +268,37 @@ async function bootSettings(page, settings) {
         return { opacity: getComputedStyle(node).opacity, hidden: node.hidden };
       });
       check('G5.7e the toast fades out after ~2.4s', faded.opacity === '0' || faded.hidden === true, JSON.stringify(faded));
+      await context.close();
+    }
+
+    /* ── 7b. R5: 48px touch targets in the cockpit and Settings ─────────── */
+    // contract: docs/UI_COMPONENT_GUIDE.md §v0.0.1.d touch targets
+    {
+      const { context, page } = await openPage(browser, server.origin, { width: 390, height: 844 });
+      await bootSettings(page, { mode: 'paper', writeSecs: 8, repeats: 1, pauseSecs: 1, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' });
+      await page.waitForTimeout(400);
+      const settingsSmall = await page.evaluate(() => {
+        const nodes = document.querySelectorAll('#screen-settings button, #screen-settings select, #screen-settings .checkline');
+        const small = [];
+        nodes.forEach((node) => {
+          const h = Math.round(node.getBoundingClientRect().height);
+          if (h > 0 && h < 48) small.push((node.id || node.className) + ':' + h);
+        });
+        return small;
+      });
+      check('G5.7f every Settings control is at least 48px tall', settingsSmall.length === 0, settingsSmall.slice(0, 6).join(', '));
+      await page.click('#btnStart');
+      await page.waitForTimeout(300);
+      const cockpitSmall = await page.evaluate(() => {
+        const nodes = document.querySelectorAll('#cockpitBar button, #cockpitControls button, #screen-player .btn, #hintChips .chip');
+        const small = [];
+        nodes.forEach((node) => {
+          const h = Math.round(node.getBoundingClientRect().height);
+          if (h > 0 && h < 48) small.push((node.id || node.className) + ':' + h);
+        });
+        return small;
+      });
+      check('G5.7g every cockpit control is at least 48px tall', cockpitSmall.length === 0, cockpitSmall.slice(0, 6).join(', '));
       await context.close();
     }
 

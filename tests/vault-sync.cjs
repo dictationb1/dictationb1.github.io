@@ -47,7 +47,7 @@ function gitHubStub(opts) {
 }
 
 (async function main() {
-  const base = { before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.c'); } };
+  const base = { before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } };
 
   /* ── 1. R5: the SDP_ENC_V2 envelope is frozen ───────────────────────── */
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 16B salt ‖ 12B iv ‖ AES-GCM-256

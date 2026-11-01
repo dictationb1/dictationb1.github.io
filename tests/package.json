@@ -1,9 +1,9 @@
 {
   "private": true,
-  "description": "Development-only release gates for Smart Dictation Player v0.0.1.a; the shipped app loads no test dependency.",
+  "description": "Development-only release gates for Smart Dictation Player v0.0.1.d; the shipped app loads no test dependency.",
   "scripts": {
     "test": "node check.cjs && node --test upgrade.test.cjs && node phase1.cjs && node server.cjs",
-    "gates": "node check.cjs && node --test upgrade.test.cjs && node phase1.cjs && node server.cjs && node browser.cjs && node upgrade-browser.cjs && node e2e.cjs && node live-lab.cjs && node audit-v42.cjs",
+    "gates": "node check.cjs && node --test upgrade.test.cjs && node phase1.cjs && node server.cjs && node browser.cjs && node upgrade-browser.cjs && node e2e.cjs && node live-lab.cjs && node audit-v42.cjs && node voice-guide.cjs && node vault-sync.cjs && node studio-safety.cjs",
     "gate:g1": "node check.cjs",
     "gate:g2": "node --test upgrade.test.cjs",
     "gate:g3": "node phase1.cjs",
@@ -12,7 +12,10 @@
     "gate:g6": "node upgrade-browser.cjs",
     "gate:g7": "node e2e.cjs",
     "gate:g8": "node live-lab.cjs",
-    "gate:g9": "node audit-v42.cjs"
+    "gate:g9": "node audit-v42.cjs",
+    "gate:g10": "node voice-guide.cjs",
+    "gate:g11": "node vault-sync.cjs",
+    "gate:g12": "node studio-safety.cjs"
   },
   "devDependencies": {
     "@sinonjs/fake-timers": "11.3.1",

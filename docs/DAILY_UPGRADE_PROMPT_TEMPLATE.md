@@ -6,7 +6,7 @@ and the gate order. Nothing else has to be explained.
 
 ---
 
-## v0.0.1.c — 2026-11-01 — the twelve-gate release
+## v0.0.1.d — 2026-11-01 — the twelve-gate release
 
 Prompts written against v0.0.1.b asked for **eight** runtime gates and a
 48,000 B `sdp-data-sync.js`. Both numbers are wrong now. Copy these lines into
@@ -207,3 +207,43 @@ gh pr merge <n> --merge --delete-branch   # or: git merge --no-ff
 - Exactly one `<style id="sdpCloak">` under 400 bytes may exist in `index.html`.
 - All nine gates must print `0 FAIL`; the expected counts are
   71 / 10 / 61 / 8 / 44 / 15 / 48 / 26 / 46 = **329 assertions** (≥ 325 required).
+
+## v0.0.1.d — 2026-11-01 — the 12-gate, PIN-gated, class-synced release
+
+**PIPE-03 correction.** Earlier revisions of this template claimed that G1
+(`tests/check.cjs`) asserts the existence of `tests/voice-guide.cjs`,
+`tests/vault-sync.cjs` and `tests/studio-safety.cjs`. That claim was true only
+for the file list; from v0.0.1.d the assertion is real:
+
+```js
+['voice-guide.cjs', 'vault-sync.cjs', 'studio-safety.cjs'].forEach(function (f) {
+  record('G10–G12 exists: tests/' + f, exists('tests/' + f));
+});
+```
+
+`tests/package.json` (`scripts.gates`) and `.github/workflows/checks.yml` both
+chain **all twelve** gates now, and CI no longer SHA-pins the app-written
+`data/elevenlabs-audio.json` (PIPE-02).
+
+| Gate | Command | Contract |
+| --- | --- | --- |
+| G1 | `node tests/check.cjs` | budgets, ES5, `/data` parity, G10–G12 existence |
+| G2 | `node --test tests/upgrade.test.cjs` | constants, `SDP_ENC_V2`, publish payloads |
+| G3 | `node tests/phase1.cjs` | jsdom behaviour: PIN gate, classSettings, quick guide |
+| G4 | `node tests/server.cjs` | config metadata + Apps Script loader |
+| G5 | `node tests/browser.cjs` | layout, routing, focus law, 48 px targets |
+| G6 | `node tests/upgrade-browser.cjs` | SW upgrade, cache purge, single reload |
+| G7 | `node tests/e2e.cjs` | student journeys incl. guide skip |
+| G8 | `node tests/live-lab.cjs` | two-device classSettings propagation |
+| G9 | `node tests/audit-v42.cjs` | audio tiers, unified lock, repeat-safe deadline |
+| G10 | `node tests/voice-guide.cjs` | activeUtter GC guard, 10 s keepalive, Guide 2.0 |
+| G11 | `node tests/vault-sync.cjs` | pinVerifier, saveKeys publish, persisted lockout |
+| G12 | `node tests/studio-safety.cjs` | credit-saver delta + locked-studio zero widgets |
+
+Every gate must print `0 FAIL`; the release commit records the counts in
+`docs/CHANGELOG_LEDGER.md`.
+
+**HARD RULE (W5).** No gate, test, script or probe may ever call
+`https://api.elevenlabs.io/v1/text-to-speech/...`. Only a human tapping
+`#btnGenClips` or `#btnTestOneWord` inside the PIN-unlocked Studio may spend a
+credit. G12 fails the release if any test file contains a live TTS call.

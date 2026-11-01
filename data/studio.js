@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — Lecturer Studio & admin vault (v0.0.1.c)
+/*! Smart Dictation Player — Lecturer Studio & admin vault (v0.0.1.d)
  * Strict ES5, dependency free.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 publishing, §R7 vault
  * contract: docs/UI_COMPONENT_GUIDE.md §Settings 6th section (collapsed)
@@ -291,31 +291,170 @@
     return true;
   }
 
+  /* ══ R1: the ten classroom keys the lecturer owns ═══════════════════════ */
+  var CLASS_SETTING_KEYS = [
+    'mode', 'writeSecs', 'repeats', 'pauseSecs', 'autoAdvance',
+    'pacingPreset', 'voiceLock', 'voiceSource', 'rate', 'theme'
+  ];
+  function classSettingsSnapshot() {
+    var out = {}, conf = {};
+    try { conf = data() && data().settings ? data().settings() : {}; } catch (e) { conf = {}; }
+    for (var i = 0; i < CLASS_SETTING_KEYS.length; i++) {
+      var k = CLASS_SETTING_KEYS[i];
+      if (conf[k] !== undefined && conf[k] !== null) out[k] = conf[k];
+    }
+    return out;
+  }
+  function buildVaultFiles(cfgBody, versionBody, message) {
+    return [
+      { path: 'data/config.json', content: JSON.stringify(cfgBody, null, 2), message: str(message || 'Studio vault ' + appVersion()) },
+      { path: 'data/version.json', content: JSON.stringify(versionBody, null, 2), message: 'Studio version ' + appVersion() }
+    ];
+  }
+  /* config.json first, version.json LAST (SYNC-03 / SYNC-07). */
+  function publishVaultFiles(files, token, cb) {
+    cb = cb || noop;
+    if (!sync() || !sync().publishFilesSequential) { cb(new Error('no_sync')); return false; }
+    return sync().publishFilesSequential(files, token, noop, function (err, info) {
+      if (!err) {
+        try {
+          var cfg = sync().config ? sync().config() : null;
+          if (cfg) cfg.settingsRev = nextSettingsRev();
+        } catch (e) {}
+      }
+      cb(err, info);
+    });
+  }
+  /* ══ SYNC-03: save & sync the ten classroom keys to every device ════════
+   * Copies the lecturer's live settings into config.classSettings, bumps
+   * settingsRev, stamps syncRev and commits config.json + version.json. */
+  function saveClassSettings(cb) {
+    cb = cb || noop;
+    if (!ST.unlocked) { msg(t('studioLocked'), 'bad'); cb(new Error('locked')); return { ok: false, reason: 'locked' }; }
+    var conf = classSettingsSnapshot();
+    if (!sync() || !sync().publishFilesSequential) { cb(new Error('no_sync')); return { ok: false, reason: 'no_sync' }; }
+    var cfgBody = sync().config ? JSON.parse(JSON.stringify(sync().config() || {})) : {};
+    cfgBody.classSettings = conf;
+    cfgBody.ver = schemaVer();
+    cfgBody.appVersion = appVersion();
+    cfgBody.version = appVersion();
+    cfgBody.schema = schemaVer();
+    var liveVersion = sync().version ? (sync().version() || {}) : {};
+    var liveSession = str(liveVersion.session || '8') || '8';
+    var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
+    var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+    var rev = Number(versionBody.settingsRev);
+    var nowIso = new Date().toISOString();
+    cfgBody.settingsRev = rev;
+    cfgBody.updatedAt = nowIso;
+    cfgBody.syncRev = Number(versionBody.syncRev);
+    var env = (isRealEnvelope(ST.envelope) ? ST.envelope : configEnvelope());
+    if (env) cfgBody.encVault = str(env);
+    var token = str(ST.secrets.ghToken);
+    var last = byId('lecturerSyncLast');
+    function stamp(ok, detail) {
+      if (!last) return;
+      var when = new Date().toISOString().slice(11, 16);
+      last.textContent = (ok ? t('lecturerSyncLast') : t('studioPublishFail')) + ' · ' + when +
+        (detail ? ' · ' + detail : '');
+      last.setAttribute('data-state', ok ? 'ok' : 'bad');
+    }
+    if (!token) {
+      msg(t('studioNoToken'), 'bad');
+      stamp(false, 'no token');
+      cb(new Error('no_token'));
+      return { ok: false, reason: 'no_token', classSettings: conf };
+    }
+    publishVaultFiles(buildVaultFiles(cfgBody, versionBody, 'Class settings rev ' + rev), token, function (err, info) {
+      if (err) { msg(t('studioPublishFail'), 'bad'); stamp(false, 'rev ' + rev); cb(err, info); return; }
+      try { if (data() && data().saveSettings) data().saveSettings({ appliedSettingsRev: rev }); } catch (e) {}
+      msg(t('studioPublishOk') + ' · Rev #' + rev, 'ok');
+      toast(t('lecturerSyncBar') + ' · Rev #' + rev);
+      stamp(true, 'Rev #' + rev);
+      cb(null, info || { ok: true, settingsRev: rev, classSettings: conf });
+    });
+    return { ok: true, settingsRev: rev, classSettings: conf };
+  }
+
+  function clearVaultLock() {
+    try { if (vault() && vault().resetLock) vault().resetLock(); } catch (e) {}
+    return true;
+  }
+  function pinVerifier() {
+    var cfg = sync() && sync().config ? sync().config() : null;
+    return cfg && isObj(cfg.pinVerifier) ? cfg.pinVerifier : null;
+  }
+  /* SEC-03: bootstrap unlock. When encVault is the placeholder
+     "SDP_ENC_V2:AAA=" there is no envelope to decrypt, so the PIN is proved
+     against config.pinVerifier (PBKDF2-SHA256, 250,000 iterations) instead. */
+  function unlockWithVerifier(pin, cb) {
+    var v = vault();
+    var verifier = pinVerifier();
+    if (!verifier || !v || !v.verifyPinVerifier) {
+      msg(t('studioSetupHint'), '');
+      cb(new Error('no_vault'));
+      return false;
+    }
+    v.verifyPinVerifier(pin, verifier).then(function (ok) {
+      if (!ok) {
+        msg(t('studioBadPin'), 'bad');
+        cb(new Error('bad_pin'));
+        return;
+      }
+      ST.unlocked = true;
+      ST.envelope = '';
+      ST.pin = str(pin);
+      ST.secrets = {};
+      ST.bootstrapMode = true;
+      msg(t('studioUnlock') + ' ✓', 'ok');
+      mount();
+      loadVoicePack(noop);
+      cb(null, ST.secrets);
+    }, function (err) {
+      if (err && err.code === 'locked') {
+        msg(t('studioLockedOut') + ' ' + str(err.retrySec || 60) + ' ' + t('seconds'), 'bad');
+      } else {
+        msg(t('studioBadPin') + (err && err.triesLeft !== undefined ? ' · ' + err.triesLeft : ''), 'bad');
+      }
+      cb(err || new Error('bad_pin'));
+    });
+    return true;
+  }
   function unlock(pin, cb) {
     cb = cb || noop;
     var v = vault();
     if (!v) { msg('crypto_unavailable', 'bad'); cb(new Error('crypto_unavailable')); return; }
+    var attempt = str(pin).replace(/[^0-9]/g, '');
+    if (!attempt) { msg(t('studioBadPin'), 'bad'); cb(new Error('bad_pin')); return; }
+    /* SEC-04: the persisted lockout is checked before anything else. */
+    if (v.isLocked && v.isLocked()) {
+      msg(t('studioLockedOut') + ' ' + v.lockRemaining() + ' ' + t('seconds'), 'bad');
+      var early = new Error('locked');
+      early.code = 'locked';
+      cb(early);
+      return;
+    }
     resolveEnvelope(function (envelope) {
       if (!isRealEnvelope(envelope)) {
-        msg(t('studioSetupHint'), '');
-        cb(new Error('no_vault'));
+        unlockWithVerifier(attempt, cb);
         return;
       }
-      if (v.isLocked()) {
-        msg(t('studioLockedOut') + ' ' + v.lockRemaining() + ' ' + t('seconds'), 'bad');
-        var lockedErr = new Error('locked');
-        lockedErr.code = 'locked';
-        cb(lockedErr);
-        return;
-      }
-      v.decryptV2(envelope, pin).then(function (secrets) {
+      v.decryptV2(envelope, attempt).then(function (secrets) {
         ST.unlocked = true;
+        ST.bootstrapMode = false;
         ST.envelope = envelope;
-        ST.pin = str(pin);
+        ST.pin = attempt;
         ST.secrets = isObj(secrets) ? secrets : {};
         if (v.stash) v.stash(ST.secrets);
+        clearVaultLock();
         msg(t('studioUnlock') + ' ✓', 'ok');
         mount();
+        /* SYNC-11: the paid-for Alice clips must be in memory before the first
+           delta generation, otherwise the lecturer pays twice for clip one. */
+        loadVoicePack(noop);
+        /* SYNC-07 completion: a local envelope that never reached GitHub is
+           published now that a token is in hand. */
+        autoPublishVault(envelope);
         cb(null, ST.secrets);
       }, function (err) {
         if (err && err.code === 'locked') {
@@ -327,13 +466,65 @@
       });
     });
   }
+  /* SEC-03/SYNC-07: a cached vault with a real envelope while GitHub still
+     carries the placeholder means the publish never landed — finish it. */
+  function autoPublishVault(envelope) {
+    try {
+      var token = str(ST.secrets.ghToken);
+      var cfg = sync() && sync().config ? sync().config() : null;
+      if (!token || !cfg) return false;
+      if (isRealEnvelope(str(cfg.encVault))) return false;
+      var cfgBody = JSON.parse(JSON.stringify(cfg));
+      cfgBody.ver = schemaVer(); cfgBody.appVersion = appVersion(); cfgBody.version = appVersion();
+      cfgBody.schema = schemaVer(); cfgBody.encVault = str(envelope);
+      cfgBody.updatedAt = new Date().toISOString();
+      var liveVersion = sync().version ? (sync().version() || {}) : {};
+      var liveSession = str(liveVersion.session || '8') || '8';
+      var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
+      var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+      cfgBody.settingsRev = Number(versionBody.settingsRev);
+      cfgBody.syncRev = Number(versionBody.syncRev);
+      publishVaultFiles(buildVaultFiles(cfgBody, versionBody, 'Studio vault ' + appVersion()), token, noop);
+      return true;
+    } catch (e) { return false; }
+  }
 
   /** D-S1/S2/S4: encrypt, persist locally at once, then commit config + version. */
+  /* SEC-02: setup() re-seals the vault, so it may only run for an already
+     authenticated Lecturer — or for a caller that proves the PIN it is about
+     to use (the headless G11 harness). Nothing else can reach this function:
+     the locked view renders no setup widget at all (SEC-01). */
+  function setupAuthorised(pin, cb) {
+    cb = cb || noop;
+    if (ST.unlocked) { cb(null, true); return; }
+    var v = vault();
+    var verifier = pinVerifier();
+    if (v && verifier && v.verifyPinVerifier) {
+      msg(t('studioAskLecturer'), '');
+      v.verifyPinVerifier(str(pin).replace(/[^0-9]/g, ''), verifier).then(function (ok) {
+        if (!ok) { cb(new Error('not_unlocked')); return; }
+        ST.unlocked = true;
+        ST.bootstrapMode = true;
+        cb(null, true);
+      }, function (err) { cb(err || new Error('not_unlocked')); });
+      return;
+    }
+    msg(t('studioAskLecturer'), '');
+    cb(new Error('not_unlocked'));
+  }
   function setup(pin, secrets, cb) {
     cb = cb || noop;
     var v = vault();
     if (!v) { cb(new Error('crypto_unavailable')); return; }
-    if (str(pin).length < 4) { msg(t('studioBadPin'), 'bad'); cb(new Error('pin_too_short')); return; }
+    if (str(pin).replace(/[^0-9]/g, '').length < 4) { msg(t('studioBadPin'), 'bad'); cb(new Error('pin_too_short')); return; }
+    setupAuthorised(pin, function (authErr) {
+      if (authErr) { cb(authErr); return; }
+      setupSeal(str(pin).replace(/[^0-9]/g, ''), secrets, cb);
+    });
+  }
+  function setupSeal(pin, secrets, cb) {
+    cb = cb || noop;
+    var v = vault();
     var secretsIn = isObj(secrets) ? secrets : {};
     v.encryptV2(secretsIn, pin).then(function (envelope) {
       ST.envelope = envelope;
@@ -352,23 +543,21 @@
       }
       /* Publish config.json + version.json immediately (version.json last) so a
          reload — or a second device — can unlock before the session is ready. */
-      var rev = nextSettingsRev();
+      /* SYNC-06: reuse buildVersionPayload() so the live session number and
+         title survive every setup publish (they used to be hardcoded '8'). */
       var nowIso = new Date().toISOString();
-      var versionBody = {
-        ver: schemaVer(), appVersion: appVersion(), version: appVersion(),
-        buildDate: nowIso.slice(0, 10), schema: schemaVer(), settingsRev: rev,
-        session: '8', title: 'Session 8', updatedAt: nowIso, syncRev: Date.now()
-      };
+      var liveVersion = sync() && sync().version ? (sync().version() || {}) : {};
+      var liveSession = str(liveVersion.session || (sync() && sync().sessionNo ? sync().sessionNo() : '8')) || '8';
+      var liveTitle = str(liveVersion.title || (sync() && sync().sessionTitle ? sync().sessionTitle() : '')) || ('Session ' + liveSession);
+      var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+      var rev = Number(versionBody.settingsRev);
       var cfgBody = sync() && sync().config ? JSON.parse(JSON.stringify(sync().config() || {})) : {};
       cfgBody.ver = schemaVer(); cfgBody.appVersion = appVersion(); cfgBody.version = appVersion();
       cfgBody.schema = schemaVer(); cfgBody.settingsRev = rev; cfgBody.encVault = envelope;
       cfgBody.updatedAt = nowIso; cfgBody.syncRev = versionBody.syncRev;
-      var files = [
-        { path: 'data/config.json', content: JSON.stringify(cfgBody, null, 2), message: 'Studio vault ' + appVersion() },
-        { path: 'data/version.json', content: JSON.stringify(versionBody, null, 2), message: 'Studio version ' + appVersion() }
-      ];
+      var files = buildVaultFiles(cfgBody, versionBody, 'Studio vault ' + appVersion());
       if (!sync() || !sync().publishFilesSequential) { toast(t('vaultSavedToast')); cb(null, envelope); return; }
-      sync().publishFilesSequential(files, token, noop, function (err, info) {
+      publishVaultFiles(files, token, function (err, info) {
         if (err) {
           msg(t('studioPublishFail'), 'bad');
           toast(t('vaultSavedToast'));
@@ -376,7 +565,7 @@
           return;
         }
         msg(t('studioPublishOk') + ' · v' + appVersion(), 'ok');
-        toast(t('vaultSavedToast'));
+        toast(t('vaultSavedToast') + ' · GitHub');
         cb(null, envelope, info);
       });
     }, function (err) { cb(err || new Error('encrypt_failed')); });
@@ -429,6 +618,12 @@
       '<h4 class="studio-h4">' + esc(t('setAudio')) + '</h4>' +
       keyRowMarkup('elKeyInput', 'ElevenLabs API key', 'xi-api-key', 'ElKey') +
       keyRowMarkup('ghTokenInput', 'GitHub token (ghp_… or github_pat_…)', 'ghp_… / github_pat_…', 'GhToken') +
+      '<label class="lbl" for="studioGasUrl">Apps Script relay URL</label>' +
+      '<input id="studioGasUrl" class="input" type="url" autocomplete="off" placeholder="https://script.google.com/…">' +
+      '<label class="lbl" for="newPinInput">' + esc(t('studioPinLabel')) + ' — new (optional)</label>' +
+      '<input id="newPinInput" class="input" type="password" inputmode="numeric" autocomplete="off" maxlength="8">' +
+      '<label class="lbl" for="confirmPinInput">' + esc(t('studioPinLabel')) + ' — confirm</label>' +
+      '<input id="confirmPinInput" class="input" type="password" inputmode="numeric" autocomplete="off" maxlength="8">' +
       '<div class="chip-row">' +
       '<button type="button" class="btn btn-sm" id="btnSaveKeys">' + esc(t('studioSave')) + '</button>' +
       '</div>' +
@@ -481,33 +676,21 @@
       '<audio id="recPreviewAudio" controls preload="none" class="rec-preview"></audio>' +
       '</div>';
   }
+  /* SEC-01 / SEC-02 / SEC-05: while locked the Studio body renders ONLY the
+     masked PIN field, the dot indicator, the 56px 12-key pad, the status line
+     and the ask-your-lecturer hint. No API key field, no #setupPin, no
+     #studioFirstTimePanel and no word editor may exist in the locked DOM —
+     whatever the state of encVault (even the placeholder SDP_ENC_V2:AAA=). */
   function lockedMarkup() {
-    var known = hasVault();
-    var html = '<div class="pin-row">' +
+    return '<div class="pin-row">' +
       '<label class="for-only" for="studioPin">' + esc(t('studioPinLabel')) + '</label>' +
       '<input id="studioPin" class="input" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="' + esc(t('studioPinLabel')) + '">' +
       '<button type="button" class="btn btn-sm" id="pinPadBack" aria-label="Delete last digit">⌫</button>' +
       '</div>' +
       pinDotsMarkup() +
       pinPadMarkup() +
-      '<p id="studioMsg" class="studio-msg" role="status" aria-live="polite"></p>';
-    if (!known) {
-      html += '<details id="studioFirstTimePanel" class="studio-setup" open><summary>' + esc(t('studioFirstTime')) + '</summary>' +
-        '<p class="muted">' + esc(t('studioSetupHint')) + '</p>' +
-        '<div class="studio-grid">' +
-        '<label class="lbl" for="setupPin">' + esc(t('studioPinLabel')) + '</label>' +
-        '<input id="setupPin" class="input" type="password" inputmode="numeric" autocomplete="off" maxlength="8">' +
-        keyRowMarkup('elKeyInput', 'ElevenLabs API key', 'xi-api-key', 'ElKey') +
-        keyRowMarkup('ghTokenInput', 'GitHub token (ghp_… or github_pat_…)', 'ghp_… / github_pat_…', 'GhToken') +
-        '<label class="lbl" for="studioGasUrl">Apps Script relay URL</label>' +
-        '<input id="studioGasUrl" class="input" type="url" autocomplete="off">' +
-        '<p id="studioTestStatus" class="studio-msg" role="status" aria-live="polite"></p>' +
-        '<button type="button" class="btn btn-primary" id="btnStudioSetup">' + esc(t('studioSetup')) + '</button>' +
-        '<textarea id="studioEnvelope" readonly aria-label="' + esc(t('studioEnvelope')) + '"></textarea>' +
-        '<button type="button" class="btn btn-sm" id="btnStudioCopyEnv">' + esc(t('studioCopy')) + '</button>' +
-        '</div></details>';
-    }
-    return html;
+      '<p id="studioMsg" class="studio-msg" role="status" aria-live="polite"></p>' +
+      '<p class="studio-hint" data-i18n="studioAskLecturer">' + esc(t('studioAskLecturer')) + '</p>';
   }
 
   function mount() {
@@ -543,8 +726,7 @@
   }
 
   function activePinInput() {
-    var setup = byId('setupPin');
-    if (setup && !hasVault()) return setup;
+    /* SEC-03: locked view has exactly one PIN field. */
     return byId('studioPin');
   }
   function pinValue() { var n = activePinInput(); return n ? str(n.value) : ''; }
@@ -754,11 +936,24 @@
   }
   function saveKeys() {
     if (!ST.unlocked) { msg(t('studioLocked'), 'bad'); return false; }
+    /* SEC-02: a new PIN must be confirmed twice before the vault is re-sealed. */
+    var confirmNode = byId('confirmPinInput');
+    var wantPin = str(fieldValue('newPinInput') || '').replace(/[^0-9]/g, '');
+    if (confirmNode) {
+      var confirmPin = str(confirmNode.value).replace(/[^0-9]/g, '');
+      if (wantPin.length >= 4 || confirmPin.length) {
+        if (wantPin.length < 4 || wantPin.length > 8) { msg(t('studioBadPin'), 'bad'); return false; }
+        if (wantPin !== confirmPin) { msg(t('studioPinMismatch'), 'bad'); return false; }
+        ST.pin = wantPin;
+      }
+    }
     var patch = {};
     var el = fieldValue('elKeyInput');
     var gh = fieldValue('ghTokenInput');
+    var gas = fieldValue('studioGasUrl');
     if (el) patch.elevenKey = el;
     if (gh) patch.ghToken = gh;
+    if (gas) patch.gasUrl = gas;
     patch.updatedAt = Date.now();
     ST.secrets = isObj(ST.secrets) ? ST.secrets : {};
     for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) ST.secrets[k] = patch[k];
@@ -766,11 +961,50 @@
     var v = vault();
     if (!v || !pin) { msg(t('vaultSavedToast'), 'ok'); return true; }
     if (v.stash) v.stash(ST.secrets);
+    var token = str(ST.secrets.ghToken);
     v.encryptV2(ST.secrets, pin).then(function (envelope) {
       ST.envelope = envelope;
       persistEnvelope(envelope);
-      toast(t('vaultSavedToast'));
-      mount();
+      var verifierPromise = null;
+      /* SEC-03: config.pinVerifier always matches the PIN that seals the vault. */
+      if (v.computePinVerifier && v.PIN_SALT) {
+        verifierPromise = v.computePinVerifier(pin, v.PIN_SALT).then(function (verifier) {
+          var cfg = sync() && sync().config ? sync().config() : null;
+          if (cfg) cfg.pinVerifier = verifier;
+          return verifier;
+        }, function () { return null; });
+      }
+      if (!verifierPromise) verifierPromise = Promise.resolve(null);
+      verifierPromise.then(function () {
+        mount();
+        /* SYNC-07: commit the vault to GitHub NOW — localStorage alone meant a
+           second device could never unlock (the 0.0.1.c 24-hour bug). */
+        if (!token || !sync() || !sync().publishFilesSequential) {
+          toast(t('vaultSavedToast'));
+          return;
+        }
+        var cfgBody = sync().config ? JSON.parse(JSON.stringify(sync().config() || {})) : {};
+        cfgBody.ver = schemaVer(); cfgBody.appVersion = appVersion(); cfgBody.version = appVersion();
+        cfgBody.schema = schemaVer();
+        cfgBody.encVault = envelope;
+        cfgBody.encVaultSavedAt = new Date().toISOString();
+        cfgBody.updatedAt = new Date().toISOString();
+        var liveVersion = sync().version ? (sync().version() || {}) : {};
+        var liveSession = str(liveVersion.session || '8') || '8';
+        var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
+        var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+        cfgBody.settingsRev = Number(versionBody.settingsRev);
+        cfgBody.syncRev = Number(versionBody.syncRev);
+        publishVaultFiles(buildVaultFiles(cfgBody, versionBody, 'Studio vault ' + appVersion()), token, function (err) {
+          if (err) {
+            msg(t('studioPublishFail'), 'bad');
+            toast(t('vaultSavedToast'));
+            return;
+          }
+          msg(t('studioPublishOk') + ' · v' + appVersion(), 'ok');
+          toast('Vault saved · synced to GitHub');
+        });
+      });
     }, function () { msg(t('studioPublishFail'), 'bad'); });
     return true;
   }
@@ -826,7 +1060,8 @@
       if (err) { cb(err, info); return; }
       ST.lastPublish = { at: Date.now(), files: files.map(function (f) { return f.path; }), version: payloads.version };
       msg(t('studioPublishOk') + ' · v' + appVersion(), 'ok');
-      pushLiveState(payloads.version);
+      /* SYNC-09: pushLiveState() posted an unauthenticated relay message that
+         gas-source.txt rejects with ADMIN_PIN — it failed silently forever. */
       cb(null, ST.lastPublish);
     });
   }
@@ -1017,6 +1252,8 @@
     else if (Array.isArray(a)) { opts = { words: a }; cb = typeof b === 'function' ? b : noop; }
     else { opts = isObj(a) ? a : {}; cb = typeof b === 'function' ? b : noop; }
     if (!ST.unlocked) { cb(new Error('locked')); return { ok: false, reason: 'locked' }; }
+    /* SYNC-11: clipExists() is only honest once the committed pack is loaded. */
+    if (!ST.voicePack.loaded) loadVoicePack(noop);
     var apiKey = str(ST.secrets.elevenKey) || fieldValue('elKeyInput');
     if (!apiKey) { msg(t('studioNoToken'), 'bad'); cb(new Error('no_key')); return { ok: false, reason: 'no_key' }; }
     var words = Array.isArray(opts.words) ? opts.words : currentWords();
@@ -1241,6 +1478,9 @@
     buildVersionPayload: buildVersionPayload,
     buildSessionPayload: buildSessionPayload,
     buildPublishPayloads: buildPublishPayloads,
+    saveClassSettings: saveClassSettings,
+    classSettingsSnapshot: classSettingsSnapshot,
+    classSettingKeys: CLASS_SETTING_KEYS,
     voicePackPayload: voicePackPayload,
     openPublishPreview: openPublishPreview,
     publishPreviewWords: publishPreviewWords,
