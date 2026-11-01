@@ -1,21 +1,23 @@
-/* Smart Dictation Player — Service Worker (v60 / 9.0.0.4)
+'use strict';
+/* Smart Dictation Player — Service Worker (v61 / 9.0.1.0)
  * GitHub Pages static hosting.
  *   - Stale-While-Revalidate for the app shell.
  *   - Cache-First for versioned media/audio, stored as FULL responses.
  *   - HTTP Range/206 support: slice a cached full response, or answer the
- *     range from the network while a background full fetch fills sdp-v60-media.
+ *     range from the network while a background full fetch fills sdp-v61-media.
  */
 'use strict';
 
-var VERSION = 'sdp-v60-9.0.0.4';
-var APP_VERSION = '9.0.0.4';
-var SW_VERSION = 'sdp-v60-9.0.0.4';
+var VERSION = 'sdp-v61-9.0.1.0';
+var APP_VERSION = '9.0.1.0';
+var SW_VERSION = 'sdp-v61-9.0.1.0';
 var MEDIA_MAX_ENTRIES = 160;
 var SHELL = [
   './',
   './index.html',
   './data.html',
   './data/index.html',
+  './data/app-core.js',
   './data/studio.js',
   './data/data-meter.js',
   './data/learning-tools.js',
@@ -28,12 +30,6 @@ var SHELL = [
   './data/elevenlabs-audio.json',
   './manifest.webmanifest',
   './sw.js',
-  './assets/audio/guide-si-1.mp3',
-  './assets/audio/guide-si-2.mp3',
-  './assets/audio/guide-si-3.mp3',
-  './assets/audio/guide-si-4.mp3',
-  './assets/audio/guide-si-5.mp3',
-  './assets/audio/guide-si-6.mp3'
 ];
 var CACHE = VERSION + '-shell';
 var MEDIA_CACHE = VERSION + '-media';
@@ -108,7 +104,7 @@ self.addEventListener('activate', function (event) {
     caches.keys().then(function (keys) {
       return Promise.all(keys.filter(function (k) {
         if (k === 'sdp-youdao-v1') return false;
-        return k.indexOf('9.0.0.4') === -1;
+        return k.indexOf('9.0.1.0') === -1;
       }).map(function (k) { return caches.delete(k); }))
     }).then(function () {
       return caches.open(MEDIA_CACHE).then(function (cache) {

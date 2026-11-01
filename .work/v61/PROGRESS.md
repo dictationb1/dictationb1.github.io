@@ -99,3 +99,10 @@ No baseline source files changed in P0.
 - One synchronous mount owns Home, Words, six Practice tools, the guide and exactly three Settings groups. Existing lecturer/community engines remain in app-core.
 - Preserved weak-word storage and three-correct graduation, paper self-check, printable six-column sheet, explicit recording playback, and IndexedDB/localStorage fallback. Offline downloader now counts successful writes, not attempts.
 - R6 greps are zero in all three principal files and all other shipped HTML/JS. Static release gate is pending P4 strict/version alignment; pedagogical tests run independently.
+
+## P4
+
+- Speech.say normalizes null/string/number inputs to whole-item arrays before playback. All four direct engine call sites use array literals; learning calls go through the same pipeline with arrays.
+- Removed the +80ms input focus and both ready-sheet paths. Deferred core now boots synchronously after its security/migration definitions and before the learning module mounts.
+- Added Cloud.onSync refresh hook, strict global directives, v61/9.0.1.0 metadata/cache stamps, root version manifest, and app-core precaching. Removed all six 11-byte guide placeholders. Data routes remain identical.
+- No Sinhala clips or device voice means a disabled honest guide badge; no Youdao Sinhala endpoint or fabricated audio was added.

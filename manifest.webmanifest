@@ -8,9 +8,12 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#040812",
-  "background_color": "#040812",
-  "categories": ["education", "productivity"],
+  "theme_color": "#09090B",
+  "background_color": "#09090B",
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='38' fill='%23040812'/%3E%3Ctext x='96' y='124' font-size='92' text-anchor='middle' fill='%2353c7f0' font-family='Arial'%3E%E2%96%B6%3C/text%3E%3C/svg%3E",
@@ -32,6 +35,10 @@
     }
   ],
   "shortcuts": [
-    { "name": "Start Dictation", "url": "./index.html?source=pwa", "icons": [] }
+    {
+      "name": "Start Dictation",
+      "url": "./index.html?source=pwa",
+      "icons": []
+    }
   ]
 }

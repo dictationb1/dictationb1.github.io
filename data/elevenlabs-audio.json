@@ -1,6 +1,6 @@
 {
-  "version": "9.0.0.4",
-  "appVersion": "9.0.0.4",
+  "version": "9.0.1.0",
+  "appVersion": "9.0.1.0",
   "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
   "modelId": "eleven_flash_v2_5",
   "voiceName": "Alice",
@@ -8,9 +8,9 @@
   "note": "Permanent ElevenLabs voice vault. Clips committed here play on every device with 0 API calls and 0 credits, and the encrypted settings envelope travels with them.",
   "strictAdminOnly": true,
   "creditLock": "student playback replays saved clips only",
-  "ver": 60,
-  "schema": 60,
-  "settingsRev": 60,
+  "ver": 61,
+  "schema": 61,
+  "settingsRev": 61,
   "key": "sdp.v56_audit_verified",
   "storageKey": "sdp.v56_audit_verified",
   "activeVideoSrc": "",
@@ -20,8 +20,8 @@
   "repoName": "dictationb1.github.io",
   "generatedAt": "2026-10-30T16:19:33.747Z",
   "syncRev": 1793385986993,
-  "buildDate": "2026-10-31",
+  "buildDate": "2026-11-01",
   "updatedAt": "2026-10-31T12:00:00.000Z",
-  "versionFamily": "9.0.0",
+  "versionFamily": "9.0.1",
   "voiceModel": "eleven_flash_v2_5"
 }

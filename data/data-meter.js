@@ -1,3 +1,4 @@
+'use strict';
 /*! Smart Dictation Player — Live Network & Cost Meter (v58 / 7.0.0).
  * ES5, dependency-free. Resource Timing is measured; opaque dictionary audio
  * and complete-session profiles are explicitly labelled estimates (≈).
@@ -5,7 +6,7 @@
  * pruning, five LKR plans and honest cached-vs-network audio accounting. */
 (function (global) {
   'use strict';
-  var METER_VERSION = '9.0.0.4', SCHEMA = 60, KB = 1024, MB = KB * KB, GB = KB * MB;
+  var METER_VERSION = '9.0.1.0', SCHEMA = 61, KB = 1024, MB = KB * KB, GB = KB * MB;
   var AUDIO_ESTIMATE = 11000;
   var STORAGE = { daily: 'sdp.dataMeter.daily', allTime: 'sdp.dataMeter.allTime', price: 'sdp.dataPriceLkrPerGb', plan: 'sdp.dataPricePlan', manifest: 'sdp.mediaManifest.v1', buffer: 'sdp.dataMeter.videoHW' };
   var KNOWN_ASSETS = {};

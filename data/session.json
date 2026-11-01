@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 60,
+  "ver": 61,
   "session": {
     "no": "8",
     "day": "Thursday",
@@ -513,11 +513,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "9.0.0.4",
+  "appVersion": "9.0.1.0",
   "updatedAt": "2026-10-31T12:00:00.000Z",
-  "version": "9.0.0.4",
-  "buildDate": "2026-10-31",
-  "settingsRev": 60,
+  "version": "9.0.1.0",
+  "buildDate": "2026-11-01",
+  "settingsRev": 61,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -617,7 +617,7 @@
   "voice": "Amy",
   "lockedVoice": "Amy",
   "updatedAtMs": 1793448000000,
-  "schema": 60,
+  "schema": 61,
   "pastSessions": [
     {
       "no": "7",
@@ -1099,5 +1099,5 @@
       "audio": "https://dict.youdao.com/dictvoice?type=1&audio=hungry"
     }
   ],
-  "versionFamily": "9.0.0"
+  "versionFamily": "9.0.1"
 }
