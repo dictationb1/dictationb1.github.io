@@ -1,0 +1,24 @@
+'use strict';
+var fs=require('fs'),acorn=require('./node-acorn.cjs'),patch=require('./patchlib.cjs');
+var html=fs.readFileSync('.work/v61/index.baseline.html','utf8');
+var start=html.indexOf('<script>')+8,end=html.indexOf('</script>',start),core=html.slice(start,end);
+var ast=acorn.parse(core,{ecmaVersion:5}),cuts=[];
+function walk(n,fn){if(!n||typeof n!=='object')return;if(n.type)fn(n);Object.keys(n).forEach(function(k){var v=n[k];if(Array.isArray(v))v.forEach(function(x){walk(x,fn);});else if(v&&typeof v==='object')walk(v,fn);});}
+walk(ast,function(n){var s=core.slice(n.start,n.end);if(n.type==='TryStatement'&&s.indexOf('f.id="sdpDataSheetCss"')>=0)cuts.push([n.start,n.end]);if(n.type==='FunctionDeclaration'&&n.id.name==='P'&&s.indexOf('topOverflow')>=0)cuts.push([n.start,n.end,'function P(){}']);if(n.type==='AssignmentExpression'&&n.left.type==='MemberExpression'&&s.indexOf('Screens.settings=function')===0)cuts.push([n.start,n.end,'void 0']);});
+cuts.sort(function(a,b){return b[0]-a[0];});cuts.forEach(function(c){core=core.slice(0,c[0])+(c[2]||'')+core.slice(c[1]);});
+fs.writeFileSync('data/app-core.js',"'use strict';\n"+core);
+var a=core.indexOf('var l=n("style");'),b=core.indexOf('var c=null;',a);if(a<0||b<0)throw Error('runtime stylesheet range');patch.rep('data/app-core.js',core.slice(a,b),'');
+patch.rep('data/app-core.js','function E(){P(),b(),g()','function E(){b(),g()');
+a=core.indexOf('var r=i("#staticFooter");');b=core.indexOf('}Results.open=function',a);if(a<0||b<0)throw Error('legacy footer range');patch.rep('data/app-core.js',core.slice(a,b),'');
+patch.rep('data/app-core.js','v58-plan-chip','sdp-plan-chip',3);patch.rep('data/app-core.js','v58NetworkPanel','sdpNetworkPanel',1);patch.rep('data/app-core.js','v58CachePanel','sdpCachePanel',1);
+core=fs.readFileSync('data/app-core.js','utf8');acorn.parse(core,{ecmaVersion:5});new Function(core);
+if(Buffer.byteLength(core)>420000)throw Error('core byte cap');
+var sprite=html.slice(html.indexOf('<svg'),html.indexOf('</svg>')+6);
+var templates=html.slice(html.indexOf('<template id="galMediaTpl">'),html.indexOf('<div id="staticControlDepot"'));
+var community=html.slice(html.indexOf('<section class="screen hidden" id="screen-comm"'),html.indexOf('<section class="screen hidden" id="screen-practice"'));
+var css=fs.readFileSync('.work/v61/p2-style.css','utf8');
+var shell=fs.readFileSync('.work/v61/p2-shell.html','utf8');
+shell=shell.replace('<!--SPRITE-->',sprite).replace('<!--TEMPLATES-->',templates).replace('<!--COMMUNITY-->',community).replace('<!--CSS-->',css);
+fs.writeFileSync('index.html',shell);
+if(Buffer.byteLength(shell)>110000)throw Error('index byte cap '+Buffer.byteLength(shell));
+console.log('P2 extraction: index='+Buffer.byteLength(shell)+' core='+Buffer.byteLength(core)+' css='+Buffer.byteLength(css));

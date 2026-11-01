@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-perf="auto" data-size="m" data-hc="off">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090B"><meta name="description" content="B1 English dictation, word practice and lecturer tools from CCBE Galle Branch."><meta name="application-name" content="Smart Dictation"><meta name="apple-mobile-web-app-capable" content="yes"><title>Smart Dictation · CCBE Galle</title><link rel="manifest" href="./manifest.webmanifest">
+<script id="sdpSwBoot">'use strict';(function(){var V='9.0.1.0',K='sdp_sw_ver',LS;try{LS=window.localStorage;var seen=LS.getItem(K)||'';if(seen!==V){LS.setItem(K,V);if(/^https?:$/.test(location.protocol)&&window.caches){caches.keys().then(function(keys){var i;for(i=0;i<keys.length;i++){if(keys[i]!=='sdp-youdao-v1'&&keys[i].indexOf(V)<0)caches['delete'](keys[i]);}})['catch'](function(){});}if(/^https?:$/.test(location.protocol)&&navigator.serviceWorker){navigator.serviceWorker.register('./sw.js').then(function(){return navigator.serviceWorker.getRegistrations();}).then(function(rs){var i;for(i=0;i<rs.length;i++)rs[i].update();})['catch'](function(){});}}}catch(e){}setTimeout(function(){if(document.body&&document.body.getAttribute('data-v61-ready')!=='1'){document.body.setAttribute('data-v61-ready','1');var n=document.getElementById('fatal');if(n&&!window.SDPCore){n.className='';n.textContent='The app could not load. Reload while online, then reopen this page.';}}},1500);}());</script>
+<style id="sdpCss">
+<!--CSS-->
+</style>
+</head>
+<body class="sdp-v61" data-theme="dark" data-perf="auto" data-wallpaper="static">
+<!--SPRITE-->
+<div id="bg" class="scene hidden" data-anim="off" aria-hidden="true"></div>
+<div id="app">
+<header class="topbar">
+<div id="sdpBrandCluster"><span class="swan-badge" aria-hidden="true">&#x1F9A2;</span><div class="brand-copy"><div class="brand-line"><span id="brandName">Smart Dictation</span><span id="sdpVerPill">v61</span></div><span id="brandSub">CCBE Galle Branch</span></div></div>
+<div id="sdpTopActions"><button id="sdpTopVoiceBtn" class="icon ghost" type="button" aria-label="Check voice" title="Check voice"><svg aria-hidden="true"><use href="#i-volume"></use></svg></button><span id="sdpTopLangPill"><button id="btnLang" type="button" aria-label="Switch interface language">EN | &#x0DC3;&#x0DD2;&#x0D82;&#x0DC4;&#x0DBD;</button></span><button id="btnGuideTop" class="icon ghost" type="button" aria-label="How it works" title="How it works"><svg aria-hidden="true"><use href="#i-info"></use></svg></button><button id="btnOpenSettingsTop" class="icon ghost" type="button" aria-label="Settings" title="Settings"><svg aria-hidden="true"><use href="#i-settings"></use></svg></button><span class="sr" aria-hidden="true"><span id="chipNet"><span id="chipNetText">Local mode</span></span></span></div>
+</header>
+<main id="sdpScreens">
+<section class="screen" id="screen-home" role="tabpanel" aria-labelledby="tab-home">
+<div id="homeAnn"></div><div id="homeResume" class="card hidden"><b id="resumeText"></b><p id="resumeSub" class="small muted"></p><div class="btn-row"><button id="btnResumeNo" class="btn ghost" type="button">Start again</button><button id="btnResumeYes" class="btn primary" type="button">Resume</button></div></div>
+<div id="sdpHomeGreeting"><span>Good evening, Student</span><small>Session 8</small></div>
+<section id="homeHero" class="card hero"><p id="homeKicker">SESSION 8 · CCBE GALLE BRANCH</p><h1 id="homeTitle">Personal Feelings, Opinions &amp; Experiences</h1><p id="homeSub">30 adjectives · UK English · Alice studio voice</p><div id="sdpHeroConfigChips"></div><button id="btnStart" class="btn primary xl block" type="button"><span id="btnStartText">Start dictation</span><span id="sdpBtnStartEst">&#8776; 6 min</span></button><button id="btnGuide" class="btn ghost block" type="button">How it works · 60s guide</button></section>
+<div id="sdpHomeStatsRow"></div><section><header class="sdp-section-title"><h2>Quick practice</h2><span>Small steps. Real progress.</span></header><div id="sdpQuickPracticeGrid"></div></section>
+<div id="microToastLoad" aria-live="polite"></div><footer id="creditFoot"><span id="creditDocked">&#x1F9A2; Crafted by Hansana</span><span id="credit" aria-hidden="true"></span></footer>
+</section>
+<section class="screen hidden" id="screen-dict" role="tabpanel" aria-labelledby="tab-dict"><header class="spread"><h1>Words</h1><span id="sdpWordCount" class="small muted"></span></header><input id="dictSearch" type="search" placeholder="Search words or meanings…" aria-label="Search words" autocomplete="off"><div id="sdpWordFilterRow" role="group" aria-label="Filter words"></div><div id="dictList"></div><div id="dictTabs" hidden></div></section>
+<section class="screen hidden" id="screen-practice" role="tabpanel" aria-labelledby="tab-prac"><header class="spread"><h1>Practice</h1><span id="pracCount" class="small muted"></span></header><div id="sdpPracticeHub"></div><div id="pracMode" hidden></div><div id="pracStage" class="sdp-practice-stage"></div></section>
+<!--COMMUNITY-->
+<section class="screen hidden" id="screen-set" role="tabpanel" aria-labelledby="tab-set"><div id="sdpNextGenSettings"></div></section>
+</main>
+<nav id="tabbar" role="tablist" aria-label="Main sections">
+<button type="button" role="tab" id="tab-home" data-tab="home" aria-selected="true" aria-controls="screen-home"><svg aria-hidden="true"><use href="#i-home"></use></svg><span>Home</span></button>
+<button type="button" role="tab" id="tab-dict" data-tab="dict" aria-selected="false" aria-controls="screen-dict"><svg aria-hidden="true"><use href="#i-book"></use></svg><span>Words</span></button>
+<button type="button" role="tab" id="tab-prac" data-tab="practice" aria-selected="false" aria-controls="screen-practice"><svg aria-hidden="true"><use href="#i-target"></use></svg><span>Practice</span></button>
+<button type="button" role="tab" id="tab-comm" data-tab="comm" aria-selected="false" aria-controls="screen-comm"><svg aria-hidden="true"><use href="#i-chat"></use></svg><span>Community</span><span id="commBadge" class="badge hidden"></span></button>
+<button type="button" role="tab" id="tab-set" data-tab="set" aria-selected="false" aria-controls="screen-set"><svg aria-hidden="true"><use href="#i-settings"></use></svg><span>Settings</span></button>
+</nav>
+<div id="printview" aria-hidden="true"></div>
+<div id="engineControls" hidden aria-hidden="true"><div id="homeMeta"></div><div id="segMode"></div><div id="homeStats"></div><div id="homeSessions"></div><div id="topOverflow"></div><button id="btnAdmin" type="button">Lecturer Studio</button><button id="btnTheme" type="button">Theme</button><button id="btnPerf" type="button">Performance</button><button id="btnLiveVideo" type="button">Wallpapers</button><input id="liveVideoInput" type="file" accept="video/*"><button id="btnRefresh" type="button">Refresh</button><button id="btnDataSheet" type="button">Data usage</button><button id="btnTestVoice" type="button">Test sound</button><button id="btnReadyTest" type="button">Test sound</button><button id="btnTestVoicePlayer" type="button">Test sound</button><button id="btnTestVoiceDiag" type="button">Test sound</button><button id="btnPause" type="button">Pause</button><div id="perfStatus"></div><div id="segPerf"></div><div id="liveVideoStatus"></div><div id="galStreamStatus"></div><div id="dimHostSet"></div><div id="contrastReadout"></div><div id="topDataBadge"><span id="topDataMB"></span><span id="topDataLkr"></span></div><div id="bgLiveWrap" data-active="false"><video id="bgLiveVideo" muted loop playsinline preload="none"></video></div><div id="staticControlDepot"></div></div>
+</div>
+<div id="dataSheet" hidden></div><div id="guideSheet" hidden></div><div id="layers"></div><div id="sheets"></div><div id="modals"></div><div id="toasts"></div><p id="live" class="sr" role="status" aria-live="polite"></p><div id="fatal" class="hidden"></div><audio id="ttsMasterAudio" preload="none"></audio>
+<!--TEMPLATES-->
+<script type="text/plain" id="gas-source"></script>
+<script src="./data/app-core.js?v=9.0.1.0" defer></script>
+<script src="./data/data-meter.js?v=9.0.1.0" defer></script>
+<script src="./data/studio.js?v=9.0.1.0" defer></script>
+<script src="./data/learning-tools.js?v=9.0.1.0" defer></script>
+</body></html>

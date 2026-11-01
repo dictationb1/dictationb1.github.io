@@ -84,3 +84,11 @@ No baseline source files changed in P0.
 - Historical phase1 tests still use their historical source when available; existing shallow-clone skips remain unchanged. Current-engine assertions use the extracted source.
 - Static gate intentionally fails on baseline legacy CSS until surgery. Selected original security behavior tests remain green.
 - P1 syntax correction verified; selected encryption/meter/preview regressions rerun before surgery.
+
+## P2
+
+- Extracted the base engine using Acorn-identified statement ranges. Preserved encrypted vault, session-secret scrubbing, GitHub preview publication, remote speech, lecturer and community engines.
+- Removed both runtime stylesheet injectors, data-sheet CSS injector, overflow regroup builder, duplicate settings wrapper and legacy footer builder. The new static shell owns layout.
+- Replaced the old static CSS with a single mount-keyed dark-zinc stylesheet; all scripts are deferred in the specified order.
+- Compatibility-only hidden engine controls retained for optional wallpaper/lecturer APIs; P3 moves them inside the three settings groups and replaces Home/Words/Practice owners.
+- Five PIN/secret/vault/publication regression tests pass against the extracted engine. Full v61 gate waits for the single learning owner in P3 and metadata/speech hardening in P4.

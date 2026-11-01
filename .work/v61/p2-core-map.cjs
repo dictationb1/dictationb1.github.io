@@ -1,0 +1,6 @@
+'use strict';
+var fs=require('fs'),acorn=require('./node-acorn.cjs'),h=fs.readFileSync('index.html','utf8'),off=h.indexOf('<script>')+8,src=h.slice(off,h.indexOf('</script>',off)),ast=acorn.parse(src,{ecmaVersion:5}),root=ast.body[0].expression.argument.callee.body.body;
+function unwrap(n){while(n.type==='UnaryExpression')n=n.argument;return n;}
+var ex=root[29].expression;console.log(ex.expressions.map(function(n){return [n.type,n.start,n.end,src.slice(n.start,n.start+70)];}));var f=unwrap(ex.expressions[0]);console.log('visual',f.type);var b=f.callee.body.body;console.log('statements',b.length);b.forEach(function(n,i){console.log(i,n.type,n.start,n.end,src.slice(n.start,n.start+180).replace(/\n/g,' '));});
+function walk(n,cb){if(!n||typeof n!=='object')return;if(n.type)cb(n);Object.keys(n).forEach(function(k){var v=n[k];if(Array.isArray(v))v.forEach(function(x){walk(x,cb);});else if(v&&typeof v==='object')walk(v,cb);});}
+console.log('STYLE contexts');walk(ast,function(n){if(n.type==='CallExpression'&&n.callee.type==='MemberExpression'&&n.callee.property.name==='createElement'&&n.arguments[0]&&n.arguments[0].value==='style')console.log(n.start,src.slice(n.start-80,n.start+220));});
