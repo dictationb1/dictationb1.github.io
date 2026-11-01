@@ -1,4 +1,4 @@
-/* Smart Dictation Player — Service Worker (v60 / 9.0.0.3)
+/* Smart Dictation Player — Service Worker (v60 / 9.0.0.4)
  * GitHub Pages static hosting.
  *   - Stale-While-Revalidate for the app shell.
  *   - Cache-First for versioned media/audio, stored as FULL responses.
@@ -7,9 +7,9 @@
  */
 'use strict';
 
-var VERSION = 'sdp-v60-9.0.0.3';
-var APP_VERSION = '9.0.0.3';
-var SW_VERSION = 'sdp-v60-9.0.0.3';
+var VERSION = 'sdp-v60-9.0.0.4';
+var APP_VERSION = '9.0.0.4';
+var SW_VERSION = 'sdp-v60-9.0.0.4';
 var MEDIA_MAX_ENTRIES = 160;
 var SHELL = [
   './',
@@ -108,7 +108,7 @@ self.addEventListener('activate', function (event) {
     caches.keys().then(function (keys) {
       return Promise.all(keys.filter(function (k) {
         if (k === 'sdp-youdao-v1') return false;
-        return k.indexOf('9.0.0.3') === -1;
+        return k.indexOf('9.0.0.4') === -1;
       }).map(function (k) { return caches.delete(k); }))
     }).then(function () {
       return caches.open(MEDIA_CACHE).then(function (cache) {

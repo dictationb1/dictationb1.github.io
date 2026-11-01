@@ -25,7 +25,7 @@
 
 ## Phases
 - [x] P0: repository/baseline verified; spec + peek/patchlib/strgen/size helpers saved; sizes PASS; baseline cheap check PASS (25/25 upgrade tests). Commit/push checkpoint follows.
-- [ ] P1: version + pre-paint cloak
+- [x] P1: all manifest/runtime version stamps 9.0.0.4, root manifest, SW cache version, head cloak and 900ms fallback (before early return). Sizes + cheap check PASS (25/25).
 - [ ] P2: speech/chrome/credit/legacy render cleanup
 - [ ] P3: Words/settings/practice
 - [ ] P4: cockpit/start/scroll
@@ -37,4 +37,6 @@ Baseline cheap check: PASS (`/tmp/p0-cheap.log`, exit 0).
 P0 size and data identity: PASS.
 G1..G9 release results: pending P5.
 
-NEXT: P1. Read SPEC.md P1 and inspect bounded anchors with peek.cjs.
+NEXT: P2. Inspect chrome/audio and legacy timer anchors with peek.cjs.
+
+P1 scope decision: existing checks require data/elevenlabs-audio.json, data/media-manifest.json and data/data-meter.js to share the release version; these and SDPVersion in learning-tools.js were bumped too. Root version.json is a copy of the canonical data manifest. No adapted anchors. index.html=485159 (+359); data routes=59845, identical.

@@ -51,7 +51,7 @@
     "readSentence": false
   },
   "ver": 60,
-  "version": "9.0.0.3",
+  "version": "9.0.0.4",
   "buildDate": "2026-10-31",
   "credits": {
     "createdBy": "Hansana",
@@ -85,7 +85,7 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "9.0.0.3",
+  "appVersion": "9.0.0.4",
   "settingsRev": 60,
   "performance": {
     "mode": "paper",
