@@ -37,7 +37,12 @@ failure, NOT ENV-BLOCKED (Chromium works).
   - index.html already clean: zero `top:calc(68px`, zero `154px`, zero `iterations:15e4/150000`; `iterations:250000` already present (SDP_ENC_V2 in EncryptedVault); no `.createMediaElementSource(`. No index.html edit made (nothing to purge); the v60 top gap is enforced by #sdpNextGenCss in P3.
   - data/studio.js: modelId eleven_flash_v2_5 and voiceId Xb7hH8MSUJpSbSDYk0k2 already default; appended an ES5 `SDP_ENC_V2` params block (PBKDF2 / SHA-256 / 250000 / AES-GCM 256) exposing `SDP_ENC_V2:` + saveVault/getVault delegates via window.SDPEncV2. 104567 -> 106144 bytes.
   - tests/phase1.cjs 5.1: default-model assertion changed eleven_multilingual_v2 -> eleven_flash_v2_5 (R9 requirement).
-- [ ] P3 cascade supremacy, global chrome, wrapped Screens.home
+- [x] P3 cascade supremacy, global chrome, wrapped Screens.home
+  - New ES5 module appended to data/learning-tools.js (source: .work/v60-9003/v60-p3-home.js, 158911 -> 215687 bytes): neutraliseLegacyStyles() + #sdpNextGenCss design system (Zinc-950/Sky-400, zero backdrop-filter, Inter/Noto Sinhala), MutationObserver keeping #sdpNextGenCss last in head, wallpaper purge, mountChrome() (brand cluster, 3 top actions, 5-slot tabbar, desktop rail), renderNextGenHome() (greeting, hero rewrite, 4 config chips, 46px CTA + est, how-it-works, 3 stat cards, 2x2 quick practice), creditDocked/creditPill/microToastLoad, SDP_applyLang i18n.
+  - Wrappers installed: Screens.home (renders v60 home every call), UI.setTab (intercepts 'dictate' -> Eng.start, re-mounts chrome), Eng.paint (re-renders home at depth 0).
+  - Adapted anchor: the legacy topbar controls block is moved whole into #sdpLegacyKeeper (all of #topDataBadge/#btnLiveVideo/#chipNet/#btnLang/#btnGuideTop/#btnPerf/#btnTheme/#btnRefresh/#btnAdmin/#btnLock stay in the DOM).
+  - Adapted anchor: tabbar keeps its real data-tab buttons (internals use #tab-<name>); #tab-comm goes to the keeper and #tab-dictate is inserted in its slot so the 5-slot indicator/index math stays exact. #tab-prac is created as a hidden alias in the keeper (id availability), #tab-practice stays the visible Practice tab.
+  - JSDOM smoke (.work/v60-9003/smoke.cjs): all v60 ids present, #sdpNextGenCss last in head, sdpV57Css/sdpV58Css disabled + neutralised, wallpaper-on removed, 0 script errors.
 - [ ] P4 wrapped cockpit, priority-1 settings, words explorer, Sinhala i18n
 - [ ] P5 lockstep test gates + absence assertions
 - [ ] P6 docs, PR, merge
