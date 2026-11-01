@@ -10,7 +10,8 @@ const {JSDOM, VirtualConsole} = require('jsdom');
 const acorn = require('acorn');
 const FakeTimers = require('@sinonjs/fake-timers');
 const root = path.resolve(__dirname, '..');
-const current = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const indexSource=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const enginePath=path.join(root,'data/app-core.js');const engineSource=fs.existsSync(enginePath)?fs.readFileSync(enginePath,'utf8'):'';const current=indexSource+'\n'+engineSource;
 const STORE_KEY = current.match(/key:"([^"]+)"/)[1];
 /* The Phase 1 comparisons need the historical baseline commit. In a shallow
    clone (or after a squash) that object can be missing: skip instead of
@@ -36,7 +37,7 @@ function test(name, fn) {
   try { fn(); results.push({test: name, status: 'PASS'}); }
   catch (err) { results.push({test: name, status: 'FAIL', detail: err.stack}); }
 }
-function harness(html = current, opts = {}) {
+function harness(html = indexSource, opts = {}) {
   const errors = [], requests = [], spoken = [], audio = [];
   const dom = new JSDOM(html, {url: 'https://example.test/' + (opts.hash || ''), runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: new VirtualConsole()});
   const w = dom.window;
@@ -69,7 +70,7 @@ function harness(html = current, opts = {}) {
     w.speechSynthesis = {getVoices() {return [{lang:opts.voice, name:opts.voice==='en-GB'?'Amy':'US voice',localService:true}];}, cancel() {}, speak(u) {spoken.push({text:u.text, lang:u.lang, voice:u.voice && u.voice.lang}); w.setTimeout(() => {if(u.onend) u.onend();}, 1);}, addEventListener() {}};
   }
   w.addEventListener('error', ev => errors.push(ev.message));
-  let script = Array.from(w.document.scripts).find(n => !n.type && n.textContent.includes('var APP_VERSION')).textContent;
+  let script = html===indexSource && engineSource ? engineSource : Array.from(w.document.scripts).find(n => !n.type && n.textContent.includes('var APP_VERSION')).textContent;
   const marker = script.indexOf('window.SDP = {') >= 0 ? 'window.SDP = {' : 'window.SDP={';
   script = script.replace(marker, 'window.__qa = {U: U, UI: UI, DB: DB, Store: Store, Errors: typeof Errors === "undefined" ? null : Errors, DataTools: DataTools, Screens: Screens, Eng: Eng, Speech: Speech, Cloud: Cloud, Admin: Admin, Diag: Diag, Results: Results, Lib: Lib, Comm: Comm, Dict: Dict, Links: typeof Links === "undefined" ? null : Links, Sha: Sha, fatalCard: fatalCard};\nwindow.SDP = {');
   if(opts.bootFailure) script = script.replace(/function boot\(\)[{][\s\S]*?Store\.test\(\)[,;]/, 'function boot(){ throw new Error("Injected boot failure");');
@@ -169,7 +170,7 @@ test('1.4 flex fatal card uses scale-only animation; confirm keeps translate', (
 test('1.5 injected script removed and lazy gas-source retained', () => {
  assert(!/__CF\$|cdn-cgi|challenge-platform/.test(current));
  const gas=fs.readFileSync(path.join(__dirname,'..','data','gas-source.txt'),'utf8');assert(/id="gas-source"><\/script>/.test(current),'the lazy gas-source holder is present');assert(gas.includes("function handlePost(e)")); assert(gas.includes("function adminOk(body)"));
- assert(current.includes('var APP_VERSION'),'the inline application remains present after comments are stripped');
+ assert(engineSource.includes('var APP_VERSION'),'the extracted application ships');
 });
 test('1.5 no cloud traffic on load; only the static live-session files, even with cloud configured', () => withApp({cloud:true}, a => {a.clock.tick(10000);assert(a.requests.length<=4 && bootTraffic(a), JSON.stringify(a.requests));a.w.document.querySelector('#btnRefresh').click();a.clock.tick(100);assert(a.requests.length>0);assert(!a.crash());}));
 test('1.6 invalid dates and malformed backup import are guarded', () => withApp({}, a => {
@@ -184,7 +185,7 @@ test('1.6 user strings remain literal text, not executable HTML', () => withApp(
 test('Static: node --check, ES2017 parser, no eval, under 450KB', () => {
  const d=new JSDOM(current);const script=Array.from(d.window.document.scripts).find(n=>!n.type&&n.textContent.includes('var APP_VERSION')).textContent;
  const file=path.join(require('os').tmpdir(),'sdp-check.js');fs.writeFileSync(file,script);cp.execFileSync(process.execPath,['--check',file]);fs.unlinkSync(file);
- acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(current)<598000);d.window.close();
+ acorn.parse(script,{ecmaVersion:2017});assert(!/\beval\s*\(|new\s+Function\s*\(/.test(script));assert(Buffer.byteLength(indexSource)<=110000);assert(Buffer.byteLength(engineSource)<=420000);d.window.close();
 });
 function enterPin(a, pin) {
   a.q.Admin.open();
@@ -243,7 +244,7 @@ test('2.2 cloud list update stays queued throughout active session', () => withA
 test('2.3 session typing/day chips update Home, player and comment metadata', () => withApp({voice:'en-GB'}, a => {
  enterPin(a,DEFAULT_PIN);a.q.Admin.tab='session';a.q.Admin.renderTab();const no=a.w.document.querySelector('[aria-label="Session number"]');no.value='42';no.dispatchEvent(new a.w.Event('input'));
  clickText(a,'Sun');assert.equal(a.q.DB.data.session.day,'Sunday');assert(a.w.document.querySelector('#homeKicker').textContent.includes('42'));assert(a.q.Comm.meta().includes('Sunday'));
- a.q.Eng.start({});assert.equal(a.q.Eng.layer,null);clickText(a,"I'm ready");a.clock.tick(120);assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
+ a.q.Eng.start({});assert.ok(a.q.Eng.layer);a.clock.tick(120);assert(a.q.Eng.layer.textContent.includes('Session 42'));assert(a.q.Eng.layer.textContent.includes('Sunday'));
 }));
 test('2.4 private message is absent from public comments, visible only in unlocked inbox', () => withApp({}, a => {
  a.q.Comm.message();a.w.document.querySelector('#sheets textarea').value='Private QA message';clickText(a,'Send to lecturer');assert.equal(a.q.DB.data.inbox.length,1);assert.equal(a.q.DB.data.comments.length,0);assert(!a.w.document.querySelector('#commList').textContent.includes('Private QA message'));
@@ -419,7 +420,7 @@ test('1.9 one failing Home widget leaves the other widgets on screen', () => wit
  a.q.Screens.home();
  assert(!a.crash());
  assert(a.w.document.querySelector('#homeTitle').textContent.length>0);
- assert(a.w.document.querySelector('#homeSessions').children.length>0);
+ assert(a.w.document.querySelector('#sdpHomeStatsRow').children.length>0);
  assert(a.q.Errors.items.some(i=>i.where==='widget: home-stats'));
  a.q.UI.statBox=real; a.q.Screens.home();
  assert.equal(a.w.document.querySelector('#homeStats').children.length,3);
@@ -481,7 +482,7 @@ test('5.2 v57: admin auto-completer parses typed words and ships no default PIN'
  assert.ok(current.includes('adminPin:""'));
 }));
 test('5.3 v59: static-first wallpaper, real meter, no fake depot, Lite disables blur', () => {
- assert.ok(current.includes('APP_VERSION="9.0.0.4"'));
+ assert.ok(current.includes('APP_VERSION="9.0.1.0"'));
  assert.ok(current.includes('./data/data-meter.js'));
  assert.ok(!current.includes('id="sdpV56"'), 'fake depot removed');
  assert.ok(!current.includes('id="materialMixer"'), 'Material Mixer removed');
@@ -498,7 +499,7 @@ test('5.4 v57: AES-GCM v2 vault, GitHub-only sync, publish preview and Range SW'
  assert.ok(studio.includes('Cloud.commitFiles') && !/ntfy\.sh\/dictationb1_sdp_keys/.test(studio));
  assert.ok(current.includes('openPublishPreview') || current.includes('publishPreviewWords'));
  const sw = fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('sdp-v60-media') && sw.includes('206') && sw.includes('Content-Range'));
+ assert.ok(sw.includes('sdp-v61-media') && sw.includes('206') && sw.includes('Content-Range'));
 }));
 console.log(JSON.stringify(results,null,2));
 if(results.some(r=>r.status==='FAIL')) process.exitCode=1;

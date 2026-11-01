@@ -118,7 +118,7 @@ async function dismissTour(page) {
 }
 
 async function unlock(page, pin) {
-  await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
+  await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const a = document.getElementById('sdpAppearanceAccordion'); if (a) a.open=true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
   await page.waitForTimeout(250);
   for (const d of pin) await page.locator('#pinPad [data-k="' + d + '"]').click();
   await page.evaluate(() => { const b = document.getElementById('pinSubmit'); if (b) b.click(); });
@@ -402,14 +402,14 @@ async function flow(browser, vp, label, seed) {
   await page.waitForTimeout(700);
   const v58sheet = await page.evaluate(() => ({
     open: !!document.getElementById('dataReportSheet'),
-    network: !!document.getElementById('v58NetworkPanel'),
-    cache: !!document.getElementById('v58CachePanel'),
+    network: !!document.getElementById('sdpNetworkPanel'),
+    cache: !!document.getElementById('sdpCachePanel'),
     today: (document.getElementById('dataSessionTodayMB') || {}).textContent || '',
     lkr: (document.getElementById('dataSessionTodayLkr') || {}).textContent || '',
     saved: (document.getElementById('dataCacheSavedLkr') || {}).textContent || '',
     planLabel: (document.getElementById('dataPlanLabel') || {}).textContent || '',
-    chips: document.querySelectorAll('#dataPlanChips .v58-plan-chip').length,
-    active: document.querySelectorAll('#dataPlanChips .v58-plan-chip[aria-pressed="true"]').length
+    chips: document.querySelectorAll('#dataPlanChips .sdp-plan-chip').length,
+    active: document.querySelectorAll('#dataPlanChips .sdp-plan-chip[aria-pressed="true"]').length
   }));
   rec(label + ' v58 data sheet: Network & Cache panels, live MB, \u2248 LKR and plan chips',
     v58sheet.open && v58sheet.network && v58sheet.cache && /MB/.test(v58sheet.today) && /^\u2248/.test(v58sheet.lkr) &&
@@ -418,7 +418,7 @@ async function flow(browser, vp, label, seed) {
   await page.evaluate(() => { if (window.SDPCore && SDPCore.UI.closeSheet) SDPCore.UI.closeSheet(); });
   await page.waitForTimeout(300);
   /* Practice Hub bento tile opens the flashcard practice screen */
-  await page.evaluate(() => { const t = document.querySelector('[data-v58-practice="flash"]'); if (t) t.click(); });
+  await page.evaluate(() => { const t = document.querySelector('[data-practice="flash"]'); if (t) t.click(); });
   await page.waitForTimeout(500);
   const practice = await page.evaluate(() => ({
     tab: document.querySelector('#tab-practice') ? document.querySelector('#tab-practice').getAttribute('aria-selected') : '',

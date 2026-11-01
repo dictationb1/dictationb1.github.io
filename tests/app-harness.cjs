@@ -14,11 +14,12 @@ function harness(seed,opts={}){
  if(opts.before)opts.before(w);
  if(seed)w.localStorage.setItem('sdp.v1',JSON.stringify(seed));
  if(opts.crypto)Object.defineProperty(w,'crypto',{value:require('node:crypto').webcrypto});
- const rawScript=Array.from(w.document.scripts).find(s=>!s.type&&s.textContent.includes('var APP_VERSION')).textContent;
+ const rawScript=fs.existsSync(path.resolve(__dirname,'../data/app-core.js'))?fs.readFileSync(path.resolve(__dirname,'../data/app-core.js'),'utf8'):Array.from(w.document.scripts).find(s=>!s.type&&s.textContent.includes('var APP_VERSION')).textContent;
  const marker=rawScript.indexOf('window.SDP = {')>=0?'window.SDP = {':'window.SDP={';
  const injection='window.__qa = {LiveWallpaper:LiveWallpaper,isAssetsMedia:isAssetsMedia,normalizeAssetPath:normalizeAssetPath,DEFAULT_WALLPAPER_SRC:DEFAULT_WALLPAPER_SRC,APP_VERSION:APP_VERSION,ASSET_MEDIA_RE:ASSET_MEDIA_RE,Errors:typeof Errors==="undefined"?null:Errors,Admin:Admin,DB:DB,Speech:Speech,UI:UI,Eng:Eng,Lib:Lib,NoVoice:NoVoice,defaultData:defaultData,Results:Results,Cloud:Cloud,Dict:Dict,DictAPI:Dict,Store:Store,CONFIG:CONFIG,ukMp3:ukMp3,SAMPLE_WORDS:SAMPLE_WORDS,IPA:typeof IPA==="undefined"?null:IPA,SAMPLE_LIST_ID:typeof SAMPLE_LIST_ID==="undefined"?null:SAMPLE_LIST_ID,U:U,Screens:Screens,WORD_BANK:WORD_BANK,publishCompletion:publishCompletion,wordRow:wordRow,T:T,STRINGS_EN:STRINGS_EN,STRINGS_SI:STRINGS_SI,GUIDE:GUIDE,welcomeGuide:welcomeGuide,firstRunTour:firstRunTour}; window.SDP = {';
  const script=rawScript.replace(marker,injection);
  vm.runInContext(script,dom.getInternalVMContext());w.document.dispatchEvent(new w.Event('DOMContentLoaded'));clock.tick(100);w.__qa.DB.data.tourSeen=true;
+ if(opts.learning){vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../data/learning-tools.js'),'utf8'),dom.getInternalVMContext());}
  return {w,q:w.__qa,clock,consoleErrors,close(){clock.uninstall();dom.window.close();}};
 }
 module.exports={harness,html};
