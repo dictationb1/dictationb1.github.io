@@ -1,357 +1,178 @@
+#!/usr/bin/env node
 'use strict';
-/* v58 / 7.0.0 Chromium upgrade gate. No live internet: every external request is
- * aborted or mocked locally. Test PIN is constructed at runtime. */
+/* G6 — real Chromium upgrade journey: a v60 device becomes a 0.0.1.a device.
+ * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
+ * contract: docs/ARCHITECTURE_MAP.md §2 boot version check (single reload guard)
+ * Preserved caches must survive; retired caches must not. Exactly one reload. */
+const path = require('node:path');
 const { chromium } = require('playwright-core');
 const serverChromium = require('@sparticuz/chromium');
 require('./chromium-env.cjs').ensureChromiumLibs();
-const fs = require('fs'), path = require('path'), http = require('http');
-const root = path.resolve(__dirname, '..');
-const PIN = require('./test-pin.cjs');
+const { start } = require('./static-server.cjs');
+
+const ROOT = path.resolve(__dirname, '..');
+const STALE = 'sdp-v60-9.0.0.4';
+const SHELL = 'sdp-v0.0.1.a-shell';
+const YOUDAO = 'sdp-youdao-v1';
+const CLIPS = 'sdp-audio-clips';
+
 const results = [];
-function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FAIL', detail }); }
-(async () => {
-  const mime = { '.html': 'text/html', '.json': 'application/json', '.js': 'text/javascript', '.mp4': 'video/mp4', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
-  const server = http.createServer((req, res) => {
-    const rel = decodeURIComponent(String(req.url || '/').split('?')[0]).replace(/^\/+/, '') || 'index.html';
-    const file = path.join(root, rel);
-    if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end('nope'); }
-    res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream');
-    res.end(fs.readFileSync(file));
-  });
-  await new Promise(r => server.listen(0, '127.0.0.1', r));
-  const base = 'http://127.0.0.1:' + server.address().port;
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.SDP_BROWSER_BIN || await serverChromium.executablePath(), args: serverChromium.args.filter(a => !['--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'].includes(a)) });
+function check(name, ok, detail) {
+  results.push({ test: name, status: ok ? 'PASS' : 'FAIL', detail: ok ? '' : String(detail === undefined ? '' : detail) });
+  return ok;
+}
 
-  async function newPage(opts) {
-    const ctx = await browser.newContext(Object.assign({ viewport: { width: 390, height: 844 } }, opts || {}));
-    const page = await ctx.newPage(); const errors = [];
-    page.on('pageerror', e => errors.push(e.message));
-    await page.route('https://**/*', route => route.abort());
-    await page.addInitScript(() => { window.__SDP_QA__ = true; });
-    await page.goto(base + '/index.html');
-    await page.waitForTimeout(2600);
-    for (let i = 0; i < 12; i++) {
-      const c = page.locator('#sheets .shead button[aria-label="Close"]');
-      if (await c.count()) await c.first().click().catch(() => {});
-      if (await page.locator('#sheets .sheet').count() === 0) break;
-      await page.waitForTimeout(200);
+async function launch() {
+  const executablePath = process.env.SDP_BROWSER_BIN || await serverChromium.executablePath();
+  const args = serverChromium.args.filter((a) => ![
+    '--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'
+  ].includes(a));
+  return chromium.launch({ headless: true, executablePath, args });
+}
+
+(async function main() {
+  const server = await start({ root: ROOT });
+  const browser = await launch();
+  try {
+    /* ── 1. seed a stale v60 cache next to the two preserved caches ────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 preserved caches
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await context.addInitScript(() => { window.__SDP_NO_LIVE__ = true; });
+    const page = await context.newPage();
+    await page.goto(server.origin + '/data.html', { waitUntil: 'domcontentloaded' });
+    const seeded = await page.evaluate(async (names) => {
+      const stale = await caches.open(names.stale);
+      await stale.put('/retired-wallpaper.mp4', new Response('stale-bytes'));
+      const youdao = await caches.open(names.youdao);
+      await youdao.put('https://dict.youdao.com/dictvoice?type=1&audio=afraid', new Response('mp3-bytes'));
+      const clips = await caches.open(names.clips);
+      await clips.put('/assets/audio/session-w1-1.mp3', new Response('clip-bytes'));
+      return (await caches.keys()).sort();
+    }, { stale: STALE, youdao: YOUDAO, clips: CLIPS });
+    check('G6.1a a stale v60 cache and both preserved caches are seeded',
+      seeded.indexOf(STALE) >= 0 && seeded.indexOf(YOUDAO) >= 0 && seeded.indexOf(CLIPS) >= 0, seeded.join(','));
+    check('G6.1b the 0.0.1.a shell cache does not exist yet', seeded.indexOf(SHELL) < 0, seeded.join(','));
+
+    /* ── 2 + 3. activating the new worker purges the retired cache ─────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 activate handler
+    const activated = await page.evaluate(async () => {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) await reg.unregister();
+      await caches.delete('sdp-v0.0.1.a-shell');
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      await new Promise((resolve) => {
+        if (reg.active) return resolve();
+        const worker = reg.installing || reg.waiting;
+        if (!worker) return resolve();
+        worker.addEventListener('statechange', () => { if (worker.state === 'activated') resolve(); });
+        setTimeout(resolve, 12000);
+      });
+      await navigator.serviceWorker.ready;
+      await new Promise((r) => setTimeout(r, 1200));
+      const names = (await caches.keys()).sort();
+      const shell = await caches.open('sdp-v0.0.1.a-shell');
+      const shellNames = (await shell.keys()).map((req) => new URL(req.url).pathname);
+      return { names, shellNames, controller: !!navigator.serviceWorker.controller };
+    }, null);
+
+    check('G6.3a the retired sdp-v60 cache is deleted', activated.names.indexOf(STALE) < 0, activated.names.join(','));
+    check('G6.3b the preserved dictionary-audio cache survives', activated.names.indexOf(YOUDAO) >= 0, activated.names.join(','));
+    check('G6.3c the preserved lecturer-clip cache survives', activated.names.indexOf(CLIPS) >= 0, activated.names.join(','));
+    check('G6.2a the 0.0.1.a shell cache exists after install', activated.names.indexOf(SHELL) >= 0, activated.names.join(','));
+    check('G6.2b the shell precaches index.html, the CSS and all six modules',
+      ['/index.html', '/assets/css/sdp-ui.css', '/data/sdp-data-sync.js', '/data/sdp-audio-speech.js',
+        '/data/sdp-dictation-engine.js', '/data/sdp-ui-views.js', '/data/studio.js', '/data/data-meter.js',
+        '/data/version.json', '/data/config.json', '/data/session.json',
+        '/assets/fonts/NotoSansSinhala-Regular.woff2', '/assets/fonts/NotoSansSinhala-Bold.woff2',
+        '/manifest.webmanifest', '/data.html', '/data/index.html']
+        .every((p) => activated.shellNames.indexOf(p) >= 0),
+      activated.shellNames.join(','));
+    const preservedY = await page.evaluate(async (name) => {
+      const cache = await caches.open(name);
+      return (await cache.keys()).length;
+    }, YOUDAO);
+    check('G6.3d the preserved entry itself is still readable', preservedY === 1, preservedY);
+    await context.close();
+
+    /* ── 4. the boot version check reloads exactly once ────────────────── */
+    // contract: docs/ARCHITECTURE_MAP.md §2 sessionStorage reload guard
+    server.setOverride('/data/version.json', JSON.stringify({
+      ver: 1, appVersion: '0.0.1.b', version: '0.0.1.b', buildDate: '2026-11-02',
+      schema: 1, settingsRev: 1, session: '8',
+      title: 'Session 8 - Personal Feelings, Opinions & Experiences (Adj)',
+      updatedAt: '2026-11-02T00:00:00Z', syncRev: 1762000000001
+    }, null, 1));
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ctx.addInitScript(() => {
+        try {
+          const navs = Number(sessionStorage.getItem('__sdp_navs') || 0) + 1;
+          sessionStorage.setItem('__sdp_navs', String(navs));
+        } catch (e) {}
+      });
+      await ctx.addInitScript(() => { window.__SDP_NO_LIVE__ = true; });
+      const p = await ctx.newPage();
+      await ctx.route('**/*', (route) => {
+        const url = route.request().url();
+        if (url.startsWith(server.origin) || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+        return route.abort();
+      });
+      await p.goto(server.origin + '/index.html', { waitUntil: 'domcontentloaded' });
+      await p.waitForTimeout(3500);
+      const state = await p.evaluate(() => ({
+        navs: Number(sessionStorage.getItem('__sdp_navs') || 0),
+        upgradedTo: sessionStorage.getItem('sdp_upgraded_to'),
+        target: window.__SDP_BOOT_VERSION__,
+        homeActive: !!document.querySelector('#screen-home.active'),
+        caches: null
+      }));
+      check('G6.4a a published build mismatch records sdp_upgraded_to', state.upgradedTo === '0.0.1.b', state.upgradedTo);
+      check('G6.4b the boot target is still 0.0.1.a', state.target === '0.0.1.a', state.target);
+      check('G6.4c the guard limits the upgrade to exactly ONE reload', state.navs === 2, state.navs);
+      check('G6.4d the page is usable after the reload', state.homeActive === true);
+      await ctx.close();
     }
-    return { ctx, page, errors };
-  }
-  async function unlock(page) {
-    await page.evaluate(() => { const d = document.getElementById('topOverflow'); if (d) d.open = true; const b = document.getElementById('btnAdmin'); if (b) b.click(); });
-    await page.waitForTimeout(250);
-    await page.evaluate((pin) => { for (const d of pin) { const b = document.querySelector('#pinPad [data-k="' + d + '"]'); if (b) b.click(); } const s = document.getElementById('pinSubmit'); if (s) s.click(); }, PIN);
-    await page.locator('#adminHost').waitFor({ timeout: 6000 });
+    server.clearOverride('/data/version.json');
+
+    /* ── 5. offline reload still renders Home from the shell cache ─────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 network-first fallback
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ctx.addInitScript(() => { window.__SDP_NO_LIVE__ = true; });
+      const p = await ctx.newPage();
+      await p.goto(server.origin + '/index.html', { waitUntil: 'load' });
+      await p.waitForTimeout(2500);
+      const controlled = await p.evaluate(async () => {
+        try {
+          await navigator.serviceWorker.ready;
+          return !!navigator.serviceWorker.controller;
+        } catch (e) { return false; }
+      });
+      check('G6.5a the service worker controls the page', controlled === true, controlled);
+      await ctx.setOffline(true);
+      await p.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await p.waitForTimeout(2500);
+      const offline = await p.evaluate(() => ({
+        active: document.querySelector('.screen.active') ? document.querySelector('.screen.active').id : '',
+        title: document.getElementById('homeTitle') ? document.getElementById('homeTitle').textContent : '',
+        hasHeader: !!document.getElementById('appHeader'),
+        toast: document.getElementById('sdpDataToast') ? document.getElementById('sdpDataToast').textContent : ''
+      }));
+      check('G6.5b an offline reload still renders #screen-home', offline.active === 'screen-home', JSON.stringify(offline));
+      check('G6.5c the offline shell keeps the header and the title', offline.hasHeader && /Smart Dictation|Dictation/i.test(offline.title), JSON.stringify(offline));
+      await ctx.setOffline(false);
+      await ctx.close();
+    }
+  } finally {
+    await browser.close();
+    await server.close();
   }
 
-  {
-    const { ctx, page, errors } = await newPage();
-    const state = await page.evaluate(() => ({
-      static: document.body.getAttribute('data-wallpaper') === 'static',
-      videoSrc: document.getElementById('bgLiveVideo').getAttribute('src'),
-      credit: document.getElementById('credit') ? getComputedStyle(document.getElementById('credit')).position : 'missing', depot: !!document.getElementById('sdpV56'),
-      overflow: !!document.getElementById('topOverflow'), lang: !!document.getElementById('btnLang'), data: !!document.getElementById('topDataBadge'),
-      creditDocked: !!document.getElementById('creditDocked') && getComputedStyle(document.getElementById('creditDocked')).position === 'static',
-      mixer: !!document.getElementById('materialMixer'), meter: !!window.SDPDataMeter
-    }));
-    push('v58 boots Static Gradient with a three-control header, inline signature pill and no fake depot/mixer', state.static && !state.videoSrc && (state.credit === 'static' || state.creditDocked) && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
-    await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
-    await page.waitForTimeout(200);
-    const ids = await page.evaluate(() => ['rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect'].map(id => !!document.getElementById(id)));
-    push('v57 settings expose real wired control IDs', ids.every(Boolean), ids);
-    const wired = await page.evaluate(() => {
-      const C = window.SDPCore; C.DB.data.settings.rate = 0.7; C.DB.data.settings.volume = 0.4; C.DB.saveNow();
-      C.Eng.start({}); C.Speech.unlock();
-      const rate = C.Speech.desiredRate, vol = C.Speech.master().volume;
-      C.Eng.stop(); return { rate, vol };
-    });
-    push('v57 speed and volume settings reach the actual speech engine', Math.abs(wired.rate - 0.7) < 1e-6 && Math.abs(wired.vol - 0.4) < 1e-6, wired);
-    const dim = await page.evaluate(() => {
-      const LW = window.SDPCore.LiveWallpaper; LW.setDim(0); const lo = document.getElementById('contrastReadout').textContent;
-      LW.setDim(100); const hi = document.getElementById('contrastReadout').textContent; LW.setDim(18);
-      const ratio = t => { const m = /Live WCAG contrast (\d+\.\d+):1/.exec(String(t)); return m ? Number(m[1]) : -1; };
-      return { lo, hi, max: document.getElementById('sVideoDim').max, loRatio: ratio(lo), hiRatio: ratio(hi) };
-    });
-    push('v58 dimmer is 0-100 and the composited WCAG gauge rises with the dim', dim.max === '100' && /Live WCAG contrast \d+\.\d+:1/.test(dim.lo) && /AAA ✓/.test(dim.hi) && /readable/.test(dim.hi) && dim.loRatio > 0 && dim.hiRatio > dim.loRatio, dim);
-    await page.evaluate(() => { window.SDPCore.DB.data.settings.perf = 'lite'; window.SDPCore.UI.applyPerf(); });
-    const blur = await page.evaluate(() => getComputedStyle(document.querySelector('.glass')).backdropFilter || getComputedStyle(document.querySelector('.glass')).webkitBackdropFilter);
-    push('v57 true Lite mode disables backdrop filters', blur === 'none', { blur });
-    await ctx.close();
-  }
-
-  {
-    const { ctx, page, errors } = await newPage();
-    await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
-    await page.evaluate(() => { const b = document.getElementById('btnOpenGallery'); if (b) b.click(); });
-    await page.waitForTimeout(300);
-    const gallery = await page.evaluate(() => ({
-      staticBtn: !!document.getElementById('btnStaticWallpaper'),
-      mb: Array.from(document.querySelectorAll('#videoGalleryList .gal-kind')).map(n => n.textContent).join(' | ')
-    }));
-    push('v57 wallpaper gallery is opt-in and labels exact MB sizes', gallery.staticBtn && /10\.06 MB|10\.55 MB|MB \(/.test(gallery.mb), gallery);
-    await page.evaluate(() => { const b = document.querySelector('[data-gallery-select]'); if (b) b.click(); });
-    await page.waitForFunction(() => { const v = document.getElementById('bgLiveVideo'); return v && v.getAttribute('src') && v.readyState >= 2; }, null, { timeout: 12000 }).catch(() => {});
-    const opted = await page.evaluate(() => ({ src: document.getElementById('bgLiveVideo').getAttribute('src'), mode: window.SDPCore.DB.data.settings.wallpaperMode }));
-    push('v57 applying a gallery video really loads the selected file', /hooded/.test(opted.src || '') && opted.mode === 'video', opted);
-    await page.evaluate(() => { window.SDPCore.LiveWallpaper.setStatic(true); });
-    const back = await page.evaluate(() => ({ src: document.getElementById('bgLiveVideo').getAttribute('src'), mode: document.body.getAttribute('data-wallpaper') }));
-    push('v57 Static returns to a 0-MB background immediately', !back.src && back.mode === 'static', back);
-    push('v57 gallery/opt-in flow has no page errors', errors.length === 0, errors);
-    await ctx.close();
-  }
-
-  {
-    const { ctx, page, errors } = await newPage();
-    await unlock(page);
-    let puts = 0;
-    await page.route('https://api.github.com/**', async route => {
-      const req = route.request();
-      if (req.method() === 'PUT') { puts++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: { sha: 'new' } }) }); }
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: btoa('{}'), encoding: 'base64', sha: 'old' }) });
-    });
-    await page.evaluate(() => { window.SDPCore.Cloud.ghToken(['g', 'hp_'].join('') + 'runtime_test'); });
-    const cancelled = await page.evaluate(() => new Promise(resolve => {
-      window.SDPCore.Cloud.ghPublish(r => resolve(r));
-      setTimeout(() => { const ta = document.getElementById('publishPreviewWords'); const btns = Array.from(document.querySelectorAll('#sheets button')); const cancel = btns.find(b => /Cancel/.test(b.textContent)); if (ta && cancel) cancel.click(); else resolve({ ok: false, err: 'no-preview' }); }, 900);
-    }));
-    push('v57 publish is blocked by an editable preview until the lecturer confirms', /cancelled/i.test(cancelled.err || '') && puts === 0, { cancelled, puts });
-    const confirmed = await page.evaluate(() => new Promise(resolve => {
-      window.SDPCore.Cloud.ghPublish(r => resolve(r));
-      setTimeout(() => { const ta = document.getElementById('publishPreviewWords'); if (ta) { ta.value = Array.from({ length: 30 }, (_, i) => 'word' + (i + 1)).join('\n'); ta.dispatchEvent(new Event('input')); } const ok = document.getElementById('btnConfirmPublish'); if (ok) ok.click(); else resolve({ ok: false, err: 'no-confirm' }); }, 900);
-    }));
-    await page.waitForTimeout(400);
-    push('v57 confirming the 30-word preview commits through GitHub only', confirmed.ok === true && puts >= 1, { confirmed, puts });
-    const radar = await page.evaluate(() => {
-      window.SDPCore.Results.open({ id: 'qa', percent: 50, score: 1, wordCount: 2, mode: 'type', rows: [{ word: 'afraid', state: 'no' }, { word: 'brave', state: 'ok' }], durationSec: 10 });
-      return { radar: !!document.getElementById('weaknessRadar'), csv: !!document.getElementById('btnExportWeaknessCsv'), missed: (document.getElementById('lecturerWeakness') || {}).textContent || '' };
-    });
-    push('v57 lecturer results include a weakness radar, error percentages and CSV export', radar.radar && radar.csv && /afraid/.test(radar.missed) && /50%/.test(radar.missed), radar);
-    push('v57 publish/results flow has no page errors', errors.length === 0, errors);
-    await ctx.close();
-  }
-
-  {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const page = await ctx.newPage(); const errors = []; let paid = 0;
-    page.on('pageerror', e => errors.push(e.message));
-    await page.route('https://**/*', route => { if (/elevenlabs/.test(route.request().url())) paid++; return route.abort(); });
-    await page.addInitScript(() => {
-      window.__SDP_QA__ = true;
-      Object.defineProperty(navigator, 'connection', { value: { saveData: true, effectiveType: '2g', addEventListener: function () {} }, configurable: true });
-    });
-    await page.goto(base + '/index.html'); await page.waitForTimeout(2200);
-    const state = await page.evaluate(() => ({ static: document.body.getAttribute('data-wallpaper'), src: document.getElementById('bgLiveVideo').getAttribute('src') }));
-    await page.evaluate(() => { window.SDPCore.Speech.playWord('afraid', 1, function () {}); window.SDPCore.Speech.speakStudioText('Number 31', 'en', function () {}); });
-    await page.waitForTimeout(500);
-    push('v57 saveData / 2G forces Static and student playback never spends ElevenLabs credits', state.static === 'static' && !state.src && paid === 0 && errors.length === 0, Object.assign({ paid, errors }, state));
-    await ctx.close();
-  }
-
-  {
-    /* v58: two-panel data sheet with plan chips + focus-dim controller. */
-    const { ctx, page, errors } = await newPage();
-    const sheet = await page.evaluate(() => new Promise(resolve => {
-      const C = window.SDPCore;
-      C.UI.setTab('home');
-      if (C.UI.openDataSheet) C.UI.openDataSheet();
-      setTimeout(() => resolve({
-        open: !!document.getElementById('dataReportSheet'),
-        network: !!document.getElementById('v58NetworkPanel'),
-        cache: !!document.getElementById('v58CachePanel'),
-        today: (document.getElementById('dataSessionTodayMB') || {}).textContent || '',
-        lkr: (document.getElementById('dataSessionTodayLkr') || {}).textContent || '',
-        savedMB: (document.getElementById('dataCacheSavedMB') || {}).textContent || '',
-        savedLkr: (document.getElementById('dataCacheSavedLkr') || {}).textContent || '',
-        planLabel: (document.getElementById('dataPlanLabel') || {}).textContent || '',
-        chips: Array.from(document.querySelectorAll('#dataPlanChips .v58-plan-chip')).map(b => b.textContent),
-        active: document.querySelectorAll('#dataPlanChips .v58-plan-chip[aria-pressed="true"]').length
-      }), 700);
-    }));
-    const expectedChips = ['Student Lite — LKR 49.00/GB', 'Study Pack — LKR 99.00/GB', 'Family Share — LKR 150.00/GB', 'Classroom — LKR 220.00/GB', 'Custom Price'];
-    push('v58 data sheet renders Network & Cache panels, live MB, ≈ LKR and the five plan chips',
-      sheet.open && sheet.network && sheet.cache && /MB/.test(sheet.today) && /^≈/.test(sheet.lkr) &&
-      /(B|MB)/.test(sheet.savedMB) && /^≈/.test(sheet.savedLkr) && /LKR \d+\.\d+\/GB/.test(sheet.planLabel) &&
-      JSON.stringify(sheet.chips) === JSON.stringify(expectedChips) && sheet.active === 1 && errors.length === 0,
-      Object.assign({ errors }, sheet));
-    await page.evaluate(() => {
-      const C = window.SDPCore;
-      if (C.UI.closeSheet) C.UI.closeSheet();
-      if (C.Speech.showRetryToast) C.Speech.showRetryToast('QA retry', 'en', function () {});
-      const el = document.querySelector('.sdp-retry-toast');
-      if (el) el.setAttribute('data-qa', '1');
-    });
-    await page.locator('#btnStart').click();
-    await page.waitForTimeout(900);
-    const focus = await page.evaluate(() => ({
-      on: document.body.classList.contains('v58-focus'),
-      qaToastGone: document.querySelectorAll('.sdp-retry-toast[data-qa]').length === 0
-    }));
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('#sheets button'));
-      const ready = btns.find(x => /ready/i.test(x.textContent));
-      if (ready) ready.click();
-    });
-    await page.waitForTimeout(1200);
-    const session = await page.evaluate(() => ({
-      dock: !!document.getElementById('v58Dock'),
-      layer: !!(window.SDPCore.Eng && window.SDPCore.Eng.layer)
-    }));
-    await page.evaluate(() => { window.SDPCore.Eng.stop(); });
-    await page.waitForTimeout(800);
-    const focusOff = await page.evaluate(() => !document.body.classList.contains('v58-focus'));
-    push('v58 focus-dim activates on Start, kills the toast and the dock appears with the player', focus.on === true && focus.qaToastGone === true && session.dock === true && session.layer === true && focusOff === true, Object.assign({ focusOff }, focus, session));
-    const chipClick = await page.evaluate(() => new Promise(resolve => {
-      const C = window.SDPCore;
-      if (C.UI.openDataSheet) C.UI.openDataSheet();
-      setTimeout(() => {
-        const chip = document.getElementById('v58Plan-study');
-        if (chip) chip.click();
-        setTimeout(() => resolve({
-          label: (document.getElementById('dataPlanLabel') || {}).textContent || '',
-          price: window.SDPDataMeter.price(),
-          pressed: chip ? chip.getAttribute('aria-pressed') : null
-        }), 300);
-      }, 500);
-    }));
-    push('v58 tapping a plan chip persists the plan, price and active state',
-      /Study Pack/.test(chipClick.label) && chipClick.price === 99 && chipClick.pressed === 'true' && errors.length === 0, Object.assign({ errors }, chipClick));
-    await ctx.close();
-  }
-
-  {
-    const { ctx, page, errors } = await newPage();
-    const home = await page.evaluate(() => {
-      const shown = (sel) => { const n = document.querySelector(sel); return !!n && n.offsetParent !== null; };
-      const absent = (sel) => { const n = document.querySelector(sel); return !n || n.offsetParent === null; };
-      const bar = document.querySelector('.topbar').getBoundingClientRect();
-      const badge = document.getElementById('topDataBadge');
-      return {
-        barH: Math.round(bar.height), barTop: Math.round(bar.top),
-        badgeGone: !!badge && badge.offsetParent === null,
-        legacy: ['#v58VoiceBadge', '#segMode', '#homeMeta', '#homeStats', '.v58-bento', '.v58-rail', '.sdp-retry-toast'].map(absent),
-        v60: ['#sdpHomeGreeting', '#homeHero', '#sdpHeroConfigChips', '#sdpHomeStatsRow', '#sdpQuickPracticeGrid'].map(shown)
-      };
-    });
-    push('v60 next-gen Home: 54px flush topbar, legacy clutter absent, next-gen blocks visible',
-      home.barH <= 56 && home.barTop === 0 && home.badgeGone && home.legacy.every(Boolean) && home.v60.every(Boolean), home);
-    const setState = await page.evaluate(() => new Promise(resolve => {
-      window.SDPCore.UI.setTab('set');
-      setTimeout(() => {
-        const box = document.getElementById('sdpNextGenSettings');
-        const acc = document.getElementById('sdpAppearanceAccordion');
-        const body = document.getElementById('setBody');
-        resolve({
-          boxTop: box ? Math.round(box.getBoundingClientRect().top) : -1,
-          boxFirst: !!box && document.getElementById('screen-set').firstElementChild === box,
-          accOpen: acc ? acc.open : null,
-          bodyInAcc: !!(body && body.closest('details#sdpAppearanceAccordion'))
-        });
-      }, 300);
-    }));
-    push('v60 Settings opens on the priority-1 panel with #setBody collapsed inside the accordion',
-      setState.boxFirst && setState.boxTop >= 0 && setState.boxTop < 140 && setState.accOpen === false && setState.bodyInAcc, setState);
-    const cockpit = await page.evaluate(() => new Promise(resolve => {
-      const C = window.SDPCore;
-      C.Eng.start({});
-      setTimeout(() => {
-        try { if (C.Eng.skipReady) C.Eng.skipReady(); } catch (e) {}
-        setTimeout(() => {
-          const vis = (id) => { const n = document.getElementById(id); return !!n && n.offsetParent !== null; };
-          const lens = document.querySelector('#layers .lens');
-          const lbody = document.querySelector('#layers .lbody');
-          const cardNode = document.getElementById('sdpCockpitCard');
-          const grid = document.querySelector('#layers .ctrlgrid');
-          const foot = document.querySelector('#layers .lfoot');
-          const gRect = grid ? grid.getBoundingClientRect() : null;
-          const fRect = foot ? foot.getBoundingClientRect() : null;
-          resolve({
-            lbodyScroll: lbody ? lbody.scrollTop : -1,
-            lbodyHeight: lbody ? Math.round(lbody.scrollHeight) : -1,
-            cardTop: cardNode ? Math.round(cardNode.getBoundingClientRect().top) : -1,
-            cardFullyVisible: cardNode ? (cardNode.getBoundingClientRect().top >= 0 && cardNode.getBoundingClientRect().bottom <= (window.innerHeight + 1)) : false,
-            gridOnscreen: gRect ? (gRect.top < window.innerHeight && gRect.bottom > 0) : false,
-            footOnscreen: fRect ? (fRect.top < window.innerHeight && fRect.bottom > 0) : false,
-            sheetOpen: !!document.querySelector('#sheets .sheet:not(.hidden)'),
-            card: vis('sdpCockpitCard'), edge: vis('sdpEdgeBar'), timer: vis('sdpTimerPill'),
-            dock: vis('sdpCockpitDock'), map: vis('sdpWordMapCard'),
-            lensGone: !lens || lens.offsetParent === null,
-            status: (document.getElementById('plStatus') || {}).textContent || ''
-          });
-        }, 1200);
-      }, 600);
-    }));
-    push('v60 active dictation shows the cockpit card, edge bar, timer pill, dock and word map',
-      cockpit.card && cockpit.edge && cockpit.timer && cockpit.dock && cockpit.map && cockpit.lensGone, cockpit);
-    push('v60.4 Bug5: no ready sheet, .lbody never scrolls, cockpit card stays in view and legacy .ctrlgrid/.lfoot are off-layout',
-      !cockpit.sheetOpen && cockpit.lbodyScroll === 0 && cockpit.cardTop < 240 && cockpit.cardFullyVisible && !cockpit.gridOnscreen && !cockpit.footOnscreen && cockpit.lbodyHeight < 1200, cockpit);
-    /* ---------------- v60 / 9.0.0.4 live-video bug regression block --------- */
-    const video = await page.evaluate(async () => {
-      const wait = (n) => new Promise((r) => setTimeout(r, n));
-      const bar = document.querySelector('.topbar');
-      const barRect = bar.getBoundingClientRect();
-      const visKids = [];
-      for (const c of bar.children) {
-        const cs = getComputedStyle(c);
-        if (cs.display !== 'none' && cs.visibility !== 'hidden') visKids.push(c.id || c.className);
-      }
-      const cd = document.getElementById('creditDocked');
-      document.getElementById('tab-dict').click();
-      await wait(700);
-      const cards = document.querySelectorAll('#dictList .sdp-word-card');
-      let tall = 0;
-      for (const c of cards) if (c.getBoundingClientRect().height > 60) tall++;
-      const sd = document.getElementById('screen-dict');
-      const dictVisible = !!sd && getComputedStyle(sd).display !== 'none';
-      window.SDPCore.UI.setTab('set');
-      await wait(700);
-      const testVoice = document.getElementById('sdpTestVoice');
-      const toastsBefore = document.querySelectorAll('#toasts .toast').length;
-      if (testVoice) testVoice.click();
-      await wait(500);
-      const toastText = Array.from(document.querySelectorAll('#toasts .toast')).slice(toastsBefore).map((t) => (t.textContent || '').trim()).join(' | ');
-      const host = document.getElementById('screen-set');
-      const ng = document.getElementById('sdpNextGenSettings');
-      const sibs = [];
-      if (host) for (const c of host.children) {
-        if (c === ng) continue;
-        const cs = getComputedStyle(c);
-        sibs.push({ id: c.id || c.className, hidden: cs.display === 'none' || cs.visibility === 'hidden' || !!(c.closest && c.closest('details#sdpAppearanceAccordion')) });
-      }
-      window.SDPCore.UI.setTab('home');
-      const legacyVisible = [];
-      for (const n of document.querySelectorAll('#screen-home *, #screen-comm *')) {
-        if (n.children.length > 3) continue;
-        const t = (n.textContent || '').replace(/^\s+/, '').slice(0, 34);
-        if (/^(Session progress|Smart Dictation Player v58)/.test(t) && (n.getClientRects().length > 0 || n.offsetParent !== null)) legacyVisible.push(t);
-      }
-      return {
-        ready: document.body.getAttribute('data-v60-ready'),
-        cloak: !!document.getElementById('sdpPrePaintCloak'),
-        barFull: Math.round(barRect.width) === window.innerWidth && Math.round(barRect.top) === 0,
-        barKids: visKids,
-        barLeak: !!document.querySelector('.topbar #btnLock') || !!document.querySelector('.topbar #chipNet') || !!document.querySelector('.topbar .brand'),
-        creditPos: cd ? getComputedStyle(cd).position : 'missing',
-        cards: cards.length, tall, screenVisible: dictVisible,
-        testVoice: !!testVoice, toastText, settingsSiblings: sibs, legacyVisible
-      };
-    });
-    push('v60.4 Bug1: data-v60-ready is set and the pre-paint cloak ships in <head>', video.ready === '1' && video.cloak, video);
-    push('v60.4 Bug2: .topbar is a full-bleed 56px bar with only #sdpBrandCluster + #sdpTopActions and no leaked legacy text',
-      video.barFull && video.barKids.length === 2 && video.barKids.indexOf('sdpBrandCluster') >= 0 && video.barKids.indexOf('sdpTopActions') >= 0 && !video.barLeak, video.barKids);
-    push('v60.4 Bug3: #creditDocked is statically positioned', video.creditPos === 'static', video.creditPos);
-    push('v60.4 Bug4: the Words tab renders >= 25 tall .sdp-word-card items',
-      video.screenVisible && video.cards >= 25 && video.tall >= 25, { cards: video.cards, tall: video.tall, visible: video.screenVisible });
-    push('v60.4 Bug6: Test voice speaks without raising an error toast', video.testVoice && !/wrong|failed|error/i.test(video.toastText), { testVoice: video.testVoice, toasts: video.toastText });
-    push('v60.4 Bug7: every #screen-set sibling of #sdpNextGenSettings is hidden or inside the collapsed accordion',
-      video.settingsSiblings.every((s) => s.hidden), video.settingsSiblings);
-    push('v60.4 Bug8: no Session progress / Smart Dictation Player v58 block is visible', video.legacyVisible.length === 0, video.legacyVisible);
-    push('v60 next-gen UI raises no page errors', errors.length === 0, errors);
-    await ctx.close();
-  }
-
-  await browser.close(); await new Promise(r => server.close(r));
+  const fails = results.filter((r) => r.status === 'FAIL');
   console.log(JSON.stringify(results, null, 2));
-  for (const r of results) if (r.status === 'FAIL') console.log('::error::' + r.test + ' :: ' + JSON.stringify(r.detail || '').slice(0, 600));
-  if (results.some(r => r.status === 'FAIL')) process.exitCode = 1;
-})().catch(e => { console.error(e); console.log('::error::' + String(e && e.stack || e).replace(/\r?\n/g, ' | ').slice(0, 900)); process.exit(1); });
+  console.log('\nG6 upgrade-browser.cjs — ' + (results.length - fails.length) + ' PASS / ' + fails.length + ' FAIL');
+  if (fails.length) process.exitCode = 1;
+})().catch((err) => {
+  console.error('G6 harness crashed:', err && err.stack ? err.stack : err);
+  process.exitCode = 1;
+});

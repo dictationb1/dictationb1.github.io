@@ -1,257 +1,255 @@
+#!/usr/bin/env node
 'use strict';
-/* v51 real-Chromium audio audit (the historical filename is retained).
-   The real app and DOM run with remote media recorded instead of downloaded.
-   No local audio pack, synthetic waveform or device speech is involved. */
-const path = require('node:path');
+/* G9 — the v0.0.1.a release audit: retirement, budgets, ES5 and no-build purity.
+ * contract: docs/ARCHITECTURE_MAP.md §3 retired ids/strings, §5 H1 budgets, §R10 load order
+ * contract: docs/SYNC_AND_DATA_CONTRACT.md §R1 preserved payloads, §R6 PWA pins
+ * Static only: nothing here needs a browser, so it can run in any CI container. */
 const fs = require('node:fs');
-const { chromium } = require('playwright-core');
-const serverChromium = require('@sparticuz/chromium');
-require('./chromium-env.cjs').ensureChromiumLibs();
-const root = path.resolve(__dirname, '..');
-const indexFile = path.join(root, 'index.html');
-const YOUDAO_BASE = 'https://dict.youdao.com/dictvoice?type=1&audio=';
-/* A real 120 ms silent WAV so the master element never errors while the
-   network stays offline: only the Youdao clip route is fulfilled locally. */
-const SILENT_WAV = Buffer.from('UklGRqQHAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', 'base64');
-const CLIP_ROUTE = /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/;
+const path = require('node:path');
+const crypto = require('node:crypto');
+const acorn = require('acorn');
+
+const ROOT = path.resolve(__dirname, '..');
 const results = [];
-let failures = 0;
-function rec(name, pass, detail) {
-  results.push({ name, status: pass ? 'PASS' : 'FAIL', detail });
-  if (!pass) failures += 1;
-  console.log((pass ? 'PASS  ' : 'FAIL  ') + name + (detail === undefined ? '' : '  ' + JSON.stringify(detail)));
+function check(name, ok, detail) {
+  results.push({ test: name, status: ok ? 'PASS' : 'FAIL', detail: ok ? '' : String(detail === undefined ? '' : detail) });
+  return ok;
 }
-function eq(name, actual, expected) { rec(name, actual === expected, { actual, expected }); }
-function ok(name, value, detail) { rec(name, !!value, detail); }
-function textOf(url) {
-  const value = String(url || '');
-  try {
-    const u = new URL(value);
-    return String(u.searchParams.get('audio') || u.searchParams.get('q') || value).replace(/\s*\.\s*$/, '');
-  } catch (e) { return value; }
+const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const bytes = (rel) => fs.statSync(path.join(ROOT, rel)).size;
+const exists = (rel) => fs.existsSync(path.join(ROOT, rel));
+const sha = (rel) => crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, rel))).digest('hex');
+const tracked = require('node:child_process').execSync('git ls-files', { cwd: ROOT }).toString().trim().split('\n');
+
+/* ── 1. retirement: nothing from v42–v60 may survive ───────────────────── */
+// contract: docs/ARCHITECTURE_MAP.md §3
+const RETIRED_FILES = [
+  'data/app-core.js', 'data/app.js', 'data/sdp-v50.js', 'data/sdp-v56.js', 'data/sdp-v58.js',
+  'data/legacy.js', 'sw-v60.js', 'assets/css/sdp-ui-v50.css', 'assets/css/material-mixer.css',
+  'data.html.bak', 'index-v60.html', 'manifest-v60.webmanifest'
+];
+const presentRetiredFiles = RETIRED_FILES.filter(exists);
+check('G9.1a zero retired v42-v60 files exist on disk', presentRetiredFiles.length === 0, presentRetiredFiles.join(','));
+
+const RETIRED_DIRS = ['scripts', 'qa', 'assets/video', 'assets/wallpapers', 'assets/audio/guide'];
+const presentDirs = RETIRED_DIRS.filter(exists);
+check('G9.1b zero retired directories (scripts/, qa/, video wallpapers)', presentDirs.length === 0, presentDirs.join(','));
+
+const videoFiles = tracked.filter((f) => /\.(mp4|webm|mov|mkv)$/i.test(f));
+check('G9.1c the 12.9 MB video wallpapers are gone from Git', videoFiles.length === 0, videoFiles.join(','));
+
+const mp3s = tracked.filter((f) => /\.mp3$/i.test(f));
+check('G9.1d no 11-byte fake guide MP3 stubs are tracked', mp3s.length === 0, mp3s.join(','));
+
+const RETIRED_MARKERS = [
+  'bgLiveWrap', 'bgLiveVideo', 'btnLiveVideo', 'liveVideoInput', 'dimTpl', 'dimHostSet', 'sVideoDim',
+  'topDataBadge', 'topDataMB', 'topDataLkr', 'btnDataSheet', 'dataSheet', 'guideSheet', 'btnReadyTest',
+  'screen-comm', 'tab-comm', 'commBadge', 'btnMsg', 'printview', 'materialMixer', 'MaterialMixer',
+  'focusDimmer', 'rupeeCalculator', 'readySheet', 'communityTab', 'v58Rail', 'sdpDesktopRail'
+];
+const indexHtml = read('index.html');
+const shipped = ['index.html', 'assets/css/sdp-ui.css', 'data.html', 'data/index.html', 'sw.js',
+  'data/sdp-data-sync.js', 'data/sdp-audio-speech.js', 'data/sdp-dictation-engine.js',
+  'data/sdp-ui-views.js', 'data/studio.js', 'data/data-meter.js', 'manifest.webmanifest'];
+const markerHits = [];
+for (const file of shipped) {
+  const text = read(file).toLowerCase();
+  for (const marker of RETIRED_MARKERS) if (text.indexOf(marker.toLowerCase()) >= 0) markerHits.push(file + ':' + marker);
 }
-const RECORDER = () => {
-  window.__clips = [];
-  window.__loads = [];
-  window.__synth = [];
-  window.__statusLog = [];
-  window.__badgeLog = [];
-  window.__subLog = [];
-  window.__clipDelay = 60;
-  Object.defineProperty(navigator, 'userAgent', {
-    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', configurable: true
-  });
-  const proto = window.HTMLMediaElement.prototype;
-  const play = proto.play, load = proto.load, pause = proto.pause;
-  proto.load = function () {
-    if (this.id !== 'ttsMasterAudio') return load.call(this);
-    window.__loads.push(String(this.getAttribute('src') || ''));
-  };
-  proto.pause = function () { if (this.id !== 'ttsMasterAudio') return pause.call(this); };
-  proto.play = function () {
-    const el = this;
-    if (el.id !== 'ttsMasterAudio') return play.apply(el, arguments);
-    const src = String(el.getAttribute('src') || '');
-    window.__clips.push({ url: src, t: Date.now(), rate: el.playbackRate, loads: window.__loads.length });
-    setTimeout(function () { if (el.onplaying) el.onplaying(); }, 5);
-    setTimeout(function () { if (el.onended) el.onended(); }, Number(window.__clipDelay) || 60);
-    return Promise.resolve();
-  };
-  setInterval(function () {
-    try {
-      const pairs = [['plStatus', '__statusLog'], ['plStepBadge', '__badgeLog'], ['plSub', '__subLog']];
-      for (let i = 0; i < pairs.length; i += 1) {
-        const el = document.getElementById(pairs[i][0]);
-        if (!el) continue;
-        const log = window[pairs[i][1]], text = String(el.textContent || '');
-        if (log[log.length - 1] !== text) log.push(text);
-      }
-    } catch (e) {}
-  }, 40);
-  if (window.speechSynthesis) window.speechSynthesis.speak = function (u) { window.__synth.push(String((u && u.text) || '')); setTimeout(function () { if (u && u.onend) u.onend(); }, 10); };
+check('G9.1e zero retired v42-v60 markers in any shipped file', markerHits.length === 0, markerHits.join(','));
+
+const cssText = read('assets/css/sdp-ui.css');
+check('G9.1f no retired CSS is merely hidden with display:none',
+  !/display\s*:\s*none\s*!important[^}]*video/i.test(cssText) && cssText.indexOf('video') < 0, 'video reference in CSS');
+
+/* ── 2. H1 byte budgets ────────────────────────────────────────────────── */
+// contract: docs/ARCHITECTURE_MAP.md §5 budget table
+const BUDGETS = {
+  'index.html': 35000,
+  'assets/css/sdp-ui.css': 60000,
+  'data/sdp-data-sync.js': 48000,
+  'data/sdp-audio-speech.js': 40000,
+  'data/sdp-dictation-engine.js': 48000,
+  'data/sdp-ui-views.js': 56000,
+  'data/studio.js': 60000,
+  'data/data-meter.js': 22000,
+  'data/config.json': 36000,
+  'data/version.json': 2000,
+  'data/session.json': 46403,
+  'data/gas-source.txt': 13764,
+  'data/elevenlabs-audio.json': 920,
+  'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
+  'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
+  'data.html': 60000,
+  'data/index.html': 60000,
+  'sw.js': 12000,
+  'manifest.webmanifest': 4000
 };
-const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.test(String(m)));
-(async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: process.env.SDP_BROWSER_BIN || await serverChromium.executablePath(),
-    args: serverChromium.args.filter((a) => !['--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'].includes(a))
-  });
-  const url = require('url').pathToFileURL(indexFile).href;
-  async function newPage() {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const page = await context.newPage();
-    const consoleErrors = [], pageErrors = [];
-    page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-    page.on('pageerror', (e) => pageErrors.push(e.message));
-    await page.addInitScript(RECORDER);
-    await page.route('**/*', (r) => {
-      const target = r.request().url();
-      if (/^(file:|data:)/.test(target)) return r.continue();
-      if (CLIP_ROUTE.test(target)) return r.fulfill({ status: 200, contentType: 'audio/wav', body: SILENT_WAV });
-      return r.abort();
-    });
-    await page.goto(url);
-    await page.waitForSelector('#homeTitle', { state: 'attached' });
-    await page.waitForFunction(() => !!(window.SDP && window.SDP.version), null, { timeout: 20000 });
-    const closeGuide = page.locator('#guideSheet .shead button[aria-label="Close"]');
-    await closeGuide.waitFor({ state: 'visible', timeout: 12000 });
-    await closeGuide.evaluate((b) => b.click());
-    await page.waitForSelector('#homeTitle', { state: 'visible' });
-    return { context, page, consoleErrors, pageErrors };
+const over = [];
+for (const [file, cap] of Object.entries(BUDGETS)) {
+  const size = bytes(file);
+  if (!(size <= cap)) over.push(file + ' ' + size + '>' + cap);
+}
+check('G9.2a every shipped file fits its H1 byte cap', over.length === 0, over.join(', '));
+check('G9.2b the /data pair is byte-identical', read('data.html') === read('data/index.html'),
+  bytes('data.html') + ' vs ' + bytes('data/index.html'));
+
+const docsBudget = { 'ARCHITECTURE_MAP.md': 20000, 'CHANGELOG_LEDGER.md': 20000, 'DAILY_UPGRADE_PROMPT_TEMPLATE.md': 8000, 'SYNC_AND_DATA_CONTRACT.md': 20000, 'UI_COMPONENT_GUIDE.md': 20000 };
+const docsOver = Object.entries(docsBudget).filter(([f, cap]) => bytes('docs/' + f) > cap).map(([f]) => f);
+check('G9.2c all five living docs are inside their caps', docsOver.length === 0, docsOver.join(','));
+check('G9.2d there are exactly five living docs', fs.readdirSync(path.join(ROOT, 'docs')).filter((f) => f.endsWith('.md')).length === 5);
+
+const testBytes = tracked.filter((f) => f.startsWith('tests/') && /\.(cjs|js)$/.test(f))
+  .reduce((sum, f) => sum + bytes(f), 0);
+check('G9.2e the whole test suite stays inside 220,000 bytes (' + testBytes + ')', testBytes <= 220000, testBytes);
+
+/* ── 3. no build step, no bundler, no monolith ─────────────────────────── */
+// contract: docs/ARCHITECTURE_MAP.md §R3 ES5 modules
+const monoliths = tracked.filter((f) => f.startsWith('data/') && /\.js$/.test(f) && bytes(f) > 60000);
+check('G9.3a no oversized monolith module exists (' + monoliths.join(',') + ')', monoliths.length === 0);
+check('G9.3b no package.json build script ships with the site', !exists('package.json') && !exists('webpack.config.js') && !exists('vite.config.js'));
+
+const inlineEvent = /\son(click|input|change|submit|load|error|keydown|keyup)\s*=/i;
+const inlineHits = shipped.filter((f) => /\.html$/.test(f)).filter((f) => inlineEvent.test(read(f)));
+check('G9.3c no inline event handlers in HTML (no build-time JS in markup)', inlineHits.length === 0, inlineHits.join(','));
+
+/* Two documented exceptions to "one stylesheet", both pre-paint only:
+   (a) #sdpCloak in index.html hides .screen until sdp-ui.css applies, so a
+       budget Android on 2G never flashes five stacked screens;
+   (b) the /data transparency page is a standalone document with its own
+       inlined styling and links no shared sheet (R9 byte audit of the app's
+       CSS must not be inflated by a page that is not the app). */
+const cloakBlocks = Array.from(indexHtml.matchAll(/<style([^>]*)>([\s\S]*?)<\/style>/gi));
+const cloakOk = cloakBlocks.length === 1 &&
+  /id="sdpCloak"/.test(cloakBlocks[0][1]) &&
+  cloakBlocks[0][2].length <= 400 &&
+  cloakBlocks[0][2].indexOf('.screen') >= 0 &&
+  cloakBlocks[0][2].indexOf('dict-card') < 0 &&
+  cloakBlocks[0][2].indexOf('.cockpit') < 0;
+check('G9.3d index.html carries at most the 400-byte #sdpCloak pre-paint guard',
+  cloakOk, cloakBlocks.length + ' style blocks, ' + (cloakBlocks[0] ? cloakBlocks[0][2].length : 0) + ' bytes');
+const dataStyleOk = ['data.html', 'data/index.html'].every((f) => {
+  const text = read(f);
+  return (text.match(/<style[\s>]/gi) || []).length === 1 && text.indexOf('rel="stylesheet"') < 0;
+});
+check('G9.3e the /data page is self-contained (one inline sheet, no shared link)', dataStyleOk);
+check('G9.3f no <style> block exists in any JS module',
+  !shipped.filter((f) => /\.js$/.test(f)).some((f) => /<style[\s>]/i.test(read(f))));
+
+const cssLinks = (indexHtml.match(/<link[^>]+rel="stylesheet"/g) || []).length;
+check('G9.3e index.html links exactly one stylesheet', cssLinks === 1, cssLinks);
+check('G9.3f the stylesheet is the shipped sdp-ui.css', indexHtml.indexOf('href="./assets/css/sdp-ui.css"') >= 0);
+check('G9.3g no runtime CSS injection (no styleSheet.insertRule / adoptedStyleSheets)',
+  !/insertRule|adoptedStyleSheets|new CSSStyleSheet/.test(read('data/sdp-ui-views.js') + read('data/studio.js') + read('data/sdp-dictation-engine.js')));
+
+/* ── 4. ES5 purity across every shipped script ─────────────────────────── */
+// contract: docs/ARCHITECTURE_MAP.md §R3 acorn ecmaVersion 5
+const jsFiles = tracked.filter((f) => /\.js$/.test(f) && !f.startsWith('tests/'));
+const es5Fails = [];
+for (const file of jsFiles) {
+  try {
+    acorn.parse(read(file), { ecmaVersion: 5 });
+  } catch (err) {
+    es5Fails.push(file + ': ' + (err.message || '').slice(0, 60));
   }
-  const clipsOf = (page) => page.evaluate(() => (window.__clips || []).slice());
-  const clickReady = async (page) => {
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('#sheets button')).some((x) => /I['\u2019]m ready/.test(x.textContent)), null, { timeout: 4000 }).catch(() => {});
-    await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#sheets button')).find((x) => /I['\u2019]m ready/.test(x.textContent)); if (b) b.click(); });
-  };
-  const state = (page) => page.evaluate(() => ({
-    badge: (document.getElementById('plStepBadge') || {}).textContent || '',
-    prog: (document.getElementById('plProgText') || {}).textContent || '',
-    cd: (document.getElementById('cdNum') || {}).textContent || '',
-    statusLog: (window.__statusLog || []).slice(),
-    dots: document.querySelectorAll('#plProgressDots .progress-dot').length
-  }));
+}
+check('G9.4a every shipped .js parses as strict ES5 (' + jsFiles.length + ' files)', es5Fails.length === 0, es5Fails.join(' | '));
 
-  {
-    const { context, page, consoleErrors, pageErrors } = await newPage();
-    await page.waitForFunction(() => !!window.ElevenVault, null, { timeout: 10000 }).catch(() => {});
-    const voice = await page.evaluate(() => {
-      const T = window.TTS, a = T.master();
-      return {
-        local: String(T.LOCAL_AUDIO_BASE || ''), cache: String(T.CACHE_NAME || ''),
-        word: T.getSingleVoiceUrl('afraid'), number: T.getSingleVoiceUrl('Number 1'),
-        phrase: T.getSingleVoiceUrl('zebra crossing'), si: T.getSingleVoiceUrl('ආයුබෝවන්', 'si'),
-        version: window.SDP.version,
-        vault: typeof window.ElevenVault === 'object',
-        vaultKey: window.ElevenVault && window.ElevenVault.keyFor('Number 1'),
-        clips: window.ElevenVault ? window.ElevenVault.clipCount() : -1,
-        generated: window.ElevenVault ? window.ElevenVault.stats.generatedCount : -1,
-        voice: window.TTS.hashText ? 'hash' : '',
-        preload: a.getAttribute('preload'), playsinline: a.hasAttribute('playsinline'),
-        referrer: a.getAttribute('referrerpolicy'), cross: a.hasAttribute('crossorigin')
-      };
-    });
-    eq('no local audio base or generated pack remains', voice.local, '');
-    ok('the clean Youdao UK word URL is requested', voice.word === YOUDAO_BASE + 'afraid', voice.word);
-    ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
-    ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
-    eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 9.0.0.1', voice.version, '9.0.0.4');
-    ok('the one-time ElevenLabs vault exists and is empty without an API key', voice.vault && voice.clips === 0 && voice.generated === 0, { clips: voice.clips, generated: voice.generated });
-    ok('the vault cache key is deterministic and voice specific', voice.vaultKey === 'el_Xb7hH8MSUJpSbSDYk0k2_' + voice.vaultKey.replace(/^el_Xb7hH8MSUJpSbSDYk0k2_/, ''), voice.vaultKey);
-    ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');
-    ok('one unlocked master element has the required attributes', voice.preload === 'auto' && voice.playsinline && voice.referrer === 'no-referrer' && !voice.cross, voice);
+const inlineScripts = [];
+const scriptRe = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+let m;
+while ((m = scriptRe.exec(indexHtml)) !== null) if (m[1].trim()) inlineScripts.push(m[1]);
+const inlineFails = [];
+for (const code of inlineScripts) {
+  try { acorn.parse(code, { ecmaVersion: 5 }); } catch (err) { inlineFails.push((err.message || '').slice(0, 60)); }
+}
+check('G9.4b every inline script in index.html parses as ES5 (' + inlineScripts.length + ' blocks)', inlineFails.length === 0, inlineFails.join(' | '));
+check('G9.4c no eval / new Function anywhere', !jsFiles.some((f) => /\beval\s*\(|new\s+Function\s*\(/.test(read(f))));
 
-    /* v60.4: the 3-2-1 countdown starts the moment Start dictation is tapped
-       (the "Are you ready?" sheet is gone), so the clip baseline is taken first. */
-    const startIndex = (await clipsOf(page)).length;
-    await page.evaluate(() => document.getElementById('btnStart').click());
-    await page.waitForTimeout(900);
-    let clips = await clipsOf(page);
-    ok('the ready instruction requests remote audio', clips.some((c) => textOf(c.url).indexOf('Welcome.') === 0), clips.map((c) => textOf(c.url)));
-    await page.evaluate(() => document.getElementById('btnReadyTest').click());
-    await page.waitForTimeout(700);
-    clips = await clipsOf(page);
-    ok('Test sound uses the same remote engine', clips.some((c) => /Sound%20check/.test(c.url)), clips.map((c) => textOf(c.url)));
-    eq('the debug voice pill stays removed', await page.locator('#voiceTestPill').count(), 0);
+const longLines = [];
+for (const file of jsFiles.concat(['assets/css/sdp-ui.css', 'index.html'])) {
+  const lines = read(file).split('\n');
+  const worst = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  const avg = lines.reduce((sum, line) => sum + line.length, 0) / Math.max(1, lines.length);
+  if (worst > 400 || avg > 200) longLines.push(file + ' max=' + worst + ' avg=' + Math.round(avg));
+}
+check('G9.4d no minified files (max line <= 400 chars, mean <= 200)', longLines.length === 0, longLines.join(', '));
 
-    await clickReady(page);
-    // The number and word are separate clips in v51. Wait for both word passes
-    // and the completed writing-phase transition rather than racing a fixed sleep.
-    await page.waitForFunction((start) => window.__clips.length >= start + 6, startIndex, { timeout: 12000 });
-    await page.waitForFunction(() => (window.__statusLog || []).some((t) => /Write the word now|Your turn/.test(t)), null, { timeout: 5000 });
-    /* v60.4: the countdown starts on Start now, so the "Test sound" pair can
-       land inside this window - drop the Sound check clip AND its companion. */
-    const raw = (await clipsOf(page)).slice(startIndex);
-    const marks = [];
-    for (let i = 0; i < raw.length; i++) {
-      const label = textOf(raw[i].url);
-      if (/^Sound check/.test(label)) { i++; continue; }
-      if (/^Welcome\./.test(label)) continue;
-      marks.push(raw[i]);
-    }
-    eq('Three is the first spoken count', textOf(marks[0] && marks[0].url), 'Three');
-    eq('Two follows', textOf(marks[1] && marks[1].url), 'Two');
-    eq('One follows', textOf(marks[2] && marks[2].url), 'One');
-    eq('Word 1 announces its number separately', textOf(marks[3] && marks[3].url), 'Number 1');
-    eq('Pass 1 plays the clean dictionary word', textOf(marks[4] && marks[4].url), 'afraid');
-    eq('Pass 2 replays the identical clean word', textOf(marks[5] && marks[5].url), 'afraid');
-    eq('both passes use the same URL', marks[5] && marks[5].url, marks[4] && marks[4].url);
-    eq('Pass 2 reuses the one master element', await page.evaluate(() => document.querySelectorAll('audio#ttsMasterAudio').length), 1);
-    ok('the loaded word URL is remembered for same-element replay', await page.evaluate(() => String(window.TTS._lastLoadedUrl || '').indexOf('dict.youdao.com/dictvoice') >= 0));
-    ok('no cross-origin fetch, Blob URL or Cache API interception is used', await page.evaluate(() => {
-      const T = window.TTS;
-      const src = String(T.master().getAttribute('src') || '');
-      return /^https:\/\/dict\.youdao\.com\//.test(src) && !/^blob:/.test(src) && typeof T.pinBlob === 'function';
-    }));
-    const gap1 = marks[1] ? marks[1].t - marks[0].t : -1, gap2 = marks[2] ? marks[2].t - marks[1].t : -1;
-    ok('the countdown starts each cue on one-second beats', gap1 >= 900 && gap1 <= 1100 && gap2 >= 900 && gap2 <= 1100, { gap1, gap2 });
-    const wordGap = marks[5] && marks[4] ? marks[5].t - marks[4].t : -1;
-    ok('Pass 2 follows the first reading after about 650ms', wordGap >= 630 && wordGap <= 1200, wordGap);
+/* ── 5. the hard audio and storage laws ───────────────────────────────── */
+// contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 no Web Audio, §R4 five keys
+const allJs = jsFiles.map(read).join('\n');
+check('G9.5a no AudioContext.createMediaElementSource anywhere', allJs.indexOf('createMediaElementSource') < 0);
+check('G9.5b no AudioContext is constructed at all', !/new\s+(global\.)?AudioContext/.test(allJs));
 
-    let now = await state(page);
-    eq('the accessible step badge tracks the current word', now.badge, 'Dictation #1 of 30');
-    eq('progress dots cover all 30 words', now.dots, 30);
-    eq('the progress label shows Dictation #1 of 30', now.prog, 'Dictation #1 of 30');
-    ok('the writing phase starts after Pass 2', now.statusLog.some((t) => /Write the word now|Your turn/.test(t)), now.statusLog.slice(-5));
-    ok('the writing countdown runs from five seconds', Number.parseFloat(String(now.cd)) >= 0 && Number.parseFloat(String(now.cd)) <= 5, now.cd);
+const keyHits = new Set();
+const keyRe = /['"]sdp\.([a-z_]+)['"]/g;
+let k;
+while ((k = keyRe.exec(allJs)) !== null) keyHits.add('sdp.' + k[1]);
+const allowed = ['sdp.progress', 'sdp.settings', 'sdp.session', 'sdp.guide_seen', 'sdp.migrated_from_legacy'];
+const strayKeys = Array.from(keyHits).filter((name) => allowed.indexOf(name) < 0);
+check('G9.5c only the five R4 localStorage keys are named in scripts', strayKeys.length === 0, strayKeys.join(','));
 
-    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
-    await page.waitForTimeout(900);
-    clips = await clipsOf(page);
-    ok('Pause requests remote audio', clips.some((c) => /Session%20paused/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
-    await page.waitForTimeout(1800);
-    clips = await clipsOf(page);
-    ok('Resume requests remote audio', clips.some((c) => /Welcome%20back/.test(c.url)), clips.slice(-4).map((c) => textOf(c.url)));
+/* ── 6. preserved payloads are untouched ──────────────────────────────── */
+// contract: docs/SYNC_AND_DATA_CONTRACT.md §R1 SHA-256 lock table
+const LOCKED = [
+  ['data/session.json', 'e0e86c80'],
+  ['data/gas-source.txt', '591b9b08'],
+  ['data/elevenlabs-audio.json', '153111d6'],
+  ['assets/fonts/NotoSansSinhala-Regular.woff2', '23f1503e'],
+  ['assets/fonts/NotoSansSinhala-Bold.woff2', 'bf59c148']
+];
+const lockFails = LOCKED.filter(([file, prefix]) => sha(file).slice(0, 8) !== prefix).map(([f]) => f);
+check('G9.6a all five preserved payloads still match their SHA-256 prefixes', lockFails.length === 0, lockFails.join(','));
 
-    await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#layers button')).find((x) => /Finish early/i.test(x.textContent)); if (b) b.click(); });
-    await page.waitForTimeout(400);
-    await page.evaluate(() => { const b = Array.from(document.querySelectorAll('#modals button')).find((x) => /Finish now/i.test(x.textContent)); if (b) b.click(); });
-    await page.waitForTimeout(1200);
-    clips = await clipsOf(page);
-    ok('Finish requests remote audio', clips.some((c) => /Dictation%20complete/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    const bad = clips.map((c) => c.url).filter((u) => /^https?:/i.test(u) && !/^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(u));
-    eq('successful mocked session clips request Youdao', bad.length, 0);
-    eq('no device fallback is used when mocked media completes', await page.evaluate(() => (window.__synth || []).length), 0);
-    eq('zero console errors during the session', noise(consoleErrors).length, 0);
-    eq('zero uncaught page errors during the session', pageErrors.length, 0);
-    await context.close();
-  }
+const session = JSON.parse(read('data/session.json'));
+const words = session.lists[0].words;
+check('G9.6b the session still holds the 30 B1 adjectives', words.length === 30, words.length);
+check('G9.6c every word keeps w, p, pos, m, si, s and audio fields',
+  words.every((w) => ['w', 'p', 'pos', 'm', 'si', 's'].every((field) => typeof w[field] === 'string' && w[field].length > 0)), words.length);
+check('G9.6d dictionary audio still points at youdao type=1', words.every((w) => String(w.audio || '').indexOf('youdao') >= 0 && String(w.audio).indexOf('type=1') >= 0));
 
-  {
-    const { context, page, consoleErrors, pageErrors } = await newPage();
-    const dead = await page.evaluate(async () => {
-      const T = window.TTS, proto = window.HTMLMediaElement.prototype, original = proto.play;
-      proto.play = function () { return Promise.reject(new Error('blocked')); };
-      window.__synth.length = 0;
-      let result = null;
-      T.playUrl('https://dict.youdao.com/dictvoice?type=1&audio=afraid', 'prompt', function (value) { result = value; });
-      await new Promise((r) => setTimeout(r, 200));
-      proto.play = original;
-      return { result, synth: (window.__synth || []).slice() };
-    });
-    ok('a blocked stream falls back to the pinned device voice instead of silence',
-      dead.synth.some((t) => /afraid/.test(String(t))), dead.synth);
-    eq('the fallback completes successfully', dead.result, true);
-    const fast = await page.evaluate(async () => {
-      const T = window.TTS, original = T.isHeadless;
-      T.isHeadless = function () { return true; };
-      const started = Date.now();
-      let done = -1;
-      T.speakStudioText('Number 1', 'en', function () { done = Date.now() - started; });
-      await new Promise((r) => setTimeout(r, 100));
-      T.isHeadless = original;
-      return done;
-    });
-    ok('normal media completion is delivered promptly in Chromium', fast >= 35 && fast <= 200, fast);
-    eq('failed playback leaves no console error', noise(consoleErrors).length, 0);
-    eq('failed playback raises no page error', pageErrors.length, 0);
-    await context.close();
-  }
+const config = JSON.parse(read('data/config.json'));
+const keepKeys = ['encVault', 'repoOwner', 'repoName', 'voiceId', 'voiceName', 'modelId', 'live', 'classInfo', 'credits', 'defaults', 'versionFamily'];
+const missingKeys = keepKeys.filter((key) => !(key in config));
+check('G9.6e config.json keeps every preserved payload field', missingKeys.length === 0, missingKeys.join(','));
+check('G9.6f config.json pins the new release metadata',
+  config.ver === 1 && config.appVersion === '0.0.1.a' && config.version === '0.0.1.a' && config.schema === 1 && config.settingsRev === 1,
+  JSON.stringify({ ver: config.ver, appVersion: config.appVersion, schema: config.schema }));
 
-  await browser.close();
-  console.log('\n' + (results.length - failures) + '/' + results.length + ' v51 audit checks passed' + (failures ? ' — ' + failures + ' FAILED' : ''));
-  if (failures) process.exitCode = 1;
-})().catch((err) => { console.error('audit crashed: ' + (err && err.stack || err)); process.exit(1); });
+/* ── 7. PWA pins and load order ────────────────────────────────────────── */
+// contract: docs/SYNC_AND_DATA_CONTRACT.md §R6, docs/ARCHITECTURE_MAP.md §R10
+const manifest = JSON.parse(read('manifest.webmanifest'));
+check('G9.7a the manifest names 0.0.1.a in its description', /0\.0\.1\.a/.test(String(manifest.description)), manifest.description);
+check('G9.7b the manifest start_url carries the pwa source tag', /source=pwa/.test(String(manifest.start_url)), manifest.start_url);
+check('G9.7c theme and background are the 0.0.1.a matte black', manifest.theme_color === '#09090B' && manifest.background_color === '#09090B', manifest.theme_color);
+
+const sw = read('sw.js');
+check('G9.7d the service worker pins the 0.0.1.a cache names', sw.indexOf('sdp-v0.0.1.a') >= 0 && sw.indexOf('9.0.0.4') < 0);
+check('G9.7e the service worker preserves the audio caches', sw.indexOf('sdp-youdao-v1') >= 0 && sw.indexOf('sdp-audio-clips') >= 0);
+
+const order = ['data-meter.js', 'sdp-data-sync.js', 'sdp-audio-speech.js', 'sdp-dictation-engine.js', 'sdp-ui-views.js', 'studio.js'];
+const scriptTags = Array.from(indexHtml.matchAll(/<script[^>]*src="([^"]+)"[^>]*>/g)).map((x) => x[1]);
+check('G9.7f index.html loads exactly six external scripts', scriptTags.length === 6, scriptTags.join(','));
+check('G9.7g the R10 load order is respected', scriptTags.map((s) => s.replace('./data/', '')).join(',') === order.join(','), scriptTags.join(','));
+check('G9.7h every script is deferred', Array.from(indexHtml.matchAll(/<script[^>]*src="[^"]+"[^>]*>/g)).every((x) => /\bdefer\b/.test(x[0])));
+
+/* ── 8. the release gate files themselves ─────────────────────────────── */
+const GATES = ['check.cjs', 'upgrade.test.cjs', 'phase1.cjs', 'server.cjs', 'browser.cjs',
+  'upgrade-browser.cjs', 'e2e.cjs', 'live-lab.cjs', 'audit-v42.cjs'];
+const missingGates = GATES.filter((f) => !exists('tests/' + f));
+check('G9.8a all nine release gates exist', missingGates.length === 0, missingGates.join(','));
+const cited = GATES.filter((f) => {
+  const text = exists('tests/' + f) ? read('tests/' + f) : '';
+  return text.indexOf('contract:') >= 0;
+});
+check('G9.8b every gate cites the contract it enforces', cited.length === GATES.length, GATES.length - cited.length + ' without citation');
+
+const attribution = 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu';
+check('G9.8c the attribution appears verbatim on Home', read('index.html').indexOf(attribution) >= 0);
+check('G9.8d the attribution also appears in About', read('index.html').indexOf('id="aboutCard"') >= 0 && read('index.html').split(attribution).length - 1 === 2);
+check('G9.8e the credits pill text is exact', (read('index.html').match(/CREDITS GOES TO Hansana/g) || []).length === 2);
+
+const fails = results.filter((r) => r.status === 'FAIL');
+console.log(JSON.stringify(results, null, 2));
+console.log('\nG9 audit-v42.cjs — ' + (results.length - fails.length) + ' PASS / ' + fails.length + ' FAIL');
+if (fails.length) process.exitCode = 1;

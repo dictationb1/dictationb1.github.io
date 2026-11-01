@@ -1,277 +1,258 @@
+#!/usr/bin/env node
 'use strict';
-/* ============================================================================
-   Live lab: exercises the current real-time class channel end to end, outside the
-   unit harness. It starts a real HTTP server for the repository, emulates the
-   free ntfy.sh API (POST + /json?poll=1&since=all + /sse) on the same origin,
-   then boots TWO independent devices:
-
-     Device A  the lecturer   publishes "Session 9 words" from Admin mode
-     Device B  a student      must see those 30 words without a reload
-
-   Run: node tests/live-lab.cjs
-   ========================================================================== */
-const http = require('node:http');
-const fs = require('node:fs');
+/* G8 — live-lab resilience: a classroom with no internet, a dead API or a hung relay.
+ * contract: docs/SYNC_AND_DATA_CONTRACT.md §R3 fallback ladder, §R7 failure copy
+ * contract: docs/ARCHITECTURE_MAP.md §R9 honest empty state
+ * A student must always be able to dictate, even when every network tier fails. */
 const path = require('node:path');
-const vm = require('node:vm');
-const root = path.resolve(__dirname, '..');
-const { JSDOM, VirtualConsole } = require('jsdom');
+const { chromium } = require('playwright-core');
+const serverChromium = require('@sparticuz/chromium');
+require('./chromium-env.cjs').ensureChromiumLibs();
+const { start } = require('./static-server.cjs');
 
+const ROOT = path.resolve(__dirname, '..');
 const results = [];
-function check(name, fn) {
-  try { fn(); results.push({ name, ok: true }); console.log('PASS  ' + name); }
-  catch (err) { results.push({ name, ok: false, err: err.message }); console.log('FAIL  ' + name + ' :: ' + err.message); }
-}
-const wait = ms => new Promise(r => setTimeout(r, ms));
-async function waitUntil(fn, timeout = 5000) {
-  const end = Date.now() + timeout;
-  while (Date.now() < end) {
-    if (fn()) return true;
-    await wait(25);
-  }
-  return !!fn();
+function check(name, ok, detail) {
+  results.push({ test: name, status: ok ? 'PASS' : 'FAIL', detail: ok ? '' : String(detail === undefined ? '' : detail) });
+  return ok;
 }
 
-/* ------------------------------------------------ ntfy.sh emulator + host --- */
-const topics = Object.create(null);
-const sseClients = [];
-const requests = [];
-function pushSSE(topic, event) {
-  const line = 'data: ' + JSON.stringify(event) + '\n\n';
-  sseClients.forEach(c => { if (c.topics.indexOf(topic) >= 0) { try { c.res.write(line); } catch (e) {} } });
+async function launch() {
+  const executablePath = process.env.SDP_BROWSER_BIN || await serverChromium.executablePath();
+  const args = serverChromium.args.filter((a) => ![
+    '--single-process', '--disable-web-security', '--allow-running-insecure-content', '--disable-site-isolation-trials'
+  ].includes(a));
+  return chromium.launch({ headless: true, executablePath, args });
 }
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, 'http://127.0.0.1');
-  requests.push(req.method + ' ' + url.pathname + (url.search || ''));
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  const parts = url.pathname.replace(/^\//, '').split('/');
-  const topicList = (parts[0] || '').split(',');
-  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
-  if (req.method === 'POST' && topicList.length === 1) {
-    let body = '';
-    req.on('data', c => { body += c; });
-    req.on('end', () => {
-      let id = 0;
-      topicList.forEach(t => { (topics[t] = topics[t] || []).push(body); id = topics[t].length; const ev = { id: String(id), event: 'message', time: Date.now(), topic: t, message: body }; pushSSE(t, ev); });
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ id: String(id), event: 'message' }));
-    });
-    return;
-  }
-  if (req.method === 'GET' && /\/json$/.test(url.pathname)) {
-    const out = [];
-    topicList.forEach(t => (topics[t] || []).forEach((message, i) => out.push(JSON.stringify({ id: String(i + 1), event: 'message', time: Date.now(), topic: t, message }))));
-    res.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
-    res.end(out.join('\n') + (out.length ? '\n' : ''));
-    return;
-  }
-  if (req.method === 'GET' && /\/sse$/.test(url.pathname)) {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-    res.write(': welcome\n\n');
-    const client = { topics: topicList, res };
-    sseClients.push(client);
-    req.on('close', () => { const i = sseClients.indexOf(client); if (i >= 0) sseClients.splice(i, 1); });
-    return;
-  }
-  /* the repository itself */
-  const rel = url.pathname === '/' ? '/index.html' : url.pathname;
-  const file = path.join(root, rel.replace(/^\/+/, ''));
-  if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end('not found'); return; }
-  const type = /\.html$/.test(file) ? 'text/html' : /\.json$/.test(file) ? 'application/json' : 'text/plain';
-  res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
-  res.end(fs.readFileSync(file));
-});
 
-/* ----------------------------------------------- minimal EventSource shim --- */
-function makeEventSource(w, base) {
-  return function EventSource(url) {
+const MOCK = () => {
+  window.__SDP_NO_LIVE__ = true;
+  window.__sdpPlayed = 0;
+  const proto = window.HTMLMediaElement.prototype;
+  proto.play = function () {
+    window.__sdpPlayed += 1;
     const self = this;
-    this.readyState = 0;
-    this.onopen = this.onmessage = this.onerror = null;
-    const target = base + String(url).replace(/^https?:\/\/ntfy\.sh/, '');
-    const req = http.get(target, res => {
-      self.readyState = 1;
-      let buf = '';
-      if (self.onopen) self.onopen({});
-      res.setEncoding('utf8');
-      res.on('data', chunk => {
-        buf += chunk;
-        const chunks = buf.split('\n\n');
-        buf = chunks.pop();
-        chunks.forEach(block => {
-          const dataLines = block.split('\n').filter(l => l.indexOf('data:') === 0).map(l => l.slice(5).trim());
-          if (dataLines.length && self.onmessage) self.onmessage({ data: dataLines.join('\n') });
-        });
-      });
-    });
-    req.on('error', () => { if (self.onerror) self.onerror({}); });
-    this.close = function () { self.readyState = 2; try { req.destroy(); } catch (e) {} };
+    setTimeout(() => { if (typeof self.onended === 'function') self.onended({}); }, 5);
+    return Promise.resolve();
   };
-}
-
-/* ------------------------------------------------------------- one device --- */
-function device(html, base) {
-  const dom = new JSDOM(html, { url: base + '/', runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: new VirtualConsole() });
-  const w = dom.window;
-  w.scrollTo = () => {};
-  w.matchMedia = () => ({ matches: false, addEventListener() {} });
-  w.HTMLCanvasElement.prototype.getContext = () => null;
-  w.fetch = (url, opts) => fetch(String(url).replace(/^https?:\/\/ntfy\.sh/, base).replace(/^\.\//, base + '/'), opts);
-  w.EventSource = makeEventSource(w, base);
-  const rawScript = Array.from(w.document.scripts).find(s => !s.type && s.textContent.includes('var APP_VERSION')).textContent;
-  const marker = rawScript.indexOf('window.SDP = {') >= 0 ? 'window.SDP = {' : 'window.SDP={';
-  const script = rawScript.replace(marker, 'window.__lab = {Admin:Admin,DB:DB,Cloud:Cloud,UI:UI,Eng:Eng,Speech:Speech,Lib:Lib,CONFIG:CONFIG,defaultData:defaultData}; window.SDP = {');
-  vm.runInContext(script, dom.getInternalVMContext());
-  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
-  return { w, q: w.__lab, close() { w.close(); } };
-}
-
-(async function run() {
-  await new Promise(r => server.listen(0, '127.0.0.1', r));
-  const port = server.address().port;
-  const base = 'http://127.0.0.1:' + port;
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const lecturer = device(html, base);
-  const student = device(html, base);
+  proto.pause = function () {};
+  proto.load = function () {};
   try {
-    /* --- boot: the student must sync immediately, with no tap ------------ */
-    student.q.Cloud.bootSync();
-    lecturer.q.Cloud.bootSync();
-    const stateTopic = student.q.CONFIG.ntfyState;
-    const commTopic = student.q.CONFIG.ntfyComm;
-    const session = JSON.parse(fs.readFileSync(path.join(root, 'data/session.json'), 'utf8')).session;
-    const NEXT_NO = '9';
-    await waitUntil(() => requests.some(r => r.startsWith('GET /data/session.json')));
-    check('boot sync loads repository version and session data', () =>
-      { if (!requests.some(r => r.startsWith('GET /data/version.json')) || !requests.some(r => r.startsWith('GET /data/session.json'))) throw Error('no boot fetch: ' + requests.join(' | ')); });
-    /* W-5: nothing at all may touch ntfy.sh before the reader switches Live Sync on */
-    check('boot sends zero ntfy.sh traffic (W-5 opt-in live sync)', () =>
-      { const live = requests.filter(r => /sdp_dictationb1_|ntfy/.test(r)); if (live.length) throw Error('eager live traffic: ' + live.join(' | ')); });
-    student.q.Cloud.enableLive();
-    lecturer.q.Cloud.enableLive();
-    await waitUntil(() => requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse') && student.q.Cloud.live.ok);
-    check('opting into Live Sync opens the SSE stream on the state and community topics', () =>
-      { if (!requests.some(r => r === 'GET /' + stateTopic + ',' + commTopic + '/sse')) throw Error(requests.join(' | ')); });
-    check('the student picked up the published B1 session from the repository', () => {
-      const d = student.q.DB.data;
-      if (String(d.session.no) !== session.no) throw Error('session no ' + d.session.no);
-      if (student.q.Lib.current().words.length !== 30) throw Error('words ' + student.q.Lib.current().words.length);
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        speak(u) { setTimeout(() => { if (u && typeof u.onend === 'function') u.onend({}); }, 5); },
+        cancel() {}, pause() {}, resume() {}, getVoices() { return []; },
+        speaking: false, pending: false, paused: false, addEventListener() {}, removeEventListener() {}
+      }
     });
-    check('the status chip reports a real, online live sync', () => {
-      const label = student.w.document.getElementById('chipNetText').textContent;
-      if (!/^Online \u00b7 Live Sync/.test(label)) throw Error(label);
-    });
+  } catch (e) {}
+  window.SpeechSynthesisUtterance = function (text) { this.text = text; this.onend = null; };
+};
 
-    /* --- the lecturer publishes a new list for Session 4 ---------------- */
-    const L = lecturer.q;
-    const list = { id: 'list_session9', name: 'Session 9 words', words: [], version: 1, published: false, draft: true };
-    L.DB.data.lists.push(list);
-    L.DB.data.outbox = [];
-    L.Admin.unlocked = true;
-    const words = L.Lib.current().words.map(x => ({ w: x.w, s: x.s, m: x.m, audio: x.audio }));
-    // Match the lecturer selecting this list, pinning it, and setting its title.
-    L.Admin.editListId = list.id;
-    L.DB.data.plan.pinned = list.id;
-    L.DB.data.session.title = list.name;
-    L.Admin.saveAll(list, words, ['2026-11-05'], null);
-    L.Admin.unlocked = false;
-    await waitUntil(() => (topics[stateTopic] || []).length && String(student.q.DB.data.session.no) === NEXT_NO);
-    check('one publish posts the whole session to the ntfy state topic', () =>
-      { if (!(topics[stateTopic] || []).length) throw Error('nothing posted: ' + requests.join(' | ')); });
-    check('the lecturer Home header is internally consistent (SESSION 4 + the same title)', () => {
-      const kicker = lecturer.w.document.getElementById('homeKicker').textContent;
-      const title = lecturer.w.document.getElementById('homeTitle').textContent;
-      if (!/^SESSION 9\b/i.test(kicker)) throw Error('kicker: ' + kicker);
-      if (!/Session 9 words/.test(title)) throw Error('title: ' + title);
-      if (kicker.indexOf('05/11/2026') < 0) throw Error('kicker has no real session date: ' + kicker);
-    });
-    check('the published session is 30 real words with British audio urls', () => {
-      const sent = topics[stateTopic] || [];
-      if (!sent.length) throw Error('no state payload');
-      const posted = JSON.parse(sent[sent.length - 1]);
-      if (posted.kind !== 'state') throw Error('wrong payload kind: ' + posted.kind);
-      if (String(posted.session.no) !== NEXT_NO) throw Error('no ' + posted.session.no);
-      if (posted.lists[0].words.length !== 30) throw Error('words ' + posted.lists[0].words.length);
-      /* Every published single word carries a clean Youdao dictionary URL. */
-      if (!posted.lists[0].words.every(x => x.m && x.s && /^https:\/\/dict\.youdao\.com\/dictvoice\?type=1&audio=/.test(x.audio))) throw Error('a word has no B1 meaning/sentence/UK audio');
-    });
+/* opts.blockExternal: abort every non-local request (dead API + dead relay) */
+async function newPage(browser, origin, opts) {
+  opts = opts || {};
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(MOCK);
+  await ctx.addInitScript((seedGuide) => {
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '1'); } catch (e) {}
+  }, opts.guideSeen !== false);
+  if (opts.settings) await ctx.addInitScript((s) => {
+    try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {}
+  }, opts.settings);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const blocked = [];
+  await ctx.route('**/*', (route) => {
+    const url = route.request().url();
+    if (url.startsWith(origin) || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+    blocked.push(url);
+    return route.abort();
+  });
+  await page.goto(origin + '/index.html', { waitUntil: 'domcontentloaded' });
+  return { ctx, page, errors, blocked };
+}
 
-    /* --- the student phone updates itself, live -------------------------- */
-    check('the student phone received Session 9 over the live stream without a reload', () => {
-      const S = student.q, d = S.DB.data;
-      if (String(d.session.no) !== NEXT_NO) throw Error('student session no ' + d.session.no);
-      if (S.Lib.current().words.length !== 30) throw Error('student words ' + S.Lib.current().words.length);
-      const kicker = student.w.document.getElementById('homeKicker').textContent;
-      if (!/^SESSION 9\b/i.test(kicker)) throw Error('student kicker: ' + kicker);
-    });
-    check('the student outbox is empty (nothing stuck as "1 waiting")', () =>
-      { if (student.q.DB.data.outbox.length) throw Error('outbox ' + student.q.DB.data.outbox.length); });
+const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' };
 
-    /* --- a student finishes and the lecturer sees it live ---------------- */
-    student.q.DB.data.results = [];
-    student.q.Cloud.postCompletion({ id: 'lab-res-1', ts: Date.now(), sessionNo: NEXT_NO, wordCount: 30, score: 27, percent: 90, deviceType: 'Android', ukVoice: false, mode: 'paper' });
-    await waitUntil(() => (topics[commTopic] || []).length && lecturer.q.DB.data.results.some(r => r.id === 'lab-res-1'));
-    check('a finished session is broadcast to the community topic', () =>
-      { if (!(topics[commTopic] || []).length) throw Error('no comm post'); });
-    check('the second device merges the live completion into real class results', () => {
-      const C = lecturer.q;
-      if (!C.DB.data.results.some(r => r.id === 'lab-res-1')) throw Error('result not merged');
-    });
-    check('Class stats then shows the real student completion, not the lecturer history', () => {
-      const C = lecturer.q;
-      C.Admin.unlocked = true;
-      C.DB.data.history = [{ id: 'own', ts: Date.now(), score: 1, wordCount: 30, percent: 3, deviceType: 'Mac', ukVoice: true }];
-      const host = lecturer.w.document.createElement('div');
-      C.Admin.tabStats(host);
-      if (!/1 student completion/.test(host.textContent)) throw Error(host.textContent.slice(0, 160));
-      if (!/90%/.test(host.textContent)) throw Error('average missing');
-      if (!/never counted as class results/.test(host.textContent)) throw Error('history not separated');
-      C.Admin.unlocked = false;
-    });
+(async function main() {
+  const server = await start({ root: ROOT });
+  const browser = await launch();
+  try {
+    /* ── 1. dead API tier: the app still dictates ─────────────────────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R3 ladder — local data wins
+    {
+      const { ctx, page, errors } = await newPage(browser, server.origin, { settings: FAST });
+      await page.waitForTimeout(900);
+      const state = await page.evaluate(() => ({
+        active: document.querySelector('.screen.active').id,
+        words: SDP.Sync.wordCount(),
+        title: document.getElementById('sessionTitle').textContent,
+        toast: document.getElementById('sdpDataToast').textContent
+      }));
+      check('G8.1a with every external host dead the 30-word bank still loads', state.words === 30, state.words);
+      check('G8.1b the session title is read from the local payload', /Session 8/.test(state.title), state.title);
+      check('G8.1c the whisper toast still reports bytes', /KB/.test(state.toast), state.toast);
+      await page.click('#btnStart');
+      await page.waitForTimeout(600);
+      const dictating = await page.evaluate(() => ({
+        screen: document.querySelector('.screen.active').id,
+        state: document.getElementById('beatStateText').textContent,
+        played: window.__sdpPlayed
+      }));
+      check('G8.1d dictation starts with no network at all', dictating.screen === 'screen-player', dictating.screen);
+      check('G8.1e the first beat plays from the local/cached audio tier', dictating.played >= 1, dictating.played);
+      check('G8.1f no unhandled page errors with a dead API', errors.length === 0, errors.slice(0, 2).join(' | '));
+      await ctx.close();
+    }
 
-    /* --- v53: the permanent ElevenLabs voice vault is served with the app --- */
-    check('the repository publishes the v59 clips-only ElevenLabs manifest that every student can fetch', () => {
-      const vault = JSON.parse(fs.readFileSync(path.join(root, 'data', 'elevenlabs-audio.json'), 'utf8'));
-      if (vault.version !== '9.0.0.4' || vault.ver !== 60) throw Error('version ' + vault.version);
-      if (vault.vaultCiphertext || vault.adminPin) throw Error('public manifest must not ship a vault or PIN');
-      if (vault.strictAdminOnly !== true) throw Error('credit lock missing');
-      if (vault.voiceId !== 'Xb7hH8MSUJpSbSDYk0k2') throw Error('voice ' + vault.voiceId);
-      if (typeof vault.clips !== 'object') throw Error('clips map missing');
-    });
-    check('the student device loads the studio, replays saved clips and never spends credits on playback', () => {
-      const S = student.q;
-      /* data/studio.js is fetched on boot, exactly like a real browser */
-      const studioSrc = fs.readFileSync(path.join(root, 'data', 'studio.js'), 'utf8');
-      if (typeof student.w.ElevenVault !== 'object' || typeof student.w.ElevenVault.voiceId !== 'function') student.w.eval(studioSrc);
-      const V = student.w.ElevenVault;
-      if (typeof V !== 'object') throw Error('no vault');
-      if (V.voiceId() !== 'Xb7hH8MSUJpSbSDYk0k2' || V.modelId() !== 'eleven_flash_v2_5') throw Error('voice/model');
-      if (V.strictAdminOnly !== true) throw Error('playback is not locked to admin generation');
-      let missing = null;
-      V.resolve('Number 1', (err) => { missing = err; });
-      if (missing !== 'missing') throw Error('resolve generated instead of reporting a missing clip');
-      if (V.hasKey() || V.stats.generatedCount !== 0) throw Error('credits were spent without a key');
-      if (!/^el_Xb7hH8MSUJpSbSDYk0k2_/.test(V.keyFor('Number 1'))) throw Error('cache key');
-      if (S.CONFIG.repoMedia.length !== 3) throw Error('repo media ' + S.CONFIG.repoMedia.length);
-      if (student.w.AdminAutoEnrich.parse('afraid, amazed').length !== 2) throw Error('auto-completer');
-    });
+    /* ── 2. offline after a cached visit ──────────────────────────────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 offline shell
+    {
+      const { ctx, page, errors } = await newPage(browser, server.origin, { settings: FAST });
+      await page.evaluate(async () => { try { await navigator.serviceWorker.ready; } catch (e) {} });
+      await page.waitForTimeout(1500);
+      await ctx.setOffline(true);
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await page.waitForTimeout(1800);
+      const offline = await page.evaluate(() => ({
+        words: SDP.Sync ? SDP.Sync.wordCount() : -1,
+        active: document.querySelector('.screen.active') ? document.querySelector('.screen.active').id : '',
+        cards: document.querySelectorAll('#dictList .dict-card').length
+      }));
+      check('G8.2a an offline reload keeps the word bank usable', offline.words === 30, offline.words);
+      check('G8.2b an offline reload lands on Home', offline.active === 'screen-home', offline.active);
+      await page.waitForFunction(() => window.SDP && SDP.Sync && SDP.Sync.wordCount() === 30, null, { timeout: 15000 }).catch(() => {});
+      const startable = await page.evaluate(async () => {
+        document.getElementById('btnStart').click();
+        await new Promise((r) => setTimeout(r, 400));
+        return { screen: document.querySelector('.screen.active').id, index: SDP.Engine.config().index };
+      });
+      check('G8.2c dictation still starts offline', startable.screen === 'screen-player', JSON.stringify(startable));
+      check('G8.2d offline boot raises no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+      await ctx.setOffline(false);
+      await ctx.close();
+    }
 
-    /* --- offline behaviour is honest, never a fake Online badge ---------- */
-    check('an offline device says so instead of showing a fake Online badge', () => {
-      const S = student.q;
-      Object.defineProperty(student.w.navigator, 'onLine', { configurable: true, get: () => false });
-      S.UI.renderNet();
-      const label = student.w.document.getElementById('chipNetText').textContent;
-      if (label !== 'Offline \u00b7 Saved on device') throw Error(label);
-      Object.defineProperty(student.w.navigator, 'onLine', { configurable: true, get: () => true });
-      S.UI.renderNet();
-    });
+    /* ── 3. a hung relay must never freeze the classroom ──────────────── */
+    // contract: docs/ARCHITECTURE_MAP.md §R9 nothing blocks the first beat
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ctx.addInitScript(MOCK);
+      await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '1'); } catch (e) {} });
+      await ctx.addInitScript((s) => { try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {} }, FAST);
+      const page = await ctx.newPage();
+      const errors = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      // a relay that accepts the request and never answers
+      await ctx.route('**/macros/**', async (route) => {
+        await new Promise((r) => setTimeout(r, 20000));
+        await route.abort();
+      });
+      await ctx.route('**/*', (route) => {
+        const url = route.request().url();
+        if (url.startsWith(server.origin) || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+        return route.abort();
+      });
+      const t0 = Date.now();
+      await page.goto(server.origin + '/index.html', { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => window.SDP && SDP.Sync && SDP.Sync.isReady(), null, { timeout: 10000 }).catch(() => {});
+      const bootMs = Date.now() - t0;
+      check('G8.3a boot does not wait for a hung relay (' + bootMs + 'ms)', bootMs < 6000, bootMs);
+      const responsive = await page.evaluate(async () => {
+        const start = performance.now();
+        document.getElementById('tab-dict').click();
+        await new Promise((r) => setTimeout(r, 30));
+        const cards = document.querySelectorAll('#dictList .dict-card').length;
+        document.getElementById('tab-home').click();
+        document.getElementById('btnStart').click();
+        await new Promise((r) => setTimeout(r, 300));
+        return {
+          ms: performance.now() - start,
+          cards,
+          screen: document.querySelector('.screen.active').id,
+          state: document.getElementById('beatStateText').textContent
+        };
+      });
+      check('G8.3b taps stay responsive while a relay hangs', responsive.ms < 2500 && responsive.cards === 30, JSON.stringify(responsive));
+      check('G8.3c dictation begins despite the hung relay', responsive.screen === 'screen-player' && !/Ready/.test(responsive.state), JSON.stringify(responsive));
+      check('G8.3d a hung relay raises no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+      await ctx.close();
+    }
+
+    /* ── 4. an empty or missing word bank is stated honestly ──────────── */
+    // contract: docs/ARCHITECTURE_MAP.md §R9 empty state
+    {
+      server.setOverride('/data/session.json', JSON.stringify({ sessionId: '0', title: 'No session', lists: [] }));
+      const { ctx, page, errors } = await newPage(browser, server.origin, { settings: FAST });
+      await page.waitForTimeout(900);
+      const empty = await page.evaluate(() => ({
+        words: SDP.Sync.wordCount(),
+        noteHidden: document.getElementById('bankEmpty').hidden,
+        noteText: document.getElementById('bankEmpty').textContent,
+        startDisabled: document.getElementById('btnStart').disabled,
+        mastered: document.getElementById('statMastered').textContent,
+        dictNoteHidden: document.getElementById('dictEmpty').hidden
+      }));
+      check('G8.4a an empty bank reports zero words', empty.words === 0, empty.words);
+      check('G8.4b the hero explains what to do instead of promising 30 words',
+        empty.noteHidden === false && /session update/i.test(empty.noteText), JSON.stringify(empty));
+      check('G8.4c Start Dictation is disabled while the bank is empty', empty.startDisabled === true, empty.startDisabled);
+      check('G8.4d the mastered counter refuses to fake a denominator', empty.mastered === '—', empty.mastered);
+      check('G8.4e the Words tab shows the same honest note', empty.dictNoteHidden === false, empty.dictNoteHidden);
+      const clicked = await page.evaluate(async () => {
+        document.getElementById('btnStart').click();
+        await new Promise((r) => setTimeout(r, 400));
+        return {
+          screen: document.querySelector('.screen.active').id,
+          toast: document.getElementById('sdpToast') ? document.getElementById('sdpToast').textContent : ''
+        };
+      });
+      check('G8.4f tapping Start on an empty bank never opens an empty cockpit', clicked.screen === 'screen-home', clicked.screen);
+      check('G8.4g an empty bank raises no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+      await ctx.close();
+      server.clearOverride('/data/session.json');
+    }
+
+    /* ── 5. corrupted storage during a live session ───────────────────── */
+    // contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 corruption policy
+    {
+      const { ctx, page, errors } = await newPage(browser, server.origin, { settings: FAST });
+      await page.waitForFunction(() => window.SDP && SDP.Sync && SDP.Sync.wordCount() === 30, null, { timeout: 10000 });
+      const survived = await page.evaluate(async () => {
+        document.getElementById('btnStart').click();
+        await new Promise((r) => setTimeout(r, 500));
+        localStorage.setItem('sdp.progress', '<<corrupt>>');
+        localStorage.setItem('sdp.settings', '<<corrupt>>');
+        try { SDP.Views.renderHome(); } catch (e) { return { crashed: String(e && e.message) }; }
+        document.getElementById('btnNext').click();
+        await new Promise((r) => setTimeout(r, 300));
+        return {
+          crashed: null,
+          index: SDP.Engine.config().index,
+          mode: SDP.Data.settings().mode,
+          progress: SDP.Data.progress().weakWords.length
+        };
+      });
+      check('G8.5a corrupting storage mid-session does not throw', survived.crashed === null, survived.crashed);
+      check('G8.5b the engine keeps its position', survived.index === 1, survived.index);
+      check('G8.5c settings fall back to safe defaults', survived.mode === 'paper', survived.mode);
+      check('G8.5d progress resets to an empty but valid shape', survived.progress === 0, survived.progress);
+      check('G8.5e no page errors after the corruption', errors.length === 0, errors.slice(0, 2).join(' | '));
+      await ctx.close();
+    }
   } finally {
-    lecturer.close(); student.close();
-    sseClients.forEach(c => { try { c.res.end(); } catch (e) {} });
-    server.close();
+    await browser.close();
+    await server.close();
   }
-  const failed = results.filter(r => !r.ok);
-  console.log('\n' + (results.length - failed.length) + '/' + results.length + ' live lab checks passed');
-  process.exit(failed.length ? 1 : 0);
-})();
+
+  const fails = results.filter((r) => r.status === 'FAIL');
+  console.log(JSON.stringify(results, null, 2));
+  console.log('\nG8 live-lab.cjs — ' + (results.length - fails.length) + ' PASS / ' + fails.length + ' FAIL');
+  if (fails.length) process.exitCode = 1;
+})().catch((err) => {
+  console.error('G8 harness crashed:', err && err.stack ? err.stack : err);
+  process.exitCode = 1;
+});
