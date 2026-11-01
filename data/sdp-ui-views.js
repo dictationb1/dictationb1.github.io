@@ -1351,6 +1351,14 @@
         node.addEventListener('click', function () { startPractice(str(node.getAttribute('data-prac'))); });
       })(quick[q]);
     }
+    /* D-L1: the header lock button was rendered on every screen and wired to
+       nothing. It now opens Settings -> Lecturer Studio and focuses the PIN
+       pad, and it mirrors the lock state (🔒 locked / 🔓 unlocked). */
+    var quick = byId('btnStudioQuick');
+    if (quick && !quick._sdpBound) {
+      quick._sdpBound = true;
+      quick.addEventListener('click', function () { openStudio(); }, false);
+    }
     var modal = byId('guideModal');
     if (modal && !modal._sdpBound) {
       modal._sdpBound = true;
@@ -1370,6 +1378,20 @@
     doc.addEventListener('sdp:teacher-updated', function () {
       showToast(t('teacherUpdatedToast'));
     }, false);
+    return true;
+  }
+
+  function openStudio() {
+    try { showTab('settings'); } catch (e) {}
+    var acc = byId('studioAccordion');
+    if (acc) {
+      acc.open = true;
+      try { if (acc.scrollIntoView) acc.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { try { acc.scrollIntoView(); } catch (e2) {} }
+    }
+    try { if (SDP.Studio && SDP.Studio.mount) SDP.Studio.mount(); } catch (e) {}
+    var target = byId('studioPin') || byId('setupPin') || byId('pinPad');
+    if (target && target.focus) { try { target.focus({ preventScroll: true }); } catch (e) {} }
+    try { if (SDP.Studio && SDP.Studio.paintQuickButton) SDP.Studio.paintQuickButton(); } catch (e) {}
     return true;
   }
 
@@ -1440,6 +1462,7 @@
     resumeDictation: resumeDictation,
     startPractice: startPractice,
     openGuide: openGuide,
+    openStudio: openStudio,
     closeGuide: closeGuide,
     speakGuide: speakGuide,
     startGuideNarration: startGuideNarration,

@@ -701,6 +701,55 @@ html[lang='si'] .hint-chip-out { font-family: var(--font-si); }
 .studio-preview-table th { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .studio-card textarea#studioEnvelope { min-height: 84px; }
 
+/* ══ v0.0.1.c Studio: 56px Touch PIN Pad, key helpers, quota card ══════ */
+/* D-L2 — every key is a real 56px tap target (WCAG 2.5.5 / classroom thumbs). */
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0 4px;
+  max-width: 340px;
+}
+.pin-key {
+  min-height: 56px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.pin-key:hover, .pin-key:focus-visible { border-color: var(--accent); }
+.pin-key:active { background: var(--bg-card); }
+.pin-key-soft { font-size: 13px; color: var(--text-muted); }
+.pin-key-primary { font-size: 13.5px; background: var(--accent); border-color: var(--accent); color: #09090B; }
+.pin-dots { display: flex; gap: 6px; align-items: center; min-height: 18px; margin: 6px 0; }
+.pin-dots > span {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  display: inline-block;
+}
+.pin-dots > span.on { background: var(--accent); border-color: var(--accent); }
+.pin-row { display: flex; gap: 8px; align-items: center; }
+.pin-row .input { flex: 1 1 auto; min-width: 0; }
+/* D-L3/D-L4 — key inputs with Show / Paste / Test affordances. */
+.key-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.key-row .input { flex: 1 1 180px; min-width: 0; }
+.key-row .btn { flex: 0 0 auto; }
+.studio-keys, .studio-quota, .studio-record {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.studio-h4 { font-size: 13px; font-weight: 700; color: var(--text-muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+.studio-quota .checkline { margin: 8px 0; }
+.rec-preview { width: 100%; max-width: 420px; margin-top: 8px; }
+
 /* ── Guide modal ───────────────────────────────────────────────────────── */
 .modal {
   position: fixed;
