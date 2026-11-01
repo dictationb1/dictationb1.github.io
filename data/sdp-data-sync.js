@@ -6,15 +6,19 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.1.a';
+  SDP.version = '0.0.1.b';
   SDP.build = '2026-11-01';
-  SDP.ver = 1;
+  SDP.ver = 2;
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.1.a';
-  var SCHEMA = 1;
-  var SETTINGS_REV = 1;
+  var APP_VERSION = '0.0.1.b';
+  var SCHEMA = 2;
+  var SETTINGS_REV = 2;
+  /* D1 guard: the in-session upgrade reload fires at most once per version. */
+  var appVersionChanged = false;
+  /* D5 guard: visibilitychange is registered at most once per module load. */
+  var watchVisBound = false;
 
   /* ── helpers ─────────────────────────────────────────────────────────── */
   function noop() {}
@@ -51,6 +55,7 @@
     return {
       mode: 'paper', writeSecs: 8, repeats: 3, pauseSecs: 1.5, autoAdvance: true,
       voiceSource: 'auto', rate: 0.95, volume: 1, lang: 'en', theme: 'dark',
+      guideAutoPlay: true, pacingPreset: 'standard', voiceLock: 'unified',
       hints: { pos: true, first: false, si: false, sentence: false }
     };
   }
@@ -155,8 +160,13 @@
     saveSession: function (s) { return writeJSON(KEYS.session, s); },
     clearSession: function () { store.remove(KEYS.session); },
 
-    guideSeen: function () { return store.get(KEYS.guide) === '1'; },
-    markGuideSeen: function () { store.set(KEYS.guide, '1'); },
+    /* D3 / W7: sdp.guide_seen is a version stamp ("0.0.1.b"), not a boolean.
+       The guide (re)opens whenever the stored stamp differs from APP_VERSION,
+       so returning 0.0.1.a users with "1" stored see it again on upgrade. */
+    getGuideSeenVersion: function () { return store.get(KEYS.guide) || ''; },
+    isGuideSeen: function () { return store.get(KEYS.guide) === APP_VERSION; },
+    guideSeen: function () { return store.get(KEYS.guide) === APP_VERSION; },
+    markGuideSeen: function () { store.set(KEYS.guide, APP_VERSION); },
 
     /* One-time legacy import. Reads retired keys, never writes them. */
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R8 one-time legacy import */
@@ -688,17 +698,29 @@
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 instant propagation */
     checkForUpdates: function (cb) {
       cb = cb || noop;
-      if (typeof global.fetch !== 'function') { cb(new Error('no_fetch'), { updated: false }); return; }
+      if (typeof global.fetch !== 'function') { cb(null, { ok: false, error: 'no_fetch', changed: false }); return; }
       fetchJSON('./data/version.json', function (err, remote) {
-        if (err || !remote) { cb(err || new Error('no_version'), { updated: false }); return; }
+        var result = { updated: false, session: null, appVersion: null };
+        if (err || !remote) {
+          var code = err && String(err.message) === 'timeout' ? 'timeout' : (err && err.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
+          cb(null, { ok: false, error: code, changed: false }); return;
+        }
         var local = state.version || {};
         var sessionChanged = str(remote.session) !== str(local.session);
         var settingsChanged = Number(remote.settingsRev || 0) !== Number(local.settingsRev || 0);
         var newer = Number(remote.syncRev || 0) > Number(local.syncRev || 0);
+        var appChanged = !!(remote.version && remote.version.appVersion && str(remote.version.appVersion) !== APP_VERSION);
         state.lastCheck = nowMs();
-        if (!sessionChanged && !settingsChanged && !newer) {
-          cb(null, { updated: false, session: str(remote.session), appVersion: str(remote.appVersion) });
+        result.session = str(remote.session);
+        result.appVersion = str(remote.appVersion);
+        result.appVersionChanged = appChanged;
+        if (!sessionChanged && !settingsChanged && !newer && !appChanged) {
+          cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion });
           return;
+        }
+        if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== str(remote.version.appVersion)) {
+          appVersionChanged = true;
+          Sync.triggerVersionUpgrade(str(remote.version.appVersion));
         }
         var needSession = sessionChanged || newer;
         var needConfig = settingsChanged || !state.config;
@@ -710,14 +732,41 @@
           applyPayloads(got.version, got.config, got.session);
           notify('update', {
             session: state.sessionNo, sessionChanged: sessionChanged,
-            settingsChanged: settingsChanged, syncRev: remote.syncRev
+            settingsChanged: settingsChanged, syncRev: remote.syncRev, appVersionChanged: appChanged
           });
           /* Student progress is never touched here (G8). */
-          cb(null, { updated: true, session: state.sessionNo, sessionChanged: sessionChanged, settingsRev: remote.settingsRev });
+          cb(null, { ok: true, error: null, changed: true, updated: true, session: state.sessionNo, sessionChanged: sessionChanged, settingsRev: remote.settingsRev, appVersionChanged: appChanged });
         }
         if (needSession) fetchJSON('./data/session.json', function (e, d) { if (!e) got.session = d; settle(); });
         if (needConfig) fetchJSON('./data/config.json', function (e, d) { if (!e) got.config = d; settle(); });
       });
+    },
+
+    /* D1: in-session version upgrade — honest badge, toast, cache purge,
+       single reload, then the boot guard stops a second one. */
+    triggerVersionUpgrade: function (nextVersion) {
+      if (sessionStorage.getItem('sdp_upgraded_to') === String(nextVersion)) return false;
+      try { sessionStorage.setItem('sdp_upgraded_to', String(nextVersion)); } catch (e) {}
+      appVersionChanged = true;
+      notify('version-upgrade', { version: String(nextVersion) });
+      try {
+        var node = doc && doc.getElementById && doc.getElementById('sdpDataToast');
+        if (node) { node.textContent = 'Update found — reloading…'; node.hidden = false; if (node.classList) node.classList.remove('toast-hidden'); }
+      } catch (e) {}
+      try {
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) {
+              if (k.indexOf('sdp-') === 0 && k !== 'sdp-youdao-v1' && k !== 'sdp-audio-clips') {
+                return caches.delete(k);
+              }
+              return Promise.resolve(false);
+            }));
+          });
+        }
+      } catch (e) {}
+      setTimeout(function () { try { location.reload(); } catch (e) {} }, 400);
+      return true;
     },
 
     startWatch: function (ms) {
@@ -726,10 +775,11 @@
         if (doc && doc.visibilityState === 'hidden') return;
         Sync.checkForUpdates(function () {});
       }, ms || 120000);
-      if (doc && doc.addEventListener) {
+      if (doc && doc.addEventListener && !watchVisBound) {
+        watchVisBound = true;
         doc.addEventListener('visibilitychange', function () {
           if (doc.visibilityState === 'visible') Sync.checkForUpdates(function () {});
-        });
+        }, false);
       }
     },
     stopWatch: function () { if (liveTimer) { global.clearInterval(liveTimer); liveTimer = null; } },
@@ -825,7 +875,8 @@
       });
     },
 
-    /* CORS-simple relay payload: text/plain body, well under 600 bytes. */
+    /* D6: the keys relay never carries the lecturer PIN in the JSON body.
+       Body: { action: 'publish', app: 'sdp', ver } only. */
     buildKeysRelayPayload: function (pin) {
       return JSON.stringify({ action: 'login', pin: str(pin), app: 'sdp', ver: APP_VERSION });
     },
@@ -862,13 +913,17 @@
         .catch(function (e) { cb(e || new Error('relay_failed')); });
     },
 
-    /* ntfy live state channel (read only, one small poll). */
+    /* D8: bounded live-state poll — 8 second timeout, clean /json?poll=1 URL,
+       never hangs a low-end phone on a dead relay. */
     pollLiveState: function (cb) {
       cb = cb || noop;
       var cfg = state.config || {};
       var topic = cfg.live && cfg.live.state ? cfg.live.state : '';
       if (!topic || typeof global.fetch !== 'function') { cb(new Error('no_live')); return; }
-      global.fetch(topic + '/json?poll=1&since=10m', { cache: 'no-store' })
+      var done = false, timer = null;
+      function finish(err, data) { if (done) return; done = true; if (timer) global.clearTimeout(timer); cb(err, data); }
+      timer = global.setTimeout(function () { finish(new Error('timeout')); }, 8000);
+      global.fetch(topic + '/json?poll=1', { cache: 'no-store' })
         .then(function (res) { return res && res.text ? res.text() : ''; })
         .then(function (text) {
           var lines = str(text).split('\n'), latest = null, i;
@@ -884,9 +939,71 @@
               }
             } catch (e) {}
           }
-          cb(null, latest);
+          finish(null, latest);
         })
-        .catch(function (e) { cb(e || new Error('live_failed')); });
+        .catch(function (e) { finish(e || new Error('live_failed')); });
+    },
+
+    /* D1: download the 30 word-audio URLs into the SW audio caches so a
+       1–2 GB Android can practise fully offline. Posts sdp:cache-words to the
+       SW controller; falls back to a direct Cache API fetch in JSDOM or when
+       the controller is not yet attached. */
+    downloadOfflineAudio: function (words, onProgress, cb) {
+      cb = cb || noop; onProgress = onProgress || noop;
+      var urls = [], i, w;
+      for (i = 0; i < (words || []).length; i++) {
+        w = words[i] || {};
+        var url = str(w.clipUrl || w.audio || '');
+        if (url) urls.push(url);
+      }
+      var done = 0, settled = false;
+      function report() { try { onProgress(done, urls.length); } catch (e) {} }
+      function finish() {
+        if (settled) return; settled = true;
+        cb(null, { cached: done, total: urls.length });
+      }
+      if (!urls.length) { finish(); return; }
+      if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.controller) {
+        global.navigator.serviceWorker.controller.postMessage({ type: 'sdp:cache-words', urls: urls });
+        var listener = function (ev) {
+          var d = ev && ev.data;
+          if (d && d.type === 'sdp:cache-progress') {
+            done = Number(d.cached) || 0; report();
+            if (done >= Number(d.total || urls.length)) {
+              global.navigator.serviceWorker.removeEventListener('message', listener);
+              finish();
+            }
+          }
+        };
+        global.navigator.serviceWorker.addEventListener('message', listener, false);
+        global.setTimeout(function () { finish(); }, 20000);
+        return;
+      }
+      /* Direct cache fallback: SW-less browsers and headless test harnesses. */
+      var pending = urls.length;
+      for (i = 0; i < urls.length; i++) {
+        (function (url) {
+          try {
+            global.caches.open('sdp-youdao-v1').then(function (cache) {
+              return global.fetch(url).then(function (res) {
+                if (res && (res.ok || res.type === 'opaque')) {
+                  try { cache.put(url, res.clone()); } catch (e) {}
+                }
+                return res;
+              }, function () { return null; });
+            }).then(function () {
+              done += 1; report();
+              if (done >= pending) finish();
+            }, function () {
+              done += 1; report();
+              if (done >= pending) finish();
+            });
+          } catch (e) {
+            done += 1; report();
+            if (done >= pending) finish();
+          }
+        })(urls[i]);
+      }
     },
 
     /* contract: docs/ARCHITECTURE_MAP.md §R6 service worker registration */

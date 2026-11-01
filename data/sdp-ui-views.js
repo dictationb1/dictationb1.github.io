@@ -7,7 +7,7 @@
 
   var SDP = global.SDP = global.SDP || {};
   var doc = global.document;
-  var APP_VERSION = '0.0.1.a';
+  var APP_VERSION = '0.0.1.b';
 
   function noop() {}
   function str(v) { return v === null || v === undefined ? '' : String(v); }
@@ -69,6 +69,38 @@
     resetStats: 'Reset local stats', checkUpdate: 'Check for session update',
     studioTitle: '6 · Lecturer Studio & admin vault', studioLocked: 'Enter the lecturer PIN to open the studio.',
     guideSpeakBtn: 'Listen to the steps (EN)', guideCloseBtn: 'Got it, Start Learning',
+    /* Table B additions — UI labels, badges, presets and studio controls */
+    dictSearchPh: 'Search 30 words (English, Sinhala, IPA)...',
+    syncBadgeSynced: 'Synced · Session 8 · v0.0.1.b',
+    syncBadgeOffline: 'Offline — showing cached session',
+    syncBadgeUpdate: 'Update found — tap to reload',
+    syncBadgeRetry: 'Check failed — retry',
+    guidePauseVoice: '⏸ Pause Voice',
+    guideResumeVoice: '▶ Resume Voice',
+    guideNextStep: '⏭ Next Step',
+    guideReplayStep: '🔁 Replay Step',
+    guideReplay: '🎓 Replay Step-by-Step Voice Guide',
+    guideAutoPlay: 'Auto-play English voice guide on start',
+    presetHeading: 'Quick Pacing Presets',
+    presetBeginner: '🐢 Beginner Slow (12s · 4×)',
+    presetStandard: '🎯 CCBE B1 Standard (8s · 3×)',
+    presetExam: '⚡ Fast Exam (5s · 2×)',
+    presetBoard: '🖥️ Smart Board Class Mode',
+    themeBoard: 'Smart Board High-Contrast',
+    voiceLockLabel: 'Voice Persona Lock',
+    voiceLockUnified: 'British Female Professor (Unified 25–35 UK)',
+    voiceLockCustom: 'Follow Individual Tier Source',
+    downloadClips: '🔊 Download All 30 Word Audio Clips for Offline Use',
+    downloadClipsDone: 'Cached 30 of 30 audio clips for offline use',
+    studioFirstTime: 'First-Time Studio Setup: Set Your 4–8 Digit Lecturer PIN + API Keys',
+    studioTestEl: 'Test ElevenLabs Key',
+    studioTestGh: 'Test GitHub Token',
+    studioShow: 'Show',
+    studioHide: 'Hide',
+    studioPaste: 'Paste',
+    pinPadClear: 'Clear',
+    pinPadUnlock: 'Unlock',
+    studioCommitClip: 'Commit Recorded Clip',
     guideStep1Title: '1. Choose how you learn',
     guideStep1Body: 'Paper Mode means writing each word in your exercise book as you hear it. Typing Mode means typing directly on your phone or laptop.',
     guideStep2Title: '2. Listen and write against the timer',
@@ -81,6 +113,7 @@
     updateChecking: 'Checking for a newer session…', updateNone: 'You already have the latest session',
     updateFound: 'New session downloaded', resetDone: 'Local stats cleared', exportReady: 'Backup downloaded',
     importOk: 'Backup restored', importBad: 'That backup file could not be read',
+    presetApplied: 'Preset applied',
     storageLine: 'stored on this device', resumeAt: 'Continue from word',
     voiceTest: 'Voice test', playWordAudio: 'Play', listen: 'Listen',
     studioPinLabel: 'Lecturer PIN', studioUnlock: 'Unlock studio', studioSetup: 'Create the vault',
@@ -138,6 +171,38 @@
     resetStats: 'දේශීය සංඛ්‍යාලේඛන මකන්න', checkUpdate: 'වාර යාවත්කාලීනය පරීක්ෂා කරන්න',
     studioTitle: '6 · කථිකාචාර්ය ස්ටුඩියෝ සහ පරිපාලන බඳුන', studioLocked: 'ස්ටුඩියෝ විවෘත කිරීමට කථිකාචාර්ය PIN ඇතුළත් කරන්න.',
     guideSpeakBtn: 'උපදෙස් හඬින් අසන්න (EN)', guideCloseBtn: 'තේරුණා, ආරම්භ කරමු',
+    /* Table B additions — Sinhala UI labels, badges, presets and studio controls */
+    dictSearchPh: 'වචන 30 සොයන්න (ඉංග්‍රීසි, සිංහල, උච්චාරණය)...',
+    syncBadgeSynced: 'සමමුහුර්තයි · 8 වන වාරය · v0.0.1.b',
+    syncBadgeOffline: 'අන්තර්ජාලය නැත — සුරැකි වාරය පෙන්වයි',
+    syncBadgeUpdate: 'නව යාවත්කාලීනයක් ඇත — නැවත පූරණයට ඔබන්න',
+    syncBadgeRetry: 'පරීක්ෂාව අසාර්ථකයි — නැවත උත්සාහ කරන්න',
+    guidePauseVoice: '⏸ හඬ නවතන්න',
+    guideResumeVoice: '▶ හඬ අරඹන්න',
+    guideNextStep: '⏭ ඊළඟ පියවර',
+    guideReplayStep: '🔁 මෙම පියවර නැවත අසන්න',
+    guideReplay: '🎓 පියවරෙන් පියවර හඬ උපදෙස් නැවත අසන්න',
+    guideAutoPlay: 'ආරම්භයේදී ඉංග්‍රීසි හඬ උපදෙස් ස්වයංක්‍රීයව වාදනය කරන්න',
+    presetHeading: 'ඉක්මන් කාල සැකසුම් (Presets)',
+    presetBeginner: '🐢 ආරම්භක මන්දගාමී (තත් 12 · 4×)',
+    presetStandard: '🎯 CCBE B1 සාමාන්‍ය (තත් 8 · 3×)',
+    presetExam: '⚡ විභාග වේගවත් (තත් 5 · 2×)',
+    presetBoard: '🖥️ ස්මාර්ට් බෝඩ් පන්ති ප්‍රකාරය',
+    themeBoard: 'ස්මාර්ට් බෝඩ් අධි-පැහැදිලි තේමාව',
+    voiceLockLabel: 'හඬ අගුල (Voice Lock)',
+    voiceLockUnified: 'බ්‍රිතාන්‍ය කාන්තා කථිකාචාර්ය හඬ (ඒකාබදද්ධ 25–35 UK)',
+    voiceLockCustom: 'තෝරාගත් හඬ මූලාශ්‍රය අනුව',
+    downloadClips: '🔊 අන්තර්ජාලය නොමැතිව භාවිතයට වචන 30 හඬපට බාගන්න',
+    downloadClipsDone: 'වචන 30න් 30ම නොබැඳි භාවිතයට සුරැකිණි',
+    studioFirstTime: 'පළමු වරට ස්ටුඩියෝ පිහිටුවීම: ඉලක්කම් 4–8 කථිකාචාර්ය PIN අංකය සහ API යතුරු ඇතුළත් කරන්න',
+    studioTestEl: 'ElevenLabs යතුර පරීක්ෂා කරන්න',
+    studioTestGh: 'GitHub යතුර පරීක්ෂා කරන්න',
+    studioShow: 'පෙන්වන්න',
+    studioHide: 'සඟවන්න',
+    studioPaste: 'අලවන්න',
+    pinPadClear: 'මකන්න',
+    pinPadUnlock: 'විවෘත කරන්න',
+    studioCommitClip: 'පටිගත කළ හඬපටය සුරකින්න',
     guideStep1Title: '1. ඔබේ ඉගෙනුම් ආකාරය තෝරන්න',
     guideStep1Body: 'පොතේ ලිවීම (Paper Mode) යනු අසන අතරේ වචන ඔබේ අභ්‍යාස පොතේ ලිවීමයි; ටයිප් කිරීම (Typing Mode) යනු දුරකථනයේ හෝ පරිගණකයේ කෙළින්ම ටයිප් කිරීමයි.',
     guideStep2Title: '2. අසා කාල ගණකය අතරේ ලියන්න',
@@ -150,6 +215,7 @@
     updateChecking: 'නව වාරයක් පරීක්ෂා කරමින්…', updateNone: 'ඔබ සතුව නවතම වාරය දැනටමත් ඇත',
     updateFound: 'නව වාරය බාගත විය', resetDone: 'දේශීය සංඛ්‍යාලේඛන මකා දමන ලදී', exportReady: 'උපස්ථය බාගත විය',
     importOk: 'උපස්ථය ප්‍රතිසාධනය විය', importBad: 'එම උපස්ථ ගොනුව කියවිය නොහැක',
+    presetApplied: 'සැකසුම යොදවීමට පවතී',
     storageLine: 'මෙම උපාංගයේ ගබඩා කර ඇත', resumeAt: 'මෙම වචනයෙන් දිගටම කරගෙන යන්න',
     voiceTest: 'හඬ පරීක්ෂණය', playWordAudio: 'වාදනය', listen: 'අසන්න',
     studioPinLabel: 'කථිකාචාර්ය PIN', studioUnlock: 'ස්ටුඩියෝ විවෘත කරන්න', studioSetup: 'බඳුන සාදන්න',
@@ -194,6 +260,13 @@
       if (!key) continue;
       var value = t(key);
       if (value !== undefined) nodes[i].textContent = value;
+    }
+    var placeholders = doc.querySelectorAll('[data-i18n-placeholder]');
+    for (var j = 0; j < placeholders.length; j++) {
+      var pkey = placeholders[j].getAttribute('data-i18n-placeholder');
+      if (!pkey) continue;
+      var pvalue = t(pkey);
+      if (pvalue !== undefined) placeholders[j].placeholder = pvalue;
     }
   }
   function paintLangPills() {
@@ -245,6 +318,12 @@
     if (select) select.value = theme;
     var icon = byId('themeIcon');
     if (icon) setText(icon, theme === 'light' ? '◑' : '◐');
+    /* R7 / H5: Smart Board shows a clean quick-word jumper in the cockpit header. */
+    var jumper = byId('quickJumper');
+    if (jumper) {
+      if (name === 'board') { jumper.hidden = false; renderQuickJumper(); }
+      else jumper.hidden = true;
+    }
     return theme;
   }
   function toggleTheme() { return applyTheme(theme === 'dark' ? 'light' : 'dark'); }
@@ -368,23 +447,102 @@
     showTab('player');
   }
 
-  /* ══ Guide ══════════════════════════════════════════════════════════════ */
+  /* ══ Guide 2.0 — version-stamped, auto-narrating student guide (R3, D3) ══ */
+  var guideState = { activeStep: 0, narrating: false, opener: null };
+  var guidePaused = false;
+
   function renderGuideSteps() {
     var host = byId('guideSteps');
     if (!host) return;
-    var html = '';
-    for (var i = 1; i <= 4; i++) {
-      html += '<li><h3>' + esc(t('guideStep' + i + 'Title')) + '</h3><p>' + esc(t('guideStep' + i + 'Body')) + '</p></li>';
+    var html = '', i;
+    for (i = 1; i <= 4; i++) {
+      html += '<li class="guide-step" data-step="' + (i - 1) + '">' +
+        '<h3>' + esc(t('guideStep' + i + 'Title')) + '</h3>' +
+        '<p>' + esc(t('guideStep' + i + 'Body')) + '</p>' +
+        '</li>';
     }
     host.innerHTML = html;
+    var steps = host.querySelectorAll ? host.querySelectorAll('.guide-step') : [];
+    for (i = 0; i < steps.length; i++) steps[i].classList.remove('guide-active');
+    if (steps[guideState.activeStep]) steps[guideState.activeStep].classList.add('guide-active');
   }
-  function openGuide() {
+  function highlightGuideStep(idx) {
+    var host = byId('guideSteps');
+    if (!host) return;
+    var steps = host.querySelectorAll ? host.querySelectorAll('.guide-step') : [];
+    var j;
+    for (j = 0; j < steps.length; j++) steps[j].classList.remove('guide-active');
+    if (steps[idx]) {
+      steps[idx].classList.add('guide-active');
+      guideState.activeStep = idx;
+    }
+  }
+  function startGuideNarration(fromStep) {
+    if (guideState.narrating) return;
+    guideState.narrating = true;
+    guideState.activeStep = Math.max(0, Math.min(3, Number(fromStep) || 0));
+    renderGuideSteps();
+    function speakStep(idx) {
+      if (idx > 3) { guideState.narrating = false; return; }
+      highlightGuideStep(idx);
+      var title = t('guideStep' + (idx + 1) + 'Title');
+      var body = t('guideStep' + (idx + 1) + 'Body');
+      /* R3: narration always speaks English, even when the cards show SI. */
+      try { SDP.Speech.playGuideStep(title + '. ' + body, { lang: 'en-GB', rate: 0.94, pitch: 1.03 }, function () {
+        speakStep(idx + 1);
+      }); } catch (e) { guideState.narrating = false; }
+    }
+    speakStep(guideState.activeStep);
+  }
+  function stopGuideNarration() {
+    guidePaused = false;
+    var btn = byId('guidePauseVoice');
+    if (btn) btn.textContent = t('guidePauseVoice');
+    try { if (SDP.Speech) SDP.Speech.stop(); } catch (e) {}
+    guideState.narrating = false;
+  }
+  function toggleGuidePause() {
+    if (!guideState.narrating && !guidePaused) return;
+    var btn = byId('guidePauseVoice');
+    try {
+      if (global.speechSynthesis && typeof global.speechSynthesis.pause === 'function') {
+        if (guidePaused) { global.speechSynthesis.resume(); guidePaused = false; if (btn) btn.textContent = t('guidePauseVoice'); }
+        else { global.speechSynthesis.pause(); guidePaused = true; if (btn) btn.textContent = t('guideResumeVoice'); }
+        return;
+      }
+    } catch (e) {}
+    /* No synth pause: restart the current step instead. */
+    if (guidePaused) { guidePaused = false; if (btn) btn.textContent = t('guidePauseVoice'); startGuideNarration(guideState.activeStep); }
+    else { stopGuideNarration(); }
+  }
+  function guideNextStep() {
+    stopGuideNarration();
+    startGuideNarration(Math.min(3, guideState.activeStep + 1));
+  }
+  function guideReplayStep() {
+    stopGuideNarration();
+    startGuideNarration(guideState.activeStep);
+  }
+  function openGuide(opener) {
     var modal = byId('guideModal');
     if (!modal) return false;
+    guideState.opener = opener || null;
+    guidePaused = false;
     renderGuideSteps();
+    var btn = byId('guidePauseVoice');
+    if (btn) btn.textContent = t('guidePauseVoice');
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     if (modal.classList) modal.classList.add('is-open');
+    var conf = settings();
+    if (conf.guideAutoPlay !== false) startGuideNarration(0);
+    /* R3 fallback: if the browser blocks un-gestured speech, the student's
+       first tap inside the modal starts the English narration. */
+    if (!modal._guideNarrationBound) {
+      modal._guideNarrationBound = true;
+      modal.addEventListener('click', function () { if (!guideState.narrating) startGuideNarration(guideState.activeStep); }, false);
+      modal.addEventListener('touchstart', function () { if (!guideState.narrating) startGuideNarration(guideState.activeStep); }, false);
+    }
     var close = byId('btnGuideClose');
     if (close && close.focus) { try { close.focus({ preventScroll: true }); } catch (e) {} }
     return true;
@@ -396,8 +554,13 @@
       modal.setAttribute('aria-hidden', 'true');
       if (modal.classList) modal.classList.remove('is-open');
     }
+    stopGuideNarration();
+    /* W7: write the version stamp so the guide re-opens on the next upgrade. */
     try { SDP.Data.markGuideSeen(); } catch (e) {}
-    try { if (SDP.Speech) SDP.Speech.stop(); } catch (e) {}
+    var opener = guideState.opener;
+    if (opener && typeof opener.focus === 'function') { try { opener.focus({ preventScroll: true }); } catch (e) {} }
+    guideState.opener = null;
+    guideState.activeStep = 0;
     return true;
   }
   function speakGuide() {
@@ -406,8 +569,27 @@
       lines.push(STRINGS_EN['guideStep' + i + 'Title']);
       lines.push(STRINGS_EN['guideStep' + i + 'Body']);
     }
-    try { SDP.Speech.say(lines, { lang: 'en-GB' }, noop); } catch (e) {}
+    try { SDP.Speech.say(lines, { lang: 'en-GB', rate: 0.94, pitch: 1.03 }, noop); } catch (e) {}
     return lines.length;
+  }
+  function trapGuideKeys() {
+    if (doc.documentElement._sdpGuideKeys) return;
+    doc.documentElement._sdpGuideKeys = true;
+    doc.addEventListener('keydown', function (ev) {
+      var modal = byId('guideModal');
+      if (!modal || modal.hidden) return;
+      if (ev.key === 'Escape') { ev.preventDefault(); closeGuide(); return; }
+      if (ev.key === 'Tab') {
+        var focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        var first = focusables[0], last = focusables[focusables.length - 1];
+        if (ev.shiftKey) {
+          if (doc.activeElement === first) { ev.preventDefault(); last.focus(); }
+        } else if (doc.activeElement === last || !modal.contains(doc.activeElement)) {
+          ev.preventDefault(); first.focus();
+        }
+      }
+    }, true);
   }
 
   /* ══ Words explorer ═════════════════════════════════════════════════════ */
@@ -549,7 +731,9 @@
         '</div>';
     }
     host.innerHTML = html;
-    if (practice.mode === 'listen' && !practice.answered) {
+    /* F3: speak a listen-mode card exactly once per card via the spoken flag. */
+    if (practice.mode === 'listen' && !practice.answered && !practice.spoken) {
+      practice.spoken = true;
       try { if (SDP.Speech) SDP.Speech.playWord(word, {}, noop); } catch (e) {}
     }
   }
@@ -591,11 +775,11 @@
           renderPractice();
           return;
         }
-        if (act === 'flip') { practice.flipped = !practice.flipped; renderPractice(); return; }
+        if (act === 'flip') { practice.flipped = !practice.flipped; practice.spoken = false; renderPractice(); return; }
         if (act === 'say' && word) { if (SDP.Speech) SDP.Speech.playWord(word, {}, noop); return; }
         if (act === 'next') {
           practice.index = (practice.index + 1) % Math.max(1, practice.pool.length);
-          practice.answered = ''; practice.flipped = false;
+          practice.answered = ''; practice.flipped = false; practice.spoken = false;
           renderPractice();
         }
       });
@@ -604,7 +788,7 @@
   function startPractice(mode) {
     practice.mode = mode === 'weak' ? 'flash' : (mode || 'flash');
     if (mode === 'weak') { var weak = byId('pracWeakOnly'); if (weak) weak.checked = true; }
-    practice.index = 0; practice.answered = ''; practice.flipped = false;
+    practice.index = 0; practice.answered = ''; practice.flipped = false; practice.spoken = false;
     showTab('practice');
     renderPractice();
     return practice.mode;
@@ -644,7 +828,16 @@
     if (langSel) langSel.value = lang;
     var themeSel = byId('setTheme');
     if (themeSel) themeSel.value = theme;
+    var voiceLock = byId('setVoiceLock');
+    if (voiceLock) voiceLock.value = str(conf.voiceLock || 'unified');
+    var guideAuto = byId('setGuideAutoPlay');
+    if (guideAuto) guideAuto.checked = conf.guideAutoPlay !== false;
+    var pills = doc.querySelectorAll ? doc.querySelectorAll('#presetRow [data-preset]') : [];
+    for (var pi = 0; pi < pills.length; pi++) {
+      pills[pi].setAttribute('aria-pressed', String(pills[pi].getAttribute('data-preset') === str(conf.pacingPreset || 'standard')));
+    }
     paintModePills();
+    paintSyncBadge({ state: 'synced', session: str(SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8') });
     var storage = byId('storageStatus');
     if (storage) {
       var kb = 0;
@@ -690,6 +883,53 @@
     if (source && !source._sdpBound) {
       source._sdpBound = true;
       source.addEventListener('change', function () { save({ voiceSource: source.value }); });
+    }
+    var voiceLock = byId('setVoiceLock');
+    if (voiceLock && !voiceLock._sdpBound) {
+      voiceLock._sdpBound = true;
+      voiceLock.addEventListener('change', function () {
+        var val = voiceLock.value;
+        save({ voiceLock: val });
+        if (val === 'unified') { try { save({ voiceSource: 'auto' }); } catch (e) {} }
+        else if (str(source ? source.value : '') === 'auto') { try { save({ voiceSource: 'custom' }); } catch (e) {} }
+        if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
+      });
+    }
+    var guideAuto = byId('setGuideAutoPlay');
+    if (guideAuto && !guideAuto._sdpBound) {
+      guideAuto._sdpBound = true;
+      guideAuto.addEventListener('change', function () { save({ guideAutoPlay: !!guideAuto.checked }); });
+    }
+    var btnReplay = byId('btnReplayGuide');
+    if (btnReplay && !btnReplay._sdpBound) {
+      btnReplay._sdpBound = true;
+      btnReplay.addEventListener('click', function () { openGuide(); });
+    }
+    var dl = byId('btnDownloadClips');
+    if (dl && !dl._sdpBound) {
+      dl._sdpBound = true;
+      dl.addEventListener('click', function () {
+        try {
+          var words = SDP.Sync && typeof SDP.Sync.words === 'function' ? SDP.Sync.words() : [];
+          var status = byId('downloadClipsStatus');
+          if (status) status.textContent = '…';
+          SDP.Sync.downloadOfflineAudio(words, function (done, total) {
+            if (status) status.textContent = str(done) + ' of ' + str(total) + ' cached';
+          }, function (result) {
+            if (status) status.textContent = result.ok ? t('downloadClipsDone') : t('downloadClipsDone') + ' — incomplete';
+            setUpdateStatus(status ? status.textContent : '', result.ok ? 'ok' : 'bad');
+          });
+        } catch (e) { var status = byId('downloadClipsStatus'); if (status) status.textContent = 'Download unavailable'; }
+      });
+    }
+    var badge = byId('syncBadge');
+    if (badge && !badge._sdpBound) {
+      badge._sdpBound = true;
+      badge.addEventListener('click', function () {
+        var st = badge.getAttribute('data-sync-state');
+        if (st === 'update') { location.reload(); }
+        else checkForUpdate();
+      });
     }
     var langSel = byId('setLang');
     if (langSel && !langSel._sdpBound) {
@@ -773,19 +1013,88 @@
     node.textContent = str(text);
     if (state) node.setAttribute('data-state', state); else node.removeAttribute('data-state');
   }
+  /* ══ Sync badge — four honest states (I1/R10) ═════════════════════════════════════════════════════════════════ */
+  function paintSyncBadge(state) {
+    state = state || {};
+    var session = str(state.session || '8');
+    var badge = byId('syncBadge');
+    var status = byId('settingsSyncStatus') || byId('updateStatus');
+    var label;
+    if (state.state === 'synced') {
+      label = t('syncBadgeSynced').replace('Session 8', 'Session ' + session).replace('8 වන වාරය', session + ' වන වාරය').replace('v0.0.1.b', 'v' + APP_VERSION);
+    } else if (state.state === 'offline') {
+      label = t('syncBadgeOffline');
+    } else if (state.state === 'update') {
+      label = t('syncBadgeUpdate').replace('v0.0.1.b', 'v' + APP_VERSION);
+    } else {
+      label = t('syncBadgeRetry');
+    }
+    if (badge) { badge.textContent = label; badge.setAttribute('data-sync-state', state.state || 'synced'); badge.setAttribute('title', label); }
+    if (status) { status.textContent = label; status.setAttribute('data-state', state.state || 'synced'); status.setAttribute('title', label); }
+  }
   function checkForUpdate() {
     setUpdateStatus(t('updateChecking'), '');
     try {
-      SDP.Sync.checkForUpdates(function (err, info) {
-        if (err) { setUpdateStatus(t('updateNone'), ''); return; }
-        if (info && info.updated) {
-          setUpdateStatus(t('updateFound') + ' · Session ' + str(info.session), 'ok');
-          onDataReady();
-        } else {
-          setUpdateStatus(t('updateNone'), '');
+      SDP.Sync.checkForUpdates(function (result) {
+        if (!result || !result.ok) {
+          var state = (result && result.error === 'no_fetch') ? 'offline' : 'error';
+          paintSyncBadge({ state: state });
+          setUpdateStatus(state === 'offline' ? t('syncBadgeOffline') : t('syncBadgeRetry'), state === 'offline' ? '' : 'bad');
+          return;
         }
+        if (result.appVersionChanged) {
+          paintSyncBadge({ state: 'update', session: result.session, appVersion: result.appVersion });
+          setUpdateStatus(t('syncBadgeUpdate'), 'ok');
+          return;
+        }
+        if (result.updated) {
+          paintSyncBadge({ state: 'synced', session: result.session });
+          setUpdateStatus(t('updateFound') + ' · Session ' + str(result.session), 'ok');
+          onDataReady();
+          return;
+        }
+        paintSyncBadge({ state: 'synced', session: result.session });
+        setUpdateStatus(t('updateNone'), '');
       });
-    } catch (e) { setUpdateStatus(t('updateNone'), ''); }
+    } catch (e) {
+      paintSyncBadge({ state: 'error' });
+      setUpdateStatus(t('syncBadgeRetry'), 'bad');
+    }
+  }
+
+  /* ══ Quick pacing presets (settings section 1) ═════════════════════════════════════════════════════════════════════ */
+  var PRESETS = {
+    beginner: { pacingPreset: 'beginner', writeSecs: 12, repeats: 4, pauseSecs: 2, autoAdvance: true },
+    standard: { pacingPreset: 'standard', writeSecs: 8, repeats: 3, pauseSecs: 1.5, autoAdvance: true },
+    exam: { pacingPreset: 'exam', writeSecs: 5, repeats: 2, pauseSecs: 1, autoAdvance: true },
+    board: { pacingPreset: 'board', writeSecs: 10, repeats: 3, pauseSecs: 1.5, autoAdvance: true, theme: 'board' }
+  };
+  function applyPreset(id) {
+    var p = PRESETS[id];
+    if (!p) return;
+    var patch = { pacingPreset: p.pacingPreset, writeSecs: p.writeSecs, repeats: p.repeats, pauseSecs: p.pauseSecs, autoAdvance: p.autoAdvance };
+    if (p.theme) patch.theme = p.theme;
+    try { SDP.Data.saveSettings(patch); } catch (e) {}
+    renderSettings();
+    if (p.theme) applyTheme(p.theme, true);
+    if (SDP.Engine && SDP.Engine.applySettings) SDP.Engine.applySettings();
+    setUpdateStatus(t('presetApplied'), 'ok');
+  }
+
+  /* ══ Smart Board quick-word jumper (R7 / H5) ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+  function renderQuickJumper() {
+    var sel = byId('setQuickWord');
+    if (!sel) return;
+    var count = 30;
+    var i, html = '';
+    for (i = 1; i <= count; i++) html += '<option value="' + i + '">' + str(i) + '</option>';
+    sel.innerHTML = html;
+    if (sel._jqBound) return;
+    sel._jqBound = true;
+    sel.addEventListener('change', function () {
+      var idx = Number(sel.value) - 1;
+      if (SDP.Engine && typeof SDP.Engine.jumpTo === 'function') SDP.Engine.jumpTo(idx);
+    });
   }
 
   /* ══ Settings order guard (5 sections, studio last & collapsed) ═════════ */
@@ -844,6 +1153,9 @@
     on('btnLang', 'click', toggleLang);
     on('guideLangPill', 'click', toggleLang);
     on('guideSpeak', 'click', speakGuide);
+    on('guidePauseVoice', 'click', toggleGuidePause);
+    on('guideNextStep', 'click', guideNextStep);
+    on('guideReplayStep', 'click', guideReplayStep);
     on('btnTheme', 'click', toggleTheme);
     on('btnStart', 'click', function () { startDictation(); });
     on('btnResume', 'click', resumeDictation);
@@ -867,6 +1179,16 @@
         });
       })(modePills[m]);
     }
+    var presetPills = doc.querySelectorAll ? doc.querySelectorAll('#presetRow [data-preset]') : [];
+    for (var pp = 0; pp < presetPills.length; pp++) {
+      (function (node) {
+        if (node._sdpBound) return;
+        node._sdpBound = true;
+        node.addEventListener('click', function () {
+          applyPreset(str(node.getAttribute('data-preset')));
+        });
+      })(presetPills[pp]);
+    }
     var quick = doc.querySelectorAll('#homeQuickPractice [data-prac]');
     for (var q = 0; q < quick.length; q++) {
       (function (node) {
@@ -880,6 +1202,7 @@
       modal._sdpBound = true;
       modal.addEventListener('click', function (ev) { if (ev && ev.target === modal) closeGuide(); });
     }
+    trapGuideKeys();
     bindWords();
     bindPractice();
     bindSettings();
@@ -916,6 +1239,7 @@
     renderPractice();
     renderGuideSteps();
     renderSettings();
+    paintSyncBadge({ state: 'synced', session: str(SDP.Sync && SDP.Sync.sessionNo ? SDP.Sync.sessionNo() : '8') });
     if (!SDP.Data.guideSeen()) openGuide();
     showToast();
     try { SDP.Sync.registerSW(); } catch (e) {}

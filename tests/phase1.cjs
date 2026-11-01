@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* G3 — jsdom behavioural and regression gate for the v0.0.1.a shell.
+/* G3 — jsdom behavioural and regression gate for the v0.0.1.b shell.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 (storage), §R5 (vault), §R2 (guide)
  * contract: docs/ARCHITECTURE_MAP.md §R3, §R4, §R5, §R6
  * Deterministic: fake timers, stubbed fetch, WebCrypto from Node. */
@@ -27,7 +27,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
         w.localStorage.setItem('sdp.progress', '{not json at all');
         w.localStorage.setItem('sdp.settings', 'null');
         w.localStorage.setItem('sdp.session', '[]]');
-        w.localStorage.setItem('sdp.guide_seen', '1');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.b');
       }
     });
     const progress = JSON.parse(app.w.localStorage.getItem('sdp.progress'));
@@ -44,7 +44,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 2. studio PIN lockout ──────────────────────────────────────────── */
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 PIN attempt tracking
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '1'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } });
     const envelope = await app.SDP.Sync.Vault.encryptV2({ ghToken: 'ghp_t', elevenKey: 'sk_t' }, '246813');
     app.SDP.Studio.setEnvelope(envelope);
     app.SDP.Sync.Vault.resetLock();
@@ -78,13 +78,14 @@ const sinhala = /[\u0D80-\u0DFF]/;
     check('G3.3d the guide language pill switches to Sinhala in place', sinhala.test(app.byId('guideSteps').textContent));
     app.byId('guideLangPill').click();
     app.byId('btnGuideClose').click();
-    check('G3.3e closing stores sdp.guide_seen = "1"', app.w.localStorage.getItem('sdp.guide_seen') === '1');
+    // contract: docs/ARCHITECTURE_MAP.md §R2 + W7 — the stamp is the version string
+    check('G3.3e closing stores sdp.guide_seen = "0.0.1.b"', app.w.localStorage.getItem('sdp.guide_seen') === '0.0.1.b');
     check('G3.3f the modal is hidden after closing', app.byId('guideModal').hidden === true);
     check('G3.3g no fake guide audio stubs exist', !fs.existsSync(path.join(ROOT, 'assets/audio/guide-si-1.mp3')));
     check('G3.3h the header guide button reopens it', (app.byId('btnGuideTop').click(), app.byId('guideModal').hidden === false));
     app.byId('btnGuideClose').click();
     // a returning visitor is not interrupted
-    const again = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '1'); } });
+    const again = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } });
     check('G3.3i returning students are not interrupted by the guide', again.byId('guideModal').hidden === true);
     again.close();
     app.close();
@@ -95,7 +96,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   {
     const app = await createApp({
       before(w) {
-        w.localStorage.setItem('sdp.guide_seen', '1');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.b');
         w.localStorage.setItem('sdp.settings', JSON.stringify({ mode: 'paper', writeSecs: 3, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' }));
       }
     });
@@ -167,7 +168,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 5. language purity ─────────────────────────────────────────────── */
   // contract: docs/UI_COMPONENT_GUIDE.md §5 language purity (W7)
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '1'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } });
     app.byId('tab-dict').click();
     const cards = app.byId('dictList').querySelectorAll('.dict-card');
     check('G3.5a the Words tab renders all 30 cards', cards.length === 30, cards.length);
@@ -203,7 +204,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 6. settings order and the studio accordion ─────────────────────── */
   // contract: docs/UI_COMPONENT_GUIDE.md §student-first settings order
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '1'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } });
     const order = app.SDP.Views.settingsOrder();
     check('G3.6a settings has exactly six sections', order.length === 6, order.join(','));
     check('G3.6b About is the fifth section and the studio accordion stays last',

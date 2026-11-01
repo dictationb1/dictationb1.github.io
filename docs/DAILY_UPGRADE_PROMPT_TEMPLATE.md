@@ -181,4 +181,4 @@ gh pr merge <n> --merge --delete-branch   # or: git merge --no-ff
 - `/data` back link is `../index.html` (works from `/data.html`, `/data/` and `/data/index.html`).
 - Exactly one `<style id="sdpCloak">` under 400 bytes may exist in `index.html`.
 - All nine gates must print `0 FAIL`; the expected counts are
-  55 / 10 / 61 / 8 / 44 / 15 / 48 / 26 / 46 = **313 assertions**.
+  71 / 10 / 61 / 8 / 44 / 15 / 48 / 26 / 46 = **329 assertions** (≥ 325 required).

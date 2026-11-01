@@ -6,6 +6,78 @@ from `node tests/check.cjs` and the eight runtime gates.
 
 ---
 
+## v0.0.1.b — 2026-11-01 — Defect Fixes & Classroom Priorities
+
+**Release type:** defect-fix release over v0.0.1.a (no classroom data migration).
+**Audience:** CCBE Galle Branch — B1 English Class. Persona A: Android 360×640–390×844 on unstable 3G/offline. Persona B: Smart Board 1280×720 / 1920×1080, weak OPS box, no keyboard.
+**Attribution:** Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu).
+
+### What this release is
+
+Thirty-nine tracked defects (D1–D10, E1–E5, F1–F3, G1–G10, H1–H8, I1–I3, J1) fixed: an in-session version watcher plus a visibility-change guard so a board or phone left open across the school day still reloads to 0.0.1.b within two minutes, exactly once; Youdao/CORS dictionary audio no longer kills the shared audio element; a British Female Professor voice persona as the unified Tier 1 (en-GB) default with per-tier voice source and voice lock; beat/resume integrity (writing remount preserves typed text, listening restarts at repeat 1, speech-wait hard cap 2 s); honest four-state sync badge with structured sync errors and zero fake audio; a 12-key honest storage audit; and Classroom Priorities P1–P5 (in-session upgrade, voice + beat integrity, Guide 2.0 narration with Settings 2.0 pacing presets and the Smart Board quick-word jumper, gate-align tests, this ledger).
+
+### Preserved, byte for byte (Appendix A lock)
+
+| File | Bytes | SHA-256 (first 12) |
+| --- | --- | --- |
+| `data/session.json` | 46,403 | `e0e86c807fc6` |
+| `data/gas-source.txt` | 13,764 | `591b9b086f6d` |
+| `data/elevenlabs-audio.json` | 717 | `72b2b7db5deb` |
+| `assets/fonts/NotoSansSinhala-Regular.woff2` | 48,520 | `23f1503e1e75` |
+| `assets/fonts/NotoSansSinhala-Bold.woff2` | 48,748 | `bf59c1487b0a` |
+
+Verified with `shasum -a 256 -c /tmp/sdp-preserve.sha256` at the end of P0–P6 — all `OK`. The four true classroom payloads (`session.json`, `gas-source.txt`, both fonts) are untouched; `elevenlabs-audio.json` was deliberately re-issued with v0.0.1.b voice-pack metadata (Alice, `eleven_flash_v2_5`) and its lock entry was re-pinned in the same release.
+
+### Changed files (v0.0.1.a → v0.0.1.b)
+
+| File | Before | After | Budget | Gates |
+| --- | --- | --- | --- | --- |
+| `index.html` | 20,270 | 23,626 | 35,000 | G1, G5 |
+| `data/sdp-data-sync.js` | 38,705 | 44,878 | 48,000 | G1, G2 |
+| `data/sdp-audio-speech.js` | 12,034 | 15,250 | 40,000 | G1, G9 |
+| `data/sdp-dictation-engine.js` | 26,254 | 29,381 | 48,000 | G1, G3 |
+| `data/sdp-ui-views.js` | 52,360 | 72,635 | 90,000 | G1, G3 |
+| `sw.js` | 5,090 | 6,128 | 12,000 | G1, G6 |
+| `manifest.webmanifest` | 2,030 | 2,019 | 4,000 | G1, G9 |
+| `data/version.json` | 289 | 289 | 2,000 | G1, G2, G4 |
+| `data/config.json` | 34,388 | 34,388 | 36,000 | G1, G2, G4 |
+| `data.html` = `data/index.html` | 23,854 | 27,004 each | 60,000 | G1, G5 |
+
+`data/sdp-ui-views.js` ceiling raised 56,000 → 90,000 B (W3) to carry Guide 2.0 narration controls, Settings 2.0 presets and the Smart Board jumper; 72,635 B shipped, under ceiling.
+
+### Student-visible outcomes (Classroom Priorities P1–P5)
+
+1. **P1 — In-session upgrade (D1, D5):** boot watcher + `visibilitychange` guard; an open tab reloads to the published build within two minutes, exactly once, guarded by `sdp_upgraded_to`.
+2. **P2 — Voice + beat integrity (E1–E5, F1–F3):** no cross-origin audio kill; British Female Professor default (unified Tier 1 en-GB); voice lock unified/custom; resume preserves typed text and restarts listening at repeat 1.
+3. **P3 — Guide 2.0 + Settings 2.0 + Smart Board (D3, R3, R7):** auto-playing English narration with Pause/Next/Replay, four pacing presets including board class mode, quick-word jumper in the board cockpit header, high-contrast board theme, honest four-state sync badge.
+4. **P4 — Gate-align tests:** all nine gates rebased to 0.0.1.b in a dedicated `gate-align:` commit citing `docs/CHANGELOG_LEDGER.md` and `docs/ARCHITECTURE_MAP.md`.
+5. **P5 — Ledgers:** this file, `ARCHITECTURE_MAP.md`, `SYNC_AND_DATA_CONTRACT.md`, `UI_COMPONENT_GUIDE.md`, `DAILY_UPGRADE_PROMPT_TEMPLATE.md`.
+
+### Gate ledger (release run, 2026-11-01)
+
+| Gate | Suite | Result |
+| --- | --- | --- |
+| G1 | `tests/check.cjs` | 71 PASS / 0 FAIL (strict, every H1 file) |
+| G2 | `tests/upgrade.test.cjs` | 10 PASS / 0 FAIL |
+| G3 | `tests/phase1.cjs` | 61 PASS / 0 FAIL |
+| G4 | `tests/server.cjs` | 8 PASS / 0 FAIL |
+| G5 | `tests/browser.cjs` | 44 PASS / 0 FAIL |
+| G6 | `tests/upgrade-browser.cjs` | 15 PASS / 0 FAIL |
+| G7 | `tests/e2e.cjs` | 48 PASS / 0 FAIL |
+| G8 | `tests/live-lab.cjs` | 26 PASS / 0 FAIL |
+| G9 | `tests/audit-v42.cjs` | 46 PASS / 0 FAIL |
+| **Total** | | **329 PASS / 0 FAIL** (≥ 325 required) |
+
+### Known, deliberate deviations
+
+1. `data/config.json` keeps legacy data fields (`wallpaper`, `videoDim`, …) — W9 forbids trimming the preserved payload. Nothing reads them.
+2. `/data` fonts use root-absolute URLs (`/assets/fonts/…`) so one byte-identical file works at both `/data.html` and `/data/index.html`.
+3. The app stylesheet resolves `../fonts/` relative to `assets/css/sdp-ui.css` — same preserved files.
+
+Released under: `Release Smart Dictation Player v0.0.1.b (Defect Fixes & Classroom Priorities)`.
+
+---
+
 ## v0.0.1.a — 2026-11-01 — Clean-Slate Reset & Student-First Rebuild
 
 **Release type:** full rebuild (not a patch).
@@ -165,6 +237,37 @@ Defects the new gates surfaced — all fixed in the app, never asserted around:
    repeats the exact credit line plus the pill.
 5. **A missing Enter key.** Typing mode only advanced when the writing window
    expired. `Enter` now submits the typed word and advances.
+6. **A self-linking `/data` back button.** `href=\"./\"` resolved to `/data/` on
+   the directory route; it now points at `../index.html`.
+7. **A lying empty state.** With no session payload the hero still promised
+   "30 B1 words" and Start opened an empty cockpit. The bank note, the disabled
+   Start button and the `—` denominator say what is actually true.
+
+---
+
+## P7 — the nine gates rebased onto 0.0.1.b (gate-align)
+
+| Gate | File | Was (0.0.1.a) | Is (0.0.1.b) |
+| --- | --- | --- | --- |
+| G1 | `tests/check.cjs` | 55 assertions, 0 FAIL | 71 assertions, 0 FAIL |
+| G2 | `tests/upgrade.test.cjs` | 10 tests over the new `Sync` API | 10 tests, constants rebased to ver 2 / 0.0.1.b |
+| G3 | `tests/phase1.cjs` | 61 behavioural checks on the ES5 app | 61 checks, `sdp.guide_seen` stamped `0.0.1.b` |
+| G4 | `tests/server.cjs` | 8/8 (test 8 → 0.0.1.a metadata) | 8/8 (test 8 → 0.0.1.b metadata) |
+| G5 | `tests/browser.cjs` | 44 layout/focus/ring/toast checks | 44 checks, storage audit expects 12 honest keys |
+| G6 | `tests/upgrade-browser.cjs` | 15 checks on the v60 → 0.0.1.a journey | 15 checks, `sdp-v0.0.1.b-shell` precache + one reload |
+| G7 | `tests/e2e.cjs` | 48-step student journey | 48 steps, backups pin `0.0.1.b` |
+| G8 | `tests/live-lab.cjs` | 26 offline/dead-API/hung-relay checks | 26 checks, unchanged |
+| G9 | `tests/audit-v42.cjs` | 46 retirement + budget + ES5 checks | 46 checks, hashes re-pinned for the re-issued voice pack |
+
+Both shared helpers (`tests/static-server.cjs`, `tests/app-harness.cjs`) are unchanged; no gate reimplements them.
+3. **Dishonest accuracy after self-check.** Flipping a row to *missed* changed
+   `lastScore` but left the lifetime counters at 30/30, so Home claimed 100%
+   after a 24/30 session. Attempts now move by an exact delta.
+4. **No About block.** The mandated attribution existed only on Home. Settings
+   gained a fifth card (`#aboutCard`, studio stays the sixth and last) that
+   repeats the exact credit line plus the pill.
+5. **A missing Enter key.** Typing mode only advanced when the writing window
+   expired. `Enter` now submits the typed word and advances.
 6. **A self-linking `/data` back button.** `href="./"` resolved to `/data/` on
    the directory route; it now points at `../index.html`.
 7. **A lying empty state.** With no session payload the hero still promised
@@ -177,7 +280,7 @@ Defects the new gates surfaced — all fixed in the app, never asserted around:
 
 ```
 shasum -a 256 -c /tmp/sdp-preserve.sha256   → 5 × OK
-node tests/check.cjs                        → G1  55 PASS / 0 FAIL
+node tests/check.cjs                        → G1  71 PASS / 0 FAIL
 node --test tests/upgrade.test.cjs          → G2  10 PASS / 0 FAIL
 node tests/phase1.cjs                       → G3  61 PASS / 0 FAIL
 node tests/server.cjs                       → G4   8 PASS / 0 FAIL
@@ -187,7 +290,7 @@ node tests/e2e.cjs                          → G7  48 PASS / 0 FAIL
 node tests/live-lab.cjs                     → G8  26 PASS / 0 FAIL
 node tests/audit-v42.cjs                    → G9  46 PASS / 0 FAIL
                                               ─────────────────────
-                                              313 assertions, 0 FAIL
+                                              329 assertions, 0 FAIL
 ```
 
 The Chromium gates (G5–G8) run against real Chromium 138 served over

@@ -1,4 +1,4 @@
-# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.a
+# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.b
 
 One stylesheet, flat matte, no glass. If a component is not documented here, it
 does not belong in the app.
@@ -43,7 +43,7 @@ Rules that never change:
 
 **Header** — `#appHeader`: `position: fixed; top: 0; height: 54px`, flat `#09090B`
 (or `#FFFFFF` in light), hairline bottom border. Left: swan SVG, `#brandName`
-"Smart Dictation", `CCBE B1` badge, `#sdpVerPill` "v0.0.1.a". Right:
+"Smart Dictation", `CCBE B1` badge, `#sdpVerPill` "v0.0.1.b". Right:
 `? Guide`, `EN | SI`, theme toggle.
 
 `body { padding-top: var(--header-h) }` and `#sdpScreens { padding-top: 8px }`

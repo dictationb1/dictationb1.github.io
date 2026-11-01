@@ -46,7 +46,9 @@
       el.id = 'sdpSharedAudio';
       el.preload = 'auto';
       el.setAttribute('playsinline', 'playsinline');
-      try { el.setAttribute('crossorigin', 'anonymous'); } catch (e) {}
+      /* E1: never set crossOrigin on <audio>. dict.youdao.com sends no
+         Access-Control-Allow-Origin, so crossorigin='anonymous' blocked
+         every one of the 30 dictionary clips. Plain element audio only. */
       if (doc.body) doc.body.appendChild(el);
     }
     state.audioEl = el;
@@ -61,36 +63,73 @@
     if (el) { try { el.pause(); } catch (e) {} }
   }
 
-  /* ── browser voice selection (en-GB first) ──────────────────────────── */
-  function pickVoice(lang) {
+  /* ── E2: deterministic Professor Voice scoring (Table D) ──────────────── */
+  /* Tier 1 (+100): en-GB + Google UK English Female / Microsoft Sonia, Libby,
+   * Maisie / Apple Serena, Kate, Martha / Alice.
+   * Tier 2 (+60): en-GB/en-AU/en-NZ + female token in name or voiceURI.
+   * Tier 3 (+30): any en-* + female token.
+   * Tie-breaker: localService === false first, then lowest array index.
+   * A voice with score <= 0 is never chosen while a scored voice exists.
+   */
+  function scoreVoice(v) {
+    if (!v || !v.lang) return -1;
+    var name = str(v.name || '').toLowerCase();
+    var lang = str(v.lang).toLowerCase().replace(/_/g, '-');
+    var uri = str(v.voiceURI || '').toLowerCase();
+    var hay = name + ' ' + uri;
+    var score = -1;
+    if (lang.indexOf('en-gb') === 0 && /google uk english female|microsoft sonia|microsoft libby|microsoft maisie|apple serena|apple kate|apple martha|\balice\b/i.test(hay)) score = 100;
+    else if ((lang.indexOf('en-gb') === 0 || lang.indexOf('en-au') === 0 || lang.indexOf('en-nz') === 0) && /female|woman|sonia|libby|maisie|serena|kate|martha|ava|amelia|hazel|susan|catherine|karen/i.test(hay)) score = 60;
+    else if (lang.indexOf('en') === 0 && /female|woman|samantha|victoria|zira|aria|jenny|allison|susan|karen|serena|alice/i.test(hay)) score = 30;
+    if (score > 0 && v.localService === false) score += 5;
+    return score;
+  }
+  function pickBestVoice(voices) {
+    var best = null, bestScore = -1, i, v, s;
+    for (i = 0; i < voices.length; i++) {
+      v = voices[i];
+      if (!v || !v.lang) continue;
+      s = scoreVoice(v);
+      if (s > bestScore) { best = v; bestScore = s; }
+      else if (s === bestScore && s > 0 && best && v.localService === false && best.localService !== false) { best = v; }
+    }
+    return { voice: best, score: bestScore };
+  }
+  function resolveOnce(voices, synth, cb) {
+    var picked = pickBestVoice(voices);
+    cb(picked.score > 0 ? picked.voice : null);
+  }
+  /* E2: never blindly lock in male voices[0]. On an empty list (common on
+   * Android Chrome) listen once to onvoiceschanged, with a 400 ms fallback
+   * timer so headless/mock browsers can never hang. */
+  function selectProfessorVoice(cb) {
+    cb = cb || noop;
     var synth = global.speechSynthesis;
-    if (!synth || typeof synth.getVoices !== 'function') return null;
+    if (!synth || typeof synth.getVoices !== 'function') { cb(null); return; }
     var voices = [];
     try { voices = synth.getVoices() || []; } catch (e) { voices = []; }
-    var i, v;
-    var want = str(lang || 'en-GB').toLowerCase();
-    var prefer = ['alice', 'serena', 'kate', 'google uk english female', 'female'];
-    for (i = 0; i < prefer.length; i++) {
-      for (var j = 0; j < voices.length; j++) {
-        v = voices[j];
-        if (!v || !v.lang) continue;
-        if (str(v.lang).toLowerCase().replace('_', '-').indexOf('en') !== 0) continue;
-        if (str(v.name).toLowerCase().indexOf(prefer[i]) >= 0) return v;
+    if (voices.length > 0) { resolveOnce(voices, synth, cb); return; }
+    if (selectProfessorVoice._waiting) { cb(null); return; }
+    selectProfessorVoice._waiting = true;
+    var fired = false;
+    function onVoicesChanged() {
+      if (fired) return;
+      fired = true;
+      try { synth.removeEventListener('voiceschanged', onVoicesChanged); } catch (e) {}
+      var v2 = [];
+      try { v2 = synth.getVoices() || []; } catch (e) {}
+      resolveOnce(v2, synth, cb);
+    }
+    synth.addEventListener('voiceschanged', onVoicesChanged, false);
+    global.setTimeout(function () {
+      if (!fired) {
+        fired = true;
+        try { synth.removeEventListener('voiceschanged', onVoicesChanged); } catch (e) {}
+        var v3 = [];
+        try { v3 = synth.getVoices() || []; } catch (e) {}
+        resolveOnce(v3, synth, cb);
       }
-    }
-    for (i = 0; i < voices.length; i++) {
-      v = voices[i];
-      if (v && v.lang && str(v.lang).toLowerCase().replace('_', '-') === want) return v;
-    }
-    for (i = 0; i < voices.length; i++) {
-      v = voices[i];
-      if (v && v.lang && str(v.lang).toLowerCase().indexOf('en-gb') === 0) return v;
-    }
-    for (i = 0; i < voices.length; i++) {
-      v = voices[i];
-      if (v && v.lang && str(v.lang).toLowerCase().indexOf('en') === 0) return v;
-    }
-    return null;
+    }, 400);
   }
 
   function estimateMs(text) {
@@ -118,6 +157,7 @@
     var myId = ++state.queueId;
     var conf = settings();
     var rate = Math.min(1.2, Math.max(0.7, Number(opts.rate || conf.rate) || 0.95));
+    var pitch = Number(opts.pitch || 1);
     var volume = Math.min(1, Math.max(0, opts.volume === undefined ? (isNaN(Number(conf.volume)) ? 1 : Number(conf.volume)) : Number(opts.volume)));
     var synth = global.speechSynthesis;
     var Utter = global.SpeechSynthesisUtterance;
@@ -137,7 +177,7 @@
         utter.lang = opts.lang || 'en-GB';
         utter.rate = rate;
         utter.volume = volume;
-        utter.pitch = 1;
+        utter.pitch = pitch;
         var voice = pickVoice(utter.lang);
         if (voice) utter.voice = voice;
         var advanced = false;
@@ -237,21 +277,35 @@
     return '';
   }
 
-  /* Tier resolution is exposed so the audio audit can prove the order. */
-  function resolveTiers(word) {
-    var w = isObj(word) ? word : { w: word };
+  /* E3: tier enforcement per voiceSource / voiceLock.
+   * lecturer=[1]  alice=[2]  device=[4]  auto/unified=[1,2,3,4]. */
+  function resolveTiers(wordObj, opts) {
+    opts = opts || {};
+    var w = isObj(wordObj) ? wordObj : { w: wordObj };
     var s = sync();
     var lecturer = s && s.getClipUrl ? str(s.getClipUrl(w)) : str(w.clipUrl);
     var eleven = clipFromManifest(w);
     var dictionary = str(w.audio);
     var tiers = [];
     var conf = settings();
-    var source = str(conf.voiceSource || 'auto');
+    var source = str(opts.voiceSource || conf.voiceSource || 'auto');
+    var voiceLock = str(conf.voiceLock || 'unified');
+    if (source === 'lecturer') return [{ tier: 'lecturer', url: lecturer }];
+    if (source === 'alice') return [{ tier: 'eleven', url: eleven }];
+    if (source === 'device') return [{ tier: 'tts', url: '' }];
+    /* 'auto' (and voiceLock === 'unified' with the default 'auto' source):
+     * Lecturer clip -> ElevenLabs Alice clip -> UK Dictionary <audio> -> Professor TTS. */
     if (lecturer) tiers.push({ tier: 'lecturer', url: lecturer });
-    if (eleven && source !== 'device') tiers.push({ tier: 'eleven', url: eleven });
-    if (dictionary && source !== 'device') tiers.push({ tier: 'dictionary', url: dictionary });
+    if (eleven) tiers.push({ tier: 'eleven', url: eleven });
+    if (dictionary) tiers.push({ tier: 'dictionary', url: dictionary });
     tiers.push({ tier: 'tts', url: '' });
     return tiers;
+  }
+  /* E3 helper: speak one guide step in English with professor cadence. */
+  function playGuideStep(stepText, o, cb) {
+    if (typeof o === 'function') { cb = o; o = {}; }
+    o = o || {}; cb = cb || noop;
+    say([str(stepText)], { lang: 'en-GB', rate: o.rate !== undefined ? o.rate : 0.94, pitch: o.pitch !== undefined ? o.pitch : 1.03, volume: o.volume }, cb);
   }
 
   /* ══ SDP.Speech.playWord — 4-tier chain, bounded at every step ═════════ */
@@ -273,7 +327,8 @@
       at += 1;
       if (current.tier === 'tts') {
         state.lastTier = 'tts';
-        say([str(word && word.w ? word.w : word)], { rate: opts.rate, volume: opts.volume }, function () { cb(null); });
+        /* E2 professor cadence for device/TTS speech. */
+        say([str(word && word.w ? word.w : word)], { rate: 0.92, pitch: 1.03, volume: opts.volume }, function () { cb(null); });
         return;
       }
       playUrl(current.url, { rate: opts.rate, volume: opts.volume, timeoutMs: opts.timeoutMs }, function (err) {
@@ -307,8 +362,10 @@
     playUrl: playUrl,
     testVoice: testVoice,
     resolveTiers: resolveTiers,
+    playGuideStep: playGuideStep,
+    selectProfessorVoice: selectProfessorVoice,
+    scoreVoice: scoreVoice,
     loadManifest: loadManifest,
-    pickVoice: pickVoice,
     sharedAudio: sharedAudio,
     lastTier: function () { return state.lastTier; },
     lastUtterances: function () { return state.lastUtterances.slice(); },

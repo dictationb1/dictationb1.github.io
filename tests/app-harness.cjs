@@ -1,5 +1,5 @@
 'use strict';
-/* Shared jsdom harness for the v0.0.1.a modules.
+/* Shared jsdom harness for the v0.0.1.b modules.
  * contract: docs/ARCHITECTURE_MAP.md §2 — the six modules load in the fixed R10
  * order and register window.SDP; the harness reproduces exactly that, with fake
  * timers, WebCrypto and a deterministic fetch stub. */

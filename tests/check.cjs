@@ -44,14 +44,14 @@ const BUDGET = {
   'data/sdp-data-sync.js': 48000,
   'data/sdp-audio-speech.js': 40000,
   'data/sdp-dictation-engine.js': 48000,
-  'data/sdp-ui-views.js': 56000,
+  'data/sdp-ui-views.js': 90000,
   'data/studio.js': 60000,
   'data/data-meter.js': 22000,
   'data/session.json': 46403,
   'data/config.json': 36000,
   'data/version.json': 2000,
   'data/gas-source.txt': 13764,
-  'data/elevenlabs-audio.json': 920,
+  'data/elevenlabs-audio.json': 717,
   'data.html': 60000,
   'data/index.html': 60000,
   'sw.js': 12000,
@@ -76,7 +76,7 @@ const EXACT = [
 const PRESERVED_SHA = {
   'data/session.json': 'e0e86c807fc667475dad43de7848d3b231642c99f913bdab8c48e24834b86a5f',
   'data/gas-source.txt': '591b9b086f6d3723afb2604a837ffc495c69a481c490f11e58131c2222b0981e',
-  'data/elevenlabs-audio.json': '153111d6ace40026cb8941a919ac5d1d0a76aa25d144a1f555d8debc38ee1c64',
+  'data/elevenlabs-audio.json': '72b2b7db5deba545478221f8e6983b9cab595db1107a76539f6e4e33222f4d85',
   'assets/fonts/NotoSansSinhala-Regular.woff2': '23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280',
   'assets/fonts/NotoSansSinhala-Bold.woff2': 'bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e'
 };
@@ -236,9 +236,10 @@ function pending(p) {
 (function versions() {
   if (exists('data/version.json')) {
     const v = JSON.parse(readText('data/version.json'));
-    const ok = v.ver === 1 && v.appVersion === '0.0.1.a' && v.version === '0.0.1.a' &&
-      v.schema === 1 && v.settingsRev === 1 && String(v.session) === '8';
-    record('version.json carries the v0.0.1.a schema', ok, JSON.stringify(v).slice(0, 220));
+    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.b ships ver 2 / schema 2 / settingsRev 2
+    const ok = v.ver === 2 && v.appVersion === '0.0.1.b' && v.version === '0.0.1.b' &&
+      v.schema === 2 && v.settingsRev === 2 && String(v.session) === '8';
+    record('version.json carries the v0.0.1.b schema', ok, JSON.stringify(v).slice(0, 220));
     record('version.json stays slim (<= 2000 B)', bytes('data/version.json') <= 2000, bytes('data/version.json'));
   } else { pending('version.json'); }
 
@@ -251,7 +252,8 @@ function pending(p) {
       c.repoName === 'dictationb1.github.io' && c.defaults && c.classInfo,
       'preserved payload trimmed');
     record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
-    record('config.json carries v0.0.1.a version fields', c.ver === 1 && c.appVersion === '0.0.1.a' && c.schema === 1 && c.settingsRev === 1);
+    // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.1.b bump set
+    record('config.json carries v0.0.1.b version fields', c.ver === 2 && c.appVersion === '0.0.1.b' && c.schema === 2 && c.settingsRev === 2);
   } else { pending('config.json'); }
 
   /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 — secrets never land in git */
@@ -333,7 +335,8 @@ function pending(p) {
   /* contract: docs/ARCHITECTURE_MAP.md §R10 fixed load order */
   record('index.html loads the six modules in the fixed R10 order', ordered, JSON.stringify(positions));
   record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
-  record('index.html declares the v0.0.1.a boot target', html.indexOf("'0.0.1.a'") > 0 || html.indexOf('"0.0.1.a"') > 0);
+  // contract: docs/ARCHITECTURE_MAP.md §R1 boot target is a single TARGET constant
+  record('index.html declares the v0.0.1.b boot target', html.indexOf("'0.0.1.b'") > 0 || html.indexOf('"0.0.1.b"') > 0);
   const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings'];
   record('index.html contains the five tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
   const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings'];
@@ -348,6 +351,39 @@ function pending(p) {
   });
   record('release gate files present and inside budget', bad.length === 0, bad.join(', '));
 })();
+
+  /* 11 ── v0.0.1.b feature surface (release ledger, docs/CHANGELOG_LEDGER.md) -- */
+  (function vb1FeatureSurface() {
+    if (!exists('index.html')) { pending('index.html'); return; }
+    var html = readText('index.html');
+    var sw = exists('sw.js') ? readText('sw.js') : '';
+    var sync = exists('data/sdp-data-sync.js') ? readText('data/sdp-data-sync.js') : '';
+    var speech = exists('data/sdp-audio-speech.js') ? readText('data/sdp-audio-speech.js') : '';
+    var views = exists('data/sdp-ui-views.js') ? readText('data/sdp-ui-views.js') : '';
+    record('index.html ships the in-session sync badge', html.indexOf('id="syncBadge"') > 0);
+    record('index.html ships the studio quick launcher', html.indexOf('id="btnStudioQuick"') > 0);
+    record('index.html ships guide narration controls (pause / next / replay)',
+      /guidePauseVoice/.test(html) && /guideNextStep/.test(html) && /guideReplayStep/.test(html) && /guideResumeVoice/.test(views));
+    record('index.html boots at the v0.0.1.b target', /var TARGET = '0\.0\.1\.b'/.test(html));
+    record('service worker pins the v0.0.1.b shell caches',
+      /SW_VERSION = 'sdp-v0\.0\.1\.b'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.1\.b-shell'/.test(sw));
+    record('service worker handles on-demand word-audio caching (sdp:cache-words)', /sdp:cache-words/.test(sw));
+    record('sync module exposes triggerVersionUpgrade (D1 in-session upgrade)', /triggerVersionUpgrade/.test(sync));
+    record('sync module exposes downloadOfflineAudio (offline clips)', /downloadOfflineAudio/.test(sync));
+    record('speech module exports playGuideStep for EN guide narration', /playGuideStep/.test(speech));
+    record('settings ship quick pacing presets (beginner / standard / exam / board)',
+      /presetRow/.test(views) && /presetBeginner/.test(views) && /presetBoard/.test(views));
+    record('settings ship Voice Persona Lock (unified / custom)', /id="setVoiceLock"/.test(html));
+    record('settings ship guide auto-play preference', /id="setGuideAutoPlay"/.test(html));
+    record('settings ship offline clip download (btnDownloadClips)', /id="btnDownloadClips"/.test(html));
+    if (exists('data/version.json')) {
+      var v = JSON.parse(readText('data/version.json'));
+      record('version.json pins syncRev 1762000000001', Number(v.syncRev) === 1762000000001, JSON.stringify(v).slice(0, 200));
+      record('version.json pins buildDate 2026-11-01', v.buildDate === '2026-11-01');
+    }
+    var man = exists('manifest.webmanifest') ? readText('manifest.webmanifest') : '';
+    record('manifest start_url carries the PWA source tag', /source=pwa/.test(man));
+  })();
 
 const failed = results.filter(function (r) { return r.status === 'FAIL'; });
 if (JSON_OUT) {
