@@ -1,4 +1,4 @@
-# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.a
+# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.b
 
 Audience: **CCBE Galle Branch — B1 English Class, Sri Lanka**
 Lecturer in Charge: **Ms. Sumodya Sewmini** · Creator: **Hansana** · Concept: **Ayya01 (Lesandu)**
@@ -20,7 +20,7 @@ a change needs a new file, it needs a new row in §H1 and a new budget in
 | `data/sdp-data-sync.js` | ≤ 48,000 B | `SDP.Data` (5 keys), `SDP.Sync` (fetch/reconcile/publish/SW), `SDP.Sync.Vault` (`SDP_ENC_V2`) |
 | `data/sdp-audio-speech.js` | ≤ 40,000 B | `SDP.Speech`: `say()` normaliser, 4-tier `playWord()`, shared `<audio>` |
 | `data/sdp-dictation-engine.js` | ≤ 48,000 B | `SDP.Engine`: beat machine, ring/bar timer, Paper/Typing, hints, 30-row self-check |
-| `data/sdp-ui-views.js` | ≤ 56,000 B | `SDP.Views`: `STRINGS_EN`/`STRINGS_SI`, router, Home, Guide, Words, Practice, Settings, toast |
+| `data/sdp-ui-views.js` | ≤ 90,000 B | `SDP.Views`: `STRINGS_EN`/`STRINGS_SI`, router, Home, Guide, Words, Practice, Settings, toast |
 | `data/studio.js` | ≤ 60,000 B | `SDP.Studio`: PIN vault, session editor, recorder, ElevenLabs, publish |
 | `data/data-meter.js` | ≤ 22,000 B | Preserved metering engine, `METER_VERSION = '0.0.1.a'`, `SCHEMA = 1` |
 | `data/session.json` | exactly 46,403 B | **Preserved read-only**: 30 Session 8 words + 30 archived Session 7 words + plan |
@@ -30,8 +30,8 @@ a change needs a new file, it needs a new row in §H1 and a new budget in
 | `data/elevenlabs-audio.json` | exactly 920 B | **Preserved read-only**: Alice voice pack manifest |
 | `data.html` | ≤ 60,000 B | `/data` transparency route |
 | `data/index.html` | ≤ 60,000 B | Byte-identical twin of `data.html` |
-| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.a` service worker |
-| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.a` |
+| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.b` service worker |
+| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.b` |
 | `docs/*.md` (5 files) | ≤ 20,000 B each (template ≤ 8,000 B) | This ledger |
 
 **Preserved files are never edited by hand.** `tests/check.cjs` compares their
@@ -44,7 +44,7 @@ byte count *and* SHA-256; the hashes live in its `PRESERVED_SHA` table and in
 
 ```js
 window.SDP = {
-  version: '0.0.1.a', build: '2026-11-01', ver: 1,
+  version: '0.0.1.b', build: '2026-11-01', ver: 2,
   Data:   { /* storage + migration */ },
   Sync:   { /* fetchers, reconciliation, publishing, Service Worker, Vault */ },
   Speech: { /* utterances + audio tiers */ },
@@ -68,7 +68,9 @@ Load order is fixed and enforced by G1:
 `index.html` runs one inline boot script **before** those six: it compares
 `window.__SDP_BOOT_VERSION__` with `data/version.json` and, when a newer build is
 published, purges stale `sdp-*` caches (never `sdp-youdao-v1` / `sdp-audio-clips`)
-and reloads exactly once (`sessionStorage['sdp_upgraded_to']` guard).
+and reloads exactly once (`sessionStorage['sdp_upgraded_to']` guard). The watcher
+re-checks on `visibilitychange` so a board or phone left open across the school
+day still reloads to 0.0.1.b within two minutes, exactly once.
 
 ---
 
@@ -154,7 +156,9 @@ Custom events on `document`: `sdp:ready`, `sdp:update`, `sdp:settings`,
 ## 6. The beat state machine (R5)
 
 States: `idle → listening → writing → (next word | finished)`; `paused` can be
-entered from either live phase and returns to the phase it left.
+entered from either live phase and returns to the phase it left. Resume into
+`writing` remounts `#typeInput` preserving typed text; resume into `listening`
+bumps the epoch and restarts at repeat 1 with a fresh listening deadline.
 
 - `listening` lasts `max(1200, (1500 + pauseSecs×1000) × repeats)` ms and speaks
   the word `repeats` times.
@@ -212,7 +216,7 @@ one utterance, never 56 character utterances.
 
 ## 9. Service worker (R6)
 
-`sw.js` — `SW_VERSION = 'sdp-v0.0.1.a'`, `SHELL_CACHE = 'sdp-v0.0.1.a-shell'`,
+`sw.js` — `SW_VERSION = 'sdp-v0.0.1.b'`, `SHELL_CACHE = 'sdp-v0.0.1.b-shell'`,
 `PRESERVE_CACHES = ['sdp-youdao-v1', 'sdp-audio-clips']`.
 
 - **install** precaches the 18-file shell list and `skipWaiting()`.
@@ -241,7 +245,7 @@ open; because audio is cache-first, replaying a word costs zero data.
 
 ---
 
-## 12. Release gate map (v0.0.1.a)
+## 12. Release gate map (v0.0.1.b)
 
 | Gate | File | Runner | What it proves |
 | --- | --- | --- | --- |
@@ -250,7 +254,7 @@ open; because audio is cache-first, replaying a word costs zero data.
 | G3 | `tests/phase1.cjs` | jsdom | storage corruption, PIN lockout, guide, paper/typing runs |
 | G4 | `tests/server.cjs` | node | config/metadata + Apps Script loader |
 | G5 | `tests/browser.cjs` | Chromium | 54px header, one screen, focus law, ring colours, toast |
-| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.a, single reload, offline shell |
+| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.b, single reload, offline shell |
 | G7 | `tests/e2e.cjs` | Chromium | the full student journey + backup download |
 | G8 | `tests/live-lab.cjs` | Chromium | dead API, offline reload, hung relay, empty bank |
 | G9 | `tests/audit-v42.cjs` | node | retirement, H1 budgets, ES5, PWA pins, preserved hashes |

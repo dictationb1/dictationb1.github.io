@@ -1,4 +1,4 @@
-# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.a
+# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.b
 
 Everything that touches bytes on a student's phone, or a byte on GitHub, is
 specified here. If code and this document disagree, the document wins and the
@@ -10,12 +10,12 @@ code is the bug.
 
 | Constant | Value | Where |
 | --- | --- | --- |
-| `APP_VERSION` / `SDP.version` | `0.0.1.a` | `index.html`, every module |
-| `ver` | `1` | `data/version.json`, `data/config.json` |
-| `schema` | `1` | same |
-| `settingsRev` | `1` | same |
-| `SW_VERSION` | `sdp-v0.0.1.a` | `sw.js` |
-| `SHELL_CACHE` | `sdp-v0.0.1.a-shell` | `sw.js` |
+| `APP_VERSION` / `SDP.version` | `0.0.1.b` | `index.html`, every module |
+| `ver` | `2` | `data/version.json`, `data/config.json` |
+| `schema` | `2` | same |
+| `settingsRev` | `2` | same |
+| `SW_VERSION` | `sdp-v0.0.1.b` | `sw.js` |
+| `SHELL_CACHE` | `sdp-v0.0.1.b-shell` | `sw.js` |
 | `PRESERVE_CACHES` | `['sdp-youdao-v1', 'sdp-audio-clips']` | `sw.js` |
 
 There is exactly one version file: `data/version.json`. Never a root `/version.json`.
@@ -56,16 +56,16 @@ The watch runs `checkForUpdates` every 120,000 ms and on `visibilitychange`
 
 ```json
 {
-  "ver": 1,
-  "appVersion": "0.0.1.a",
-  "version": "0.0.1.a",
+  "ver": 2,
+  "appVersion": "0.0.1.b",
+  "version": "0.0.1.b",
   "buildDate": "2026-11-01",
-  "schema": 1,
-  "settingsRev": 1,
+  "schema": 2,
+  "settingsRev": 2,
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "updatedAt": "2026-11-01T00:00:00Z",
-  "syncRev": 1762000000000
+  "syncRev": 1762000000001
 }
 ```
 
@@ -81,7 +81,7 @@ pointer file back in.
 | `sdp.progress` | `{mastered:{}, attempts:{}, weakWords:[], streak:{count,lastDate}, history:[], lastScore:null}` |
 | `sdp.settings` | `{mode:"paper", writeSecs:8, repeats:3, pauseSecs:1.5, autoAdvance:true, voiceSource:"auto", rate:0.95, volume:1, lang:"en", theme:"dark", hints:{pos:true,first:false,si:false,sentence:false}}` |
 | `sdp.session` | `{sessionId:"8", index:0, mode:"paper", answers:{}, updatedAt:0}` — deleted on finish |
-| `sdp.guide_seen` | `"1"` once the student closes `#guideModal` |
+| `sdp.guide_seen` | `"0.0.1.b"` once the student closes `#guideModal` (version stamp, not a boolean) |
 | `sdp.migrated_from_legacy` | `"1"` after the one-time import |
 
 **Corruption policy.** `Data.read()` wraps `JSON.parse` in try/catch. A corrupt
@@ -141,14 +141,16 @@ the identical object.
 | --- | --- | --- |
 | `dict.youdao.com/dictvoice…`, `?audio=` | cache-first | `sdp-youdao-v1` |
 | `assets/audio/session-w*`, `blob:`, `elevenlabs` | cache-first | `sdp-audio-clips` |
-| `.woff2`, `.png`, `.svg`, `.ico`, `.webp`, `/assets/fonts/` | cache-first | `sdp-v0.0.1.a-shell` |
+| `.woff2`, `.png`, `.svg`, `.ico`, `.webp`, `/assets/fonts/` | cache-first | `sdp-v0.0.1.b-shell` |
 | navigations | network-first, 4,000 ms → cache → `./index.html` | shell |
 | same-origin `.html/.json/.js/.css/.webmanifest`, `/data/` | network-first, 4,000 ms | shell |
 
 `install` precaches: `./`, `./index.html`, `./assets/css/sdp-ui.css`, the six
 `./data/*.js` modules, `./data/version.json`, `./data/config.json`,
 `./data/session.json`, both fonts, `./manifest.webmanifest`, `./data.html`,
-`./data/index.html` — then `skipWaiting()`.
+`./data/index.html` — then `skipWaiting()`. A `sdp:cache-words` message handler
+caches the 30 word-audio URLs on demand (offline downloader); both preserved
+audio caches survive every upgrade.
 
 `activate` deletes every `sdp-*` cache that is not the shell cache or a preserved
 cache, then `clients.claim()`.
@@ -164,7 +166,7 @@ Two paths, both while unlocked:
    from a prior `GET`. Owner/repo come from the preserved `config.json`
    (`dictationb1` / `dictationb1.github.io`).
 2. **GAS relay** — CORS-simple `POST` with `Content-Type: text/plain` body
-   `{action:'login', pin, app:'sdp', ver:'0.0.1.a'}` (61 B, hard ceiling 600 B).
+   `{action:'login', pin, app:'sdp', ver:'0.0.1.b'}` (61 B, hard ceiling 600 B).
    Word publishing is chunked so every chunk stays under 40,000 B.
 
 Publishing writes `data/session.json`, `data/version.json` and `data/config.json`
@@ -185,8 +187,8 @@ Must keep, untouched: `credits`, `tts`, `voice`, `live` (ntfy state/community/in
 `voiceId: "Xb7hH8MSUJpSbSDYk0k2"`, `voiceName: "Alice"`,
 `modelId: "eleven_flash_v2_5"`.
 
-Only `ver: 1`, `appVersion: "0.0.1.a"`, `version: "0.0.1.a"`, `schema: 1`,
-`settingsRev: 1` are ours to change.
+Only `ver: 2`, `appVersion: "0.0.1.b"`, `version: "0.0.1.b"`, `schema: 2`,
+`settingsRev: 2` are ours to change.
 
 ---
 
@@ -195,7 +197,7 @@ Only `ver: 1`, `appVersion: "0.0.1.a"`, `version: "0.0.1.a"`, `schema: 1`,
 ```
 e0e86c807fc667475dad43de7848d3b231642c99f913bdab8c48e24834b86a5f  data/session.json                 46,403 B
 591b9b086f6d3723afb2604a837ffc495c69a481c490f11e58131c2222b0981e  data/gas-source.txt              13,764 B
-153111d6ace40026cb8941a919ac5d1d0a76aa25d144a1f555d8debc38ee1c64  data/elevenlabs-audio.json          920 B
+72b2b7db5deba545478221f8e6983b9cab595db1107a76539f6e4e33222f4d85  data/elevenlabs-audio.json          717 B
 23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280  assets/fonts/NotoSansSinhala-Regular.woff2  48,520 B
 bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e  assets/fonts/NotoSansSinhala-Bold.woff2     48,748 B
 ```
@@ -222,7 +224,7 @@ node tests/check.cjs                        # G1, same table baked in
 | G3 | R4 (corruption + migration), R5 (PIN lockout), R2 (guide), R5/R6 grading, W7 (language purity) |
 | G4 | Preserved Apps Script backend (`data/gas-source.txt`) — seven behaviour tests unchanged |
 | G5 | R3 (header 54px, single screen), R4 (input law), R5 (ring colours), R9 (toast) |
-| G6 | R6 (cache purge, preserved caches, single reload, offline shell) |
+| G6 | R6 (cache purge → `sdp-v0.0.1.b-shell`, preserved caches, single reload, offline shell) |
 | G7 | R2 (journeys), R5 (self-check + retry), R4 (legacy migration), R8 (settings order) |
 | G8 | R2 (two-device propagation without touching progress), R7 (publish) |
 | G9 | R5 (audio tiers, beat text, one-utterance `say`, same-element replay) |
