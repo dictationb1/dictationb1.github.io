@@ -341,7 +341,7 @@ test('v59 learning-tools: SDPPerfGuard decides lite from slow frames and memoise
     /* a 16.7ms frame budget is healthy */
     const fast = PG.decide({ avg: 16.666, med: 16.7, slow3: 0 });
     assert.equal(fast.lite, false, '60fps frames never downgrade');
-    assert.equal(w.document.body.getAttribute('data-perf'), 'auto');
+    assert.equal(w.SDPCore.DB.data.settings.perf, 'auto');assert.equal(PG.stats, null);
     /* simulated 30ms/frame rAF: avg > 22 && med > 25 && slow3 > 32 */
     const slow = PG.decide({ avg: 30, med: 30, slow3: 100 });
     assert.equal(slow.lite, true, 'slow frames downgrade to lite');

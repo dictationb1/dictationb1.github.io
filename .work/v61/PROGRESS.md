@@ -92,3 +92,10 @@ No baseline source files changed in P0.
 - Replaced the old static CSS with a single mount-keyed dark-zinc stylesheet; all scripts are deferred in the specified order.
 - Compatibility-only hidden engine controls retained for optional wallpaper/lecturer APIs; P3 moves them inside the three settings groups and replaces Home/Words/Practice owners.
 - Five PIN/secret/vault/publication regression tests pass against the extracted engine. Full v61 gate waits for the single learning owner in P3 and metadata/speech hardening in P4.
+
+## P3
+
+- Replaced the stacked learning file with one ASCII-only ES5 SDP61 owner. Pure Levenshtein and syllable algorithms were extracted from the baseline; UI wrappers, observers, CSS injectors and janitor sweeps were not carried forward.
+- One synchronous mount owns Home, Words, six Practice tools, the guide and exactly three Settings groups. Existing lecturer/community engines remain in app-core.
+- Preserved weak-word storage and three-correct graduation, paper self-check, printable six-column sheet, explicit recording playback, and IndexedDB/localStorage fallback. Offline downloader now counts successful writes, not attempts.
+- R6 greps are zero in all three principal files and all other shipped HTML/JS. Static release gate is pending P4 strict/version alignment; pedagogical tests run independently.
