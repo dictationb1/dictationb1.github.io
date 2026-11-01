@@ -43,7 +43,11 @@ failure, NOT ENV-BLOCKED (Chromium works).
   - Adapted anchor: the legacy topbar controls block is moved whole into #sdpLegacyKeeper (all of #topDataBadge/#btnLiveVideo/#chipNet/#btnLang/#btnGuideTop/#btnPerf/#btnTheme/#btnRefresh/#btnAdmin/#btnLock stay in the DOM).
   - Adapted anchor: tabbar keeps its real data-tab buttons (internals use #tab-<name>); #tab-comm goes to the keeper and #tab-dictate is inserted in its slot so the 5-slot indicator/index math stays exact. #tab-prac is created as a hidden alias in the keeper (id availability), #tab-practice stays the visible Practice tab.
   - JSDOM smoke (.work/v60-9003/smoke.cjs): all v60 ids present, #sdpNextGenCss last in head, sdpV57Css/sdpV58Css disabled + neutralised, wallpaper-on removed, 0 script errors.
-- [ ] P4 wrapped cockpit, priority-1 settings, words explorer, Sinhala i18n
+- [x] P4 wrapped cockpit, priority-1 settings, words explorer, Sinhala i18n
+  - Inserted inside the v60 module (learning-tools.js 215687 -> 244304 bytes): wrapSettings (Screens.settings + Screens.set), renderNextGenSettings (#sdpNextGenSettings first child of #screen-set, PRIORITY 1 six wired controls, PRIORITY 2 voice card, PRIORITY 3 collapsed <details id=sdpAppearanceAccordion> holding #setBody), wrapDict/renderWordCards (#sdpWordFilterRow All/Weak/Mastered/A-Z + full .sdp-word-card.wordcard.v59-dict-card cards with .v59-ipa/.v59-pos/.sdp-si-pill + play/slow), wrapCockpit (Eng.openPlayer/paint/paintCountdown -> #sdpCockpitCard, #sdpEdgeBar(Fill), #sdpCockpitHeaderRow with #plStatus + #sdpTimerPill holding #cdNum and the #cdFg ring, #sdpCockpitStage/#sdpLetterSlots, #sdpCockpitDock 4 helpers, #sdpCockpitFoot pause/skip, #sdpCockpitCounters, #sdpWordMapCard).
+  - Adapted anchor: legacy player action rows are hidden by walking #sdpCockpitCard children and hiding any untouched child that contains a <button> (no class guesses), instead of deleting them.
+  - Adapted anchor: the real player layer is UL.layer (no .player class in this build), so decoration matches #layers .layer and .lens hiding is scoped '.layer .lens,.layer.player .lens'.
+  - JSDOM smoke: settings box first, accordion closed with #setBody inside, all six controls + legacy ids present, speed pill sets rate 0.75, 30 word cards with 30 IPA + 30 Sinhala pills, cockpit ids all present after Eng.start+skipReady.
 - [ ] P5 lockstep test gates + absence assertions
 - [ ] P6 docs, PR, merge
 

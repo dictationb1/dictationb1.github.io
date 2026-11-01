@@ -45,3 +45,38 @@ function report() {
 }
 report();
 app.close();
+/* ---- P4 section ---- */
+(function () {
+  var fs = require("fs"), path = require("path");
+  var { harness } = require("../../tests/app-harness.cjs");
+  var LEARN = fs.readFileSync(path.resolve(__dirname, "../../data/learning-tools.js"), "utf8");
+  var app = harness(null, {});
+  var w = app.w, doc = w.document;
+  try { w.eval(LEARN); } catch (e) { console.log("EVAL ERR " + e.message); }
+  app.clock.tick(2500);
+  var C = w.SDPCore;
+  try { C.UI.setTab("set"); } catch (e) { console.log("ERR setTab " + e.message); }
+  app.clock.tick(50);
+  var box = doc.getElementById("sdpNextGenSettings");
+  console.log("settings box:", !!box, "isFirst:", doc.getElementById("screen-set").firstElementChild === box);
+  var acc = doc.getElementById("sdpAppearanceAccordion");
+  console.log("accordion:", !!acc, "open:", acc && acc.open, "setBody inside:", !!(doc.getElementById("setBody") && doc.getElementById("setBody").closest("details#sdpAppearanceAccordion")));
+  ["sdpSegMode", "sdpSegSpeed", "sdpSegRepeats", "sdpRangeWait", "sdpToggleAutoSentence", "sdpSegLang", "sdpTestVoice", "rateRange", "volRange", "repeatsSelect", "readSentenceToggle", "writeSecsRange", "bitrateSelect"].forEach(function (id) {
+    if (!doc.getElementById(id)) console.log("MISSING " + id);
+  });
+  try { doc.getElementById("sdpSegSpeed").children[0].click(); } catch (e) { console.log("ERR speed " + e.message); }
+  console.log("rate after click:", C.DB.data.settings.rate);
+  try { C.UI.setTab("dict"); } catch (e) { console.log("ERR dicttab " + e.message); }
+  app.clock.tick(50);
+  console.log("filter row:", !!doc.getElementById("sdpWordFilterRow"), "cards:", doc.querySelectorAll("#dictList .sdp-word-card").length, "si pills:", doc.querySelectorAll("#dictList .v59-si-pill, #dictList .sdp-si-pill").length, "ipa:", doc.querySelectorAll("#dictList .v59-ipa").length);
+  try { C.UI.setTab("home"); } catch (e) { console.log("ERR hometab " + e.message); }
+  try { C.Eng.start({}); app.clock.tick(20); if (C.Eng.skipReady) C.Eng.skipReady(); else C.Eng.start({}); } catch (e) { console.log("ERR engstart " + e.message); }
+  app.clock.tick(100);
+  ["sdpCockpitCard", "sdpEdgeBar", "sdpTimerPill", "sdpCockpitDock", "sdpWordMapCard", "sdpCockpitCounters", "cdNum", "plStatus", "cdFg", "ansInput"].forEach(function (id) {
+    console.log("cockpit " + id + "=" + (doc.getElementById(id) ? "Y" : "N"));
+  });
+  var card = doc.getElementById("sdpCockpitCard");
+  console.log("card inside layer:", !!(card && card.closest(".layer.player")));
+  console.log("errors:", app.consoleErrors.filter(function (m) { return !/Not implemented/.test(m); }).slice(0, 6));
+  app.close();
+})();
