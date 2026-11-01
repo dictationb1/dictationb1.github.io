@@ -1,5 +1,16 @@
 # v60 (9.0.0.4) — PROGRESS
 
+## P2 — CHROME + AUDIO FIXES (done)
+- Bug 6 root cause found in learning-tools `say(text, slow)`: `sp.say(String(text), slow ? 0.72 : 1)` -> now `sp.say([String(text)], { rate: ... }, function(){})`.
+- Added `v604Speech()` wrapper: `if (typeof items === 'string') items = [items];` on SDPCore.Speech.say.
+- Added `v604SweepTopbar()` (moves every non-cluster/non-actions child of .topbar into #sdpLegacyKeeper, keeps #brandName/#brandSub/#sdpVerPill inside #sdpBrandCluster).
+- Added `v604Credit()` (#creditDocked re-parented to #screen-home, inline position static).
+- Added `v604LegacyText()` + CSS to hide `Session progress*` / `Smart Dictation Player v58*` blocks, `#staticFooter`, `.v58-footer`, `.v58-session-prog`, `.v58-bento`.
+- CSS block appended at the end of #sdpNextGenCss (wins cascade) implementing the full-bleed fixed 56px `.topbar`.
+- boot() calls v604All() immediately and at 900/2000/4000ms; sets `data-v60-ready="1"`.
+- Adapted anchors: `#sdpBtnTestVoice` does not exist -> the real control is `#sdpTestVoice` (label `T4('test')` = "Test voice"); `#sdpTopVoiceBtn` keeps its startDictation() behaviour (reported in P6).
+- Cheap check PASS.
+
 ## P1 — VERSION BUMP + FOUC CLOAK (done)
 - `#sdpPrePaintCloak` injected in `<head>` right after `#sdpSwBoot`; 900ms fallback timer added inside `#sdpSwBoot`.
 - Version 9.0.0.3 -> 9.0.0.4 in: data/{version,config,session,elevenlabs-audio,media-manifest}.json (2 each), sw.js (5), data/data-meter.js (1), data/learning-tools.js (3), data/studio.js (1), index.html (6), data.html (1) + data/index.html copy.
@@ -28,7 +39,7 @@
 ## Phase status
 - [x] P0 preflight and helpers
 - [x] P1 version 9.0.0.4 + pre-paint FOUC cloak (index 485175 B; all stamps 9.0.0.4 incl. data-meter/learning-tools/studio/sw; cloak injected after #sdpSwBoot with 900ms fallback)
-- [ ] P2 Speech.say/topbar/creditDocked/legacy timers
+- [x] P2 Speech.say/topbar/creditDocked/legacy timers (learning-tools 254801 B; .topbar now exactly 2 children; #creditDocked static inside #screen-home; say() passes arrays; Speech.say string wrapper; data-v60-ready set)
 - [ ] P3 blank Words tab, Settings leaks, Practice styling
 - [ ] P4 dictation cockpit split-screen + scroll lock
 - [ ] P5 regression gates
