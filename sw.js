@@ -1,4 +1,4 @@
-/* Smart Dictation Player — Service Worker (v60 / 9.0.0.1)
+/* Smart Dictation Player — Service Worker (v60 / 9.0.0.3)
  * GitHub Pages static hosting.
  *   - Stale-While-Revalidate for the app shell.
  *   - Cache-First for versioned media/audio, stored as FULL responses.
@@ -7,8 +7,10 @@
  */
 'use strict';
 
-var VERSION = 'sdp-v60';
-var APP_VERSION = '9.0.0.1';
+var VERSION = 'sdp-v60-9.0.0.3';
+var APP_VERSION = '9.0.0.3';
+var SW_VERSION = 'sdp-v60-9.0.0.3';
+var MEDIA_MAX_ENTRIES = 160;
 var SHELL = [
   './',
   './index.html',
@@ -45,6 +47,9 @@ function pruneMediaCache(cache, maxEntries) {
 }
 function safeFetch(url, init) {
   try { return fetch(url, init || {}); } catch (e) { return Promise.reject(e); }
+}
+function isFreshAsset(url) {
+  return /\.(html|js|json)(\?|$)/i.test(url) || /\/$/.test(url);
 }
 function isMedia(url) {
   return /\.(mp4|webm|mov|m4v|mp3|wav|ogg|m4a|aac|opus)(?:[?#]|$)/i.test(url) ||
@@ -88,10 +93,13 @@ function backgroundFull(cache, req) {
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(CACHE)
-      .then(function (cache) { return cache.addAll(SHELL); })
-      .then(function () { return self.skipWaiting(); })
-      .catch(function () { return self.skipWaiting(); })
+    caches.open(CACHE).then(function (cache) {
+      return Promise.all(SHELL.map(function (u) {
+        return fetch(u, { cache: 'reload' }).then(function (r) {
+          return r && r.ok ? cache.put(u, r) : null;
+        })['catch'](function () { return null; });
+      }));
+    }).then(function () { return self.skipWaiting(); })['catch'](function () { return self.skipWaiting(); })
   );
 });
 
@@ -99,11 +107,12 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(keys.filter(function (k) {
-        return k !== CACHE && k !== MEDIA_CACHE && k !== 'sdp-youdao-v1';
+        if (k === 'sdp-youdao-v1') return false;
+        return k.indexOf('9.0.0.3') === -1;
       }).map(function (k) { return caches.delete(k); }))
     }).then(function () {
       return caches.open(MEDIA_CACHE).then(function (cache) {
-        return pruneMediaCache(cache, 40);
+        return pruneMediaCache(cache, MEDIA_MAX_ENTRIES);
       });
     }).then(function () { return self.clients.claim(); })
   );
@@ -114,6 +123,26 @@ self.addEventListener('fetch', function (event) {
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+
+  if (req.mode === 'navigate' || isFreshAsset(url.pathname + url.search)) {
+    event.respondWith(
+      safeFetch(req, { cache: 'no-cache' }).then(function (resp) {
+        if (resp && resp.status === 200) {
+          try {
+            var copy = resp.clone();
+            caches.open(CACHE).then(function (cache) { return cache.put(req, copy); })['catch'](function () { return null; });
+          } catch (err) {}
+        }
+        return resp;
+      })['catch'](function () {
+        return caches.match(req).then(function (hit) {
+          if (hit) return hit;
+          return caches.match('./index.html').then(function (shell) { return shell || Response.error(); });
+        });
+      })
+    );
+    return;
+  }
 
   if (isMedia(req.url)) {
     var rangeHeader = req.headers.get('Range');

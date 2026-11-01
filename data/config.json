@@ -36,7 +36,7 @@
     "pauseWord": 1.2,
     "pauseSent": 1.6,
     "theme": "dark",
-    "perf": "full",
+    "perf": "auto",
     "glassTint": 0,
     "wallpaperVideo": false,
     "activeVideoSrc": "",
@@ -51,7 +51,7 @@
     "readSentence": false
   },
   "ver": 60,
-  "version": "9.0.0.1",
+  "version": "9.0.0.3",
   "buildDate": "2026-10-31",
   "credits": {
     "createdBy": "Hansana",
@@ -85,7 +85,7 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "9.0.0.1",
+  "appVersion": "9.0.0.3",
   "settingsRev": 60,
   "performance": {
     "mode": "paper",

@@ -85,14 +85,14 @@ console.log('secret gate: PASS (' + SCAN_FILES.length + ' required files + all t
 /* Metadata and manifest. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data/media-manifest.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must be ver 60 / appVersion 9.0.0.1');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.3') throw Error(f + ' must be ver 60 / appVersion 9.0.0.3');
 }
-if (!/APP_VERSION="9\.0\.0.1"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.1');
+if (!/APP_VERSION="9\.0\.0.3"/.test(INDEX)) throw Error('index APP_VERSION must be 9.0.0.3');
 const manifest = JSON.parse(read('manifest.webmanifest'));
 if (!manifest.name || manifest.display !== 'standalone' || manifest.theme_color !== '#040812') throw Error('invalid PWA manifest');
 const media = JSON.parse(read('data/media-manifest.json'));
 if (!Array.isArray(media.assets) || media.assets.length < 4) throw Error('media manifest must list wallpapers + static');
-console.log('metadata: v60 / 9.0.0.1; media manifest: ' + media.assets.length + ' assets');
+console.log('metadata: v60 / 9.0.0.3; media manifest: ' + media.assets.length + ' assets');
 
 /* P0 runtime wiring markers. */
 if (!/sdp\.v2:/.test(INDEX) || !/isUnlockedOnThisDevice/.test(INDEX)) throw Error('local salted PIN wiring missing');
@@ -110,7 +110,7 @@ if (!/aboutCreditsSheet/.test(INDEX) || !/v58-sig-pill/.test(INDEX)) throw Error
 if (!/v58WorkSpace|v58-workspace/.test(INDEX)) throw Error('desktop workspace missing');
 if (!/learning-tools\.js/.test(INDEX)) throw Error('learning-tools script tag missing');
 const versionData = JSON.parse(read('data/version.json'));
-if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.1' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.1 / settingsRev 60');
+if (versionData.ver !== 60 || versionData.appVersion !== '9.0.0.3' || versionData.settingsRev !== 60) throw Error('version.json must ship ver 60 / 9.0.0.3 / settingsRev 60');
 console.log('v58 markers: PASS');
 
 /* ------------------------------------------------------------------ *
@@ -119,14 +119,14 @@ console.log('v58 markers: PASS');
 /* Version stamps everywhere. */
 for (const f of ['data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json']) {
   const d = JSON.parse(read(f));
-  if (d.ver !== 60 || d.appVersion !== '9.0.0.1') throw Error(f + ' must ship 60 / 9.0.0.1');
+  if (d.ver !== 60 || d.appVersion !== '9.0.0.3') throw Error(f + ' must ship 60 / 9.0.0.3');
 }
-if (!/var VERSION = 'sdp-v60'/.test(sw) || !/var APP_VERSION = '9\.0\.0.1'/.test(sw)) throw Error('sw.js must ship sdp-v60 / 9.0.0.1');
+if (!/var VERSION = 'sdp-v60-9\.0\.0\.3'/.test(sw) || !/var APP_VERSION = '9\.0\.0.3'/.test(sw)) throw Error('sw.js must ship sdp-v60 / 9.0.0.3');
 if (!/sdp-youdao-v1/.test(sw) || !/sdp-youdao-v1/.test(learn)) throw Error('sdp-youdao-v1 offline cache must be preserved');
-if (!/METER_VERSION = '9\.0\.0.1', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.1 / 60');
+if (!/METER_VERSION = '9\.0\.0.3', SCHEMA = 60/.test(meterSrc)) throw Error('data-meter must ship 9.0.0.3 / 60');
 const DATAHTML = read('data.html');
-if (!/v60 · APP_VERSION 9\.0\.0.1/.test(DATAHTML)) throw Error('/data must show v60 · APP_VERSION 9.0.0.1');
-if (!/v60 · APP_VERSION 9\.0\.0.1/.test(read('data/index.html'))) throw Error('/data/index.html must show v60');
+if (!/v60 · APP_VERSION 9\.0\.0.3/.test(DATAHTML)) throw Error('/data must show v60 · APP_VERSION 9.0.0.3');
+if (!/v60 · APP_VERSION 9\.0\.0.3/.test(read('data/index.html'))) throw Error('/data/index.html must show v60');
 
 /* A1: fresh installs pick the automatic performance mode, never a forced "full". */
 if (!/perf:"auto"/.test(INDEX)) throw Error('fresh settings must default to perf:"auto"');
@@ -185,7 +185,7 @@ if (/\.createMediaElementSource\s*\(/.test(learn)) throw Error('learning-tools m
 if (/\.createMediaElementSource\s*\(/.test(INDEX)) throw Error('index.html must never create a MediaElementSource on the Youdao audio');
 
 /* ------------------------------------------------------------------
- * v60 / 9.0.0.1 release markers
+ * v60 / 9.0.0.3 release markers
  * ------------------------------------------------------------------ */
 if (!/#sdpNextGenCss/.test(learn)) throw Error('learning-tools must inject #sdpNextGenCss');
 var _mt = learn.indexOf("microToastLoad") >= 0 && learn.indexOf("getEntriesByType") >= 0 && learn.indexOf("\"navigation\"") >= 0;
@@ -198,5 +198,43 @@ if (!/iterations: ?250000/.test(INDEX)) throw Error('index.html must ship PBKDF2
 if (!/encVault/.test(read('data/config.json')) || !/SDP_ENC_V2:/.test(read('data/config.json'))) throw Error('config.json must carry encVault: SDP_ENC_V2:...');
 console.log('v60 markers: PASS');
 console.log('v59 markers: PASS');
+/* ------------------------------------------------------------------
+ * v60 Next-Gen DOM wiring (JSDOM, no browser)
+ * ------------------------------------------------------------------ */
+{
+  const { harness } = require('./app-harness.cjs');
+  const app = harness(null, {});
+  try {
+    app.w.eval(learn);
+    app.clock.tick(2500);
+    const doc = app.w.document;
+    const C = app.w.SDPCore;
+    for (const id of ['sdpHomeGreeting', 'sdpHeroConfigChips', 'sdpHomeStatsRow', 'sdpQuickPracticeGrid', 'microToastLoad', 'creditPill', 'creditDocked', 'sdpDesktopRail']) {
+      if (!doc.getElementById(id)) throw Error('v60 home chrome missing #' + id);
+    }
+    C.Screens.dict();
+    app.clock.tick(80);
+    if (!doc.getElementById('sdpWordFilterRow')) throw Error('v60 #sdpWordFilterRow missing after Screens.dict()');
+    if (!doc.querySelectorAll('#dictList .sdp-word-card.v59-dict-card').length) throw Error('v60 dictionary cards missing');
+    C.Screens.settings();
+    app.clock.tick(80);
+    const box = doc.getElementById('sdpNextGenSettings');
+    const body = doc.getElementById('setBody');
+    const acc = doc.getElementById('sdpAppearanceAccordion');
+    if (!box) throw Error('v60 #sdpNextGenSettings missing');
+    if (doc.getElementById('screen-set').firstElementChild !== box) throw Error('v60 settings must be the first child of #screen-set');
+    if (!body || !body.closest('details#sdpAppearanceAccordion')) throw Error('#setBody must be inside details#sdpAppearanceAccordion');
+    if (!acc || acc.open !== false) throw Error('the appearance accordion must start collapsed');
+    for (const id of ['sdpSegMode', 'sdpSegSpeed', 'sdpSegRepeats', 'sdpRangeWait', 'sdpToggleAutoSentence', 'sdpSegLang', 'rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect']) {
+      if (!doc.getElementById(id)) throw Error('v60 settings control missing #' + id);
+    }
+    const v57 = doc.getElementById('sdpV57Css'), v58 = doc.getElementById('sdpV58Css'), ng = doc.getElementById('sdpNextGenCss');
+    if (!v57 || !v57.disabled || v57.textContent !== '/* v60 neutralised */') throw Error('#sdpV57Css must be neutralised');
+    if (!v58 || !v58.disabled) throw Error('#sdpV58Css must be neutralised');
+    if (!ng || doc.head.lastElementChild !== ng) throw Error('#sdpNextGenCss must be the last style in <head>');
+    console.log('v60 next-gen DOM: PASS');
+  } finally { app.close(); }
+}
+
 console.log('ALL v60 STATIC CHECKS PASSED');
 

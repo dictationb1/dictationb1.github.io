@@ -1,6 +1,6 @@
 {
   "ver": 60,
-  "appVersion": "9.0.0.1",
+  "appVersion": "9.0.0.3",
   "updatedAt": "2026-10-31T12:00:00.000Z",
   "assets": [
     {
@@ -54,7 +54,7 @@
   "numberCues": 31,
   "appShellBytes": 440000,
   "profileNote": "Estimated profiles use manifest asset bytes plus one uncached audio reading per word/number. Live totals use Resource Timing plus labelled opaque-audio estimates.",
-  "version": "9.0.0.1",
+  "version": "9.0.0.3",
   "versionFamily": "9.0.0",
   "schema": 60,
   "settingsRev": 60,

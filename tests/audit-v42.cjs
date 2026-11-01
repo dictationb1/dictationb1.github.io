@@ -137,7 +137,7 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     ok('a numbered phrase uses the Youdao speech endpoint', voice.number === YOUDAO_BASE + 'Number%201', voice.number);
     ok('a custom phrase uses the Youdao speech endpoint', voice.phrase === YOUDAO_BASE + 'zebra%20crossing', voice.phrase);
     eq('Sinhala has a dedicated stream URL', voice.si, 'https://dict.youdao.com/dictvoice?type=1&le=si&audio=' + encodeURIComponent('ආයුබෝවන්'));
-    eq('the running build is 9.0.0.1', voice.version, '9.0.0.1');
+    eq('the running build is 9.0.0.1', voice.version, '9.0.0.3');
     ok('the one-time ElevenLabs vault exists and is empty without an API key', voice.vault && voice.clips === 0 && voice.generated === 0, { clips: voice.clips, generated: voice.generated });
     ok('the vault cache key is deterministic and voice specific', voice.vaultKey === 'el_Xb7hH8MSUJpSbSDYk0k2_' + voice.vaultKey.replace(/^el_Xb7hH8MSUJpSbSDYk0k2_/, ''), voice.vaultKey);
     ok('Speech exposes the deterministic hash used by the vault', voice.voice === 'hash');
@@ -184,13 +184,13 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     eq('progress dots cover all 30 words', now.dots, 30);
     eq('the progress label shows Dictation #1 of 30', now.prog, 'Dictation #1 of 30');
     ok('the writing phase starts after Pass 2', now.statusLog.some((t) => /Write the word now|Your turn/.test(t)), now.statusLog.slice(-5));
-    ok('the writing countdown runs from five seconds', Number(now.cd) >= 0 && Number(now.cd) <= 5, now.cd);
+    ok('the writing countdown runs from five seconds', Number.parseFloat(String(now.cd)) >= 0 && Number.parseFloat(String(now.cd)) <= 5, now.cd);
 
-    await page.click('#plPlay');
+    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
     await page.waitForTimeout(900);
     clips = await clipsOf(page);
     ok('Pause requests remote audio', clips.some((c) => /Session%20paused/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    await page.click('#plPlay');
+    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
     await page.waitForTimeout(1800);
     clips = await clipsOf(page);
     ok('Resume requests remote audio', clips.some((c) => /Welcome%20back/.test(c.url)), clips.slice(-4).map((c) => textOf(c.url)));

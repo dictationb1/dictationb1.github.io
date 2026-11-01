@@ -52,9 +52,10 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       videoSrc: document.getElementById('bgLiveVideo').getAttribute('src'),
       credit: document.getElementById('credit') ? getComputedStyle(document.getElementById('credit')).position : 'missing', depot: !!document.getElementById('sdpV56'),
       overflow: !!document.getElementById('topOverflow'), lang: !!document.getElementById('btnLang'), data: !!document.getElementById('topDataBadge'),
+      creditDocked: !!document.getElementById('creditDocked') && getComputedStyle(document.getElementById('creditDocked')).position === 'fixed',
       mixer: !!document.getElementById('materialMixer'), meter: !!window.SDPDataMeter
     }));
-    push('v58 boots Static Gradient with a three-control header, inline signature pill and no fake depot/mixer', state.static && !state.videoSrc && state.credit === 'static' && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
+    push('v58 boots Static Gradient with a three-control header, inline signature pill and no fake depot/mixer', state.static && !state.videoSrc && (state.credit === 'static' || state.creditDocked) && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
     await page.evaluate(() => { window.SDPCore.UI.setTab('set'); });
     await page.waitForTimeout(200);
     const ids = await page.evaluate(() => ['rateRange', 'volRange', 'repeatsSelect', 'readSentenceToggle', 'writeSecsRange', 'bitrateSelect'].map(id => !!document.getElementById(id)));
@@ -215,6 +216,61 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     }));
     push('v58 tapping a plan chip persists the plan, price and active state',
       /Study Pack/.test(chipClick.label) && chipClick.price === 99 && chipClick.pressed === 'true' && errors.length === 0, Object.assign({ errors }, chipClick));
+    await ctx.close();
+  }
+
+  {
+    const { ctx, page, errors } = await newPage();
+    const home = await page.evaluate(() => {
+      const shown = (sel) => { const n = document.querySelector(sel); return !!n && n.offsetParent !== null; };
+      const absent = (sel) => { const n = document.querySelector(sel); return !n || n.offsetParent === null; };
+      const bar = document.querySelector('.topbar').getBoundingClientRect();
+      const badge = document.getElementById('topDataBadge');
+      return {
+        barH: Math.round(bar.height), barTop: Math.round(bar.top),
+        badgeGone: !!badge && badge.offsetParent === null,
+        legacy: ['#v58VoiceBadge', '#segMode', '#homeMeta', '#homeStats', '.v58-bento', '.v58-rail', '.sdp-retry-toast'].map(absent),
+        v60: ['#sdpHomeGreeting', '#homeHero', '#sdpHeroConfigChips', '#sdpHomeStatsRow', '#sdpQuickPracticeGrid'].map(shown)
+      };
+    });
+    push('v60 next-gen Home: 54px flush topbar, legacy clutter absent, next-gen blocks visible',
+      home.barH <= 56 && home.barTop === 0 && home.badgeGone && home.legacy.every(Boolean) && home.v60.every(Boolean), home);
+    const setState = await page.evaluate(() => new Promise(resolve => {
+      window.SDPCore.UI.setTab('set');
+      setTimeout(() => {
+        const box = document.getElementById('sdpNextGenSettings');
+        const acc = document.getElementById('sdpAppearanceAccordion');
+        const body = document.getElementById('setBody');
+        resolve({
+          boxTop: box ? Math.round(box.getBoundingClientRect().top) : -1,
+          boxFirst: !!box && document.getElementById('screen-set').firstElementChild === box,
+          accOpen: acc ? acc.open : null,
+          bodyInAcc: !!(body && body.closest('details#sdpAppearanceAccordion'))
+        });
+      }, 300);
+    }));
+    push('v60 Settings opens on the priority-1 panel with #setBody collapsed inside the accordion',
+      setState.boxFirst && setState.boxTop >= 0 && setState.boxTop < 140 && setState.accOpen === false && setState.bodyInAcc, setState);
+    const cockpit = await page.evaluate(() => new Promise(resolve => {
+      const C = window.SDPCore;
+      C.Eng.start({});
+      setTimeout(() => {
+        try { if (C.Eng.skipReady) C.Eng.skipReady(); } catch (e) {}
+        setTimeout(() => {
+          const vis = (id) => { const n = document.getElementById(id); return !!n && n.offsetParent !== null; };
+          const lens = document.querySelector('#layers .lens');
+          resolve({
+            card: vis('sdpCockpitCard'), edge: vis('sdpEdgeBar'), timer: vis('sdpTimerPill'),
+            dock: vis('sdpCockpitDock'), map: vis('sdpWordMapCard'),
+            lensGone: !lens || lens.offsetParent === null,
+            status: (document.getElementById('plStatus') || {}).textContent || ''
+          });
+        }, 1200);
+      }, 600);
+    }));
+    push('v60 active dictation shows the cockpit card, edge bar, timer pill, dock and word map',
+      cockpit.card && cockpit.edge && cockpit.timer && cockpit.dock && cockpit.map && cockpit.lensGone, cockpit);
+    push('v60 next-gen UI raises no page errors', errors.length === 0, errors);
     await ctx.close();
   }
 

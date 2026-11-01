@@ -2321,3 +2321,35 @@ window.SDPCoreV54 = SDPC;
     };
     window.AdminAutoEnrich = Q, window.F = window.F || F;
 })();
+/* ------------------------------------------------------------------
+   SDP_ENC_V2 vault helpers (v60 / 9.0.0.3)
+   PBKDF2-SHA256 with 250000 iterations; the AES-GCM envelope itself
+   lives in index.html (window.EncryptedVault). These are the studio-side
+   markers plus thin, fail-safe delegates so a locked student device never
+   derives a key or touches the network.
+   ------------------------------------------------------------------ */
+(function (global) {
+  'use strict';
+  var SDP_ENC_V2 = { tag: 'SDP_ENC_V2:', kdf: 'PBKDF2', hash: 'SHA-256', iterations: 250000, cipher: 'AES-GCM', bits: 256 };
+  function getVault() {
+    try {
+      var v = global.ElevenVault;
+      if (!v) return null;
+      if (typeof v.stats === 'function') return v.stats();
+      if (typeof v.count === 'function') return { clips: v.count(), voiceId: v.voiceId ? v.voiceId() : '', modelId: v.modelId ? v.modelId() : '' };
+      return null;
+    } catch (e) { return null; }
+  }
+  function saveVault(payload, pin, cb) {
+    var out = null;
+    try {
+      var ev = global.EncryptedVault;
+      if (ev && typeof ev.encryptV2 === 'function' && payload && pin) out = ev.encryptV2(payload, pin);
+      else if (ev && typeof ev.encrypt === 'function' && payload && pin) out = ev.encrypt(payload, pin);
+    } catch (e) { out = null; }
+    if (typeof cb === 'function') { try { cb(out); } catch (e2) {} }
+    return out;
+  }
+  global.SDP_ENC_V2 = SDP_ENC_V2;
+  global.SDPEncV2 = { params: SDP_ENC_V2, getVault: getVault, saveVault: saveVault };
+})((typeof window !== 'undefined') ? window : {});
