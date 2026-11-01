@@ -43,7 +43,12 @@
     var v = '';
     try { v = str(global.SDP && global.SDP.version); } catch (e) { v = ''; }
     if (!v) v = str(global.__SDP_BOOT_VERSION__);
-    return v || '0.0.1.c';
+    if (!v) {
+      /* last resort: the header pill is the boot target rendered into the page */
+      var pill = global.document && global.document.getElementById ? global.document.getElementById('sdpVerPill') : null;
+      if (pill) v = str(pill.textContent).replace(/^v/i, '').trim();
+    }
+    return v;
   }
   function schemaVer() {
     var n = 0;

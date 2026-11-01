@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#09090B">
-<meta name="description" content="Smart Dictation Player v0.0.1.b — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
+<meta name="description" content="Smart Dictation Player v0.0.1.c — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
 <title>Smart Dictation · CCBE B1</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./assets/css/sdp-ui.css">
@@ -21,8 +21,8 @@
     </svg>
     <span id="brandName">Smart Dictation</span>
     <span class="b1badge">CCBE B1</span>
-    <span id="sdpVerPill">v0.0.1.b</span>
-    <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced · Session 8 · v0.0.1.b</button>
+    <span id="sdpVerPill">v0.0.1.c</span>
+    <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced · Session 8 · v0.0.1.c</button>
     <button id="btnStudioQuick" class="hbtn hbtn-icon" type="button" aria-label="Open the Lecturer Studio from Settings">🔒</button>
     <div id="quickJumper" class="quick-jumper" hidden>
       <label class="muted" for="setQuickWord">Jump to word:</label>
@@ -99,7 +99,7 @@
 
       <footer id="creditFoot">
         <span class="credits-pill">CREDITS GOES TO Hansana</span>
-        <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+        <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
         <p class="credit-line credit-line-si" lang="si">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
       </footer>
     </section>
@@ -327,13 +327,13 @@
           <p class="about-line" data-i18n="aboutBlurb">A free, offline-first dictation trainer for one class — no accounts, no ads, no tracking.</p>
           <p class="about-line about-audience" data-i18n="aboutAudience">Built for the CCBE Galle Branch — B1 English Class, Sri Lanka.</p>
           <ul class="about-list">
-            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.b</span></li>
+            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.c</span></li>
             <li><span data-i18n="aboutBuiltLabel">Built</span>: <span id="aboutBuilt">2026-11-01</span></li>
             <li><a id="aboutDataLink" href="./data/" data-i18n="aboutDataLink">See every byte this app stores</a></li>
           </ul>
           <footer class="credit-foot">
             <span class="credits-pill">CREDITS GOES TO Hansana</span>
-            <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu</p>
+            <p class="credit-line">Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
             <p class="credit-line credit-line-si" lang="si">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
           </footer>
         </section>
@@ -380,7 +380,7 @@
 
 <script>
 (function () {
-  var TARGET = '0.0.1.b';
+  var TARGET = '0.0.1.c';
   window.__SDP_BOOT_VERSION__ = TARGET;
   var doReload = function (remoteVersion) {
     try { sessionStorage.setItem('sdp_upgraded_to', remoteVersion); } catch (e) {}
@@ -419,7 +419,7 @@
   };
   checkNow();
   /* D1 in-session version watcher: a Smart Board or phone left open across
-     the school day still sees the 0.0.1.b reload within two minutes, and
+     the school day still sees the 0.0.1.c reload within two minutes, and
      again as soon as the tab becomes visible. */
   var watcher = null;
   function startWatcher() {

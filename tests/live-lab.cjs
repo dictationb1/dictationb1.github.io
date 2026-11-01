@@ -4,6 +4,7 @@
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R3 fallback ladder, §R7 failure copy
  * contract: docs/ARCHITECTURE_MAP.md §R9 honest empty state
  * A student must always be able to dictate, even when every network tier fails. */
+const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright-core');
 const serverChromium = require('@sparticuz/chromium');
@@ -56,8 +57,8 @@ async function newPage(browser, origin, opts) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript(MOCK);
   await ctx.addInitScript((seedGuide) => {
-    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } catch (e) {}
-  }, opts.guideSeen !== false);
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', seedGuide); } catch (e) {}
+  }, opts.guideSeen === false ? false : TARGET_VERSION);
   if (opts.settings) await ctx.addInitScript((s) => {
     try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {}
   }, opts.settings);
@@ -75,6 +76,9 @@ async function newPage(browser, origin, opts) {
   return { ctx, page, errors, blocked };
 }
 
+const TARGET_VERSION = /var TARGET = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'))[1];
+/* contract: docs/ARCHITECTURE_MAP.md §R1 — the guide is "seen" for the running
+ * release only, so this pin follows index.html instead of hardcoding a build. */
 const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' };
 
 (async function main() {
@@ -141,7 +145,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
       await ctx.addInitScript(MOCK);
-      await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.b'); } catch (e) {} });
+      await ctx.addInitScript((v) => { try { localStorage.setItem('sdp.guide_seen', v); } catch (e) {} }, TARGET_VERSION);
       await ctx.addInitScript((s) => { try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {} }, FAST);
       const page = await ctx.newPage();
       const errors = [];

@@ -1,4 +1,4 @@
-# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.b
+# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.c
 
 Everything that touches bytes on a student's phone, or a byte on GitHub, is
 specified here. If code and this document disagree, the document wins and the
@@ -10,12 +10,13 @@ code is the bug.
 
 | Constant | Value | Where |
 | --- | --- | --- |
-| `APP_VERSION` / `SDP.version` | `0.0.1.b` | `index.html`, every module |
-| `ver` | `2` | `data/version.json`, `data/config.json` |
-| `schema` | `2` | same |
-| `settingsRev` | `2` | same |
-| `SW_VERSION` | `sdp-v0.0.1.b` | `sw.js` |
-| `SHELL_CACHE` | `sdp-v0.0.1.b-shell` | `sw.js` |
+| `APP_VERSION` / `SDP.version` | `0.0.1.c` | `index.html`, every module |
+| `ver` | `3` | `data/version.json`, `data/config.json`, `data/elevenlabs-audio.json` |
+| `schema` | `3` | same |
+| `settingsRev` | `3` | same |
+| `syncRev` | `1762000000002` | `data/version.json` |
+| `SW_VERSION` | `sdp-v0.0.1.c` | `sw.js` |
+| `SHELL_CACHE` | `sdp-v0.0.1.c-shell` | `sw.js` |
 | `PRESERVE_CACHES` | `['sdp-youdao-v1', 'sdp-audio-clips']` | `sw.js` |
 
 There is exactly one version file: `data/version.json`. Never a root `/version.json`.
@@ -56,16 +57,16 @@ The watch runs `checkForUpdates` every 120,000 ms and on `visibilitychange`
 
 ```json
 {
-  "ver": 2,
-  "appVersion": "0.0.1.b",
-  "version": "0.0.1.b",
+  "ver": 3,
+  "appVersion": "0.0.1.c",
+  "version": "0.0.1.c",
   "buildDate": "2026-11-01",
-  "schema": 2,
-  "settingsRev": 2,
+  "schema": 3,
+  "settingsRev": 3,
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
   "updatedAt": "2026-11-01T00:00:00Z",
-  "syncRev": 1762000000001
+  "syncRev": 1762000000002
 }
 ```
 
@@ -166,16 +167,35 @@ Two paths, both while unlocked:
    from a prior `GET`. Owner/repo come from the preserved `config.json`
    (`dictationb1` / `dictationb1.github.io`).
 2. **GAS relay** — CORS-simple `POST` with `Content-Type: text/plain` body
-   `{action:'login', pin, app:'sdp', ver:'0.0.1.b'}` (61 B, hard ceiling 600 B).
-   Word publishing is chunked so every chunk stays under 40,000 B.
+   `{action, app:'sdp', ver:'0.0.1.c'}` (hard ceiling 600 B). **The PIN is never
+   in the body** (W6/D-S9): it is verified inside the Apps Script, which is the
+   only place it exists. Word publishing is chunked so every chunk stays under
+   40,000 B.
 
-Publishing writes `data/session.json`, `data/version.json` and `data/config.json`
-and then bumps `syncRev`, which is exactly what `checkForUpdates` watches.
+### Sequential publisher (`SDP.Sync.publishFilesSequential`)
+
+`Promise.all` over three PUTs is forbidden: GitHub rejects concurrent commits to
+the same branch and the lecturer sees a half-published session.
+
+1. One file at a time, in the order given by the caller.
+2. Before **every** PUT, `getFileSha()` re-reads the current `sha` — a cached sha
+   from two seconds ago is stale by the time the next file commits.
+3. A `409` triggers exactly one retry with a fresh sha, then the file is reported
+   as failed instead of silently skipped.
+4. **`data/version.json` is always published last**, so no device can ever read a
+   new version number pointing at a session that has not landed yet.
+5. `onFileStatus(path, ok, err)` paints progress; the callback returns
+   `{ok, published, failed[], order[]}`.
+
+Publishing writes `data/session.json`, `data/config.json`,
+`data/elevenlabs-audio.json` and finally `data/version.json`; the version bump
+carries the new `syncRev`, which is exactly what `checkForUpdates` watches.
 
 **Preserved-file rule.** A deliberate publish legitimately changes
-`data/session.json` / `data/elevenlabs-audio.json`. When that happens, update the
-`BUDGET`/`EXACT`/`PRESERVED_SHA` tables in `tests/check.cjs` **and** Appendix A
-below in the same commit, then rerun G1. Never hand-edit the payload itself.
+`data/session.json`. When that happens, update the `BUDGET`/`EXACT`/`PRESERVED_SHA`
+tables in `tests/check.cjs` **and** Appendix A below in the same commit, then
+rerun G1. Never hand-edit the payload itself. `data/elevenlabs-audio.json` is
+app-written since v0.0.1.c and is therefore budgeted, not hash-frozen (D-UI11).
 
 ---
 
@@ -187,8 +207,8 @@ Must keep, untouched: `credits`, `tts`, `voice`, `live` (ntfy state/community/in
 `voiceId: "Xb7hH8MSUJpSbSDYk0k2"`, `voiceName: "Alice"`,
 `modelId: "eleven_flash_v2_5"`.
 
-Only `ver: 2`, `appVersion: "0.0.1.b"`, `version: "0.0.1.b"`, `schema: 2`,
-`settingsRev: 2` are ours to change.
+Only `ver: 3`, `appVersion: "0.0.1.c"`, `version: "0.0.1.c"`, `schema: 3`,
+`settingsRev: 3` are ours to change.
 
 ---
 
@@ -197,7 +217,6 @@ Only `ver: 2`, `appVersion: "0.0.1.b"`, `version: "0.0.1.b"`, `schema: 2`,
 ```
 e0e86c807fc667475dad43de7848d3b231642c99f913bdab8c48e24834b86a5f  data/session.json                 46,403 B
 591b9b086f6d3723afb2604a837ffc495c69a481c490f11e58131c2222b0981e  data/gas-source.txt              13,764 B
-72b2b7db5deba545478221f8e6983b9cab595db1107a76539f6e4e33222f4d85  data/elevenlabs-audio.json          717 B
 23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280  assets/fonts/NotoSansSinhala-Regular.woff2  48,520 B
 bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e  assets/fonts/NotoSansSinhala-Bold.woff2     48,748 B
 ```
@@ -208,6 +227,11 @@ Verify at any time with:
 shasum -a 256 -c /tmp/sdp-preserve.sha256   # phase manifest
 node tests/check.cjs                        # G1, same table baked in
 ```
+
+`data/elevenlabs-audio.json` left this table in v0.0.1.c: the Lecturer Studio
+rewrites it on every publish, so a frozen hash was a publishing bug waiting to
+happen. It is now capped at 2,500,000 B and its header (`version`, `appVersion`,
+`ver`, `schema`, `voiceId`) is asserted by G1 and G9.6g.
 
 `data/session.json` content contract: `lists[0]` = `list_session_8_feelings`
 (30 words, `w/p/pos/m/si/s/audio`), `lists[1]` = `list_session_7_travel`
@@ -228,6 +252,9 @@ node tests/check.cjs                        # G1, same table baked in
 | G7 | R2 (journeys), R5 (self-check + retry), R4 (legacy migration), R8 (settings order) |
 | G8 | R2 (two-device propagation without touching progress), R7 (publish) |
 | G9 | R5 (audio tiers, beat text, one-utterance `say`, same-element replay) |
+| G10 | R4 (one professor voice, male-name blacklist), R3 (Guide 2.0 step machine, 600 ms watchdog, `#guideTapBanner`) |
+| G11 | R5 (`SDP_ENC_V2` 16B salt ‖ 12B iv, 250k PBKDF2), R6 (sequential publish, `version.json` last, fresh sha, one 409 retry), W6 (no PIN in any body or URL) |
+| G12 | W5 (no gate touches the billing endpoint), R9 (EN + SI strings), studio widgets `#pinPad`/`#btnTestElKey`/`#btnTestGhToken`/`#btnCommitClip` |
 
 ---
 
@@ -247,3 +274,10 @@ detected by shape (`typeof localStorage.setItem === 'function'`); every write is
 individually wrapped in `try/catch` and returns `false` on failure. `tests/audit-v42.cjs`
 (G9.5c) and `tests/upgrade.test.cjs` (R1) both fail the build if a sixth key
 appears in the source.
+
+---
+
+**Credits — preserved verbatim, EN and SI.**
+`CREDITS GOES TO Hansana` ·
+Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
+නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini

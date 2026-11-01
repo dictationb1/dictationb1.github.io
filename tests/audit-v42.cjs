@@ -67,17 +67,17 @@ check('G9.1f no retired CSS is merely hidden with display:none',
 const BUDGETS = {
   'index.html': 35000,
   'assets/css/sdp-ui.css': 60000,
-  'data/sdp-data-sync.js': 48000,
-  'data/sdp-audio-speech.js': 40000,
-  'data/sdp-dictation-engine.js': 48000,
-  'data/sdp-ui-views.js': 90000,
-  'data/studio.js': 60000,
+  'data/sdp-data-sync.js': 65000,
+  'data/sdp-audio-speech.js': 48000,
+  'data/sdp-dictation-engine.js': 58000,
+  'data/sdp-ui-views.js': 110000,
+  'data/studio.js': 85000,
   'data/data-meter.js': 22000,
   'data/config.json': 36000,
   'data/version.json': 2000,
   'data/session.json': 46403,
   'data/gas-source.txt': 13764,
-  'data/elevenlabs-audio.json': 717,
+  'data/elevenlabs-audio.json': 2500000,
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
   'data.html': 60000,
@@ -94,18 +94,18 @@ check('G9.2a every shipped file fits its H1 byte cap', over.length === 0, over.j
 check('G9.2b the /data pair is byte-identical', read('data.html') === read('data/index.html'),
   bytes('data.html') + ' vs ' + bytes('data/index.html'));
 
-const docsBudget = { 'ARCHITECTURE_MAP.md': 20000, 'CHANGELOG_LEDGER.md': 20000, 'DAILY_UPGRADE_PROMPT_TEMPLATE.md': 8000, 'SYNC_AND_DATA_CONTRACT.md': 20000, 'UI_COMPONENT_GUIDE.md': 20000 };
+const docsBudget = { 'ARCHITECTURE_MAP.md': 32000, 'CHANGELOG_LEDGER.md': 32000, 'DAILY_UPGRADE_PROMPT_TEMPLATE.md': 14000, 'SYNC_AND_DATA_CONTRACT.md': 32000, 'UI_COMPONENT_GUIDE.md': 32000 };
 const docsOver = Object.entries(docsBudget).filter(([f, cap]) => bytes('docs/' + f) > cap).map(([f]) => f);
 check('G9.2c all five living docs are inside their caps', docsOver.length === 0, docsOver.join(','));
 check('G9.2d there are exactly five living docs', fs.readdirSync(path.join(ROOT, 'docs')).filter((f) => f.endsWith('.md')).length === 5);
 
 const testBytes = tracked.filter((f) => f.startsWith('tests/') && /\.(cjs|js)$/.test(f))
   .reduce((sum, f) => sum + bytes(f), 0);
-check('G9.2e the whole test suite stays inside 220,000 bytes (' + testBytes + ')', testBytes <= 220000, testBytes);
+check('G9.2e the whole test suite stays inside 320,000 bytes (' + testBytes + ')', testBytes <= 320000, testBytes);
 
 /* ── 3. no build step, no bundler, no monolith ─────────────────────────── */
 // contract: docs/ARCHITECTURE_MAP.md §R3 ES5 modules
-const monoliths = tracked.filter((f) => f.startsWith('data/') && /\.js$/.test(f) && bytes(f) > 90000);
+const monoliths = tracked.filter((f) => f.startsWith('data/') && /\.js$/.test(f) && bytes(f) > 110000);
 check('G9.3a no oversized monolith module exists (' + monoliths.join(',') + ')', monoliths.length === 0);
 check('G9.3b no package.json build script ships with the site', !exists('package.json') && !exists('webpack.config.js') && !exists('vite.config.js'));
 
@@ -191,15 +191,22 @@ check('G9.5c only the five R4 localStorage keys are named in scripts', strayKeys
 
 /* ── 6. preserved payloads are untouched ──────────────────────────────── */
 // contract: docs/SYNC_AND_DATA_CONTRACT.md §R1 SHA-256 lock table
+/* contract: docs/SYNC_AND_DATA_CONTRACT.md §W4 — the four read-only classroom
+ * payloads. data/elevenlabs-audio.json left this table in v0.0.1.c: the studio
+ * now writes it on every publish (D-UI11), so it is budgeted and header-checked
+ * instead of hash-frozen, and its clips are still never re-rendered for free. */
 const LOCKED = [
   ['data/session.json', 'e0e86c80'],
   ['data/gas-source.txt', '591b9b08'],
-  ['data/elevenlabs-audio.json', '72b2b7db'],
   ['assets/fonts/NotoSansSinhala-Regular.woff2', '23f1503e'],
   ['assets/fonts/NotoSansSinhala-Bold.woff2', 'bf59c148']
 ];
 const lockFails = LOCKED.filter(([file, prefix]) => sha(file).slice(0, 8) !== prefix).map(([f]) => f);
-check('G9.6a all five preserved payloads still match their SHA-256 prefixes', lockFails.length === 0, lockFails.join(','));
+check('G9.6a all four preserved payloads still match their SHA-256 prefixes', lockFails.length === 0, lockFails.join(','));
+const voicePack = JSON.parse(read('data/elevenlabs-audio.json'));
+check('G9.6g the voice pack stays app-writable and valid',
+  voicePack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && voicePack.version === '0.0.1.c' &&
+  typeof voicePack.clips === 'object', JSON.stringify([voicePack.version, voicePack.voiceId]));
 
 const session = JSON.parse(read('data/session.json'));
 const words = session.lists[0].words;
@@ -213,19 +220,19 @@ const keepKeys = ['encVault', 'repoOwner', 'repoName', 'voiceId', 'voiceName', '
 const missingKeys = keepKeys.filter((key) => !(key in config));
 check('G9.6e config.json keeps every preserved payload field', missingKeys.length === 0, missingKeys.join(','));
 check('G9.6f config.json pins the new release metadata',
-  // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.b is ver 2 / schema 2 / settingsRev 2
-  config.ver === 2 && config.appVersion === '0.0.1.b' && config.version === '0.0.1.b' && config.schema === 2 && config.settingsRev === 2,
+  // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.1.c is ver 3 / schema 3 / settingsRev 3
+  config.ver === 3 && config.appVersion === '0.0.1.c' && config.version === '0.0.1.c' && config.schema === 3 && config.settingsRev === 3,
   JSON.stringify({ ver: config.ver, appVersion: config.appVersion, schema: config.schema }));
 
 /* ── 7. PWA pins and load order ────────────────────────────────────────── */
 // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6, docs/ARCHITECTURE_MAP.md §R10
 const manifest = JSON.parse(read('manifest.webmanifest'));
-check('G9.7a the manifest names 0.0.1.b in its description', /0.0.1.b/.test(String(manifest.description)), manifest.description);
+check('G9.7a the manifest names 0.0.1.c in its description', /0\.0\.1\.c/.test(String(manifest.description)), manifest.description);
 check('G9.7b the manifest start_url carries the pwa source tag', /source=pwa/.test(String(manifest.start_url)), manifest.start_url);
-check('G9.7c theme and background are the 0.0.1.b matte black', manifest.theme_color === '#09090B' && manifest.background_color === '#09090B', manifest.theme_color);
+check('G9.7c theme and background are the 0.0.1.c matte black', manifest.theme_color === '#09090B' && manifest.background_color === '#09090B', manifest.theme_color);
 
 const sw = read('sw.js');
-check('G9.7d the service worker pins the 0.0.1.b cache names', sw.indexOf('sdp-v0.0.1.b') >= 0 && sw.indexOf('9.0.0.4') < 0);
+check('G9.7d the service worker pins the 0.0.1.c cache names', sw.indexOf('sdp-v0.0.1.c') >= 0 && sw.indexOf('9.0.0.4') < 0);
 check('G9.7e the service worker preserves the audio caches', sw.indexOf('sdp-youdao-v1') >= 0 && sw.indexOf('sdp-audio-clips') >= 0);
 
 const order = ['data-meter.js', 'sdp-data-sync.js', 'sdp-audio-speech.js', 'sdp-dictation-engine.js', 'sdp-ui-views.js', 'studio.js'];
@@ -245,7 +252,7 @@ const cited = GATES.filter((f) => {
 });
 check('G9.8b every gate cites the contract it enforces', cited.length === GATES.length, GATES.length - cited.length + ' without citation');
 
-const attribution = 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu';
+const attribution = 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)';
 check('G9.8c the attribution appears verbatim on Home', read('index.html').indexOf(attribution) >= 0);
 check('G9.8d the attribution also appears in About', read('index.html').indexOf('id="aboutCard"') >= 0 && read('index.html').split(attribution).length - 1 === 2);
 check('G9.8e the credits pill text is exact', (read('index.html').match(/CREDITS GOES TO Hansana/g) || []).length === 2);

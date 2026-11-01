@@ -64,37 +64,38 @@ function bootSync(seed) {
 }
 
 /* ── R1 ─────────────────────────────────────────────────────────────────── */
-test('R1: app, schema and service-worker constants are all 0.0.1.b', () => {
+test('R1: app, schema and service-worker constants are all 0.0.1.c', () => {
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R1 version & cache constants
   const { SDP } = bootSync();
-  assert.equal(SDP.version, '0.0.1.b');
+  assert.equal(SDP.version, '0.0.1.c');
   assert.equal(SDP.build, '2026-11-01');
-  assert.equal(SDP.ver, 2);
+  assert.equal(SDP.ver, 3);
   assert.equal(SDP.SDPCore, undefined); // alias lives on window, not inside SDP
   assert.equal(SDP.Sync.Vault.PREFIX, 'SDP_ENC_V2:');
   assert.equal(SDP.Sync.Vault.ITERATIONS, 250000);
 
   const version = readJSON('data/version.json');
-  assert.equal(version.ver, 2);
-  assert.equal(version.appVersion, '0.0.1.b');
-  assert.equal(version.version, '0.0.1.b');
-  assert.equal(version.schema, 2);
-  assert.equal(version.settingsRev, 2);
+  assert.equal(version.ver, 3);
+  assert.equal(version.appVersion, '0.0.1.c');
+  assert.equal(version.version, '0.0.1.c');
+  assert.equal(version.schema, 3);
+  assert.equal(version.settingsRev, 3);
   assert.equal(String(version.session), '8');
 
   const cfg = readJSON('data/config.json');
-  assert.equal(cfg.ver, 2);
-  assert.equal(cfg.appVersion, '0.0.1.b');
-  assert.equal(cfg.schema, 2);
-  assert.equal(cfg.settingsRev, 2);
+  assert.equal(cfg.ver, 3);
+  assert.equal(cfg.appVersion, '0.0.1.c');
+  assert.equal(cfg.version, '0.0.1.c');
+  assert.equal(cfg.schema, 3);
+  assert.equal(cfg.settingsRev, 3);
   assert.equal(cfg.encVault, 'SDP_ENC_V2:AAA=');
 
   const sw = read('sw.js');
-  assert.match(sw, /SW_VERSION = 'sdp-v0\.0\.1\.b'/);
-  assert.match(sw, /SHELL_CACHE = 'sdp-v0\.0\.1\.b-shell'/);
+  assert.match(sw, /SW_VERSION = 'sdp-v0\.0\.1\.c'/);
+  assert.match(sw, /SHELL_CACHE = 'sdp-v0\.0\.1\.c-shell'/);
   assert.match(sw, /PRESERVE_CACHES = \['sdp-youdao-v1', 'sdp-audio-clips'\]/);
   const index = read('index.html');
-  assert.match(index, /var TARGET = '0\.0\.1\.b'/);
+  assert.match(index, /var TARGET = '0\.0\.1\.c'/);
 });
 
 test('R1: the five localStorage keys and the settings default shape are exact', () => {
@@ -105,14 +106,16 @@ test('R1: the five localStorage keys and the settings default shape are exact', 
     Object.keys(SDP.Data.KEYS).map((k) => SDP.Data.KEYS[k]).sort(),
     ['sdp.guide_seen', 'sdp.migrated_from_legacy', 'sdp.progress', 'sdp.session', 'sdp.settings']
   );
-  // contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 — v0.0.1.b default settings add
-  // guideAutoPlay, pacingPreset and voiceLock to the shape
+  // contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 — v0.0.1.b added guideAutoPlay,
+  // pacingPreset and voiceLock; v0.0.1.c adds touchedKeys (R7: the teacher must
+  // never clobber a field the student changed by hand).
   const defaults = SDP.Data.settings();
   assert.deepEqual(Object.keys(defaults).sort(), [
     'autoAdvance', 'guideAutoPlay', 'hints', 'lang', 'mode', 'pacingPreset',
-    'pauseSecs', 'rate', 'repeats', 'theme', 'voiceLock', 'voiceSource',
-    'volume', 'writeSecs'
+    'pauseSecs', 'rate', 'repeats', 'theme', 'touchedKeys', 'voiceLock',
+    'voiceSource', 'volume', 'writeSecs'
   ]);
+  assert.deepEqual(defaults.touchedKeys, {}, 'touchedKeys starts as an empty field map');
   assert.equal(defaults.mode, 'paper');
   assert.equal(defaults.writeSecs, 8);
   assert.equal(defaults.repeats, 3);
@@ -283,13 +286,17 @@ test('R7: GitHub Contents payload, CORS-simple GAS relay and 40K word chunking',
   assert.equal(SDP.Sync.contentsUrl('data/session.json'),
     'https://api.github.com/repos/dictationb1/dictationb1.github.io/contents/data/session.json');
 
-  const relay = SDP.Sync.buildKeysRelayPayload('246813');
+  const relay = SDP.Sync.buildKeysRelayPayload('login');
   assert.ok(Buffer.byteLength(relay) < 600, 'relay body must stay CORS-simple and tiny');
   const parsed = JSON.parse(relay);
   assert.equal(parsed.action, 'login');
-  assert.equal(parsed.pin, '246813');
+  // contract: docs/SYNC_AND_DATA_CONTRACT.md §W6 — the PIN is verified inside the
+  // Apps Script and must never travel in the relay body, a URL or a log line.
+  assert.deepEqual(Object.keys(parsed).sort(), ['action', 'app', 'ver']);
+  assert.equal(parsed.pin, undefined, 'relay must not carry the PIN');
+  assert.equal(relay.indexOf('246813'), -1, 'the PIN must not appear anywhere in the body');
   // contract: docs/CHANGELOG_LEDGER.md §Release ledger — relay pins the current build version
-  assert.equal(parsed.ver, '0.0.1.b');
+  assert.equal(parsed.ver, '0.0.1.c');
 
   const longWords = Array.from({ length: 1200 }, (_, i) => ({
     w: 'word' + i,

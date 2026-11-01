@@ -7,7 +7,12 @@
 
   var SDP = global.SDP = global.SDP || {};
   var doc = global.document;
-  var APP_VERSION = '0.0.1.b';
+  /* Single source of truth: SDP.version is published by sdp-data-sync.js. */
+  var APP_VERSION = (function () {
+    try { if (SDP && SDP.version) return String(SDP.version); } catch (e) {}
+    try { if (global.__SDP_BOOT_VERSION__) return String(global.__SDP_BOOT_VERSION__); } catch (e) {}
+    return '0.0.1.c';
+  })();
 
   function noop() {}
   function str(v) { return v === null || v === undefined ? '' : String(v); }
@@ -37,7 +42,7 @@
     statMastered: 'Mastered', statAccuracy: 'Accuracy', statStreak: 'Day streak',
     quickPractice: 'Quick practice', flashcards: 'Flashcards', quiz: '4-Choice Quiz', listening: 'Listening Drill',
     weakWords: 'Weak Words', mastered: 'Mastered', announcements: 'Class announcement',
-    creditsLine: 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu',
+    creditsLine: 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)',
     creditsPill: 'CREDITS GOES TO Hansana',
     btnPrev: 'Previous', btnPlayPause: 'Listen / Pause', btnNext: 'Next', btnRepeat: 'Repeat', btnHint: 'Hint',
     btnModeSwitch: 'Paper / Typing', btnFinish: 'Finish & check',
@@ -71,7 +76,7 @@
     guideSpeakBtn: 'Listen to the steps (EN)', guideCloseBtn: 'Got it, Start Learning',
     /* Table B additions — UI labels, badges, presets and studio controls */
     dictSearchPh: 'Search 30 words (English, Sinhala, IPA)...',
-    syncBadgeSynced: 'Synced · Session 8 · v0.0.1.b',
+    syncBadgeSynced: 'Synced · Session 8 · v0.0.1.c',
     syncBadgeOffline: 'Offline — showing cached session',
     syncBadgeUpdate: 'Update found — tap to reload',
     syncBadgeRetry: 'Check failed — retry',
@@ -204,7 +209,7 @@
     guideSpeakBtn: 'උපදෙස් හඬින් අසන්න (EN)', guideCloseBtn: 'තේරුණා, ආරම්භ කරමු',
     /* Table B additions — Sinhala UI labels, badges, presets and studio controls */
     dictSearchPh: 'වචන 30 සොයන්න (ඉංග්‍රීසි, සිංහල, උච්චාරණය)...',
-    syncBadgeSynced: 'සමමුහුර්තයි · 8 වන වාරය · v0.0.1.b',
+    syncBadgeSynced: 'සමමුහුර්තයි · 8 වන වාරය · v0.0.1.c',
     syncBadgeOffline: 'අන්තර්ජාලය නැත — සුරැකි වාරය පෙන්වයි',
     syncBadgeUpdate: 'නව යාවත්කාලීනයක් ඇත — නැවත පූරණයට ඔබන්න',
     syncBadgeRetry: 'පරීක්ෂාව අසාර්ථකයි — නැවත උත්සාහ කරන්න',
@@ -1274,11 +1279,11 @@
     var status = byId('settingsSyncStatus');
     var label;
     if (state.state === 'synced') {
-      label = t('syncBadgeSynced').replace('Session 8', 'Session ' + session).replace('8 වන වාරය', session + ' වන වාරය').replace('v0.0.1.b', 'v' + APP_VERSION);
+      label = t('syncBadgeSynced').replace('Session 8', 'Session ' + session).replace('8 වන වාරය', session + ' වන වාරය').replace('v0.0.1.c', 'v' + APP_VERSION);
     } else if (state.state === 'offline') {
       label = t('syncBadgeOffline');
     } else if (state.state === 'update') {
-      label = t('syncBadgeUpdate').replace('v0.0.1.b', 'v' + APP_VERSION);
+      label = t('syncBadgeUpdate').replace('v0.0.1.c', 'v' + APP_VERSION);
     } else {
       label = t('syncBadgeRetry');
     }

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#09090B">
-<meta name="description" content="Smart Dictation Player v0.0.1.b — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
-<title>Data &amp; Cache Transparency · Smart Dictation v0.0.1.b</title>
+<meta name="description" content="Smart Dictation Player v0.0.1.c — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
+<title>Data &amp; Cache Transparency · Smart Dictation v0.0.1.c</title>
 <script>
 (function () {
   var vUrl = location.pathname.indexOf('/data/') !== -1 ? './version.json' : './data/version.json';
-  var TARGET = '0.0.1.b';
+  var TARGET = '0.0.1.c';
   if (typeof fetch !== 'function') return;
   fetch(vUrl + '?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r && r.ok ? r.json() : null; })
@@ -117,7 +117,7 @@
 <header>
   <div class="brand">
     <strong>Smart Dictation</strong>
-    <span class="ver">v0.0.1.b</span>
+    <span class="ver">v0.0.1.c</span>
     <span class="badge">CCBE B1</span>
   </div>
   <div class="chips" style="margin:0">
@@ -199,7 +199,7 @@
   <footer class="foot">
     <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
     <p lang="si" style="font-family:'Noto Sans Sinhala',sans-serif">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
-    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player v0.0.1.b</p>
+    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player v0.0.1.c</p>
   </footer>
 </main>
 
@@ -347,7 +347,7 @@
   }
 
   function renderCaches() {
-    var roles = { 'sdp-v0.0.1.b-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
+    var roles = { 'sdp-v0.0.1.c-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
     function paint(entries) {
       var html = '', i;
       if (!entries) { $('cacheTable').innerHTML = '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>'; return; }
@@ -372,7 +372,7 @@
     }, function () { paint(null); });
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
-        $('swState').textContent = regs && regs.length ? 'Service worker: sdp-v0.0.1.b ✓' : '';
+        $('swState').textContent = regs && regs.length ? 'Service worker: sdp-v0.0.1.c ✓' : '';
       }, function () {});
     }
   }
@@ -399,7 +399,7 @@
       { k: 'sdp.progress', what: lang === 'si' ? 'ප්‍රගුණ කළ වචන, උත්සාහ, දුර්වල වචන, දින පෙළ' : 'mastered words, attempts, weak words, streak (player R8 key 1 of 5)' },
       { k: 'sdp.settings', what: lang === 'si' ? 'ආකාරය, වේගය, භාෂාව, තේමාව' : 'mode, pacing, language, theme, voice presets (player R8 key 2 of 5)' },
       { k: 'sdp.session', what: lang === 'si' ? 'නවතා ඇති සැසියේ පිහිටීම' : 'in-flight dictation resume position (player R8 key 3 of 5)' },
-      { k: 'sdp.guide_seen', what: lang === 'si' ? 'උපදෙස් අගයේ අනුව තිබේ නොවේ' : 'guide version stamp: "0.0.1.b" means the 0.0.1.b guide was seen (player R8 key 4 of 5)' },
+      { k: 'sdp.guide_seen', what: lang === 'si' ? 'උපදෙස් අගයේ අනුව තිබේ නොවේ' : 'guide version stamp: "0.0.1.c" means the 0.0.1.c guide was seen (player R8 key 4 of 5)' },
       { k: 'sdp.migrated_from_legacy', what: lang === 'si' ? 'එක් වරක් පැරණි දත්ත ආනයනය' : 'one-time legacy import already ran (player R8 key 5 of 5)' },
       { k: 'sdp.dataMeter.daily', what: lang === 'si' ? 'දිවයක් දැයි දත්තය' : 'daily data-meter totals' },
       { k: 'sdp.dataMeter.allTime', what: lang === 'si' ? 'මුළු කාලයේ තොරතුල්' : 'all-time data-meter totals' },
