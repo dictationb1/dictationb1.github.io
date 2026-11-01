@@ -2322,7 +2322,7 @@ window.SDPCoreV54 = SDPC;
     window.AdminAutoEnrich = Q, window.F = window.F || F;
 })();
 /* ------------------------------------------------------------------
-   SDP_ENC_V2 vault helpers (v60 / 9.0.0.3)
+   SDP_ENC_V2 vault helpers (v60 / 9.0.0.4)
    PBKDF2-SHA256 with 250000 iterations; the AES-GCM envelope itself
    lives in index.html (window.EncryptedVault). These are the studio-side
    markers plus thin, fail-safe delegates so a locked student device never

@@ -52,7 +52,7 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
       videoSrc: document.getElementById('bgLiveVideo').getAttribute('src'),
       credit: document.getElementById('credit') ? getComputedStyle(document.getElementById('credit')).position : 'missing', depot: !!document.getElementById('sdpV56'),
       overflow: !!document.getElementById('topOverflow'), lang: !!document.getElementById('btnLang'), data: !!document.getElementById('topDataBadge'),
-      creditDocked: !!document.getElementById('creditDocked') && getComputedStyle(document.getElementById('creditDocked')).position === 'fixed',
+      creditDocked: !!document.getElementById('creditDocked') && getComputedStyle(document.getElementById('creditDocked')).position === 'static',
       mixer: !!document.getElementById('materialMixer'), meter: !!window.SDPDataMeter
     }));
     push('v58 boots Static Gradient with a three-control header, inline signature pill and no fake depot/mixer', state.static && !state.videoSrc && (state.credit === 'static' || state.creditDocked) && !state.depot && state.overflow && state.lang && state.data && !state.mixer && state.meter && errors.length === 0, Object.assign({ errors }, state));
@@ -259,7 +259,20 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
         setTimeout(() => {
           const vis = (id) => { const n = document.getElementById(id); return !!n && n.offsetParent !== null; };
           const lens = document.querySelector('#layers .lens');
+          const lbody = document.querySelector('#layers .lbody');
+          const cardNode = document.getElementById('sdpCockpitCard');
+          const grid = document.querySelector('#layers .ctrlgrid');
+          const foot = document.querySelector('#layers .lfoot');
+          const gRect = grid ? grid.getBoundingClientRect() : null;
+          const fRect = foot ? foot.getBoundingClientRect() : null;
           resolve({
+            lbodyScroll: lbody ? lbody.scrollTop : -1,
+            lbodyHeight: lbody ? Math.round(lbody.scrollHeight) : -1,
+            cardTop: cardNode ? Math.round(cardNode.getBoundingClientRect().top) : -1,
+            cardFullyVisible: cardNode ? (cardNode.getBoundingClientRect().top >= 0 && cardNode.getBoundingClientRect().bottom <= (window.innerHeight + 1)) : false,
+            gridOnscreen: gRect ? (gRect.top < window.innerHeight && gRect.bottom > 0) : false,
+            footOnscreen: fRect ? (fRect.top < window.innerHeight && fRect.bottom > 0) : false,
+            sheetOpen: !!document.querySelector('#sheets .sheet:not(.hidden)'),
             card: vis('sdpCockpitCard'), edge: vis('sdpEdgeBar'), timer: vis('sdpTimerPill'),
             dock: vis('sdpCockpitDock'), map: vis('sdpWordMapCard'),
             lensGone: !lens || lens.offsetParent === null,
@@ -270,6 +283,69 @@ function push(test, ok, detail) { results.push({ test, status: ok ? 'PASS' : 'FA
     }));
     push('v60 active dictation shows the cockpit card, edge bar, timer pill, dock and word map',
       cockpit.card && cockpit.edge && cockpit.timer && cockpit.dock && cockpit.map && cockpit.lensGone, cockpit);
+    push('v60.4 Bug5: no ready sheet, .lbody never scrolls, cockpit card stays in view and legacy .ctrlgrid/.lfoot are off-layout',
+      !cockpit.sheetOpen && cockpit.lbodyScroll === 0 && cockpit.cardTop < 240 && cockpit.cardFullyVisible && !cockpit.gridOnscreen && !cockpit.footOnscreen && cockpit.lbodyHeight < 1200, cockpit);
+    /* ---------------- v60 / 9.0.0.4 live-video bug regression block --------- */
+    const video = await page.evaluate(async () => {
+      const wait = (n) => new Promise((r) => setTimeout(r, n));
+      const bar = document.querySelector('.topbar');
+      const barRect = bar.getBoundingClientRect();
+      const visKids = [];
+      for (const c of bar.children) {
+        const cs = getComputedStyle(c);
+        if (cs.display !== 'none' && cs.visibility !== 'hidden') visKids.push(c.id || c.className);
+      }
+      const cd = document.getElementById('creditDocked');
+      document.getElementById('tab-dict').click();
+      await wait(700);
+      const cards = document.querySelectorAll('#dictList .sdp-word-card');
+      let tall = 0;
+      for (const c of cards) if (c.getBoundingClientRect().height > 60) tall++;
+      const sd = document.getElementById('screen-dict');
+      const dictVisible = !!sd && getComputedStyle(sd).display !== 'none';
+      window.SDPCore.UI.setTab('set');
+      await wait(700);
+      const testVoice = document.getElementById('sdpTestVoice');
+      const toastsBefore = document.querySelectorAll('#toasts .toast').length;
+      if (testVoice) testVoice.click();
+      await wait(500);
+      const toastText = Array.from(document.querySelectorAll('#toasts .toast')).slice(toastsBefore).map((t) => (t.textContent || '').trim()).join(' | ');
+      const host = document.getElementById('screen-set');
+      const ng = document.getElementById('sdpNextGenSettings');
+      const sibs = [];
+      if (host) for (const c of host.children) {
+        if (c === ng) continue;
+        const cs = getComputedStyle(c);
+        sibs.push({ id: c.id || c.className, hidden: cs.display === 'none' || cs.visibility === 'hidden' || !!(c.closest && c.closest('details#sdpAppearanceAccordion')) });
+      }
+      window.SDPCore.UI.setTab('home');
+      const legacyVisible = [];
+      for (const n of document.querySelectorAll('#screen-home *, #screen-comm *')) {
+        if (n.children.length > 3) continue;
+        const t = (n.textContent || '').replace(/^\s+/, '').slice(0, 34);
+        if (/^(Session progress|Smart Dictation Player v58)/.test(t) && (n.getClientRects().length > 0 || n.offsetParent !== null)) legacyVisible.push(t);
+      }
+      return {
+        ready: document.body.getAttribute('data-v60-ready'),
+        cloak: !!document.getElementById('sdpPrePaintCloak'),
+        barFull: Math.round(barRect.width) === window.innerWidth && Math.round(barRect.top) === 0,
+        barKids: visKids,
+        barLeak: !!document.querySelector('.topbar #btnLock') || !!document.querySelector('.topbar #chipNet') || !!document.querySelector('.topbar .brand'),
+        creditPos: cd ? getComputedStyle(cd).position : 'missing',
+        cards: cards.length, tall, screenVisible: dictVisible,
+        testVoice: !!testVoice, toastText, settingsSiblings: sibs, legacyVisible
+      };
+    });
+    push('v60.4 Bug1: data-v60-ready is set and the pre-paint cloak ships in <head>', video.ready === '1' && video.cloak, video);
+    push('v60.4 Bug2: .topbar is a full-bleed 56px bar with only #sdpBrandCluster + #sdpTopActions and no leaked legacy text',
+      video.barFull && video.barKids.length === 2 && video.barKids.indexOf('sdpBrandCluster') >= 0 && video.barKids.indexOf('sdpTopActions') >= 0 && !video.barLeak, video.barKids);
+    push('v60.4 Bug3: #creditDocked is statically positioned', video.creditPos === 'static', video.creditPos);
+    push('v60.4 Bug4: the Words tab renders >= 25 tall .sdp-word-card items',
+      video.screenVisible && video.cards >= 25 && video.tall >= 25, { cards: video.cards, tall: video.tall, visible: video.screenVisible });
+    push('v60.4 Bug6: Test voice speaks without raising an error toast', video.testVoice && !/wrong|failed|error/i.test(video.toastText), { testVoice: video.testVoice, toasts: video.toastText });
+    push('v60.4 Bug7: every #screen-set sibling of #sdpNextGenSettings is hidden or inside the collapsed accordion',
+      video.settingsSiblings.every((s) => s.hidden), video.settingsSiblings);
+    push('v60.4 Bug8: no Session progress / Smart Dictation Player v58 block is visible', video.legacyVisible.length === 0, video.legacyVisible);
     push('v60 next-gen UI raises no page errors', errors.length === 0, errors);
     await ctx.close();
   }

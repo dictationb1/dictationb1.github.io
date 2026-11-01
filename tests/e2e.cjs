@@ -226,13 +226,15 @@ async function flow(browser, vp, label, seed) {
   await page.evaluate(() => { const d = document.getElementById('sdpAppearanceAccordion'); if (d) d.open = false; });
   await dismissTour(page); await page.evaluate(() => { const C = window.SDPCore; if (C && C.UI && C.UI.setTab) C.UI.setTab('home'); else document.getElementById('tab-home').click(); });
 
-  /* ready screen + full dictation */
+  /* v60.4 / Bug 5: Start dictation opens the Cockpit directly - the legacy
+     "Are you ready?" bottom sheet is bypassed (no skip control either). */
   await page.locator('#btnStart').click();
-  const readyTxt = await page.locator('#sheets').textContent();
-  rec(label + ' "Are you ready?" screen without a skip control',
-    /Are you ready/.test(readyTxt) && /pen and paper/i.test(readyTxt) &&
-    await page.getByRole('button', { name: 'Skip countdown', exact: true }).count() === 0 && await page.locator('#layers .layer').count() === 0);
-  await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+  await page.waitForSelector('#layers .layer', { state: 'visible', timeout: 15000 });
+  await page.waitForTimeout(600);
+  const readyVisible = await page.getByRole('button', { name: "I'm ready", exact: true }).isVisible().catch(() => false);
+  rec(label + ' Start dictation opens the Cockpit directly without a ready sheet',
+    !readyVisible && await page.locator('#sdpCockpitCard').count() > 0 &&
+    await page.getByRole('button', { name: 'Skip countdown', exact: true }).count() === 0);
   await page.waitForSelector('#layers button', { state: 'visible' });
   try { await page.waitForFunction(() => (window.__spoken || []).some(s => s.text.trim()), null, { timeout: 15000 }); } catch (e) {}
   /* the first real utterance (iOS primes the audio engine with a blank one) */
@@ -293,7 +295,7 @@ async function flow(browser, vp, label, seed) {
   await dismissTour(page); await page.evaluate(() => { const C = window.SDPCore; if (C && C.UI && C.UI.setTab) C.UI.setTab('home'); else document.getElementById('tab-home').click(); });
   await dismissTour(page);
   await page.locator('#btnStart').click();
-  await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+  await page.waitForSelector('#layers .layer', { state: 'visible', timeout: 15000 });
   await page.waitForSelector('#layers button', { state: 'visible' });
   for (let i = 0; i < 2; i++) {
     try { await page.waitForFunction(() => {

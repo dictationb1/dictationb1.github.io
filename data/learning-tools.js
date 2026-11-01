@@ -3113,7 +3113,7 @@
      ============================================================ */
   window.SDPVersion = {
     family: '9.0',
-    current: '9.0.0.3',
+    current: '9.0.0.4',
     parse: function (v) {
       var m = /^9\.0\.(\d+)(?:\.(\d+))?$/.exec(String(v || '9.0.0.1'));
       return { major: 9, minor: 0, patch: Number(m && m[1] ? m[1] : 0), build: Number(m && m[2] ? m[2] : 1) };
@@ -3298,7 +3298,7 @@ V59.ready = true;
 })();
 
 /* ============================================================================
-   v60 Next-Gen "Hurubuhuti" UI - complete replacement layer (v60 / 9.0.0.3)
+   v60 Next-Gen "Hurubuhuti" UI - complete replacement layer (v60 / 9.0.0.4)
    ----------------------------------------------------------------------------
    Appended to data/learning-tools.js. ES5 only. Every label is ASCII in this
    source file (Sinhala / emoji are \uXXXX escapes) so the file stays safe to
@@ -3312,7 +3312,7 @@ V59.ready = true;
   var D = W && W.document;
   if (!W || !D) return;
 
-  var V = { id: '60', ver: '9.0.0.3', mounted: false, busy: false, lang: 'en', bootedAt: 0 };
+  var V = { id: '60', ver: '9.0.0.4', mounted: false, busy: false, lang: 'en', bootedAt: 0 };
   W.SDP_NEXTGEN_V60 = V;
 
   /* ---------------------------------------------------------------- helpers */
@@ -3568,6 +3568,12 @@ V59.ready = true;
     l.push('#sdpDesktopRail .sdp-rail-title{font-size:13.5px!important;font-weight:750!important;color:#FAFAFA!important}');
     l.push('#sdpDesktopRail .sdp-rail-sub{font-size:10px!important;color:#71717A!important;display:block!important}');
     l.push('#creditDockedDesktop{font-size:10.5px!important;color:#71717A!important;font-weight:650!important;padding:0 6px!important}');
+    l.push('/* ---- v60 / 9.0.0.4 live-video audit fixes ---- */\n.topbar,.topbar.glass{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;height:56px!important;min-height:56px!important;margin:0!important;padding:0 14px!important;background:#09090B!important;border:0!important;border-bottom:1px solid rgba(255,255,255,0.09)!important;border-radius:0!important;box-shadow:0 4px 16px rgba(0,0,0,0.6)!important;z-index:120!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;box-sizing:border-box!important;overflow:hidden!important}\n#sdpBrandCluster{display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;min-width:0!important;flex:1 1 auto!important;position:static!important;background:transparent!important;border:0!important;box-shadow:none!important}\n#sdpBrandText{display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;line-height:1.15!important;gap:1px!important;position:static!important}\n#brandName{position:static!important;display:block!important;font-size:14px!important;font-weight:750!important;color:#FAFAFA!important;letter-spacing:-0.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin:0!important;padding:0!important;background:none!important;border:0!important}\n#brandSub{position:static!important;display:block!important;font-size:10px!important;font-weight:600!important;color:#A1A1AA!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin:0!important;padding:0!important}\n#sdpVerPill{position:static!important;font-size:9.5px!important;font-weight:800!important;letter-spacing:.04em!important;color:#38BDF8!important;background:#0C2D3E!important;border-radius:6px!important;padding:1px 5px!important;margin-left:6px!important;display:inline-block!important;line-height:1.3!important;vertical-align:middle!important}\n#creditDocked{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:center!important;width:-moz-fit-content!important;width:fit-content!important;margin:18px auto 6px!important;pointer-events:none!important;z-index:1!important;font-size:10.5px!important;font-weight:650!important;color:#71717A!important;background:#121215!important;border:1px solid rgba(255,255,255,0.08)!important;border-radius:999px!important;padding:4px 12px!important}\n#staticFooter,.v58-footer,.v58-home-footer,.v58-session-prog,.v58-offline-card,.v58-bento{display:none!important;visibility:hidden!important}\n[data-v60-legacy="1"]{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}');
+    l.push('/* ---- v60 / 9.0.0.4 words + settings + practice ---- */\n#screen-dict:not(.hidden){display:block!important;opacity:1!important;visibility:visible!important}\n#screen-dict #dictList,#dictList{display:flex!important;flex-direction:column!important;gap:10px!important;min-height:200px!important;opacity:1!important;visibility:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}\n#dictList .sdp-word-card,#dictList .wordcard,#dictList .v59-dict-card{display:flex!important;flex-direction:column!important;opacity:1!important;visibility:visible!important;background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;padding:12px 14px!important;box-shadow:none!important;min-height:64px!important}\n#sdpWordFilterRow{display:flex!important;gap:6px!important;flex-wrap:wrap!important;margin:8px 0 10px!important}\n#sdpWordFilterRow button{min-height:32px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,0.12)!important;background:#18181B!important;color:#A1A1AA!important;font-size:11.5px!important;font-weight:700!important;padding:4px 12px!important}\n#sdpWordFilterRow button[aria-pressed="true"]{background:#38BDF8!important;border-color:#38BDF8!important;color:#062530!important}\n#screen-set > *:not(#sdpNextGenSettings){display:none!important;visibility:hidden!important}\n#pasteHelper,#sdpPasteHelper{display:none!important}\n#sdpAppearanceAccordion{display:block!important;width:100%!important;margin-top:12px!important;background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;padding:0!important;overflow:hidden!important}\n#sdpAppearanceAccordion > summary{cursor:pointer!important;padding:14px 16px!important;font-size:11px!important;font-weight:800!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#A1A1AA!important;list-style:none!important}\n#sdpAppearanceAccordion[open] > summary{border-bottom:1px solid rgba(255,255,255,0.08)!important;color:#FAFAFA!important}\n#sdpAppearanceAccordion > *:not(summary){padding:0 14px!important}\n#sdpAppearanceAccordion > *:not(summary):last-child{padding-bottom:14px!important}\n.v58-mastery-card,.v58-session-prog,.v58-footer,.v58-home-footer{display:none!important;visibility:hidden!important}\n#screen-comm .card,#screen-comm .glass,#screen-comm .wordcard,#screen-comm .v58-tile{background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:14px!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}\n#screen-comm .chip,#screen-comm .sdp-btn{background:#18181B!important;border:1px solid rgba(255,255,255,0.12)!important;color:#A1A1AA!important;box-shadow:none!important;border-radius:999px!important}\n#screen-comm .chip.on,#screen-comm .chip[aria-pressed="true"],#screen-comm .sdp-btn.primary,#screen-comm [aria-pressed="true"]{background:#38BDF8!important;border-color:#38BDF8!important;color:#062530!important}');
+    l.push('.layer.player .lens{display:none!important;visibility:hidden!important}\n.layer.player .lbody{overflow-y:auto!important;scroll-behavior:auto!important;-webkit-overflow-scrolling:touch!important}\n#sdpLegacyPlayerDock{position:fixed!important;left:-9999px!important;top:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important}\n#sdpCockpitCard > *:not(#sdpEdgeBar):not(#sdpCockpitHeaderRow):not(#sdpCockpitStage):not(#sdpCockpitDock):not(#sdpCockpitFoot){display:none!important;visibility:hidden!important}\n#sdpCockpitCard{display:flex!important;flex-direction:column!important;gap:10px!important;padding:12px 14px!important;background:#18181B!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:18px!important;box-shadow:none!important;position:relative!important;overflow:hidden!important}\n#sdpCockpitCard #plWord{font-size:1.6rem!important;font-weight:800!important;color:#FAFAFA!important;letter-spacing:-0.02em!important;margin:6px 0!important;display:block!important}\n#sdpCockpitFoot{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}\n#sdpFinishBtn{min-height:32px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,0.12)!important;background:#18181B!important;color:#A1A1AA!important;font-size:11.5px!important;font-weight:700!important;padding:4px 12px!important;cursor:pointer!important}');
+    l.push('.layer.player .lbody,.layer .lbody{padding-top:8px!important;padding-bottom:10px!important}\n.layer.player .lhead,.layer .lhead{min-height:44px!important;padding-top:4px!important;padding-bottom:4px!important}\n#sdpCockpitCard{margin-top:0!important}\n.layer>.lbody>.stack{max-width:560px!important;margin:0 auto!important;gap:10px!important}');
+    l.push('.layer{justify-content:flex-start!important;align-items:stretch!important}\n.layer>.lbody{justify-content:flex-start!important}');
+    l.push('.layer .v58Dock{padding:0!important;margin:0!important;gap:10px!important}');
     return l;
   }
 
@@ -4040,6 +4046,323 @@ V59.ready = true;
     e.__v60Paint = true;
   }
 
+  /* ======================= v60 / 9.0.0.4 live-video regression fixes === */
+  function v604Keeper() {
+    var box = $('#sdpLegacyKeeper');
+    if (!box) { box = keep(mk('div', null, 'sdpLegacyKeeper')); }
+    return box;
+  }
+  /* Bug 2: .topbar must contain ONLY #sdpBrandCluster + #sdpTopActions. */
+  function v604SweepTopbar() {
+    var bar = $('.topbar');
+    if (!bar) return;
+    var kids = [], i, n, id;
+    for (i = 0; i < bar.children.length; i++) kids.push(bar.children[i]);
+    for (i = 0; i < kids.length; i++) {
+      n = kids[i];
+      id = String(n.id || '');
+      if (id === 'sdpBrandCluster' || id === 'sdpTopActions') continue;
+      keep(n);
+    }
+    try {
+      bar.style.setProperty('position', 'fixed', 'important');
+      bar.style.setProperty('top', '0', 'important');
+      bar.style.setProperty('left', '0', 'important');
+      bar.style.setProperty('right', '0', 'important');
+      bar.style.setProperty('width', '100%', 'important');
+      bar.style.setProperty('max-width', 'none', 'important');
+      bar.style.setProperty('height', '56px', 'important');
+      bar.style.setProperty('margin', '0', 'important');
+      bar.style.setProperty('padding', '0 14px', 'important');
+      bar.style.setProperty('background', '#09090B', 'important');
+      bar.style.setProperty('background-color', '#09090B', 'important');
+      bar.style.setProperty('background-image', 'none', 'important');
+      bar.style.setProperty('border', '0', 'important');
+      bar.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.09)', 'important');
+      bar.style.setProperty('border-radius', '0', 'important');
+      bar.style.setProperty('box-shadow', '0 4px 16px rgba(0,0,0,0.6)', 'important');
+      bar.style.setProperty('backdrop-filter', 'none', 'important');
+      bar.style.setProperty('transform', 'none', 'important');
+      bar.style.setProperty('z-index', '120', 'important');
+      bar.style.setProperty('box-sizing', 'border-box', 'important');
+    } catch (eStyle) {}
+    var cluster = $('#sdpBrandCluster');
+    if (!cluster) return;
+    var textbox = $('#sdpBrandText');
+    if (!textbox) { textbox = mk('div', null, 'sdpBrandText'); cluster.appendChild(textbox); }
+    var name = $('#brandName'), sub = $('#brandSub'), j;
+    if (name && name.parentNode !== textbox) textbox.appendChild(name);
+    if (sub && sub.parentNode !== textbox) textbox.appendChild(sub);
+    if (name) { for (j = 0; j < name.children.length; j++) { if (name.children[j].id !== 'sdpVerPill') {} } }
+    if (name && !$('#sdpVerPill')) {
+      var pill = mk('span', null, 'sdpVerPill', 'v' + V.id);
+      pill.setAttribute('aria-label', 'version ' + V.ver);
+      if (name.parentNode) name.parentNode.appendChild(pill);
+    }
+  }
+  /* Bug 8: hide any legacy block that still renders the v58 footer/progress. */
+  function v604LegacyText() {
+    var screens = ['screen-home', 'screen-dict', 'screen-comm', 'screen-set'];
+    var bad = ['Session progress', 'Smart Dictation Player v58'];
+    var i, j, k, scr, kids, all, n, t, tag;
+    for (i = 0; i < screens.length; i++) {
+      scr = $('#' + screens[i]);
+      if (!scr) continue;
+      kids = [];
+      all = [];
+      for (j = 0; j < scr.children.length; j++) kids.push(scr.children[j]);
+      for (j = 0; j < kids.length; j++) {
+        all.push(kids[j]);
+        for (k = 0; k < kids[j].children.length; k++) all.push(kids[j].children[k]);
+      }
+      for (j = 0; j < all.length; j++) {
+        n = all[j];
+        if (!n || n.nodeType !== 1) continue;
+        if (n.id === 'sdpNextGenSettings' || n.id === 'sdpCockpitCard' || n.id === 'creditDocked') continue;
+        tag = String(n.tagName || '').toLowerCase();
+        if (tag === 'button' || tag === 'a' || tag === 'input' || tag === 'select' || tag === 'textarea') continue;
+        t = String(n.textContent || '').replace(/^\s+/, '').slice(0, 40);
+        for (k = 0; k < bad.length; k++) {
+          if (t.indexOf(bad[k]) === 0) {
+            n.setAttribute('data-v60-legacy', '1');
+            try { n.style.display = 'none'; } catch (e1) {}
+          }
+        }
+      }
+    }
+  }
+  /* Bug 3: #creditDocked lives in the #screen-home scroll flow, never fixed. */
+  function v604Credit() {
+    var cd = $('#creditDocked');
+    if (!cd) return;
+    var home = $('#screen-home');
+    if (home && cd.parentNode !== home) home.appendChild(cd);
+    try {
+      cd.style.position = 'static';
+      cd.style.transform = 'none';
+      cd.style.left = 'auto';
+      cd.style.right = 'auto';
+      cd.style.top = 'auto';
+      cd.style.bottom = 'auto';
+      cd.style.display = 'flex';
+      cd.style.margin = '18px auto 6px';
+    } catch (e1) {}
+  }
+  /* Bug 6: Speech.say(items) requires an array; coerce a bare string. */
+  function v604Speech() {
+    var C = core();
+    if (!C) return;
+    var sp = C.Speech;
+    if (!sp || typeof sp.say !== 'function' || sp.__v604Say) return;
+    var orig = sp.say;
+    sp.say = function (items, opts, cb) {
+      if (typeof items === 'string') items = [items];
+      return orig.call(this, items, opts, cb);
+    };
+    sp.__v604Say = true;
+  }
+  /* Bug 7: nothing but #sdpNextGenSettings may render in #screen-set. */
+  function v604Settings() {
+    var host = $('#screen-set');
+    if (!host) return;
+    var ng = $('#sdpNextGenSettings');
+    var acc = $('#sdpAppearanceAccordion');
+    if (!ng) return;
+    if (!acc) {
+      acc = mk('details', null, 'sdpAppearanceAccordion');
+      acc.appendChild(mk('summary', null, null, T4('p3')));
+      ng.appendChild(acc);
+    }
+    var kids = [], i, n, id;
+    for (i = 0; i < host.children.length; i++) kids.push(host.children[i]);
+    for (i = 0; i < kids.length; i++) {
+      n = kids[i];
+      if (!n || n === ng) continue;
+      id = String(n.id || '');
+      if (id === 'sdpAppearanceAccordion') continue;
+      if (acc && n.parentNode !== acc) acc.appendChild(n);
+      try { n.style.display = 'none'; } catch (e1) {}
+      n.setAttribute('data-v60-legacy', '1');
+    }
+  }
+  /* Bug 8: climb from a legacy seed to the whole legacy block, then hide it. */
+  function v604HideBlock(seed) {
+    if (!seed || seed.nodeType !== 1) return;
+    var n = seed, best = seed, p, t;
+    while (n && n.parentNode && n.parentNode.nodeType === 1) {
+      p = n.parentNode;
+      if (!p || p === D.body) break;
+      if (p.id === 'app' || p.id === 'screen-home' || p.id === 'screen-dict' || p.id === 'screen-comm' || p.id === 'screen-set') break;
+      if (/\bscreen\b/.test(String(p.className || ''))) break;
+      if (p.children && p.children.length > 3) break;
+      t = String(p.textContent || '').replace(/^\s+/, '');
+      if (!/^(Session progress|Smart Dictation Player v58)/.test(t)) break;
+      best = p;
+      n = p;
+    }
+    best.setAttribute('data-v60-legacy', '1');
+    try { best.style.display = 'none'; } catch (e2) {}
+  }
+  function v604LegacyBlocks() {
+    var roots = ['#screen-home', '#screen-dict', '#screen-comm', '#screen-set'];
+    var i, j, all, n, first, txt;
+    for (i = 0; i < roots.length; i++) {
+      var host = $(roots[i]);
+      if (!host || !host.querySelectorAll) continue;
+      all = host.querySelectorAll('*');
+      for (j = 0; j < all.length; j++) {
+        n = all[j];
+        if (n.getAttribute && n.getAttribute('data-v60-legacy') === '1') continue;
+        if (n.children && n.children.length > 3) continue;
+        first = String(n.textContent || '').replace(/^\s+/, '');
+        if (!first) continue;
+        txt = first.slice(0, 32);
+        if (/^(Session progress|Smart Dictation Player v58)/.test(txt)) v604HideBlock(n);
+      }
+    }
+    var stat = $('#staticFooter');
+    if (stat) stat.setAttribute('data-v60-legacy', '1');
+  }
+  /* Bug 4: the Words tab must always render synchronously. */
+  function v604Words() {
+    var tab = $('#tab-dict');
+    if (tab && !tab.__v604Dict) {
+      on(tab, 'click', function () {
+        try { var u = UI(); if (u && u.setTab) u.setTab('dict'); } catch (e1) {}
+        var sd = $('#screen-dict');
+        if (sd) {
+          try { sd.className = String(sd.className || '').replace(/\bhidden\b/g, '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, ''); } catch (e2) {}
+          try { sd.style.display = 'block'; sd.style.opacity = '1'; sd.style.visibility = 'visible'; } catch (e3) {}
+        }
+        try { var s = Screens(); if (s && s.dict) s.dict(); } catch (e4) {}
+      });
+      tab.__v604Dict = true;
+    }
+  }
+  /* Bug 5.1: student dictation starts in the cockpit, not the ready sheet. */
+  function v604Ready() {
+    var e = Eng();
+    if (!e || e.__v604Ready || typeof e.skipReady !== 'function') return;
+    e.__v604Ready = true;
+    var origReady = e.readyScreen;
+    e.readyScreen = function () {
+      var self = this;
+      if (W.__SDP_SKIP_READY__ === false) { return origReady ? origReady.apply(this, arguments) : undefined; }
+      var C = core();
+      try { if (C && C.Speech && C.Speech.unlock) C.Speech.unlock(); } catch (e1) {}
+      try { if (C && C.UI && C.UI.closeSheet) C.UI.closeSheet(); } catch (e2) {}
+      W.setTimeout(function () {
+        try {
+          if (!self || (self.st !== 'ready' && self.st !== 'idle')) return;
+          if (typeof self.readyGo === 'function') self.readyGo();
+          else if (typeof self.skipReady === 'function') self.skipReady();
+        } catch (e3) {}
+      }, 150);
+      return undefined;
+    };
+  }
+  /* Bug 5.2 / 5.3: legacy player chrome leaves the layout, card stays on top. */
+  function v604PlayerChrome(eng) {
+    var e = eng || Eng();
+    var layer = cockpitLayer(e);
+    if (!layer) return;
+    var dock = layer.querySelector('#sdpLegacyPlayerDock');
+    if (!dock) {
+      dock = mk('div', null, 'sdpLegacyPlayerDock');
+      dock.id = 'sdpLegacyPlayerDock';
+      dock.setAttribute('aria-hidden', 'true');
+      layer.appendChild(dock);
+    }
+    var junk = layer.querySelectorAll('.ctrlgrid, .lfoot, .lens, #plCount, #plBars');
+    for (var i = 0; i < junk.length; i++) {
+      if (junk[i].parentNode !== dock) dock.appendChild(junk[i]);
+    }
+    var fill = layer.querySelector('#plFill');
+    if (fill && fill.parentNode && fill.parentNode !== dock) {
+      var par = fill.parentNode;
+      if (String(par.className || '').indexOf('bar') >= 0) dock.appendChild(par);
+    }
+    var card = layer.querySelector('#sdpCockpitCard') || layer.querySelector('.wordcard');
+    if (card) {
+      var keep = { sdpEdgeBar: 1, sdpCockpitHeaderRow: 1, sdpCockpitStage: 1, sdpCockpitDock: 1, sdpCockpitFoot: 1 };
+      var kids = [], j, n;
+      for (j = 0; j < card.children.length; j++) kids.push(card.children[j]);
+      for (j = 0; j < kids.length; j++) {
+        n = kids[j];
+        if (keep[String(n.id || '')]) { try { n.style.removeProperty('display'); } catch (e4) {} continue; }
+        n.setAttribute('data-v60-legacy', '1');
+        try { n.style.setProperty('display', 'none', 'important'); } catch (e5) {}
+      }
+      var word = card.querySelector('#plWord');
+      var stage = card.querySelector('#sdpCockpitStage');
+      if (word) {
+        if (e && e.showWord && stage) {
+          if (word.parentNode !== stage) stage.appendChild(word);
+          try { word.style.setProperty('display', 'block', 'important'); } catch (e6) {}
+        } else {
+          try { word.style.setProperty('display', 'none', 'important'); } catch (e7) {}
+        }
+      }
+      var foot = card.querySelector('#sdpCockpitFoot');
+      if (foot && !card.querySelector('#sdpFinishBtn')) {
+        var fin = mk('button', null, 'sdpFinishBtn', 'Finish');
+        fin.id = 'sdpFinishBtn';
+        fin.type = 'button';
+        on(fin, 'click', function () { try { if (e && e.finishEarly) e.finishEarly(); } catch (e8) {} });
+        foot.insertBefore(fin, foot.firstChild);
+      }
+    }
+    var body = layer.querySelector('.lbody');
+    if (body) {
+      try {
+        body.style.setProperty('scroll-behavior', 'auto', 'important');
+        body.style.setProperty('overflow-y', 'auto', 'important');
+        if (body.scrollTop) body.scrollTop = 0;
+      } catch (e9) {}
+    }
+  }
+  function v604Player() {
+    var e = Eng();
+    if (!e || e.__v604Player) return;
+    e.__v604Player = true;
+    if (typeof e.openPlayer === 'function') {
+      var op = e.openPlayer;
+      e.openPlayer = function () {
+        var out = op.apply(this, arguments);
+        try { v604PlayerChrome(this); } catch (e1) {}
+        return out;
+      };
+    }
+    if (typeof e.paint === 'function') {
+      var pa = e.paint;
+      e.paint = function () {
+        var out2 = pa.apply(this, arguments);
+        try { v604PlayerChrome(this); } catch (e2) {}
+        return out2;
+      };
+    }
+    if (typeof e.paintCountdown === 'function') {
+      var pc = e.paintCountdown;
+      e.paintCountdown = function () {
+        var out3 = pc.apply(this, arguments);
+        try { v604PlayerChrome(this); } catch (e3) {}
+        return out3;
+      };
+    }
+  }
+  function v604All() {
+    try { v604Speech(); } catch (e1) {}
+    try { v604SweepTopbar(); } catch (e2) {}
+    try { v604Credit(); } catch (e3) {}
+    try { v604LegacyText(); } catch (e4) {}
+    try { v604Settings(); } catch (e6) {}
+    try { v604LegacyBlocks(); } catch (e7) {}
+    try { v604Words(); } catch (e8) {}
+    try { v604Ready(); } catch (e9) {}
+    try { v604Player(); } catch (e10) {}
+    try { v604PlayerChrome(); } catch (e11) {}
+    try { if (D.body) D.body.setAttribute('data-v60-ready', '1'); } catch (e5) {}
+  }
   /* ---------------------------------------------------------------- boot */
   function boot() {
     if (!D.body) { V.retries = (V.retries || 0) + 1; if (V.retries < 200) W.setTimeout(boot, 60); return; }
@@ -4056,6 +4379,12 @@ V59.ready = true;
     wrapPaint();
     try { renderNextGenHome(); } catch (e) {}
     try { wrapSettings(); wrapDict(); wrapCockpit(); } catch (e) {}
+    try { v604Keeper(); v604All(); } catch (e0) {}
+    W.setTimeout(function () { try { v604All(); } catch (e1) {} }, 900);
+    W.setTimeout(function () { try { v604All(); } catch (e2) {} }, 2000);
+    W.setTimeout(function () { try { v604All(); } catch (e3) {} }, 4000);
+    W.setTimeout(function () { try { v604All(); } catch (e4) {} }, 5500);
+    W.setTimeout(function () { try { v604All(); } catch (e5) {} }, 7000);
     W.setTimeout(showLoadToast, 700);
     W.setTimeout(showCreditPill, 1400);
   }
@@ -4159,7 +4488,7 @@ V59.ready = true;
     try {
       var sp = core() && core().Speech;
       if (sp && typeof sp.speak === 'function') { sp.speak(String(text), slow ? { rate: 0.72 } : undefined); return; }
-      if (sp && typeof sp.say === 'function') { sp.say(String(text), slow ? 0.72 : 1); return; }
+      if (sp && typeof sp.say === 'function') { sp.say([String(text)], { rate: slow ? 0.72 : 1 }, function () {}); return; }
       if (W.speechSynthesis && W.SpeechSynthesisUtterance) {
         var u = new W.SpeechSynthesisUtterance(String(text));
         u.rate = slow ? 0.72 : 1;
@@ -4558,7 +4887,7 @@ V59.ready = true;
       var pause = mk('button', null, 'sdpPauseBtn', T4('pause'));
       pause.type = 'button';
       on(pause, 'click', function () { try { e3.playPause(); } catch (e) {} });
-      var skip = mk('button', null, 'sdpSkipBtn', T4('skip'));
+      var skip = mk('button', null, 'sdpSkipBtn', 'Next');
       skip.type = 'button';
       on(skip, 'click', function () { try { e3.next(); } catch (e) {} });
       acts.appendChild(pause);
