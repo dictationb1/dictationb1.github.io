@@ -1,4 +1,0 @@
-'use strict';var fs=require('fs'),p=require('./patchlib.cjs'),acorn=require('./node-acorn.cjs');
-var s=fs.readFileSync('tests/check.cjs','utf8');s=s.replace('!/benchmark: function/.test(learn)||!/decide: function/.test(learn)','!/benchmark:\\s*function/.test(learn)||!/decide:\\s*function/.test(learn)');fs.writeFileSync('tests/check.cjs',s);
-s=fs.readFileSync('data/app-core.js','utf8');var a=s.indexOf('startWrite:function(e){'),b=s.indexOf('startCountdown:function',a),chunk=s.slice(a,b);var old='t<=0?("type"!==o.mode||o.wordSolved||o.wordWrong?o.next():o.onTypeWrong("timeout"))';if(chunk.indexOf(old)>=0)p.rep('data/app-core.js',old,'t<=0?("type"!==o.mode?o.revealCurrent():o.wordSolved||o.wordWrong?o.next():o.onTypeWrong("timeout"))');else if(chunk.indexOf('o.revealCurrent()')<0)throw Error('missing countdown anchor');
-s=fs.readFileSync('data/app-core.js','utf8');acorn.parse(s,{ecmaVersion:5});new Function(s);
