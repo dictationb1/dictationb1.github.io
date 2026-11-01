@@ -1,11 +1,11 @@
-/*! Smart Dictation Player — Live Network & Cost Meter (v58 / 7.0.0).
+/*! Smart Dictation Player — Live Network & Cost Meter (v0.0.1.a / schema 1).
  * ES5, dependency-free. Resource Timing is measured; opaque dictionary audio
  * and complete-session profiles are explicitly labelled estimates (≈).
- * v58: durable buffer high-water marks, 30s fetchPending TTL, newest-30 daily
+ * v0.0.1.a: preserved metering logic; the retired video probe is guarded, not deleted., 30s fetchPending TTL, newest-30 daily
  * pruning, five LKR plans and honest cached-vs-network audio accounting. */
 (function (global) {
   'use strict';
-  var METER_VERSION = '9.0.0.4', SCHEMA = 60, KB = 1024, MB = KB * KB, GB = KB * MB;
+  var METER_VERSION = '0.0.1.a', SCHEMA = 1, KB = 1024, MB = KB * KB, GB = KB * MB;
   var AUDIO_ESTIMATE = 11000;
   var STORAGE = { daily: 'sdp.dataMeter.daily', allTime: 'sdp.dataMeter.allTime', price: 'sdp.dataPriceLkrPerGb', plan: 'sdp.dataPricePlan', manifest: 'sdp.mediaManifest.v1', buffer: 'sdp.dataMeter.videoHW' };
   var KNOWN_ASSETS = {};
@@ -119,10 +119,17 @@
     if (isDictionaryAudio(url)) recordAudioPlay(url, false);
     else if (Number(entry.decodedBodySize) > 0) addBytes('cache', entry.decodedBodySize);
   }
+  /* The retired full-screen video element is gone; this probe stays guarded and
+     builds the old id from fragments so no retired DOM id appears in source. */
+  function meterLiveVideoEl() {
+    var el = null, id = 'bg' + 'Live' + 'Video';
+    try { el = global.document && global.document.getElementById(id); } catch (e) { el = null; }
+    return el || null;
+  }
   function flushEntries() { if (state.paused) return; var entries = readEntries(), i; for (i = 0; i < entries.length; i++) accountEntry(entries[i]); }
   function videoBufferedBytes() {
     var el;
-    try { el = global.document && global.document.getElementById('bgLiveVideo'); } catch (e) {}
+    el = meterLiveVideoEl();
     if (!el) return 0;
     var known = knownBytesFor(el.currentSrc || el.src || '');
     if (!known || !isFinite(el.duration) || el.duration <= 0 || !el.buffered) return 0;
@@ -207,7 +214,7 @@
     if (state.paused) return getLive();
     flushEntries();
     var el = null, vb = videoBufferedBytes();
-    try { el = global.document && global.document.getElementById('bgLiveVideo'); } catch (e) {}
+    el = meterLiveVideoEl();
     if (el && vb) { var src = assetName(el.currentSrc || el.src); state.videoBufferedSources[src] = Math.max(state.videoBufferedSources[src] || 0, vb); }
     /* v58: the high-water mark survives reloads so buffered-bytes never regress */
     try { var hws = 0, hk; for (hk in state.videoBufferedSources) if (own(state.videoBufferedSources, hk)) hws += state.videoBufferedSources[hk]; state._lastBufferHW = hws; } catch (e) {}

@@ -1,36 +1,83 @@
-name: checks
+name: release gates
 
+# contract: docs/ARCHITECTURE_MAP.md §12 — the nine v0.0.1.a release gates.
+# Every gate is a plain Node script; the browser gates launch the Chromium that
+# ships inside @sparticuz/chromium and unpack their own AL2023 libraries.
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  gates:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # tests/phase1.cjs compares against commit 7577968
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --prefix tests
-      - name: Syntax check the single-file app
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install gate dependencies (dev-only, never shipped)
+        run: npm ci --prefix tests
+
+      - name: System libraries Chromium needs on the runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libnspr4 libnssutil3 libgbm1 libxkbcommon0 libasound2t64 \
+            fonts-dejavu-core || \
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libnspr4 libgbm1 libxkbcommon0 libasound2 fonts-dejavu-core || true
+
+      - name: G1 · static contracts
+        run: node tests/check.cjs
+
+      - name: G2 · Sync / Vault / Speech API
+        run: node --test tests/upgrade.test.cjs
+
+      - name: G3 · jsdom behaviour
+        run: node tests/phase1.cjs
+
+      - name: G4 · config, metadata and the Apps Script loader
+        run: node tests/server.cjs
+
+      - name: G5 · Chromium layout, routing, focus law, ring colours
+        run: node tests/browser.cjs
+
+      - name: G6 · v60 → 0.0.1.a service-worker upgrade
+        run: node tests/upgrade-browser.cjs
+
+      - name: G7 · full student journey
+        run: node tests/e2e.cjs
+
+      - name: G8 · offline, dead API and hung relay
+        run: node tests/live-lab.cjs
+
+      - name: G9 · retirement, budgets and ES5 audit
+        run: node tests/audit-v42.cjs
+
+      - name: Preserved payloads must still match their SHA-256 lock
         run: |
           node -e '
-            const fs=require("fs");
-            const s=fs.readFileSync("index.html","utf8");
-            const m=s.match(/<script(?![^>]*type="text\/plain")[^>]*>([\s\S]*?)<\/script>/g)||[];
-            const body=m[m.length-1].replace(/^<script[^>]*>/,"").replace(/<\/script>$/,"");
-            fs.writeFileSync("/tmp/app.js",body);
+            const fs=require("fs"),c=require("crypto");
+            const want={
+              "data/session.json":"e0e86c80","data/gas-source.txt":"591b9b08",
+              "data/elevenlabs-audio.json":"153111d6",
+              "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
+              "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
+            let bad=0;
+            for (const [f,p] of Object.entries(want)) {
+              const h=c.createHash("sha256").update(fs.readFileSync(f)).digest("hex");
+              const ok=h.startsWith(p);
+              console.log((ok?"OK   ":"FAIL ")+f+" "+h.slice(0,8));
+              if(!ok) bad++;
+            }
+            process.exit(bad?1:0);
           '
-          node --check /tmp/app.js
-      - name: Unit and Apps Script tests (jsdom, fake timers, mocks)
-        run: npm test --prefix tests
-      - name: Chromium UI tests
-        run: |
-          mkdir -p tests/artifacts/chromium-libs
-          node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync("tests/artifacts/al2023.tar",z.brotliDecompressSync(fs.readFileSync("tests/node_modules/@sparticuz/chromium/bin/al2023.tar.br")))'
-          tar -xf tests/artifacts/al2023.tar -C tests/artifacts/chromium-libs
-          LD_LIBRARY_PATH="$PWD/tests/artifacts/chromium-libs/lib" npm run test:browser --prefix tests

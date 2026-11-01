@@ -1,11 +1,13 @@
 const DEFAULT_PIN = require('./test-pin.cjs');
 'use strict';
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),acorn=require('acorn');
-const html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8');
-/* v46: the Apps Script source lives next to the page (data/gas-source.txt) and
-   is fetched only when a lecturer unlocks admin, so the QA reads the file. */
-const inline=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/)[1];
-const source=inline.trim()?inline:fs.readFileSync(require('path').join(__dirname,'../data/gas-source.txt'),'utf8');
+/* v0.0.1.a: the shell no longer inlines 13 KB of Apps Script; the app fetches
+   data/gas-source.txt on demand, so QA executes exactly the shipped backend file.
+   contract: docs/SYNC_AND_DATA_CONTRACT.md §Preserved backend */
+const indexPath=require('path').join(__dirname,'../index.html');
+const html=fs.existsSync(indexPath)?fs.readFileSync(indexPath,'utf8'):'';
+const gasInline=html.match(/<script type="text\/plain" id="gas-source">([\s\S]*?)<\/script>/);
+const source=gasInline&&gasInline[1].trim()?gasInline[1].trim():fs.readFileSync(require('path').join(__dirname,'../data/gas-source.txt'),'utf8');
 const tables={},cache={},properties={ADMIN_PIN:DEFAULT_PIN};
 let now=Date.UTC(2026,9,13,12);
 function sheet(name){if(tables[name])return tables[name];const rows=[];
@@ -52,16 +54,30 @@ test('Server failed multi-cell publish leaves committed words/version intact and
  assert(post({action:'publish',pin:DEFAULT_PIN,listId:'qa-list',name:'Retry',words}).ok);delete cache.state;state=context.readState();assert.equal(state.lists[0].words.length,1200);assert.equal(state.lists[0].version,3);
 });
 
-test('v58 release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
+/* contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 — the frozen SDP_ENC_V2 wire format ships with the studio */
+test('v0.0.1.a release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- for(const f of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(f);assert.equal(d.ver,60,f);assert.equal(d.appVersion,'9.0.0.4',f);assert.ok(d.adminPin===undefined||d.adminPin==='',f);assert.ok(!d.vaultCiphertext,f+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,f+' no relays');}
+ const rel=read('data/version.json');assert.equal(rel.ver,1);assert.equal(rel.appVersion,'0.0.1.a');
+ const cfg=read('data/config.json');assert.equal(cfg.ver,1);assert.equal(cfg.appVersion,'0.0.1.a');assert.equal(cfg.encVault,'SDP_ENC_V2:AAA=');
+ for(const jf of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(jf);assert.ok(d.adminPin===undefined||d.adminPin==='',jf);assert.ok(!d.vaultCiphertext,jf+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,jf+' no relays');}
  const vault=read('data/elevenlabs-audio.json');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
- const studio=fs.readFileSync(require('path').join(__dirname,'..','data','studio.js'),'utf8');
- assert.ok(html.includes('sdp.v57_secure_local'));assert.ok(html.includes('APP_VERSION="9.0.0.4"'));assert.ok(html.includes('data/studio.js?v=9.0.0.4'));assert.ok(html.includes('window.EncryptedVault'));assert.ok(html.includes('SDP_ENC_V2:'));
- assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(html),'index has no vault/audio relays');
- assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(studio),'studio has no vault/audio relays');
- assert.ok(studio.includes('sdp_elevenlabs_vault_v1'));assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'));
- assert.ok(studio.includes('adminGenerateMissing'));assert.ok(studio.includes('Cloud.commitFiles'));assert.ok(studio.includes('window.GitHubSync'));assert.ok(studio.includes('window.UniversalSync'));assert.ok(studio.includes('playOrFetchOnce'));assert.ok(studio.includes('isUnlockedOnThisDevice'));
- assert.ok(html.length < 600000, 'index.html stays under the published byte ceiling');
+ const file=n=>require('path').join(__dirname,'..',n);
+ if(fs.existsSync(file('data/studio.js'))){
+  const studio=fs.readFileSync(file('data/studio.js'),'utf8');
+  assert.ok(studio.includes('SDP.Sync.Vault'),'studio unlocks through the frozen vault API');
+  assert.ok(studio.includes('api.elevenlabs.io/v1/text-to-speech'),'studio generates with the ElevenLabs REST API');
+  assert.ok(studio.includes('eleven_flash_v2_5'),'studio pins eleven_flash_v2_5');
+  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(studio),'studio has no vault/audio relays');
+ }
+ if(fs.existsSync(file('data/sdp-data-sync.js'))){
+  const syncjs=fs.readFileSync(file('data/sdp-data-sync.js'),'utf8');
+  assert.ok(syncjs.includes('SDP_ENC_V2:'),'AES-GCM v2 envelope ships in the sync module');
+  assert.ok(syncjs.includes('encryptV2')&&syncjs.includes('decryptV2'));
+ }
+ if(html){
+  assert.ok(html.includes('./data/studio.js'),'the shell loads the studio module');
+  assert.ok(!/dictationb1_sdp_(keys|words|audio)_v[0-9]+/.test(html),'index has no vault/audio relays');
+  assert.ok(html.length<600000,'index.html stays under the published byte ceiling');
+ }
 });
 console.log(JSON.stringify(results,null,2));if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
