@@ -238,3 +238,32 @@ open; because audio is cache-first, replaying a word costs zero data.
 | change storage or sync | `data/sdp-data-sync.js` (+ `docs/SYNC_AND_DATA_CONTRACT.md`) | G2 |
 | change audio order | `data/sdp-audio-speech.js` | G9 |
 | publish a new session | Lecturer Studio (`data/studio.js`) | `docs/DAILY_UPGRADE_PROMPT_TEMPLATE.md` |
+
+---
+
+## 12. Release gate map (v0.0.1.a)
+
+| Gate | File | Runner | What it proves |
+| --- | --- | --- | --- |
+| G1 | `tests/check.cjs` | node | static contracts: ids, strings, budgets, load order |
+| G2 | `tests/upgrade.test.cjs` | node:test | `Sync`/`Vault`/`Speech` API against real payloads |
+| G3 | `tests/phase1.cjs` | jsdom | storage corruption, PIN lockout, guide, paper/typing runs |
+| G4 | `tests/server.cjs` | node | config/metadata + Apps Script loader |
+| G5 | `tests/browser.cjs` | Chromium | 54px header, one screen, focus law, ring colours, toast |
+| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.a, single reload, offline shell |
+| G7 | `tests/e2e.cjs` | Chromium | the full student journey + backup download |
+| G8 | `tests/live-lab.cjs` | Chromium | dead API, offline reload, hung relay, empty bank |
+| G9 | `tests/audit-v42.cjs` | node | retirement, H1 budgets, ES5, PWA pins, preserved hashes |
+
+Shared plumbing: `tests/static-server.cjs` (one server, `setOverride` for
+per-test payloads) and `tests/app-harness.cjs` (jsdom + `@sinonjs/fake-timers`
++ WebCrypto + a fetch stub over the real `data/*.json`). Neither gate may
+reimplement them; that is how the suite stays consistent.
+
+## 13. Empty-bank behaviour (new in 0.0.1.a)
+
+`SDP.Sync.wordCount() === 0` is a first-class state, not an error: Home shows
+`#bankEmpty`, `#btnStart` is `disabled`, `#statMastered` renders `—`,
+`startDictation()` toasts and stays on Home, and the Words tab hides the list
+behind `#dictEmpty`. This is what a student sees if they install the PWA while
+GitHub is unreachable and no cached payload exists.

@@ -131,19 +131,68 @@ repeat visit is served from `sdp-v0.0.1.a-shell` and costs ≈ 0 KB.
 
 ---
 
+## P6b — the nine gates rebased onto 0.0.1.a (gate-align)
+
+| Gate | File | Was (v60) | Is (0.0.1.a) |
+| --- | --- | --- | --- |
+| G1 | `tests/check.cjs` | 61 assertions, 9 FAIL | 55 assertions, 0 FAIL |
+| G2 | `tests/upgrade.test.cjs` | QUnit-free `node:test` | 10 tests over the new `Sync` API |
+| G3 | `tests/phase1.cjs` | jsdom v50 shell | 61 behavioural checks on the ES5 app |
+| G4 | `tests/server.cjs` | 8/8 (test 8 v58 metadata) | 8/8 (test 8 → 0.0.1.a metadata) |
+| G5 | `tests/browser.cjs` | axe + v50 layout | 44 layout/focus/ring/toast checks |
+| G6 | `tests/upgrade-browser.cjs` | v60 → v60 cache walk | 15 checks on the v60 → 0.0.1.a journey |
+| G7 | `tests/e2e.cjs` | 21-step v58 playthrough | 48-step student journey |
+| G8 | `tests/live-lab.cjs` | live-relay soak | 26 offline/dead-API/hung-relay checks |
+| G9 | `tests/audit-v42.cjs` | v42 retirement audit | 46 retirement + budget + ES5 checks |
+
+Two shared helpers were added so the gates cannot drift apart:
+`tests/static-server.cjs` (one HTTP server with per-test overrides) and
+`tests/app-harness.cjs` (jsdom + fake timers + WebCrypto + deterministic fetch).
+
+Defects the new gates surfaced — all fixed in the app, never asserted around:
+
+1. **UTF-8 chunk accounting.** `Sync.publishWordsChunked` measured the Apps
+   Script 40 KB cell limit in UTF-16 characters, so a Sinhala-heavy chunk
+   encoded to 50,279 bytes. It now measures `utf8Encode(line).length`.
+2. **A sixth localStorage write.** The store capability probe wrote
+   `__sdp_probe__`, breaking the five-key promise (R4). Detection is now
+   shape-only; the app writes nothing until it has a real value.
+3. **Dishonest accuracy after self-check.** Flipping a row to *missed* changed
+   `lastScore` but left the lifetime counters at 30/30, so Home claimed 100%
+   after a 24/30 session. Attempts now move by an exact delta.
+4. **No About block.** The mandated attribution existed only on Home. Settings
+   gained a fifth card (`#aboutCard`, studio stays the sixth and last) that
+   repeats the exact credit line plus the pill.
+5. **A missing Enter key.** Typing mode only advanced when the writing window
+   expired. `Enter` now submits the typed word and advances.
+6. **A self-linking `/data` back button.** `href="./"` resolved to `/data/` on
+   the directory route; it now points at `../index.html`.
+7. **A lying empty state.** With no session payload the hero still promised
+   "30 B1 words" and Start opened an empty cockpit. The bank note, the disabled
+   Start button and the `—` denominator say what is actually true.
+
+---
+
 ## Release verification (filled by the release commit)
 
 ```
 shasum -a 256 -c /tmp/sdp-preserve.sha256   → 5 × OK
-node tests/check.cjs                        → G1  … PASS / 0 FAIL
-node --test tests/upgrade.test.cjs          → G2  … PASS / 0 FAIL
-node tests/phase1.cjs                       → G3  … PASS / 0 FAIL
-node tests/server.cjs                       → G4  … PASS / 0 FAIL
-node tests/browser.cjs                      → G5  … PASS / 0 FAIL
-node tests/upgrade-browser.cjs              → G6  … PASS / 0 FAIL
-node tests/e2e.cjs                          → G7  … PASS / 0 FAIL
-node tests/live-lab.cjs                     → G8  … PASS / 0 FAIL
-node tests/audit-v42.cjs                    → G9  … PASS / 0 FAIL
+node tests/check.cjs                        → G1  55 PASS / 0 FAIL
+node --test tests/upgrade.test.cjs          → G2  10 PASS / 0 FAIL
+node tests/phase1.cjs                       → G3  61 PASS / 0 FAIL
+node tests/server.cjs                       → G4   8 PASS / 0 FAIL
+node tests/browser.cjs                      → G5  44 PASS / 0 FAIL
+node tests/upgrade-browser.cjs              → G6  15 PASS / 0 FAIL
+node tests/e2e.cjs                          → G7  48 PASS / 0 FAIL
+node tests/live-lab.cjs                     → G8  26 PASS / 0 FAIL
+node tests/audit-v42.cjs                    → G9  46 PASS / 0 FAIL
+                                              ─────────────────────
+                                              313 assertions, 0 FAIL
 ```
+
+The Chromium gates (G5–G8) run against real Chromium 138 served over
+`http://127.0.0.1`, with every non-local host aborted and media mocked, so the
+counts are reproducible offline. Suite total: 151 KB of `tests/*.cjs`
+(cap 220,000 B).
 
 Released under: `Release Smart Dictation Player v0.0.1.a (Clean-Slate Rebuild)`.

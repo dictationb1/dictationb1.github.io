@@ -186,3 +186,64 @@ key to `STRINGS_SI`, then use `data-i18n="key"` or `Views.t('key')`.
 - `#beatStateText` and `#sdpDataToast` are `aria-live="polite"`.
 - Focus is visible everywhere (`:focus-visible` 2px accent outline).
 - Colour is never the only signal: marks carry `✅` / `❌` and words.
+
+---
+
+## 8. The About card (fifth settings section)
+
+Settings is six `.set-card` sections in this order — the studio vault is always
+sixth and last, collapsed:
+
+| # | Section id | Audience |
+| --- | --- | --- |
+| 1 | study | student |
+| 2 | display | student |
+| 3 | audio | student |
+| 4 | `#setProgress` (data & updates) | student |
+| 5 | `#aboutCard` | student |
+| 6 | `#studioAccordion` | lecturer only |
+
+`#aboutCard` carries the version, the build date, a link to the `/data`
+transparency page, the audience line and its own `.credit-foot` block — the
+same `.credits-pill` (`CREDITS GOES TO Hansana`) and `.credit-line` used by
+`#creditFoot` on Home. The ids are unique; the *content* must stay byte-equal:
+
+```
+Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 / Lesandu
+```
+
+Never render this as a `position: fixed` badge over the cockpit — G7.2c/G7.2d
+fail the build if the credits appear on `#screen-player` or if the footer
+computes to `fixed`.
+
+## 9. Empty and broken states are stated, never faked
+
+| State | Home | Words tab | Engine |
+| --- | --- | --- | --- |
+| 0 words in the bank | `#bankEmpty` visible, `#btnStart` disabled, mastered shows `—` | `#dictEmpty` visible | `startDictation` refuses and toasts |
+| corrupt progress | counters fall back to 0 | cards still render | `Data.progress()` returns defaults |
+| corrupt settings | paper mode, defaults | — | `setMode` reads defaults |
+| offline | shell from SW cache | cards from cached payload | audio falls back to TTS |
+
+## 10. Typing mode submits on Enter
+
+`#typeInput` accepts `Enter` (and `keyCode 13`) in **listening or writing**
+phase: the value is stored on the item, the draft is saved, and the beat
+advances — or finishes if it was the last word. Nothing else is bound to the
+keyboard, and no other focus call exists.
+
+## 11. The pre-paint cloak
+
+`index.html` carries exactly one `<style id="sdpCloak">` block, under 400 bytes:
+
+```
+html,body{margin:0;background:#09090B;color:#FAFAFA;…}.screen{display:none!important}
+.screen.active{display:block!important}
+```
+
+It exists so a budget Android on 2G never flashes five stacked screens before
+`sdp-ui.css` arrives. It is the *only* allowed inline style in the app shell
+(G9.3d enforces the 400-byte cap and the selector allow-list), and it carries no
+layout rules — every real rule lives in the single stylesheet. The `/data`
+transparency page is a standalone document and keeps its own inline sheet
+(G9.3e).

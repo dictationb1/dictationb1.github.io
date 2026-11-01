@@ -226,3 +226,22 @@ node tests/check.cjs                        # G1, same table baked in
 | G7 | R2 (journeys), R5 (self-check + retry), R4 (legacy migration), R8 (settings order) |
 | G8 | R2 (two-device propagation without touching progress), R7 (publish) |
 | G9 | R5 (audio tiers, beat text, one-utterance `say`, same-element replay) |
+
+---
+
+## R11. Publish chunk budget is measured in BYTES
+
+Apps Script cells are limited to 40,000 **bytes**, not characters. Sinhala is
+three bytes per glyph in UTF-8, so a chunk that looks safe by `.length` can be
+33% over budget. `Sync.publishWordsChunked` therefore accumulates
+`utf8Encode(line).length` and closes a chunk before it would exceed the limit.
+The regression test builds 300 Sinhala-heavy words and asserts every chunk is
+under budget (`tests/upgrade.test.cjs`, "R7: GitHub Contents payload").
+
+## R12. Five keys, no probe
+
+The store layer must never write a key just to test writability. Capability is
+detected by shape (`typeof localStorage.setItem === 'function'`); every write is
+individually wrapped in `try/catch` and returns `false` on failure. `tests/audit-v42.cjs`
+(G9.5c) and `tests/upgrade.test.cjs` (R1) both fail the build if a sixth key
+appears in the source.

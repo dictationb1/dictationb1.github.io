@@ -165,3 +165,20 @@ gh pr merge <n> --merge --delete-branch   # or: git merge --no-ff
   Appendix A, rerun G1, and note it in the ledger.
 - **Never** re-introduce a retired id (`bgLiveVideo`, `dataSheet`, `screen-comm`, …)
   or a floating credit badge over the player.
+
+---
+
+## Appendix — v0.0.1.a additions to quote verbatim
+
+- Publish chunks are measured in **bytes** (`utf8Encode(line).length`), never
+  `String.length`; Sinhala is 3 bytes per glyph.
+- The store layer writes **five keys only** — no `__sdp_probe__`, no capability
+  test writes.
+- Typing mode submits on **Enter** in either listening or writing phase.
+- Settings is **six** sections; `#aboutCard` is fifth, `#studioAccordion` last.
+- The About card repeats the exact credit line; credits are never a fixed badge.
+- An empty bank shows `#bankEmpty`, disables Start and prints `—` for mastered.
+- `/data` back link is `../index.html` (works from `/data.html`, `/data/` and `/data/index.html`).
+- Exactly one `<style id="sdpCloak">` under 400 bytes may exist in `index.html`.
+- All nine gates must print `0 FAIL`; the expected counts are
+  55 / 10 / 61 / 8 / 44 / 15 / 48 / 26 / 46 = **313 assertions**.
