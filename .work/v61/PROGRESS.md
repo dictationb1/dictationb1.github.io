@@ -106,3 +106,9 @@ No baseline source files changed in P0.
 - Removed the +80ms input focus and both ready-sheet paths. Deferred core now boots synchronously after its security/migration definitions and before the learning module mounts.
 - Added Cloud.onSync refresh hook, strict global directives, v61/9.0.1.0 metadata/cache stamps, root version manifest, and app-core precaching. Removed all six 11-byte guide placeholders. Data routes remain identical.
 - No Sinhala clips or device voice means a disabled honest guide badge; no Youdao Sinhala endpoint or fabricated audio was added.
+
+## P5
+
+- Removed both legacy player builders and installed one cockpit renderer in the extracted engine: phase edge, header/countdown ring, paper slots or typing input, four helpers, compact voice/pause/skip footer, live counters and dynamic word map.
+- No .ctrlgrid, #plRing or #plBars remains. Input is never auto-focused. Paper timeout now has an explicit reveal beat. Results use the interactive SDP61 self-check and preserve lecturer weakness analysis.
+- Settings controls are retained across synchronous re-renders instead than recreated with duplicate IDs. The static gate's performance-API check accepts whitespace-equivalent ES5 formatting without removing the API requirement.

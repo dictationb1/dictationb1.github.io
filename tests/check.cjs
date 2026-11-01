@@ -70,8 +70,8 @@ if(!/rows:t\.map\(function\(w\)\{return\{word:/.test(APP_SRC)||!/mode:"paper"/.t
 if(!/encVault/.test(read('data/config.json'))||!/SDP_ENC_V2:/.test(read('data/config.json')))throw Error('encrypted config missing');
 if(!/eleven_flash_v2_5/.test(studio)||!/eleven_flash_v2_5/.test(read('data/elevenlabs-audio.json')))throw Error('studio model missing');
 if(/\.drawImage\s*\(|\.getImageData\s*\(/.test(learn))throw Error('canvas readback forbidden');
-if(!/SDPPerfGuard/.test(learn)||!/benchmark: function/.test(learn)||!/decide: function/.test(learn))throw Error('performance guard missing');
-if(!/sdp_offline_v60/.test(learn)||!/sdp\.v56_audit_verified/.test(learn))throw Error('storage compatibility missing');
+if(!/SDPPerfGuard/.test(learn)||!/benchmark:\s*function/.test(learn)||!/decide:\s*function/.test(learn))throw Error('performance guard missing');
+if(!/sdp_offline_v60/.test(learn)||!/sdp\.v56_audit_verified/.test(APP_SRC+learn))throw Error('storage compatibility missing');
 if(!/microToastLoad/.test(learn)||!/getEntriesByType\("navigation"\)/.test(learn))throw Error('honest transfer telemetry missing');
 console.log('LEGACY_ABSENT, V61_PRESENT, ES5, byte caps, metadata and security: PASS');
 {
