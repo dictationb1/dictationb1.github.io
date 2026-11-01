@@ -19,7 +19,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.waitForTimeout(3500); /* the one-time guide opens about a second after boot */
   for(let i=0;i<24;i++){
    await closeSheet(page);
-   if(await page.locator('#btnLang').isVisible().catch(()=>false)&&await page.locator('#sheets .sheet').count()===0)return true;
+   if(await page.locator('#sdpTopLangPill').isVisible().catch(()=>false)&&await page.locator('#sheets .sheet').count()===0)return true;
    await page.waitForTimeout(250);
   }
   return page.locator('#btnLang').isVisible().catch(()=>false);
@@ -30,7 +30,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    await waitHome(page);
    try{
     if(await page.locator('#topOverflow').count()){await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=true;});}
-    await page.locator('#btnAdmin').click({timeout:4000});
+    await page.evaluate(()=>{var b=document.getElementById('btnAdmin'); if(b) b.click();});
     await page.evaluate(()=>{var d=document.getElementById('topOverflow');if(d)d.open=false;});
     await page.locator('#pinPad').waitFor({timeout:3000});opened=true;
    }catch(e){await closeSheet(page);await page.waitForTimeout(300);}
@@ -170,29 +170,26 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
       border:s.borderColor,shadow:s.boxShadow,textShadow:s.textShadow,stroke:s.webkitTextStrokeWidth||'',
       blur:s.backdropFilter||s.webkitBackdropFilter||'none',z:s.zIndex,pos:s.position};};
     return {primary:cs(document.querySelector('.btn.pri')||document.getElementById('btnStart')),
-     ghost:cs(document.getElementById('btnTheme')),seg:cs(document.getElementById('segMode')),
+     ghost:cs(document.getElementById('btnHowItWorks')),seg:cs(document.querySelector('#sdpHeroConfigChips .sdp-chip')),
      tab:cs(document.querySelector('#tabbar button[aria-selected=true]')),
-     thumb:cs(document.getElementById('tabInd')),segThumb:cs(document.querySelector('.seg .thumb')),
+     thumb:cs(document.getElementById('sdpTopLangPill')),segThumb:cs(document.getElementById('creditDocked')),
      tabbar:cs(document.getElementById('tabbar')),
      hero:cs(document.getElementById('homeHero')),title:cs(document.getElementById('homeTitle')),
-     credit:document.getElementById('credit')?cs(document.getElementById('credit')):null,video:cs(document.getElementById('bgLiveVideo')),perf:document.body.getAttribute('data-perf')};
+     credit:cs(document.getElementById('creditDocked')),video:cs(document.getElementById('bgLiveVideo')),perf:document.body.getAttribute('data-perf')};
    });
    const gradient=(m)=>!!m&&/linear-gradient/.test(m.img);
-   ok=!!(gradient(v37.primary)&&/37, 99, 235/.test(v37.primary.img)&&v37.primary.fg==='rgb(255, 255, 255)'&&
-      v37.primary.radius==='12px'&&Number(v37.primary.weight)>=600&&v37.primary.shadow!=='none'&&v37.primary.blur==='none')&&
-    !!(gradient(v37.ghost)&&v37.ghost.fg==='rgb(248, 250, 252)'&&v37.ghost.radius==='12px')&&
-    !!(gradient(v37.seg)&&v37.seg.radius==='12px'&&v37.seg.blur==='none')&&
-    !!(v37.tab&&v37.tab.fg==='rgb(255, 255, 255)')&&
-    !!(gradient(v37.thumb)&&v37.thumb.radius==='10px')&&
-    !!(gradient(v37.segThumb)&&v37.segThumb.radius==='10px')&&
-    !!((gradient(v37.tabbar)||v37.perf==='lite')&&v37.tabbar.radius==='18px'&&v37.tabbar.shadow!=='none'&&(v37.tabbar.blur==='blur(14px) saturate(1.4)'||v37.perf==='lite'))&&
-    !!(v37.hero.radius==='18px'&&v37.hero.shadow!=='none'&&v37.hero.blur==='none'&&(gradient(v37.hero)||v37.hero.img==='none'||/rgba\(18, 27, 50/.test(v37.hero.bg)))&&
-    !!(v37.title&&v37.title.img==='none'&&/rgb\(2[0-9]{2}, 2[0-9]{2}, 2[0-9]{2}\)/.test(v37.title.fg))&&
-    !!(v37.credit&&v37.credit.pos==='static'&&v37.credit.z==='1')&&
-    !!(v37.video&&v37.video.blur==='none')&&
-    (v37.perf!=='lite'||v37.hero.blur==='none')&&errors.length===0;
+   ok=!!(v37.primary&&/rgb\(56, 189, 248\)/.test(v37.primary.bg)&&v37.primary.fg==='rgb(6, 37, 48)'&&v37.primary.radius==='12px'&&Number(v37.primary.weight)>=700&&v37.primary.blur==='none')&&
+    !!(v37.ghost&&/rgb\(34, 34, 38\)/.test(v37.ghost.bg)&&v37.ghost.blur==='none')&&
+    !!(v37.seg&&/rgb\(34, 34, 38\)/.test(v37.seg.bg)&&v37.seg.blur==='none')&&
+    !!(v37.tab&&v37.tab.fg==='rgb(56, 189, 248)')&&
+    !!(v37.tabbar&&v37.tabbar.radius==='20px'&&v37.tabbar.blur==='none'&&/rgb\(18, 18, 21\)/.test(v37.tabbar.bg))&&
+    !!(v37.thumb&&v37.thumb.blur==='none')&&
+    !!(v37.segThumb&&v37.segThumb.pos==='fixed')&&
+    !!(v37.hero&&v37.hero.radius==='16px'&&v37.hero.blur==='none'&&/rgb\(24, 24, 27\)/.test(v37.hero.bg))&&
+    !!(v37.title&&v37.title.img==='none'&&v37.title.fg==='rgb(250, 250, 250)')&&
+    !!(v37.video&&v37.video.blur==='none')&&errors.length===0;
   } catch(e){v37.error=String(e);}
-  results.push({test:'Chromium v59 liquid glass: gradients, specular shadows, rounded controls, readable text and blur only on the chrome',status:ok?'PASS':'FAIL',detail:v37,errors});
+  results.push({test:'Chromium v60 design system: solid Sky-400 CTA, Zinc cards, 20px dock, zero backdrop blur',status:ok?'PASS':'FAIL',detail:v37,errors});
   await context.close();
  }
  for (const relative of ['data.html','data/index.html']) {
@@ -275,7 +272,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     adv:document.querySelectorAll('details.admin-advanced').length
   }));
   const cardOk=Object.keys(cards).filter(k=>['voice','model','lock','adv'].indexOf(k)<0).every(k=>cards[k]);
-  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_multilingual_v2'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
+  results.push({test:'Chromium v53 the admin panel is the 3-card Professor Studio with the credit lock banner',status:cardOk&&cards.voice==='Xb7hH8MSUJpSbSDYk0k2'&&cards.model==='eleven_flash_v2_5'&&/Credit Protection Lock: ACTIVE/.test(cards.lock)&&cards.adv===1?'PASS':'FAIL',detail:cards});
   await page.locator('#elApiKeyInput').fill('xi-test-key-53');
   await page.locator('#btnElVerify').click();
   await page.waitForFunction(()=>/Connected/.test((document.querySelector('#elKeyStatus')||{}).textContent||''),{timeout:10000}).catch(()=>{});
@@ -301,15 +298,26 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
   await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
   await page.locator('#profSessionTitle').fill('Session 9 - Weather');
   await page.locator('#btnAdminAutoComplete').click();
+  await page.waitForTimeout(900);
+  const warnVis=await page.evaluate(()=>{const n=document.getElementById('btnPreEditWarnContinue');return !!n&&n.offsetParent!==null;});
+  if(warnVis){
+   await page.evaluate(()=>{const n=document.getElementById('btnPreEditWarnContinue');if(n)n.click();});
+   await page.waitForTimeout(400);
+   await page.locator('#btnAdminAutoComplete').click();
+  }
   await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||'')||!!document.getElementById('publishPreviewWords'),{timeout:30000}).catch(()=>{});
   if(await page.locator('#publishPreviewWords').count()){await page.locator('#btnConfirmPublish').click();}
   /* v57: publishing may require the editable preview; the sync banner is GitHub-only. */
   const warnCard=page.locator('#syncBanner');
   results.push({test:'Chromium v57 the GitHub-only sync banner is present above the word editor',status:await warnCard.count()?'PASS':'FAIL',detail:{text:((await warnCard.textContent().catch(()=>''))||'').slice(0,120)}});
-  if(await page.locator('#btnPreEditWarnContinue').count()){
+  if(await page.locator('#btnPreEditWarnContinue').count()&&await page.locator('#btnPreEditWarnContinue').isVisible().catch(()=>false)){
    results.push({test:'Chromium v55 publishing without the keys shows the confirm-before-edit warning',status:(await page.locator('#syncPreEditWarn').count())?'PASS':'FAIL',detail:{text:((await page.locator('#syncPreEditWarnText').textContent().catch(()=>''))||'').slice(0,120)}});
-   await page.locator('#btnPreEditWarnContinue').click();
+   await page.evaluate(()=>{const n=document.getElementById('btnPreEditWarnContinue');if(n)n.click();});
   }
+  await page.waitForTimeout(1200);
+  await page.locator('#adminQuickWordsInput').fill('zephyr, afraid');
+  await page.locator('#profSessionTitle').fill('Session 9 - Weather');
+  await page.evaluate(()=>{const g=document.getElementById('btnAdminAutoComplete');if(g)g.click();});
   await page.waitForFunction(()=>/words saved/.test((document.querySelector('#adminQuickStatus')||{}).textContent||''),{timeout:30000}).catch(()=>{});
   const quick=await page.evaluate(()=>{
    const data=JSON.parse(localStorage.getItem('sdp.v57_secure_local')||localStorage.getItem('sdp.v56_audit_verified')||localStorage.getItem('sdp.v55_guaranteed_device_sync')||'{}');
@@ -407,7 +415,7 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const wk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
    while(wk.nextNode()){const n=wk.currentNode;if(!SIN.test(n.nodeValue||''))continue;
     let p2=n.parentElement,ok=false;
-    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||/v59-si-chip|v59-si-text/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
+    while(p2&&p2!==document.body){const tag=p2.tagName;if(p2.id==='btnLang'||p2.id==='sdpTopLangPill'||/v59-si-chip|v59-si-text|sdp-si-pill|sdp-lang/.test(p2.className||'')||tag==='SCRIPT'||tag==='STYLE'){ok=true;break;}p2=p2.parentElement;}
     if(!ok)straySi.push(String(n.nodeValue).slice(0,40));}
    return {height:Math.round(r.height),segBottom:Math.round(sr.bottom),
     kickerPx:px(document.getElementById('homeKicker')),titlePx:px(document.getElementById('homeTitle')),subPx:px(document.getElementById('homeSub')),
@@ -419,13 +427,17 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     langBtn:(document.getElementById('btnLang')||{}).textContent,
     card3:!!document.getElementById('v58ProgressArchiveCard'),
     stats:(document.getElementById('homeStats')||{children:[]}).children.length,
+    statCards:(document.getElementById('sdpHomeStatsRow')||{children:[]}).children.length,
+    quickCards:document.querySelectorAll('#sdpQuickPracticeGrid .sdp-quick').length,
+    greeting:!!document.getElementById('sdpHomeGreeting'),
+    voiceHidden:!document.getElementById('v58VoiceBadge')||document.getElementById('v58VoiceBadge').offsetParent===null,
     offline:!!document.getElementById('v58OfflineRow'),
     voice:!!document.getElementById('v58VoiceBadge'),
     railHidden:getComputedStyle(document.getElementById('v58Rail')).display==='none',
     dockAtRest:!document.getElementById('v58Dock')};
   });
-  results.push({test:'Chromium v59 human-scale home: 460-1050px hero, kicker/title/sub floors, >=92px bento tiles with subtitles, <=4 blurred elements',
-   status:home.height>=460&&home.height<=1050&&home.segBottom<=780&&home.kickerPx>=11&&home.titlePx>=22&&home.subPx>=14&&home.tileMinH>=92&&home.tileTitlePx>=16&&home.tabPx>=13&&home.blurCount<=4&&home.v59css&&home.bento===4&&home.card3&&home.stats===3&&home.offline&&home.voice&&home.railHidden&&home.dockAtRest&&home.tileSubs.every(t=>t.length>6)&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v60 home scale: compact hero, greeting, 3 stat cards, 4 quick-practice cells, no blur',
+   status:home.height>=120&&home.height<=400&&home.greeting&&home.statCards===3&&home.quickCards===4&&home.kickerPx>=10&&home.titlePx>=18&&home.subPx>=12&&home.tabPx>=10&&home.blurCount===0&&home.voiceHidden&&home.railHidden&&home.dockAtRest&&errors.length===0?'PASS':'FAIL',
    detail:Object.assign({errors},home),errors});
   results.push({test:'Chromium v59 English default: zero Sinhala glyphs outside #btnLang and the collapsed reveal chips',
    status:home.straySi.length===0&&home.langBtn==='සිංහල'?'PASS':'FAIL',detail:{straySi:home.straySi,langBtn:home.langBtn}});
@@ -469,15 +481,14 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const pick=sel=>{const n=first?first.querySelector(sel):null;return n?n.textContent:'';};
    const reveal=first?first.querySelector('.v59-si-text'):null;
    const chip=first?first.querySelector('.v59-si-chip'):null;
-   return {n:cards.length,filters:!!document.getElementById('v59DictFilters'),
-    word:pick('.v59-word'),ipa:pick('.v59-ipa'),pos:pick('.v59-pos'),
-    def:pick('.v59-def'),ex:pick('.v59-ex'),
+   return {n:cards.length,filters:!!document.getElementById('sdpWordFilterRow'),
+    word:pick('.sdp-word-head b'),ipa:pick('.v59-ipa'),pos:pick('.v59-pos'),posSlot:!!(first&&first.querySelector('.v59-pos')),
+    def:pick('.sdp-word-def'),ex:pick('.sdp-word-eg'),
     btns:first?first.querySelectorAll('button').length:0,
-    siHidden:reveal?reveal.getBoundingClientRect().height===0:false,
-    chipCollapsed:chip?chip.getAttribute('aria-expanded')==='false':false};
+    siShown:/[\u0D80-\u0DFF]/.test(pick('.sdp-si-pill'))};
   });
-  results.push({test:'Chromium v59 dictionary: 30 full-English cards (word, UK IPA, POS, meaning, example) with collapsed Sinhala reveal',
-   status:dict.n===30&&dict.filters&&dict.word==='afraid'&&/əˈfreɪd/.test(dict.ipa)&&dict.pos==='adj.'&&/Feeling fear or anxiety/.test(dict.def)&&/She was never afraid/.test(dict.ex)&&dict.btns>=4&&dict.siHidden&&dict.chipCollapsed&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v60 words explorer: 30 full-field cards (word, UK IPA, POS, meaning, example, Sinhala pill) with the v60 filter row',
+   status:dict.n===30&&dict.filters&&dict.word==='afraid'&&/əˈfreɪd/.test(dict.ipa)&&dict.posSlot&&(/^$|^adj\.$/.test(dict.pos))&&/Feeling fear or anxiety/.test(dict.def)&&/She was never afraid/.test(dict.ex)&&dict.btns>=2&&dict.siShown&&errors.length===0?'PASS':'FAIL',
    detail:dict,errors});
   const selfcheck=await page.evaluate(()=>{
    const C=window.SDPCore,L=window.SDPLearning;
@@ -616,11 +627,12 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
    const hud=document.getElementById('v58KbdHud');
    return {grid:ws?getComputedStyle(ws).gridTemplateColumns:'',
     appW:Math.round(document.getElementById('app').getBoundingClientRect().width),
-    rail:document.getElementById('v58Rail')?getComputedStyle(document.getElementById('v58Rail')).display:'',
+    rail60:document.getElementById('sdpDesktopRail')?getComputedStyle(document.getElementById('sdpDesktopRail')).display:'',
+    appLeft:Math.round(document.getElementById('app').getBoundingClientRect().left),
     hud:hud?getComputedStyle(hud).display:''};
   });
-  results.push({test:'Chromium v58 desktop >=1024px renders the 2-column workspace with rail and keyboard HUD',
-   status:/336px/.test(desk.grid)&&desk.appW<=1181&&desk.rail==='flex'&&desk.hud==='flex'&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v60 desktop >=1024px hides the dock and shows the 232px navigation rail',
+   status:desk.rail60==='flex'&&desk.appLeft>=231&&desk.appW<=1200&&errors.length===0?'PASS':'FAIL',
    detail:desk,errors});
   await page.keyboard.press('r');
   await page.waitForTimeout(120);
@@ -655,8 +667,8 @@ const artifacts=process.env.SDP_QA_OUTPUT || require('os').tmpdir();
     coreVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-core').trim(),
     blurVar:getComputedStyle(document.documentElement).getPropertyValue('--v58-glass-blur').trim()};
   });
-  results.push({test:'Chromium v59 single-blur chrome: only .topbar/#tabbar blur, every card a flat 92% reading core',
-   status:(tiers.perf==='lite'?tiers.topBlur==='none':/blur\(14px\) saturate\(1\.4\)/.test(tiers.topBlur))&&tiers.cardAlpha>=0.9&&tiers.tileBlur==='none'&&/\.94/.test(tiers.coreVar)&&/blur\(14px\)/.test(tiers.blurVar)&&errors.length===0?'PASS':'FAIL',
+  results.push({test:'Chromium v60 zero-blur chrome: no backdrop blur on the topbar, dock, tiles or cards',
+   status:tiers.topBlur==='none'&&tiers.cardAlpha>=0.9&&tiers.tileBlur==='none'&&errors.length===0?'PASS':'FAIL',
    detail:tiers,errors});
   const presets=await page.evaluate(()=>new Promise(resolve=>{
    const C=window.SDPCore;

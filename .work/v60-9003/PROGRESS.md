@@ -48,8 +48,9 @@ failure, NOT ENV-BLOCKED (Chromium works).
   - Adapted anchor: legacy player action rows are hidden by walking #sdpCockpitCard children and hiding any untouched child that contains a <button> (no class guesses), instead of deleting them.
   - Adapted anchor: the real player layer is UL.layer (no .player class in this build), so decoration matches #layers .layer and .lens hiding is scoped '.layer .lens,.layer.player .lens'.
   - JSDOM smoke: settings box first, accordion closed with #setBody inside, all six controls + legacy ids present, speed pill sets rate 0.75, 30 word cards with 30 IPA + 30 Sinhala pills, cockpit ids all present after Eng.start+skipReady.
-- [ ] P5 lockstep test gates + absence assertions
+- [x] P5 lockstep test gates + absence assertions
 - [ ] P6 docs, PR, merge
+  - P5 done: lockstep retargets to v60 selectors; resume card hoisted to the top of #screen-home (inline visibility/pointer-events because legacy home hides it); desktop rail z-index 30 so sheets stay clickable; zero-blur + POS slot + Sky CTA assertions; e2e drives tabs through SDPCore.UI.setTab so the desktop rail never intercepts.
 
 ## Gates
 | gate | command | status |
@@ -58,8 +59,11 @@ failure, NOT ENV-BLOCKED (Chromium works).
 | G2 | node --test tests/upgrade.test.cjs | PASS 25/25 (P1) |
 | G3 | node tests/phase1.cjs | PASS (P2) |
 | G4 | node tests/server.cjs | PASS (P1) |
-| G5 | node tests/browser.cjs | pre-existing FAIL x1 (baseline) |
-| G6 | node tests/upgrade-browser.cjs | |
-| G7 | node tests/e2e.cjs | |
+| G5 | node tests/browser.cjs | PASS 51/51 (P5) |
+| G6 | node tests/upgrade-browser.cjs | PASS 21/21 (P5) |
+| G7 | node tests/e2e.cjs | PASS 53/53 (P5) |
 | G8 | node tests/live-lab.cjs | |
 | G9 | node tests/audit-v42.cjs | |
+
+## Sizes (P5 end)
+index.html 484800 | data.html 59845 | data/index.html 59845 | data/learning-tools.js 247504 | data/studio.js 106144 | sw.js 7100

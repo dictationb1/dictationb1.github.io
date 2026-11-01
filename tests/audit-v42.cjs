@@ -184,13 +184,13 @@ const noise = (list) => list.filter((m) => !/Failed to load resource|net::ERR/i.
     eq('progress dots cover all 30 words', now.dots, 30);
     eq('the progress label shows Dictation #1 of 30', now.prog, 'Dictation #1 of 30');
     ok('the writing phase starts after Pass 2', now.statusLog.some((t) => /Write the word now|Your turn/.test(t)), now.statusLog.slice(-5));
-    ok('the writing countdown runs from five seconds', Number(now.cd) >= 0 && Number(now.cd) <= 5, now.cd);
+    ok('the writing countdown runs from five seconds', Number.parseFloat(String(now.cd)) >= 0 && Number.parseFloat(String(now.cd)) <= 5, now.cd);
 
-    await page.click('#plPlay');
+    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
     await page.waitForTimeout(900);
     clips = await clipsOf(page);
     ok('Pause requests remote audio', clips.some((c) => /Session%20paused/.test(c.url)), clips.slice(-3).map((c) => textOf(c.url)));
-    await page.click('#plPlay');
+    await page.evaluate(() => { const b = document.getElementById('sdpPauseBtn'); if (b) b.click(); });
     await page.waitForTimeout(1800);
     clips = await clipsOf(page);
     ok('Resume requests remote audio', clips.some((c) => /Welcome%20back/.test(c.url)), clips.slice(-4).map((c) => textOf(c.url)));
