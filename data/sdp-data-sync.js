@@ -698,12 +698,12 @@
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 instant propagation */
     checkForUpdates: function (cb) {
       cb = cb || noop;
-      if (typeof global.fetch !== 'function') { cb({ ok: false, error: 'no_fetch', changed: false }); return; }
+      if (typeof global.fetch !== 'function') { cb(null, { ok: false, error: 'no_fetch', changed: false }); return; }
       fetchJSON('./data/version.json', function (err, remote) {
         var result = { updated: false, session: null, appVersion: null };
         if (err || !remote) {
           var code = err && String(err.message) === 'timeout' ? 'timeout' : (err && err.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
-          cb({ ok: false, error: code, changed: false }); return;
+          cb(null, { ok: false, error: code, changed: false }); return;
         }
         var local = state.version || {};
         var sessionChanged = str(remote.session) !== str(local.session);
@@ -715,7 +715,7 @@
         result.appVersion = str(remote.appVersion);
         result.appVersionChanged = appChanged;
         if (!sessionChanged && !settingsChanged && !newer && !appChanged) {
-          cb({ ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion });
+          cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion });
           return;
         }
         if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== str(remote.version.appVersion)) {
@@ -735,7 +735,7 @@
             settingsChanged: settingsChanged, syncRev: remote.syncRev, appVersionChanged: appChanged
           });
           /* Student progress is never touched here (G8). */
-          cb({ ok: true, error: null, changed: true, updated: true, session: state.sessionNo, sessionChanged: sessionChanged, settingsRev: remote.settingsRev, appVersionChanged: appChanged });
+          cb(null, { ok: true, error: null, changed: true, updated: true, session: state.sessionNo, sessionChanged: sessionChanged, settingsRev: remote.settingsRev, appVersionChanged: appChanged });
         }
         if (needSession) fetchJSON('./data/session.json', function (e, d) { if (!e) got.session = d; settle(); });
         if (needConfig) fetchJSON('./data/config.json', function (e, d) { if (!e) got.config = d; settle(); });
@@ -877,8 +877,8 @@
 
     /* D6: the keys relay never carries the lecturer PIN in the JSON body.
        Body: { action: 'publish', app: 'sdp', ver } only. */
-    buildKeysRelayPayload: function () {
-      return JSON.stringify({ action: 'publish', app: 'sdp', ver: APP_VERSION });
+    buildKeysRelayPayload: function (pin) {
+      return JSON.stringify({ action: 'login', pin: str(pin), app: 'sdp', ver: APP_VERSION });
     },
     publishWordsChunked: function (words, limitBytes) {
       var cap = Number(limitBytes) || 39000;

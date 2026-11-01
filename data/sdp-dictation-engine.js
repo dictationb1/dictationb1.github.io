@@ -281,8 +281,10 @@
        phase alive (polling on the 100ms ticker) so the writing countdown
        never starts mid-audio; hard cap at +2000 ms past phase end. */
     if (E.phase === 'listening' && E.waitingForSpeech) {
+      /* F2 hard cap: writing must start no later than 2000 ms after the
+         listening phase began, even if the final repeat is still speaking. */
+      if (now() - E.phaseStart >= 2000) { E.waitingForSpeech = false; enterWriting(); return; }
       if (SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()) {
-        if (now() - E.waitSince > 2000) { E.waitingForSpeech = false; enterWriting(); return; }
         paint(E.phaseMs ? 0 : 0);
         setStateText();
         return;
@@ -324,6 +326,7 @@
 
   function enterListening() {
     E.phase = 'listening';
+    E.phaseStart = now();
     E.epoch += 1;
     E.phaseMs = listenMs();
     E.remainingMs = E.phaseMs;
@@ -441,6 +444,17 @@
   function goPrev() {
     if (E.index <= 0) { enterWord(0); return; }
     enterWord(E.index - 1);
+  }
+  /* R7 Smart Board jumper: tap any word number on the board; pause the
+     current word, remount at the chosen index and enter listening. */
+  function jumpTo(index) {
+    if (index < 0) index = 0;
+    if (index >= E.items.length) return false;
+    if (E.phase !== 'idle' && E.phase !== 'finished') pause();
+    E.index = index;
+    saveDraft();
+    enterWord(E.index);
+    return true;
   }
 
   function setMode(mode, silent) {
@@ -778,6 +792,7 @@
     togglePlayPause: togglePlayPause,
     next: goNext,
     prev: goPrev,
+    jumpTo: jumpTo,
     repeat: repeatWord,
     toggleHint: toggleHint,
     cycleHint: cycleHint,

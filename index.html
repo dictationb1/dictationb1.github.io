@@ -24,6 +24,10 @@
     <span id="sdpVerPill">v0.0.1.b</span>
     <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced · Session 8 · v0.0.1.b</button>
     <button id="btnStudioQuick" class="hbtn hbtn-icon" type="button" aria-label="Open the Lecturer Studio from Settings">🔒</button>
+    <div id="quickJumper" class="quick-jumper" hidden>
+      <label class="muted" for="setQuickWord">Jump to word:</label>
+      <select id="setQuickWord" class="input"></select>
+    </div>
   </div>
   <div class="header-actions">
     <button id="btnGuideTop" type="button" class="hbtn" data-i18n="guideBtn" aria-label="Open the student guide">? Guide</button>
@@ -217,10 +221,24 @@
             <output id="outPause" for="setPause">1.5s</output>
           </div>
           <label class="checkline" for="setAutoAdvance"><input type="checkbox" id="setAutoAdvance" checked> <span data-i18n="autoAdvance">Advance automatically</span></label>
+          <p class="lbl" data-i18n="presetHeading">Quick Pacing Presets</p>
+          <div id="presetRow" class="pill-row" role="group" aria-label="Quick pacing presets">
+            <button type="button" class="pill preset-pill" id="presetBeginner" data-preset="beginner" data-i18n="presetBeginner">🐢 Beginner Slow (12s · 4×)</button>
+            <button type="button" class="pill preset-pill" id="presetStandard" data-preset="standard" data-i18n="presetStandard">🎯 CCBE B1 Standard (8s · 3×)</button>
+            <button type="button" class="pill preset-pill" id="presetExam" data-preset="exam" data-i18n="presetExam">⚡ Fast Exam (5s · 2×)</button>
+            <button type="button" class="pill preset-pill" id="presetBoard" data-preset="board" data-i18n="presetBoard">🖥️ Smart Board Class Mode</button>
+          </div>
         </section>
 
         <section class="card set-card">
           <h3 class="set-head" data-i18n="setAudio">2 · Audio &amp; voice</h3>
+          <div class="field">
+            <label class="lbl" for="setVoiceLock" data-i18n="voiceLockLabel">Voice Persona Lock</label>
+            <select id="setVoiceLock" class="input">
+              <option value="unified" data-i18n="voiceLockUnified">British Female Professor (Unified 25–35 UK)</option>
+              <option value="custom" data-i18n="voiceLockCustom">Follow Individual Tier Source</option>
+            </select>
+          </div>
           <div class="field">
             <label class="lbl" for="setVoiceSource" data-i18n="voiceSource">Voice source</label>
             <select id="setVoiceSource" class="input">
@@ -255,10 +273,13 @@
           <div class="field">
             <label class="lbl" for="setTheme" data-i18n="theme">Theme</label>
             <select id="setTheme" class="input">
-              <option value="dark" data-i18n="themeDark">Dark</option>
-              <option value="light" data-i18n="themeLight">Light</option>
+            <option value="dark" data-i18n="themeDark">Dark</option>
+            <option value="light" data-i18n="themeLight">Light</option>
+            <option value="board" data-i18n="themeBoard">Smart Board High-Contrast</option>
             </select>
           </div>
+          <button id="btnReplayGuide" type="button" class="btn btn-sm" data-i18n="guideReplay">🎓 Replay Step-by-Step Voice Guide</button>
+          <label class="checkline" for="setGuideAutoPlay"><input type="checkbox" id="setGuideAutoPlay" checked> <span data-i18n="guideAutoPlay">Auto-play English voice guide on start</span></label>
         </section>
 
         <section class="card set-card">
@@ -269,7 +290,10 @@
             <input id="importFile" type="file" accept="application/json,.json" class="visually-hidden" tabindex="-1">
             <button id="btnResetStats" type="button" class="btn btn-sm btn-danger" data-i18n="resetStats">Reset local stats</button>
             <button id="btnCheckUpdate" type="button" class="btn btn-sm" data-i18n="checkUpdate">Check for session update</button>
+            <button id="btnDownloadClips" type="button" class="btn btn-sm" data-i18n="downloadClips">🔊 Download All 30 Word Audio Clips for Offline Use</button>
           </div>
+          <p id="settingsSyncStatus" class="muted" role="status" aria-live="polite"></p>
+          <span id="downloadClipsStatus" class="muted"></span>
           <p id="updateStatus" class="muted" role="status" aria-live="polite"></p>
           <p id="storageStatus" class="muted"></p>
         </section>

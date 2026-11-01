@@ -4,7 +4,7 @@
   "description": "Smart Dictation Player v0.0.1.b — listen to UK English words and write them down. Offline-ready Sinhala/English dictation practice for the CCBE Galle Branch B1 class.",
   "lang": "en",
   "dir": "ltr",
-  "start_url": "./?v=0.0.1.b",
+  "start_url": "./?v=0.0.1.b&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
