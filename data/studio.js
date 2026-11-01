@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — Lecturer Studio & admin vault (v0.0.1.c)
+/*! Smart Dictation Player — Lecturer Studio & admin vault (v0.0.1.d)
  * Strict ES5, dependency free.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 publishing, §R7 vault
  * contract: docs/UI_COMPONENT_GUIDE.md §Settings 6th section (collapsed)

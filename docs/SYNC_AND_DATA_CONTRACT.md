@@ -1,4 +1,4 @@
-# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.c
+# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.d
 
 Everything that touches bytes on a student's phone, or a byte on GitHub, is
 specified here. If code and this document disagree, the document wins and the
@@ -10,13 +10,13 @@ code is the bug.
 
 | Constant | Value | Where |
 | --- | --- | --- |
-| `APP_VERSION` / `SDP.version` | `0.0.1.c` | `index.html`, every module |
+| `APP_VERSION` / `SDP.version` | `0.0.1.d` | `index.html`, every module |
 | `ver` | `3` | `data/version.json`, `data/config.json`, `data/elevenlabs-audio.json` |
 | `schema` | `3` | same |
 | `settingsRev` | `3` | same |
 | `syncRev` | `1762000000002` | `data/version.json` |
-| `SW_VERSION` | `sdp-v0.0.1.c` | `sw.js` |
-| `SHELL_CACHE` | `sdp-v0.0.1.c-shell` | `sw.js` |
+| `SW_VERSION` | `sdp-v0.0.1.d` | `sw.js` |
+| `SHELL_CACHE` | `sdp-v0.0.1.d-shell` | `sw.js` |
 | `PRESERVE_CACHES` | `['sdp-youdao-v1', 'sdp-audio-clips']` | `sw.js` |
 
 There is exactly one version file: `data/version.json`. Never a root `/version.json`.
@@ -58,8 +58,8 @@ The watch runs `checkForUpdates` every 120,000 ms and on `visibilitychange`
 ```json
 {
   "ver": 3,
-  "appVersion": "0.0.1.c",
-  "version": "0.0.1.c",
+  "appVersion": "0.0.1.d",
+  "version": "0.0.1.d",
   "buildDate": "2026-11-01",
   "schema": 3,
   "settingsRev": 3,
@@ -167,7 +167,7 @@ Two paths, both while unlocked:
    from a prior `GET`. Owner/repo come from the preserved `config.json`
    (`dictationb1` / `dictationb1.github.io`).
 2. **GAS relay** — CORS-simple `POST` with `Content-Type: text/plain` body
-   `{action, app:'sdp', ver:'0.0.1.c'}` (hard ceiling 600 B). **The PIN is never
+   `{action, app:'sdp', ver:'0.0.1.d'}` (hard ceiling 600 B). **The PIN is never
    in the body** (W6/D-S9): it is verified inside the Apps Script, which is the
    only place it exists. Word publishing is chunked so every chunk stays under
    40,000 B.
@@ -195,7 +195,7 @@ carries the new `syncRev`, which is exactly what `checkForUpdates` watches.
 `data/session.json`. When that happens, update the `BUDGET`/`EXACT`/`PRESERVED_SHA`
 tables in `tests/check.cjs` **and** Appendix A below in the same commit, then
 rerun G1. Never hand-edit the payload itself. `data/elevenlabs-audio.json` is
-app-written since v0.0.1.c and is therefore budgeted, not hash-frozen (D-UI11).
+app-written since v0.0.1.d and is therefore budgeted, not hash-frozen (D-UI11).
 
 ---
 
@@ -207,7 +207,7 @@ Must keep, untouched: `credits`, `tts`, `voice`, `live` (ntfy state/community/in
 `voiceId: "Xb7hH8MSUJpSbSDYk0k2"`, `voiceName: "Alice"`,
 `modelId: "eleven_flash_v2_5"`.
 
-Only `ver: 3`, `appVersion: "0.0.1.c"`, `version: "0.0.1.c"`, `schema: 3`,
+Only `ver: 3`, `appVersion: "0.0.1.d"`, `version: "0.0.1.d"`, `schema: 3`,
 `settingsRev: 3` are ours to change.
 
 ---
@@ -228,7 +228,7 @@ shasum -a 256 -c /tmp/sdp-preserve.sha256   # phase manifest
 node tests/check.cjs                        # G1, same table baked in
 ```
 
-`data/elevenlabs-audio.json` left this table in v0.0.1.c: the Lecturer Studio
+`data/elevenlabs-audio.json` left this table in v0.0.1.d: the Lecturer Studio
 rewrites it on every publish, so a frozen hash was a publishing bug waiting to
 happen. It is now capped at 2,500,000 B and its header (`version`, `appVersion`,
 `ver`, `schema`, `voiceId`) is asserted by G1 and G9.6g.
@@ -281,3 +281,70 @@ appears in the source.
 `CREDITS GOES TO Hansana` ·
 Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
 නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini
+
+---
+
+## R11 — v0.0.1.d: the guaranteed classroom settings contract
+
+### R11.1 `config.classSettings` (the ten keys the lecturer owns)
+
+```json
+"classSettings": {
+  "mode": "paper", "writeSecs": 8, "repeats": 3, "pauseSecs": 1.5,
+  "autoAdvance": true, "pacingPreset": "standard", "voiceLock": "unified",
+  "voiceSource": "auto", "rate": 0.95, "theme": "dark"
+}
+```
+
+`SDP.Studio.saveClassSettings()` copies those ten keys out of
+`SDP.Data.settings()`, bumps `settingsRev`, stamps `syncRev = Date.now()` and
+commits `data/config.json` then `data/version.json` (always last) through
+`SDP.Sync.publishFilesSequential`.
+
+### R11.2 Adoption (SYNC-01, SYNC-02)
+
+`sdp.settings.appliedSettingsRev` defaults to `0`. Whenever
+`remote.settingsRev > appliedSettingsRev` — including the very first boot —
+`SDP.Sync.adoptRemoteSettings()` copies the ten keys from `classSettings`
+(falling back to `defaults`), **overrides `touchedKeys` for exactly those ten
+keys**, clears them from `touchedKeys`, stores the new `appliedSettingsRev`,
+calls `SDP.Engine.applySettings()` + `SDP.Views.renderAll()` and fires
+`sdp:teacher-updated` (`{ settingsRev }`), which the UI shows as
+`📡 Synced teacher's latest classroom settings (Rev #N)`.
+
+Personal keys `lang`, `guideAutoPlay`, `volume`, `hints` and the whole
+`sdp.progress` payload are never written by an adoption.
+
+### R11.3 The 30 s pointer read (SYNC-05)
+
+`SDP.Sync.startWatch(30000)` polls **only**
+`https://raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/data/version.json?t=…`
+(falling back to `./data/version.json`). A full `checkForUpdates()` — the only
+path that touches `api.github.com` — runs only when `syncRev`, `settingsRev` or
+`appVersion` moved, on `visibilitychange`, on a manual `#syncBadge` tap, or
+while the Studio resolves its vault envelope.
+
+### R11.4 PIN gate (SEC-01..04)
+
+`data/config.json` ships:
+
+```json
+"pinVerifier": { "algo": "PBKDF2-SHA256", "iterations": 250000, "salt": "…", "hash": "…" }
+```
+
+for the bootstrap lecturer PIN `246813`. While locked, the Studio renders only
+`#studioPin`, `#pinDots`, `#pinPad` (12 keys, 56 px), `#studioMsg` and the
+ask-your-lecturer hint. When `encVault` is the placeholder `SDP_ENC_V2:AAA=`
+the PIN is proved against `pinVerifier`; otherwise the real envelope is
+decrypted with `Vault.decryptV2()`.
+
+Brute force is bounded by `sdp.settings.vaultLock = { fails, lockUntil, strikes }`:
+5 wrong attempts → 60,000 ms lock; a second offence (`strikes >= 2`) → 300,000
+ms. The value lives in `localStorage`, so a reload never clears it.
+
+### R11.5 Voice tiers (VOX-04)
+
+`voiceLock === 'unified'` (default) and `voiceSource !== 'custom'` →
+`resolveTiers()` returns lecturer clip → Alice clip → professor `en-GB` TTS.
+Tier 3 (`dict.youdao.com`) is **excluded**: it serves arbitrary third-party
+voices. It survives only for an explicit `custom` source.

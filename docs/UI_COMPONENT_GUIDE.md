@@ -1,11 +1,11 @@
-# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.c
+# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.d
 
 One stylesheet, flat matte, no glass. If a component is not documented here, it
 does not belong in the app.
 
 ---
 
-## 0. What changed in v0.0.1.c
+## 0. What changed in v0.0.1.d
 
 Five new surfaces, all flat matte, all real DOM:
 
@@ -272,3 +272,54 @@ transparency page is a standalone document and keeps its own inline sheet
 `CREDITS GOES TO Hansana` ·
 Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
 නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini
+
+---
+
+## v0.0.1.d UI additions
+
+### Lecturer classroom sync bar (`#lecturerSyncBar`)
+
+Sticky, full-width, at the top of Settings section 1 and rendered **only**
+while `SDP.Studio.isUnlocked()` is true. It holds one primary button
+`#btnSyncClassSettings`
+(`data-i18n="lecturerSyncBar"`, `📡 Save & Sync Current Settings to All
+Classroom Devices`) and the honest status line `#lecturerSyncLast`
+(`data-i18n="lecturerSyncLast"`), which prints `Last synced to the class ·
+HH:MM · Rev #N` after a successful publish.
+
+### Locked Lecturer Studio (SEC-01)
+
+The locked body is now **only**:
+
+1. masked `#studioPin` (`type="password" inputmode="numeric" maxlength="8"`)
+   with the `#pinDots` indicator,
+2. the 56 px 12-key `#pinPad` (`1..9`, `#pinPadClear`, `0`, `#pinPadUnlock`)
+   plus the ⌫ helper `#pinPadBack`,
+3. `#studioMsg` and the hint `data-i18n="studioAskLecturer"`.
+
+Zero key inputs, zero `#setupPin`, zero `#studioFirstTimePanel`, zero word
+editor — in every vault state, including the placeholder
+`SDP_ENC_V2:AAA=`.
+
+### Quick Walkthrough Mode (`VOX-07`)
+
+`#btnStart` (first Start of a session, `settings.guideAutoPlay !== false`)
+opens `#guideModal` with title `data-i18n="guideQuickTitle"`, narrates Steps 1
+and 2 in English and shows the primary
+`#btnGuideSkipStart` (`⏩ Skip Guide & Start Immediately`). Skipping, or the
+end of Step 2, closes the modal and starts the cockpit countdown.
+
+### Touch targets
+
+Every cockpit and Settings control is at least **48 px** tall (`.btn`,
+`.btn-sm`, `.seg-btn`, `.pill`, `.mark-btn`, `select`, `.checkline`,
+`.pin-key`). `assets/css/sdp-ui.css` ends with the enforced block.
+
+### Honest badges and marks
+
+- `#syncBadge` is composed at render time: `Synced · Session N · v<version>`
+  (EN) / `සමමුහුර්තයි · N වන වාරය · v<version>` (SI). No version or session
+  literal lives in `STRINGS_EN` / `STRINGS_SI` (ENG-06).
+- `#btnToggleMissed` reads **Invert marks (tap twice)**
+  (`data-i18n="invertMarks"`); the first tap arms the action for 3,000 ms
+  (`data-confirm-arm="1"`), the second inverts all rows (ENG-07).

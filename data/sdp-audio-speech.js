@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — speech & audio pipeline (v0.0.1.c)
+/*! Smart Dictation Player — speech & audio pipeline (v0.0.1.d)
  * Strict ES5, dependency free.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 audio priority chain
  * Dictionary audio always plays through a plain <audio> element; element audio

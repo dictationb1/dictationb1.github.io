@@ -1,12 +1,12 @@
-/*! Smart Dictation Player — service worker (v0.0.1.c)
+/*! Smart Dictation Player — service worker (v0.0.1.d)
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
  * Network-first for the shell (so a publish lands immediately), cache-first
  * for audio and fonts, and two preserved caches that are never purged:
  * 'sdp-youdao-v1' (dictionary audio) and 'sdp-audio-clips' (lecturer/Alice). */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.1.c';
-var SHELL_CACHE = 'sdp-v0.0.1.c-shell';
+var SW_VERSION = 'sdp-v0.0.1.d';
+var SHELL_CACHE = 'sdp-v0.0.1.d-shell';
 var PRESERVE_CACHES = ['sdp-youdao-v1', 'sdp-audio-clips'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';

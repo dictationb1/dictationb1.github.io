@@ -1,10 +1,10 @@
 {
   "name": "Smart Dictation Player — CCBE Galle Branch",
   "short_name": "Dictation",
-  "description": "Smart Dictation Player v0.0.1.c — listen to UK English words and write them down. Offline-ready Sinhala/English dictation practice for the CCBE Galle Branch B1 class.",
+  "description": "Smart Dictation Player v0.0.1.d — listen to UK English words and write them down. Offline-ready Sinhala/English dictation practice for the CCBE Galle Branch B1 class.",
   "lang": "en",
   "dir": "ltr",
-  "start_url": "./?v=0.0.1.c&source=pwa",
+  "start_url": "./?v=0.0.1.d&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -38,13 +38,13 @@
     {
       "name": "Start Dictation",
       "short_name": "Dictation",
-      "url": "./index.html?tab=player&v=0.0.1.c",
+      "url": "./index.html?tab=player&v=0.0.1.d",
       "icons": []
     },
     {
       "name": "Data & cache transparency",
       "short_name": "Data",
-      "url": "./data/?v=0.0.1.c",
+      "url": "./data/?v=0.0.1.d",
       "icons": []
     }
   ]

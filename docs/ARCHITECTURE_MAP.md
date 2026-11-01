@@ -1,4 +1,4 @@
-# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.c
+# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.d
 
 Audience: **CCBE Galle Branch — B1 English Class, Sri Lanka**
 Lecturer in Charge: **Ms. Sumodya Sewmini** · Creator: **Hansana** · Concept: **Ayya01 (Lesandu)**
@@ -30,13 +30,13 @@ a change needs a new file, it needs a new row in §H1 and a new budget in
 | `data/elevenlabs-audio.json` | ≤ 2,500,000 B | **App-written** Alice voice pack (D-UI11); header asserted, clips travel with the repo |
 | `data.html` | ≤ 60,000 B | `/data` transparency route |
 | `data/index.html` | ≤ 60,000 B | Byte-identical twin of `data.html` |
-| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.c` service worker |
-| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.c` |
+| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.d` service worker |
+| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.d` |
 | `docs/*.md` (5 files) | ≤ 32,000 B each (template ≤ 14,000 B) | This ledger |
 
 **Preserved files are never edited by hand.** `tests/check.cjs` compares their
 byte count *and* SHA-256; the hashes live in its `PRESERVED_SHA` table and in
-`docs/SYNC_AND_DATA_CONTRACT.md` Appendix A. Since v0.0.1.c that table is four
+`docs/SYNC_AND_DATA_CONTRACT.md` Appendix A. Since v0.0.1.d that table is four
 files, not five: `data/elevenlabs-audio.json` is written by the Lecturer Studio
 on every publish (D-UI11), so freezing it would have made publishing impossible.
 
@@ -247,7 +247,7 @@ open; because audio is cache-first, replaying a word costs zero data.
 
 ---
 
-## 12. Release gate map (v0.0.1.c)
+## 12. Release gate map (v0.0.1.d)
 
 | Gate | File | Runner | What it proves |
 | --- | --- | --- | --- |
@@ -256,7 +256,7 @@ open; because audio is cache-first, replaying a word costs zero data.
 | G3 | `tests/phase1.cjs` | jsdom | storage corruption, PIN lockout, guide, paper/typing runs |
 | G4 | `tests/server.cjs` | node | config/metadata + Apps Script loader |
 | G5 | `tests/browser.cjs` | Chromium | 54px header, one screen, focus law, ring colours, toast |
-| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.c, single reload, offline shell |
+| G6 | `tests/upgrade-browser.cjs` | Chromium | v60 cache → 0.0.1.d, single reload, offline shell |
 | G7 | `tests/e2e.cjs` | Chromium | the full student journey + backup download |
 | G8 | `tests/live-lab.cjs` | Chromium | dead API, offline reload, hung relay, empty bank |
 | G9 | `tests/audit-v42.cjs` | node | retirement, H1 budgets, ES5, PWA pins, preserved hashes |
@@ -287,3 +287,47 @@ GitHub is unreachable and no cached payload exists.
 `CREDITS GOES TO Hansana` ·
 Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) ·
 නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini
+
+---
+
+## 13. v0.0.1.d — classroom sync, PIN gate and the professor voice
+
+Audience: **CCBE Galle Branch — B1 English Class, Sri Lanka**
+Lecturer in Charge: **Ms. Sumodya Sewmini** · Creator: **Hansana** · Concept: **Ayya01 (Lesandu)**
+
+| Pill | Line |
+| --- | --- |
+| `CREDITS GOES TO Hansana` | `Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)` |
+| `නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini` | both lines ship in EN and SI on Home, About and `/data` |
+
+### 13.1 New public surface (R10 additions)
+
+```js
+SDP.version = '0.0.1.d'; SDP.ver = 4;
+SDP.Sync.adoptRemoteSettings(remoteConfig, remoteSettingsRev); // R1
+SDP.Sync.fetchRawMainJson(relPath, cb);   // raw.githubusercontent.com, no token
+SDP.Sync.pollVersionTick(cb);             // the 30 s pointer read
+SDP.Sync.Vault.computePinVerifier(pin, saltB64);      // PBKDF2-SHA256, 250k
+SDP.Sync.Vault.verifyPinVerifier(pin, verifierObj);   // constant-time compare
+SDP.Sync.Vault.recordFail() / .strikes() / .resetLock();
+SDP.Studio.saveClassSettings(cb);         // the #lecturerSyncBar button
+SDP.Studio.classSettingKeys;              // the ten classroom keys
+SDP.Speech.activeUtter();                 // VOX-01 module-scope guard
+SDP.Speech.lastTierName();                // VOX-08 honest toast
+SDP.Views.renderAll();                    // one repaint after an adoption
+SDP.Views.openGuideQuick(mode); SDP.Views.finishQuickGuide(start);
+```
+
+### 13.2 New structural DOM ids (H2 additions)
+
+`#lecturerSyncBar`, `#btnSyncClassSettings`, `#lecturerSyncLast`,
+`#btnGuideSkipStart`, `#newPinInput`, `#confirmPinInput`, `#studioGasUrl`
+(unlocked only). `#studioFirstTimePanel`, `#setupPin` and `#btnStudioSetup`
+no longer exist anywhere in the locked Studio DOM (SEC-01).
+
+### 13.3 Byte ceilings after the bump
+
+Every H1 budget is unchanged; the largest growth is `data/sdp-ui-views.js`
+(string tables + quick guide) and `data/studio.js` (class-settings publish),
+both far inside their 110,000 B / 85,000 B ceilings. `data/config.json` gained
+`classSettings` and `pinVerifier` and stays under 36,000 B.
