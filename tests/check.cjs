@@ -264,6 +264,25 @@ function pending(p) {
       c.credits.en === 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini' &&
       /^නිර්මාණය: Hansana · අදහස: Ayya01 \(Lesandu\) · භාරකාර කථිකාචාර්ය: /.test(c.credits.si),
       JSON.stringify(c.credits && [c.credits.en, c.credits.si]));
+    /* contract: docs/CHANGELOG_LEDGER.md §v0.0.1.d — the credits must survive
+       verbatim in EN and SI, plus the pill, on Home, About and /data. */
+    const PILL = 'CREDITS GOES TO Hansana';
+    const EN_LINE = 'Lecturer in Charge: Ms. Sumodya Sewmini \u00b7 Creator: Hansana \u00b7 Concept: Ayya01 (Lesandu)';
+    const SI_HEAD = '\u0db1\u0dd2\u0dbb\u0dca\u0db8\u0dcf\u0dab\u0dba: Hansana';
+    if (exists('index.html')) {
+      const home = readText('index.html');
+      const pills = (home.match(new RegExp(PILL, 'g')) || []).length;
+      record('index.html keeps the credits pill on Home and About', pills >= 2, pills);
+      record('index.html keeps the EN + SI credit lines twice',
+        (home.match(new RegExp(EN_LINE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length >= 2 &&
+        (home.match(new RegExp(SI_HEAD, 'g')) || []).length >= 2, 'en/si');
+    } else { pending('index.html credits'); }
+    if (exists('data.html')) {
+      const dp = readText('data.html');
+      record('data.html keeps the credits pill, EN line and SI line',
+        dp.indexOf(PILL) !== -1 && dp.indexOf(EN_LINE) !== -1 && dp.indexOf(SI_HEAD) !== -1,
+        JSON.stringify([dp.indexOf(PILL) !== -1, dp.indexOf(EN_LINE) !== -1, dp.indexOf(SI_HEAD) !== -1]));
+    } else { pending('data.html credits'); }
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.1 — the ten classroom keys */
     const CLASSY = ['mode', 'writeSecs', 'repeats', 'pauseSecs', 'autoAdvance',
       'pacingPreset', 'voiceLock', 'voiceSource', 'rate', 'theme'];
