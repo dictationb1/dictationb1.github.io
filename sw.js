@@ -1,16 +1,22 @@
-/*! Smart Dictation Player — service worker (v0.0.1.d)
+/*! Smart Dictation Player — service worker (v0.0.1.e)
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
- * Network-first for the shell (so a publish lands immediately), cache-first
- * for audio and fonts, and two preserved caches that are never purged:
- * 'sdp-youdao-v1' (dictionary audio) and 'sdp-audio-clips' (lecturer/Alice). */
+ * D2: a strict origin gate is the FIRST statement of the fetch handler — only
+ * same-origin requests and dict.youdao.com dictionary audio are ever touched.
+ * api.elevenlabs.io, api.github.com and raw.githubusercontent.com are never
+ * intercepted, never cached and never delayed by this worker. Network-first
+ * for the shell and data JSON ({ cache: 'reload' }, 10 s timeout, D3/D4),
+ * cache-first for audio and fonts, and two preserved caches that are never
+ * purged: 'sdp-youdao-v1' (dictionary audio) and 'sdp-audio-clips'
+ * (lecturer/Alice). */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.1.d';
-var SHELL_CACHE = 'sdp-v0.0.1.d-shell';
+var SW_VERSION = 'sdp-v0.0.1.e';
+var SHELL_CACHE = 'sdp-v0.0.1.e-shell';
 var PRESERVE_CACHES = ['sdp-youdao-v1', 'sdp-audio-clips'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';
-var NETWORK_TIMEOUT = 4000;
+var AUDIO_CACHE = CLIP_CACHE;
+var NETWORK_TIMEOUT = 10000; /* D3: slow classroom links get 10 s, not 4 s */
 
 var SHELL = [
   './',
@@ -32,17 +38,23 @@ var SHELL = [
   './data/index.html'
 ];
 
-function isYoutubeAudio(url) {
-  return url.indexOf('dict.youdao.com') >= 0 || /[?&]audio=/.test(url) || /\/dictvoice/.test(url);
+/* D2: the only external host this worker may touch is the dictionary audio
+   CDN. Matching is hostname/path based — never a broad /[?&]audio=/ or
+   /elevenlabs/i regex that could swallow an API request. */
+function isYoudaoHost(url) {
+  return url.indexOf('dict.youdao.com') >= 0 || url.indexOf('/dictvoice') >= 0;
 }
-function isClipAudio(url) {
-  return /assets\/audio\/session-w/.test(url) || url.indexOf('blob:') === 0 || /elevenlabs/i.test(url);
+function isLecturerClipPath(pathname) {
+  return /\/assets\/audio\/session-w/.test(pathname);
 }
 function isFontOrIcon(url) {
   return /\.(woff2|woff|ttf|png|svg|ico|webp)(\?|$)/i.test(url) || url.indexOf('/assets/fonts/') >= 0;
 }
 function isShellRequest(url) {
   return /\.(html|json|js|css|webmanifest)(\?|$)/i.test(url) || url.indexOf('/data/') >= 0;
+}
+function isDataJsonPath(pathname) {
+  return /\/data\/[^\/]+\.json$/i.test(pathname);
 }
 
 function cacheFirst(request, cacheName) {
@@ -78,10 +90,50 @@ function isJsonRequest(request, url) {
   return /\.json(\?|$)/i.test(url || '') || (request && request.headers &&
     String(request.headers.get('Accept') || '').indexOf('application/json') >= 0);
 }
-function networkFirst(request) {
-  var url = request && request.url ? request.url : '';
+
+/* D3/D4: data JSON is fetched with { cache: 'reload' } so the browser's
+   10-minute HTTP cache can never serve a stale version.json, the network
+   window is 10 s, and the fallback cache match ignores the ?t= cache-buster.
+   A ?t= request is never written into SHELL_CACHE — only its clean pathname
+   is cached, and activate() purges any ?t= key that older versions left. */
+function networkFirstDataJson(request, url) {
+  return caches.open(SHELL_CACHE).then(function (cache) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      var cleanUrl = url.pathname;
+      function fallback() {
+        return cache.match(url.pathname, { ignoreSearch: true }).then(function (hit) {
+          return hit || offlineJson();
+        });
+      }
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        fallback().then(resolve);
+      }, NETWORK_TIMEOUT);
+      fetch(new Request(request.url, { cache: 'reload' })).then(function (res) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (res && res.ok) {
+          try { cache.put(cleanUrl, res.clone()); } catch (e) {}
+          resolve(res);
+          return;
+        }
+        fallback().then(function (hit) { resolve(res && res.status ? res : hit); }, function () { resolve(res || offlineJson()); });
+      }).catch(function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        fallback().then(resolve);
+      });
+    });
+  });
+}
+
+function networkFirstShell(request, url) {
   var navigable = isNavigable(request);
-  var jsonish = isJsonRequest(request, url);
+  var jsonish = isJsonRequest(request, url.href);
   return caches.open(SHELL_CACHE).then(function (cache) {
     return new Promise(function (resolve) {
       var settled = false;
@@ -99,7 +151,7 @@ function networkFirst(request) {
         settled = true;
         clearTimeout(timer);
         if (res && res.ok) {
-          try { cache.put(request, res.clone()); } catch (e) {}
+          try { if (String(request.url).indexOf('?t=') < 0) cache.put(request, res.clone()); } catch (e) {}
         }
         resolve(res);
       }).catch(function () {
@@ -131,29 +183,59 @@ self.addEventListener('install', function (event) {
   );
 });
 
+/* Purge every cache-busted '?t=' entry the v0.0.1.d worker left behind (D4),
+   then delete retired caches. The two preserved audio caches survive. */
+function purgeQueryKeys(cacheName) {
+  return caches.open(cacheName).then(function (cache) {
+    return cache.keys().then(function (requests) {
+      return Promise.all(requests.map(function (req) {
+        if (String(req.url).indexOf('?t=') >= 0) return cache.delete(req);
+        return Promise.resolve(false);
+      }));
+    }).catch(function () { return false; });
+  });
+}
+
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (names) {
-      return Promise.all(names.map(function (name) {
+      var kept = [];
+      names.forEach(function (name) {
         var keep = name === SHELL_CACHE || PRESERVE_CACHES.indexOf(name) >= 0;
         /* Everything else under the sdp- prefix is a retired version. */
-        if (!keep && name.indexOf('sdp-') === 0) return caches.delete(name);
-        return Promise.resolve(false);
-      }));
+        if (keep) kept.push(name);
+        else if (name.indexOf('sdp-') === 0) return caches.delete(name);
+      });
+      return Promise.all(kept.map(purgeQueryKeys));
     }).then(function () { return self.clients.claim(); })
   );
 });
 
+/* ══ D2: the origin gate is the very first check of every fetch ══════════
+   Same-origin requests and dict.youdao.com dictionary audio are served by the
+   policies below. EVERY other host — api.elevenlabs.io, api.github.com,
+   raw.githubusercontent.com, fonts, CDNs — returns immediately without
+   event.respondWith(), so the browser's own network stack handles it and the
+   worker can never cache or delay a key check, a version probe or a relay. */
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (!request || request.method !== 'GET') return;
-  var url = request.url || '';
-
-  if (isYoutubeAudio(url)) { event.respondWith(cacheFirst(request, YOUDAO_CACHE)); return; }
-  if (isClipAudio(url)) { event.respondWith(cacheFirst(request, CLIP_CACHE)); return; }
-  if (isFontOrIcon(url)) { event.respondWith(cacheFirst(request, SHELL_CACHE)); return; }
-  if (request.mode === 'navigate') { event.respondWith(networkFirst(request)); return; }
-  if (url.indexOf(self.location.origin) === 0 && isShellRequest(url)) { event.respondWith(networkFirst(request)); return; }
+  var url;
+  try { url = new URL(request.url); } catch (e) { return; }
+  var sameOrigin = url.origin === self.location.origin;
+  var isDictAudio = url.hostname === 'dict.youdao.com' || isLecturerClipPath(url.pathname);
+  if (!sameOrigin && !isDictAudio) return; /* D2: never intercept third-party hosts */
+  if (isDictAudio) {
+    event.respondWith(cacheFirst(request, url.hostname === 'dict.youdao.com' ? YOUDAO_CACHE : AUDIO_CACHE));
+    return;
+  }
+  if (isDataJsonPath(url.pathname)) {
+    event.respondWith(networkFirstDataJson(request, url));
+    return;
+  }
+  if (request.mode === 'navigate' || isShellRequest(url.href)) {
+    event.respondWith(networkFirstShell(request, url));
+  }
 });
 
 self.addEventListener('message', function (event) {
@@ -174,7 +256,7 @@ self.addEventListener('message', function (event) {
         return;
       }
       var url = String(urls[done++]);
-      var cacheName = isYoutubeAudio(url) ? YOUDAO_CACHE : CLIP_CACHE;
+      var cacheName = isYoudaoHost(url) ? YOUDAO_CACHE : CLIP_CACHE;
       caches.open(cacheName).then(function (cache) {
         return fetch(url).then(function (res) {
           if (res && (res.ok || res.type === 'opaque')) {

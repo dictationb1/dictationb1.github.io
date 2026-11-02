@@ -17,8 +17,8 @@ any new upgrade prompt instead:
 - Budgets: `index.html` 35,000 · `sdp-ui.css` 60,000 · `sdp-data-sync.js` 65,000 ·
   `sdp-audio-speech.js` 48,000 · `sdp-dictation-engine.js` 58,000 ·
   `sdp-ui-views.js` 110,000 · `studio.js` 85,000 · `data-meter.js` 22,000 ·
-  `data.html` = `data/index.html` 60,000 · `sw.js` 12,000 · `docs/*.md` 32,000
-  (this template 14,000).
+  `data.html` = `data/index.html` 60,000 · `sw.js` 12,000 · `docs/*.md` 40,000
+  (this template 18,000).
 - **Never** call `/v1/text-to-speech` from a gate, test, script or probe. The only
   live TTS is a human click on `#btnGenClips` / `#btnTestOneWord` in
   `data/studio.js`; G12 fails the release if a test file even mentions the path.
@@ -28,6 +28,25 @@ any new upgrade prompt instead:
   `CREDITS GOES TO Hansana` ·
   `Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)` ·
   `නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini`.
+
+---
+
+## v0.0.1.e — 2026-11-02 — the honest-sync release
+
+Copy these extra lines into any upgrade prompt written against **v0.0.1.e**:
+
+- The version check is **never-red dual-source**: same-origin `./data/version.json?t=`
+  first, then `raw.githubusercontent.com`; either 200 is `ok: true`. Students
+  never poll `api.github.com` (token-only Studio use).
+- The unified voice ladder is lecturer → Alice → (verified Neural UK Female) →
+  **dictionary human British audio** → TTS last, with an 800 ms word watchdog
+  and a 700 ms guide watchdog driven by the real `utter.onstart` flag.
+- Fresh devices boot `lang: 'en'`; the one-time `langResetV001e` flag lives
+  inside `sdp.settings` and `lang` is never a class key.
+- Every publish stamps ONE monotonic `syncRev = Math.max(Date.now(), prev + 1)`
+  into config/session/voice-pack/version; `version.json` commits last.
+- Home is a Bento grid at ≥ 1024 px (7fr/5fr, credits full-row) with 28 px
+  `.step-badge` journey numbers and four rich `.practice-card` buttons.
 
 ---
 

@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.d)
+/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.e)
  * Strict ES5, dependency free, no build step.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R1, §R7, §R8, §R9
  * contract: docs/ARCHITECTURE_MAP.md §R6 two-layer sync */
@@ -6,15 +6,15 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.1.d';
-  SDP.build = '2026-11-01';
-  SDP.ver = 4;
+  SDP.version = '0.0.1.e';
+  SDP.build = '2026-11-02';
+  SDP.ver = 5;
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.1.d';
-  var SCHEMA = 4;
-  var SETTINGS_REV = 4;
+  var APP_VERSION = '0.0.1.e';
+  var SCHEMA = 5;
+  var SETTINGS_REV = 5;
   /* D1 guard: the in-session upgrade reload fires at most once per version. */
   var appVersionChanged = false;
   /* D5 guard: visibilitychange is registered at most once per module load. */
@@ -125,6 +125,13 @@
     return out;
   }
 
+  /* D17: version.json carries `version` as a STRING ('0.0.1.e'); some older
+     payloads nested an object. One shared parser keeps every reader honest. */
+  function parseRemoteAppVer(v) {
+    if (isObj(v)) return str(v.appVersion || (isObj(v.version) ? (v.version.appVersion || v.version.version) : v.version));
+    return str(typeof v === 'string' ? v : '');
+  }
+
   var Data = {
     KEYS: KEYS,
     available: store.available,
@@ -140,6 +147,15 @@
       s.rate = Math.min(1.2, Math.max(0.7, Number(s.rate) || 0.95));
       s.volume = Math.min(1, Math.max(0, isNaN(Number(s.volume)) ? 1 : Number(s.volume)));
       if (s.lang !== 'si') s.lang = 'en';
+      /* D7 / R3: the one-time v0.0.1.e boot migration. Devices left on 'si' by
+         an older release wake up in professional British English exactly once
+         (langResetV001e lives INSIDE sdp.settings, never as a sixth R4 key);
+         after it has run, a student's own EN | SI choice always wins. */
+      if (s.langResetV001e !== true) {
+        s.lang = 'en';
+        s.langResetV001e = true;
+        writeJSON(KEYS.settings, s);
+      }
       /* D-UI3: 'board' is a real theme, not a typo for 'dark'. */
       if (s.theme !== 'light' && s.theme !== 'board') s.theme = 'dark';
       /* R7: which settings the student changed by hand. A remote settingsRev
@@ -859,11 +875,13 @@
     },
 
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 instant propagation */
+    /* R1 Never-Red law (D1/D5): if EITHER the same-origin CDN copy or the
+       opportunistic raw.githubusercontent.com enhancer answers 200, the check
+       is ok:true — Brave Shields, CORS blocks and timeouts are non-fatal.
+       ok:false only when BOTH fail; students never poll api.github.com. */
     checkForUpdates: function (cb) {
       cb = cb || noop;
       if (typeof global.fetch !== 'function') { cb(null, { ok: false, error: 'no_fetch', changed: false }); return; }
-      /* D-S6: read BOTH sources, then let the newest syncRev win. The CDN copy
-         can be up to two minutes stale; api.github.com is live immediately. */
       var pending = 2, cdnVersion = null, cdnErr = null, rawVersion = null, rawFailed = false, settled = false;
       function joined() {
         if (settled) return;
@@ -873,39 +891,38 @@
         proceed();
       }
       fetchJSON('./data/version.json', function (err, data) { cdnErr = err; cdnVersion = err ? null : data; joined(); });
-      Sync.fetchRawGitHubJson('data/version.json', function (err, data) {
+      Sync.fetchRawMainJson('data/version.json', function (err, data) {
         if (err || !data) rawFailed = true; else rawVersion = data;
         joined();
       });
       function proceed() {
         var rawRev = Number((rawVersion && rawVersion.syncRev) || 0);
         var cdnRev = Number((cdnVersion && cdnVersion.syncRev) || 0);
-        var useRaw = rawRev > cdnRev;
+        /* A source that failed or was blocked can never win the clock race. */
+        var useRaw = cdnVersion ? (!rawFailed && rawRev > cdnRev) : (!!rawVersion && !rawFailed);
         var remote = useRaw ? rawVersion : cdnVersion;
         var result = { updated: false, session: null, appVersion: null };
         if (!remote) {
-          var code = cdnErr && String(cdnErr.message) === 'timeout' ? 'timeout' : (cdnErr && cdnErr.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
+          var cdnCode = cdnErr && String(cdnErr.message) === 'timeout' ? 'timeout' : (cdnErr && cdnErr.message === 'no_fetch' ? 'no_fetch' : 'bad_response');
+          var code = cdnVersion || rawVersion ? cdnCode : (cdnErr && cdnErr.message === 'no_fetch' ? 'no_fetch' : cdnCode);
           cb(null, { ok: false, error: code, changed: false }); return;
         }
         var local = state.version || {};
         var sessionChanged = str(remote.session) !== str(local.session);
         var settingsChanged = Number(remote.settingsRev || 0) !== Number(local.settingsRev || 0);
         var newer = Number(remote.syncRev || 0) > Number(local.syncRev || 0);
-        /* SYNC-04: remote.version is a STRING ('0.0.1.d') in version.json, so
-           reading only `.appVersion` off it made every upgrade invisible. */
-        var remoteAppVer = str(remote.version && (remote.version.appVersion || remote.version.version));
-        if (!remoteAppVer) remoteAppVer = str(remote.appVersion);
+        /* SYNC-04 / D17: share one parser for the remote app version. */
+        var remoteAppVer = parseRemoteAppVer(remote);
         var appChanged = !!remoteAppVer && remoteAppVer !== APP_VERSION;
         state.lastCheck = nowMs();
         state.lastCheckSource = useRaw ? 'raw' : 'cdn';
         result.session = str(remote.session);
-        result.appVersion = str(remote.appVersion);
+        result.appVersion = str(remote.appVersion || remoteAppVer);
         result.appVersionChanged = appChanged;
         if (!sessionChanged && !settingsChanged && !newer && !appChanged) {
           cb(null, { ok: true, error: null, changed: false, updated: false, session: result.session, appVersion: result.appVersion, source: state.lastCheckSource });
           return;
         }
-        try { remoteAppVer = str(remote.version && (remote.version.appVersion || remote.version.version)) || str(remote.appVersion); } catch (e) {}
         if (appChanged && sessionStorage.getItem('sdp_upgraded_to') !== remoteAppVer) {
           appVersionChanged = true;
           Sync.triggerVersionUpgrade(remoteAppVer);
@@ -920,7 +937,7 @@
            so a brand-new encVault is never mixed with a stale CDN session. */
         function pull(path, assign) {
           if (useRaw) {
-            Sync.fetchRawGitHubJson(path, function (err, data) {
+            Sync.fetchRawMainJson(path, function (err, data) {
               if (!err && data) assign(data);
               settle();
             });
@@ -980,24 +997,31 @@
       return true;
     },
 
-    /* SYNC-05: one cheap raw.githubusercontent.com read every 30 s. The full
-       reconciliation (and any api.github.com traffic) only happens when the
-       pointer really moved, on visibilitychange, on a manual badge tap, or
-       while the Studio resolves its vault envelope. */
+    /* SYNC-05 + D16: one cheap raw.githubusercontent.com read every 30 s; the
+       full reconciliation happens on a real pointer move or badge tap. */
     startWatch: function (ms) {
       Sync.stopWatch();
       liveTimer = global.setInterval(function () {
         if (doc && doc.visibilityState === 'hidden') return;
-        Sync.pollVersionTick(function () {});
+        Sync.checkForUpdates(Sync.handleWatchResult);
       }, ms || 30000);
       if (doc && doc.addEventListener && !watchVisBound) {
         watchVisBound = true;
         doc.addEventListener('visibilitychange', function () {
-          if (doc.visibilityState === 'visible') Sync.checkForUpdates(function () {});
+          if (doc.visibilityState === 'visible') Sync.checkForUpdates(Sync.handleWatchResult);
         }, false);
       }
     },
     stopWatch: function () { if (liveTimer) { global.clearInterval(liveTimer); liveTimer = null; } },
+    /* D16: every 30 s tick and every visibilitychange result is published,
+       never discarded. Views listens for 'sdp:sync-status'; Sync.onWatchTick
+       receives the same (err, result) pair for tooling. */
+    handleWatchResult: function (err, result) {
+      if (typeof Sync.onWatchTick === 'function') {
+        try { Sync.onWatchTick(err, result); } catch (e) {}
+      }
+      emit('sdp:sync-status', { err: err || null, result: isObj(result) ? result : null });
+    },
 
     /* ── audio clip resolution (no fake stubs are ever shipped) ─────────── */
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 tier 1 */
@@ -1203,7 +1227,7 @@
         var local = state.version || {};
         var applied = 0;
         try { applied = Number(Data.settings().appliedSettingsRev) || 0; } catch (e) { applied = 0; }
-        var remoteAppVer = str(remote.appVersion || remote.version || '');
+        var remoteAppVer = parseRemoteAppVer(remote);
         var moved = Number(remote.syncRev || 0) > Number(local.syncRev || 0) ||
           Number(remote.settingsRev || 0) > applied ||
           (!!remoteAppVer && remoteAppVer !== APP_VERSION);
@@ -1224,11 +1248,9 @@
       });
     },
 
-    /* ══ D-S6 / D-S7: read straight from api.github.com ═════════════════
-     * GitHub Pages rebuilds its CDN in 30-120 s. A lecturer who saves keys on
-     * Device A must not wait that long on Device B, so the public Contents API
-     * (no token required for a public repository) is read in parallel and the
-     * newest syncRev always wins. */
+    /* ══ Studio-only token-bearing read (D5): students never call this. The
+     * Contents API answers while the Pages CDN rebuilds; without a token the
+     * caller degrades to the same raw CDN every student uses. */
     fetchRawGitHubJson: function (path, cb, token) {
       cb = cb || noop;
       if (typeof global.fetch !== 'function') { cb(new Error('no_fetch')); return false; }

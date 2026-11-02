@@ -1,4 +1,4 @@
-# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.d
+# SYNC_AND_DATA_CONTRACT — Smart Dictation Player v0.0.1.e
 
 Everything that touches bytes on a student's phone, or a byte on GitHub, is
 specified here. If code and this document disagree, the document wins and the
@@ -10,13 +10,13 @@ code is the bug.
 
 | Constant | Value | Where |
 | --- | --- | --- |
-| `APP_VERSION` / `SDP.version` | `0.0.1.d` | `index.html`, every module |
-| `ver` | `3` | `data/version.json`, `data/config.json`, `data/elevenlabs-audio.json` |
-| `schema` | `3` | same |
-| `settingsRev` | `3` | same |
-| `syncRev` | `1762000000002` | `data/version.json` |
-| `SW_VERSION` | `sdp-v0.0.1.d` | `sw.js` |
-| `SHELL_CACHE` | `sdp-v0.0.1.d-shell` | `sw.js` |
+| `APP_VERSION` / `SDP.version` | `0.0.1.e` | `index.html`, every module |
+| `ver` | `5` | `data/version.json`, `data/config.json`, `data/elevenlabs-audio.json` |
+| `schema` | `5` | same |
+| `settingsRev` | `5` | same |
+| `syncRev` | `1793585000000` | identical in version/config/voice-pack |
+| `SW_VERSION` | `sdp-v0.0.1.e` | `sw.js` |
+| `SHELL_CACHE` | `sdp-v0.0.1.e-shell` | `sw.js` |
 | `PRESERVE_CACHES` | `['sdp-youdao-v1', 'sdp-audio-clips']` | `sw.js` |
 
 There is exactly one version file: `data/version.json`. Never a root `/version.json`.
@@ -57,16 +57,16 @@ The watch runs `checkForUpdates` every 120,000 ms and on `visibilitychange`
 
 ```json
 {
-  "ver": 3,
-  "appVersion": "0.0.1.d",
-  "version": "0.0.1.d",
-  "buildDate": "2026-11-01",
-  "schema": 3,
-  "settingsRev": 3,
+  "ver": 5,
+  "appVersion": "0.0.1.e",
+  "version": "0.0.1.e",
+  "buildDate": "2026-11-02",
+  "schema": 5,
+  "settingsRev": 5,
   "session": "8",
   "title": "Session 8 - Personal Feelings, Opinions & Experiences (Adj)",
-  "updatedAt": "2026-11-01T00:00:00Z",
-  "syncRev": 1762000000002
+  "updatedAt": "2026-11-02T00:00:00Z",
+  "syncRev": 1793585000000
 }
 ```
 
@@ -342,9 +342,55 @@ Brute force is bounded by `sdp.settings.vaultLock = { fails, lockUntil, strikes 
 5 wrong attempts → 60,000 ms lock; a second offence (`strikes >= 2`) → 300,000
 ms. The value lives in `localStorage`, so a reload never clears it.
 
-### R11.5 Voice tiers (VOX-04)
+### R11.5 Voice tiers (VOX-04, rewritten in v0.0.1.e by D10)
 
 `voiceLock === 'unified'` (default) and `voiceSource !== 'custom'` →
-`resolveTiers()` returns lecturer clip → Alice clip → professor `en-GB` TTS.
-Tier 3 (`dict.youdao.com`) is **excluded**: it serves arbitrary third-party
-voices. It survives only for an explicit `custom` source.
+`resolveTiers()` returns lecturer clip → Alice clip → **`neural_tts` only when a
+verified Tier-1 Neural UK Female voice is present (score ≥ 100 and
+`getVoices().length > 0`)** → dictionary (`dict.youdao.com` type=1, real human
+British recording) → browser TTS **last**. v0.0.1.d excluded the dictionary tier
+entirely and left Brave (0 voices) silent; the real human recording now always
+precedes low-quality synth. Explicit `custom` keeps the d behaviour.
+
+---
+
+## R13 — v0.0.1.e: honest sync, migration and the one publish clock
+
+### R13.1 Never-red dual-source version check (D1, D5, D17)
+
+`checkForUpdates(cb)` reads `./data/version.json?t=<ms>` (same-origin, Source 1)
+and, if that fails, `raw.githubusercontent.com/dictationb1/dictationb1.github.io/main/data/version.json`
+(Source 2). **Either HTTP 200 resolves `cb(null, { ok: true, … })`; the badge
+goes red only when both sources fail.** `api.github.com` is never polled by
+students — it stays token-only Studio access. `cb(err, result)` fires exactly
+once per check; one shared `Views.handleSyncCheckResult(err, result)` composes
+the badge/toast, and the 30 s watch tick plus `visibilitychange` both feed it.
+
+### R13.2 Service worker origin gate (D2)
+
+The `fetch` handler's FIRST check is the origin: only same-origin requests and
+`dict.youdao.com/dictvoice` audio are ever intercepted — everything else
+(including `api.github.com` and `api.elevenlabs.io`) passes straight through.
+Data reads (`data/*.json`): 10 s network-first with `cache: 'reload'`, a clean
+path cache put (never a `?t=` URL), an `ignoreSearch` cache fallback, and an
+honest 503 JSON offline page. `activate` purges retired `sdp-*` caches and every
+stale `?t=` entry, preserving `sdp-youdao-v1` and `sdp-audio-clips`.
+
+### R13.3 One-time language migration (D7, R3)
+
+`defaultSettings().lang` is `'en'`. On boot, while `sdp.settings.langResetV001e`
+is falsy, `Data.settings()` forces `lang: 'en'` once, sets
+`langResetV001e: true` **inside** `sdp.settings` (never a sixth top-level key)
+and persists. `lang` is NOT in `CLASS_SETTING_KEYS`: a student's later choice is
+personal and survives every class-settings adoption.
+
+### R13.4 One publish clock + coherent payloads (D13, D19)
+
+`Studio.nextSyncRev()` = `Math.max(Date.now(), prevSyncRev + 1)`. Every file of
+one publish (config, session, voice pack, version) carries the SAME stamp;
+`version.json` is committed last via `publishFilesSequential`. `saveKeys()`
+ALWAYS recomputes `config.pinVerifier` from the salt already published in
+`config.json` (fresh 16-byte salt only when no verifier exists) — the verifier
+can never go stale after a PIN change. `session.clips` (word→clip URLs) survive
+`buildSessionPayload()`, and `Studio.publishChecklist()` refuses a publish whose
+words, envelope, verifier or syncRev are incoherent — in plain language.

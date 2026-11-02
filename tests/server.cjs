@@ -55,10 +55,10 @@ test('Server failed multi-cell publish leaves committed words/version intact and
 });
 
 /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R7 — the frozen SDP_ENC_V2 wire format ships with the studio */
-test('v0.0.1.d release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
+test('v0.0.1.e release metadata: public JSON is secret-free, GitHub-only studio and AES-GCM v2 runtime ship together',()=>{
  const read=f=>JSON.parse(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'));
- const rel=read('data/version.json');assert.equal(rel.ver,4);assert.equal(rel.appVersion,'0.0.1.d');assert.equal(rel.schema,4);assert.equal(rel.settingsRev,4);
- const cfg=read('data/config.json');assert.equal(cfg.ver,4);assert.equal(cfg.appVersion,'0.0.1.d');assert.equal(cfg.schema,4);assert.equal(cfg.settingsRev,4);assert.equal(cfg.encVault,'SDP_ENC_V2:AAA=');
+ const rel=read('data/version.json');assert.equal(rel.ver,5);assert.equal(rel.appVersion,'0.0.1.e');assert.equal(rel.schema,5);assert.equal(rel.settingsRev,5);
+ const cfg=read('data/config.json');assert.equal(cfg.ver,5);assert.equal(cfg.appVersion,'0.0.1.e');assert.equal(cfg.schema,5);assert.equal(cfg.settingsRev,5);assert.equal(cfg.encVault,'SDP_ENC_V2:AAA=');
  for(const jf of ['data/version.json','data/config.json','data/session.json','data/elevenlabs-audio.json']){const d=read(jf);assert.ok(d.adminPin===undefined||d.adminPin==='',jf);assert.ok(!d.vaultCiphertext,jf+' no public vault');assert.ok(!d.keysTopic&&!d.wordsTopic&&!d.audioTopic,jf+' no relays');}
  const vault=read('data/elevenlabs-audio.json');assert.equal(vault.voiceId,'Xb7hH8MSUJpSbSDYk0k2');assert.equal(vault.modelId,'eleven_flash_v2_5');assert.equal(vault.strictAdminOnly,true);assert.equal(typeof vault.clips,'object');
  const file=n=>require('path').join(__dirname,'..',n);

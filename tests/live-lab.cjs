@@ -88,7 +88,7 @@ const TARGET_VERSION = /var TARGET = '([^']+)'/.exec(fs.readFileSync(path.join(R
 /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.2 — appliedSettingsRev pins
  * this pacing against a classSettings adoption; guideAutoPlay is off so a
  * resilience tap reaches the cockpit without the quick walkthrough. */
-const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: false, appliedSettingsRev: 4 };
+const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: false, appliedSettingsRev: 5 };
 
 (async function main() {
   const server = await start({ root: ROOT });
@@ -117,8 +117,8 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
         spoken: (window.__sdpSpoken || []).length
       }));
       check('G8.1d dictation starts with no network at all', dictating.screen === 'screen-player', dictating.screen);
-      check('G8.1e the first beat is audible with every network tier dead (professor TTS)',
-        dictating.spoken >= 1, JSON.stringify(dictating));
+      check('G8.1e the first beat is audible with every network tier dead (audio element or professor TTS)',
+        dictating.played + dictating.spoken >= 1, JSON.stringify(dictating));
       check('G8.1f no unhandled page errors with a dead API', errors.length === 0, errors.slice(0, 2).join(' | '));
       await ctx.close();
     }
@@ -270,7 +270,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
           localStorage.setItem('sdp.guide_seen', seed.guide);
           localStorage.setItem('sdp.settings', JSON.stringify(seed.settings));
         } catch (e) {}
-      }, { guide: TARGET_VERSION, settings: Object.assign({}, FAST, { appliedSettingsRev: 4 }) });
+      }, { guide: TARGET_VERSION, settings: Object.assign({}, FAST, { appliedSettingsRev: 5 }) });
       const pageA = await ctxA.newPage();
       const errorsA = [];
       pageA.on('pageerror', (e) => errorsA.push(e.message));

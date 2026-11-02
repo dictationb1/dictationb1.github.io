@@ -1,4 +1,4 @@
-# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.d
+# UI_COMPONENT_GUIDE — Smart Dictation Player v0.0.1.e
 
 One stylesheet, flat matte, no glass. If a component is not documented here, it
 does not belong in the app.
@@ -323,3 +323,49 @@ Every cockpit and Settings control is at least **48 px** tall (`.btn`,
 - `#btnToggleMissed` reads **Invert marks (tap twice)**
   (`data-i18n="invertMarks"`); the first tap arms the action for 3,000 ms
   (`data-confirm-arm="1"`), the second inverts all rows (ENG-07).
+
+## v0.0.1.e UI additions
+
+### The Bento home board (≥ 1024 px)
+
+`#screen-home` is a two-column grid: `grid-template-columns: minmax(0, 7fr)
+minmax(0, 5fr); gap: 16px` (the rule carries `!important` because
+`.screen.active` sets `display:block !important`). Hero + stats + announcement
+fill the wide left column; journey + Quick Practice the right; `#creditFoot`
+spans the full row (`grid-column: 1 / -1`). Below 1024 px everything stacks in
+one column with ≥ 48 px targets, exactly as before.
+
+### Journey step badges
+
+`.journey-list` is `list-style: none; padding-left: 0`; each `<li>` is a flex
+row of a **28 px circular `.step-badge`** (accent fill, dark ink, `aria-hidden`)
+plus the label span. The typed `1. `/`2. `/`3. ` prefixes are gone from
+`STRINGS_EN`/`STRINGS_SI` — the badge IS the number.
+
+### Quick Practice rich cards
+
+`.practice-grid` (single column) holds four `.practice-card` buttons —
+`min-height: 64px`, icon (`.prac-ico`) + title (`.prac-title`) + subtitle
+(`.prac-sub`) — replacing the four small `btn-sm` chips. The click contract is
+unchanged: `data-prac="flash|quiz|listen|weak"` and the same
+`#homeQuickPractice [data-prac]` binding.
+
+### Hero buttons
+
+`.hero-actions .btn` is `flex: 0 1 auto` with `min-width: 176px;
+max-width: 260px` — buttons size to their label instead of stretching to equal
+columns on a Smart Board.
+
+### The honest guide watchdog (D11)
+
+`armGuideWatchdog()` fires at **700 ms** and checks `SDP.Speech.hasStarted()`
+(the real `utter.onstart` flag) and `SDP.Speech.isAudioPlaying()` — never the
+synchronous `isSpeaking()`. `#guideTapBanner` appears only when no real speech
+started AND no cloud fallback audio is playing; the audio fallback itself is
+four short British-English lines played through the shared `<audio>` element
+(`state.lastTier = 'guide_audio'`).
+
+### Language pills (D7)
+
+`.lang-on`/`.lang-off` weight and the active side's accent + underline are
+driven by `body[data-lang]`; `#setLang option[value=en]` is bold.

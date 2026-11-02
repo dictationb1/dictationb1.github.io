@@ -41,6 +41,7 @@
     paperMode: 'Paper', typingMode: 'Typing', resumeSession: 'Continue where you stopped',
     statMastered: 'Mastered', statAccuracy: 'Accuracy', statStreak: 'Day streak',
     quickPractice: 'Quick practice', flashcards: 'Flashcards', quiz: '4-Choice Quiz', listening: 'Listening Drill',
+    flashcardsSub: 'Flip through all 30 words', quizSub: 'Pick the right meaning', listeningSub: 'Hear it, then choose', weakWordsSub: 'Retry the ones you missed',
     weakWords: 'Weak Words', mastered: 'Mastered', announcements: 'Class announcement',
     creditsLine: 'Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)',
     creditsPill: 'CREDITS GOES TO Hansana',
@@ -144,9 +145,9 @@
     studioElevenNote: 'ElevenLabs generation runs only while unlocked, using the Alice voice and flash_v2_5.',
     /* ── v0.0.1.c Table B: Guide 2.0, Home journey, Smart Board bar, Studio ── */
     guideTapToStart: '🔊 Tap anywhere to start the voice guide',
-    homeJourney1: '1. Listen & write',
-    homeJourney2: '2. Check your 30 words',
-    homeJourney3: '3. Train weak words',
+    homeJourney1: 'Listen & write',
+    homeJourney2: 'Check your 30 words',
+    homeJourney3: 'Train weak words',
     homeReadyBadge: 'Session 8 ready · 30 words',
     modePaperFull: '📒 Write in Exercise Book (Paper)',
     modeTypingFull: '⌨️ Type on Screen',
@@ -185,6 +186,7 @@
     paperMode: 'පොතේ ලිවීම', typingMode: 'ටයිප් කිරීම', resumeSession: 'නැවැත්වූ තැනින් ඉදිරියට යන්න',
     statMastered: 'ප්‍රගුණ කළ වචන', statAccuracy: 'නිවැරදිභාවය', statStreak: 'දින පෙළ',
     quickPractice: 'ක්ෂණික අභ්‍යාස', flashcards: 'ෆ්ලෑෂ් කාඩ්', quiz: 'බහුවරණ ප්‍රශ්න', listening: 'ශ්‍රවණ අභ්‍යාස',
+    flashcardsSub: 'වචන 30 ම පෙරළන්න', quizSub: 'නිවැරදි අර්ථය තෝරන්න', listeningSub: 'අහන්න, එතැනින් තෝරන්න', weakWordsSub: 'මඟ හැරි ඒවා නැවත අභ්‍යාස කරන්න',
     weakWords: 'දුර්වල වචන', mastered: 'ප්‍රගුණ කළ', announcements: 'පන්ති දැනුම්දීම',
     creditsLine: 'නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini',
     creditsPill: 'CREDITS GOES TO Hansana',
@@ -288,9 +290,9 @@
     studioElevenNote: 'ElevenLabs ජනනය සිදු වන්නේ අගුළු හැර ඇති විට පමණක්, Alice හඬ සහ flash_v2_5 සමඟය.',
     /* ── v0.0.1.c Table B (සිංහල) ── */
     guideTapToStart: '🔊 හඬ උපදෙස් ආරම්භ කිරීමට ඕනෑම තැනක ස්පර්ශ කරන්න',
-    homeJourney1: '1. අසා ලියන්න',
-    homeJourney2: '2. වචන 30 පරීක්ෂා කරන්න',
-    homeJourney3: '3. දුර්වල වචන පුහුණු වන්න',
+    homeJourney1: 'අසා ලියන්න',
+    homeJourney2: 'වචන 30 පරීක්ෂා කරන්න',
+    homeJourney3: 'දුර්වල වචන පුහුණු වන්න',
     homeReadyBadge: '8 වන වාරය සූදානම් · වචන 30',
     modePaperFull: '📒 අභ්‍යාස පොතේ ලිවීම (Paper)',
     modeTypingFull: '⌨️ තිරයේ ටයිප් කිරීම (Typing)',
@@ -694,20 +696,24 @@
     if (banner.hidden) return false;
     return !(banner.classList && banner.classList.contains('hidden'));
   }
-  /* 600 ms after the guide opens, if nothing is audible the student is told to
-     tap. Mobile Chrome, iOS Safari and Smart Board browsers all block
-     un-gestured speechSynthesis, so silence is expected there — not a bug. */
+  /* D11: 700 ms after the guide opens, if no utterance has REALLY started
+     (utter.onstart) and no <audio> fallback is playing, the student is told to
+     tap. The v0.0.1.d watchdog read the synchronous state.speaking flag, which
+     is true the moment say() is called — so the banner never showed on
+     voiceless browsers like Brave Desktop even though nothing was audible. */
   function armGuideWatchdog() {
     if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} }
     guideState.watchdog = global.setTimeout(function () {
       guideState.watchdog = null;
       var modal = byId('guideModal');
       if (!modal || modal.hidden) return;
-      var speaking = false;
-      try { speaking = !!(SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()); } catch (e) { speaking = false; }
-      if (!speaking && !guideState.narrating) showGuideTapBanner();
-      else if (!speaking) showGuideTapBanner();
-    }, 600);
+      var audible = false;
+      try {
+        audible = !!(SDP.Speech && SDP.Speech.hasStarted && SDP.Speech.hasStarted()) ||
+          !!(SDP.Speech && SDP.Speech.isAudioPlaying && SDP.Speech.isAudioPlaying());
+      } catch (e) { audible = false; }
+      if (!audible) showGuideTapBanner();
+    }, 700);
   }
   function clearGuideWatchdog() {
     if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} guideState.watchdog = null; }
@@ -1473,32 +1479,56 @@
     }
     if (status) { status.textContent = label; status.setAttribute('data-state', state.state || 'synced'); status.setAttribute('title', label); }
   }
+  /* R2/D1: checkForUpdates(cb) is node-style — it calls cb(err, result) where
+     result is the SECOND argument. v0.0.1.d read arg 1 (null) and painted
+     "Check failed — retry" even on a healthy 200 OK. This one shared handler
+     is the single honest painter for the manual check AND every 30 s tick. */
+  function handleSyncCheckResult(err, result) {
+    var res = (result && typeof result === 'object') ? result : ((err && typeof err === 'object' && 'ok' in err) ? err : {});
+    var hasErr = (result !== undefined && !!err) || !res.ok;
+    if (hasErr) {
+      paintSyncBadge({ state: res.error === 'no_fetch' ? 'offline' : 'error', session: syncSessionNo() });
+      return;
+    }
+    if (res.appVersionChanged) {
+      paintSyncBadge({ state: 'update', session: res.session || syncSessionNo() });
+      return;
+    }
+    paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
+  }
+  function syncSessionNo() {
+    var n = '8';
+    try { if (SDP.Sync && SDP.Sync.sessionNo) n = SDP.Sync.sessionNo() || '8'; } catch (e) {}
+    return str(n);
+  }
   function checkForUpdate() {
     setUpdateStatus(t('updateChecking'), '');
     try {
-      SDP.Sync.checkForUpdates(function (result) {
-        if (!result || !result.ok) {
-          var state = (result && result.error === 'no_fetch') ? 'offline' : 'error';
-          paintSyncBadge({ state: state });
+      SDP.Sync.checkForUpdates(function (err, result) {
+        var res = (result && typeof result === 'object') ? result : ((err && typeof err === 'object' && 'ok' in err) ? err : {});
+        var failed = (result !== undefined && !!err) || !res.ok;
+        if (failed) {
+          var state = (res && res.error === 'no_fetch') ? 'offline' : 'error';
+          paintSyncBadge({ state: state, session: syncSessionNo() });
           setUpdateStatus(state === 'offline' ? t('syncBadgeOffline') : t('syncBadgeRetry'), state === 'offline' ? '' : 'bad');
           return;
         }
-        if (result.appVersionChanged) {
-          paintSyncBadge({ state: 'update', session: result.session, appVersion: result.appVersion });
+        if (res.appVersionChanged) {
+          paintSyncBadge({ state: 'update', session: res.session || syncSessionNo(), appVersion: res.appVersion });
           setUpdateStatus(t('syncBadgeUpdate'), 'ok');
           return;
         }
-        if (result.updated) {
-          paintSyncBadge({ state: 'synced', session: result.session });
-          setUpdateStatus(t('updateFound') + ' · Session ' + str(result.session), 'ok');
+        if (res.updated) {
+          paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
+          setUpdateStatus(t('updateFound') + ' · Session ' + str(res.session), 'ok');
           onDataReady();
           return;
         }
-        paintSyncBadge({ state: 'synced', session: result.session });
+        paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
         setUpdateStatus(t('updateNone'), '');
       });
     } catch (e) {
-      paintSyncBadge({ state: 'error' });
+      paintSyncBadge({ state: 'error', session: syncSessionNo() });
       setUpdateStatus(t('syncBadgeRetry'), 'bad');
     }
   }
@@ -1776,6 +1806,13 @@
       showToast(rev ? t('lecturerSyncedToast') + rev + ')' : t('teacherUpdatedToast'));
       renderAll();
     }, false);
+    /* D16: SDP.Sync publishes every 30 s watcher tick and every
+       visibilitychange check on this event; the badge repaints from the real
+       (err, result) pair instead of being frozen at boot-time optimism. */
+    doc.addEventListener('sdp:sync-status', function (ev) {
+      var d = (ev && ev.detail) || {};
+      handleSyncCheckResult(d.err, d.result);
+    }, false);
     return true;
   }
 
@@ -1805,7 +1842,10 @@
     try { if (SDP.Speech && SDP.Speech.loadManifest) SDP.Speech.loadManifest(noop); } catch (e) {}
     try { if (SDP.Studio && SDP.Studio.onDataReady) SDP.Studio.onDataReady(); } catch (e) {}
     if (!err && global.__SDP_NO_LIVE__ !== true) {
-      try { SDP.Sync.startWatch(120000); } catch (e) {}
+      /* D18: this is the ONLY background poller. startWatch(30000) owns the
+         30-second cadence and feeds every tick into the honest sync badge;
+         index.html keeps just its one-shot boot version check. */
+      try { SDP.Sync.startWatch(30000); } catch (e) {}
     }
     return true;
   }

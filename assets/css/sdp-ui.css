@@ -412,8 +412,9 @@ select.input { cursor: pointer; }
 #homeHero { display: flex; flex-direction: column; gap: 10px; }
 #homeTitle { font-size: 24px; letter-spacing: -0.02em; }
 #homeSub { color: var(--text-muted); margin: 0; }
+/* R7: hero buttons size to their label (min comfortable tap, max readable). */
 .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.hero-actions .btn { flex: 1 1 150px; }
+.hero-actions .btn { flex: 0 1 auto; min-width: 176px; max-width: 260px; }
 .resume {
   display: flex;
   flex-wrap: wrap;
@@ -904,6 +905,21 @@ html[lang='si'] .guide-steps p { font-family: var(--font-si); }
 .sync-badge[data-sync-state='offline'] { color: var(--warn); border-color: var(--warn); }
 .sync-badge[data-sync-state='update'] { color: var(--accent); border-color: var(--accent); }
 .sync-badge[data-sync-state='error'] { color: var(--danger); border-color: var(--danger); }
+
+/* D7/R3: British English (EN) is the shipped classroom language, so the active
+   side of every EN | SI pill reads as the primary choice and the inactive side
+   dims. paintLangPills() drives the opacity; this adds the accent weight. */
+.lang-on, .lang-off { font-weight: 700; transition: opacity .15s ease; }
+body[data-lang='en'] #btnLang .lang-on,
+body[data-lang='en'] #guideLangPill .lang-on,
+body[data-lang='si'] #btnLang .lang-off,
+body[data-lang='si'] #guideLangPill .lang-off {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Settings section 3: EN is listed first and reads as the default choice. */
+#setLang option[value='en'] { font-weight: 700; }
 .quick-jumper { display: flex; align-items: center; gap: 6px; }
 .quick-jumper .input { min-height: 30px; padding: 2px 8px; font-size: 12.5px; max-width: 92px; }
 
@@ -969,13 +985,69 @@ html[lang='si'] .guide-steps p { font-family: var(--font-si); }
 .ready-badge[data-ready='false'] { border-color: var(--warn); color: var(--warn); }
 .journey-list {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 0;
+  list-style: none;
   display: grid;
-  gap: 4px;
+  gap: 8px;
   font-size: 14px;
   color: var(--text-muted);
 }
-.journey-list li { line-height: 1.45; }
+.journey-list li { line-height: 1.45; display: flex; align-items: center; gap: 10px; }
+/* R7: the numbered badge replaces the manual '1. '/'2. '/'3. ' prefixes. */
+.step-badge {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #04202B;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+/* R7: the desktop Bento board — hero + stats in the wide left column,
+   journey + quick practice in the right, credits spanning the full row. */
+@media (min-width: 1024px) {
+  #screen-home {
+    /* !important: .screen.active sets display:block !important above. */
+    display: grid !important;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px;
+    align-items: start;
+  }
+  #screen-home > .card { margin-bottom: 0; }
+  #homeStatsRow { margin-bottom: 0; }
+  #homeHero, #homeStatsRow, #homeAnn { grid-column: 1; }
+  #homeJourneyCard, #homeQuickPractice, #bankEmpty { grid-column: 2; }
+  #creditFoot { grid-column: 1 / -1; }
+}
+
+/* ── R7: rich quick-practice cards (icon + title + subtitle) ─────────── */
+.practice-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.practice-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.practice-card:hover { border-color: var(--accent); }
+.practice-card:active { transform: translateY(1px); }
+.prac-ico { flex: 0 0 auto; font-size: 22px; }
+.prac-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.prac-title { font-weight: 700; font-size: 14.5px; }
+.prac-sub { font-size: 12px; color: var(--text-muted); }
 
 /* ── D-UI4/D-UI5/R10: Smart Board Classroom Bar ──────────────────────── */
 /* Hidden by default. It appears on a projector-sized screen (>= 1024px) or

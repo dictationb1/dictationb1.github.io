@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#09090B">
-<meta name="description" content="Smart Dictation Player v0.0.1.d — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
+<meta name="description" content="Smart Dictation Player v0.0.1.e — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
 <title>Smart Dictation · CCBE B1</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./assets/css/sdp-ui.css">
@@ -21,7 +21,7 @@
     </svg>
     <span id="brandName">Smart Dictation</span>
     <span class="b1badge">CCBE B1</span>
-    <span id="sdpVerPill">v0.0.1.d</span>
+    <span id="sdpVerPill">v0.0.1.e</span>
     <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced</button>
     <button id="btnStudioQuick" class="hbtn hbtn-icon" type="button" aria-label="Open the Lecturer Studio from Settings">🔒</button>
     <div id="quickJumper" class="quick-jumper" hidden>
@@ -70,9 +70,9 @@
         <h2 class="card-title" data-i18n="homeJourneyTitle">Your 3 steps today</h2>
         <p id="homeReadyBadge" class="ready-badge" role="status" data-i18n="homeReadyBadge">Session 8 ready · 30 words</p>
         <ol class="journey-list">
-          <li data-i18n="homeJourney1">1. Listen &amp; write</li>
-          <li data-i18n="homeJourney2">2. Check your 30 words</li>
-          <li data-i18n="homeJourney3">3. Train weak words</li>
+          <li><span class="step-badge" aria-hidden="true">1</span><span data-i18n="homeJourney1">Listen &amp; write</span></li>
+          <li><span class="step-badge" aria-hidden="true">2</span><span data-i18n="homeJourney2">Check your 30 words</span></li>
+          <li><span class="step-badge" aria-hidden="true">3</span><span data-i18n="homeJourney3">Train weak words</span></li>
         </ol>
       </div>
 
@@ -84,11 +84,23 @@
 
       <div id="homeQuickPractice" class="card">
         <h2 class="card-title" data-i18n="quickPractice">Quick practice</h2>
-        <div class="chip-row">
-          <button type="button" class="btn btn-sm" data-prac="flash" data-i18n="flashcards">Flashcards</button>
-          <button type="button" class="btn btn-sm" data-prac="quiz" data-i18n="quiz">4-Choice Quiz</button>
-          <button type="button" class="btn btn-sm" data-prac="listen" data-i18n="listening">Listening Drill</button>
-          <button type="button" class="btn btn-sm" data-prac="weak" data-i18n="weakWords">Weak Words</button>
+        <div class="practice-grid">
+          <button type="button" class="practice-card" data-prac="flash">
+            <span class="prac-ico" aria-hidden="true">🗂️</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="flashcards">Flashcards</span><span class="prac-sub" data-i18n="flashcardsSub">Flip through all 30 words</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="quiz">
+            <span class="prac-ico" aria-hidden="true">✅</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="quiz">4-Choice Quiz</span><span class="prac-sub" data-i18n="quizSub">Pick the right meaning</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="listen">
+            <span class="prac-ico" aria-hidden="true">🎧</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="listening">Listening Drill</span><span class="prac-sub" data-i18n="listeningSub">Hear it, then choose</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="weak">
+            <span class="prac-ico" aria-hidden="true">🎯</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="weakWords">Weak Words</span><span class="prac-sub" data-i18n="weakWordsSub">Retry the ones you missed</span></span>
+          </button>
         </div>
       </div>
 
@@ -331,7 +343,7 @@
           <p class="about-line" data-i18n="aboutBlurb">A free, offline-first dictation trainer for one class — no accounts, no ads, no tracking.</p>
           <p class="about-line about-audience" data-i18n="aboutAudience">Built for the CCBE Galle Branch — B1 English Class, Sri Lanka.</p>
           <ul class="about-list">
-            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.d</span></li>
+            <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.1.e</span></li>
             <li><span data-i18n="aboutBuiltLabel">Built</span>: <span id="aboutBuilt">2026-11-01</span></li>
             <li><a id="aboutDataLink" href="./data/" data-i18n="aboutDataLink">See every byte this app stores</a></li>
           </ul>
@@ -385,7 +397,7 @@
 
 <script>
 (function () {
-  var TARGET = '0.0.1.d';
+  var TARGET = '0.0.1.e';
   window.__SDP_BOOT_VERSION__ = TARGET;
   var doReload = function (remoteVersion) {
     try { sessionStorage.setItem('sdp_upgraded_to', remoteVersion); } catch (e) {}
@@ -423,24 +435,10 @@
     } catch (e) {}
   };
   checkNow();
-  /* D1 in-session version watcher: a Smart Board or phone left open across
-     the school day still sees the 0.0.1.d reload within two minutes, and
-     again as soon as the tab becomes visible. */
-  var watcher = null;
-  function startWatcher() {
-    if (watcher) return;
-    watcher = setInterval(checkNow, 30000);
-  }
-  if (typeof document !== 'undefined' && document.addEventListener) {
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') checkNow();
-    }, false);
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      startWatcher();
-    } else {
-      document.addEventListener('DOMContentLoaded', startWatcher, false);
-    }
-  }
+  /* D18: this inline script is the ONE-SHOT boot version check only. The 30 s
+     background cadence belongs to SDP.Sync.startWatch(30000), which also feeds
+     every tick into the honest sync badge (D16) — a duplicate setInterval here
+     polled version.json twice as often and painted nothing. */
 })();
 </script>
 

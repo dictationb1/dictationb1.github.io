@@ -49,7 +49,7 @@ function installVoices(app, list) {
   /* ── 1. D-V1: the ReferenceError that killed v0.0.1.b ────────────────── */
   // contract: docs/CHANGELOG_LEDGER.md §D-V1 — pickVoice must always be a function
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     check('G10.1a the speech module exports pickVoice as a function',
       typeof app.SDP.Speech.pickVoice === 'function');
     let picked = 'unset';
@@ -65,7 +65,7 @@ function installVoices(app, list) {
   /* ── 2. D-V2: one unified British female professor, male names banned ── */
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 male-name blacklist
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     const list = fakeVoices();
     installVoices(app, list);
     await new Promise((resolve) => app.SDP.Speech.selectProfessorVoice((v) => { app.w.__picked = v; resolve(); }));
@@ -133,7 +133,7 @@ function installVoices(app, list) {
   {
     /* A device whose audio is blocked: playGuideStep accepts the call but never
        starts or completes, which is exactly what Chrome does before a gesture. */
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     app.SDP.Speech.playGuideStep = function () { return false; };
     /* re-open the guide with a blocked engine: openGuide() arms the 600 ms
        watchdog, and nothing will ever report "speaking" */
@@ -161,9 +161,9 @@ function installVoices(app, list) {
   {
     const app = await createApp({
       before(w) {
-        w.localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.e');
         /* appliedSettingsRev pins the student's own lock against adoption. */
-        w.localStorage.setItem('sdp.settings', JSON.stringify({ voiceLock: 'custom', voiceSource: 'native', lang: 'en', appliedSettingsRev: 4 }));
+        w.localStorage.setItem('sdp.settings', JSON.stringify({ voiceLock: 'custom', voiceSource: 'native', lang: 'en', appliedSettingsRev: 5 }));
       }
     });
     check('G10.5a a custom voice lock is preserved, not overwritten',

@@ -1,4 +1,4 @@
-# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.d
+# ARCHITECTURE_MAP — Smart Dictation Player v0.0.1.e
 
 Audience: **CCBE Galle Branch — B1 English Class, Sri Lanka**
 Lecturer in Charge: **Ms. Sumodya Sewmini** · Creator: **Hansana** · Concept: **Ayya01 (Lesandu)**
@@ -30,9 +30,9 @@ a change needs a new file, it needs a new row in §H1 and a new budget in
 | `data/elevenlabs-audio.json` | ≤ 2,500,000 B | **App-written** Alice voice pack (D-UI11); header asserted, clips travel with the repo |
 | `data.html` | ≤ 60,000 B | `/data` transparency route |
 | `data/index.html` | ≤ 60,000 B | Byte-identical twin of `data.html` |
-| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.d` service worker |
-| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.d` |
-| `docs/*.md` (5 files) | ≤ 32,000 B each (template ≤ 14,000 B) | This ledger |
+| `sw.js` | ≤ 12,000 B | `sdp-v0.0.1.e` service worker |
+| `manifest.webmanifest` | ≤ 4,000 B | PWA manifest, description pinned to `0.0.1.e` |
+| `docs/*.md` (5 files) | ≤ 40,000 B each (template ≤ 18,000 B) | This ledger |
 
 **Preserved files are never edited by hand.** `tests/check.cjs` compares their
 byte count *and* SHA-256; the hashes live in its `PRESERVED_SHA` table and in
@@ -331,3 +331,26 @@ Every H1 budget is unchanged; the largest growth is `data/sdp-ui-views.js`
 (string tables + quick guide) and `data/studio.js` (class-settings publish),
 both far inside their 110,000 B / 85,000 B ceilings. `data/config.json` gained
 `classSettings` and `pinVerifier` and stays under 36,000 B.
+
+## 14. v0.0.1.e — honest sync, British English default, guaranteed voice, Bento home
+
+Audience and attribution are unchanged. New public surface (R10 additions):
+
+```js
+SDP.ver = 5; SDP.version = '0.0.1.e';
+SDP.Sync.parseRemoteAppVer(v);        // one shared reader of string/object version fields
+SDP.Sync.fetchRawMainJson(rel, cb);   // raw.githubusercontent.com source of the never-red check
+SDP.Speech.hasStarted();              // real utter.onstart flag (D10/D11 watchdogs)
+SDP.Speech.isAudioPlaying();          // shared <audio> playing flag
+SDP.Speech.getVoicesSafe();           // voices after a user gesture, never throws
+SDP.Speech.youdaoAudioUrl(text); SDP.Speech.shortGuideLine(i);
+SDP.Studio.publishChecklist(payloads); // pre-publish coherence, plain-language problems
+SDP.Studio.nextSyncRev();             // Math.max(Date.now(), prevSyncRev + 1) — the ONE publish clock
+```
+
+New structural classes (H2 additions): `.step-badge` (28 px circular journey numbers),
+`.practice-grid` / `.practice-card` / `.prac-ico` / `.prac-title` / `.prac-sub`
+(Quick Practice rich cards). `#screen-home` becomes a two-column Bento grid at
+≥ 1024 px (`minmax(0,7fr) minmax(0,5fr)`, gap 16 px; `#creditFoot` spans the full
+row). Behavioural contracts live in `docs/SYNC_AND_DATA_CONTRACT.md` §R13 and
+`docs/UI_COMPONENT_GUIDE.md` §v0.0.1.e.
