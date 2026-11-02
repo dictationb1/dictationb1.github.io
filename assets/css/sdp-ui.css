@@ -904,6 +904,21 @@ html[lang='si'] .guide-steps p { font-family: var(--font-si); }
 .sync-badge[data-sync-state='offline'] { color: var(--warn); border-color: var(--warn); }
 .sync-badge[data-sync-state='update'] { color: var(--accent); border-color: var(--accent); }
 .sync-badge[data-sync-state='error'] { color: var(--danger); border-color: var(--danger); }
+
+/* D7/R3: British English (EN) is the shipped classroom language, so the active
+   side of every EN | SI pill reads as the primary choice and the inactive side
+   dims. paintLangPills() drives the opacity; this adds the accent weight. */
+.lang-on, .lang-off { font-weight: 700; transition: opacity .15s ease; }
+body[data-lang='en'] #btnLang .lang-on,
+body[data-lang='en'] #guideLangPill .lang-on,
+body[data-lang='si'] #btnLang .lang-off,
+body[data-lang='si'] #guideLangPill .lang-off {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Settings section 3: EN is listed first and reads as the default choice. */
+#setLang option[value='en'] { font-weight: 700; }
 .quick-jumper { display: flex; align-items: center; gap: 6px; }
 .quick-jumper .input { min-height: 30px; padding: 2px 8px; font-size: 12.5px; max-width: 92px; }
 

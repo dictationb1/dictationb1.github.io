@@ -147,6 +147,15 @@
       s.rate = Math.min(1.2, Math.max(0.7, Number(s.rate) || 0.95));
       s.volume = Math.min(1, Math.max(0, isNaN(Number(s.volume)) ? 1 : Number(s.volume)));
       if (s.lang !== 'si') s.lang = 'en';
+      /* D7 / R3: the one-time v0.0.1.e boot migration. Devices left on 'si' by
+         an older release wake up in professional British English exactly once
+         (langResetV001e lives INSIDE sdp.settings, never as a sixth R4 key);
+         after it has run, a student's own EN | SI choice always wins. */
+      if (s.langResetV001e !== true) {
+        s.lang = 'en';
+        s.langResetV001e = true;
+        writeJSON(KEYS.settings, s);
+      }
       /* D-UI3: 'board' is a real theme, not a typo for 'dark'. */
       if (s.theme !== 'light' && s.theme !== 'board') s.theme = 'dark';
       /* R7: which settings the student changed by hand. A remote settingsRev

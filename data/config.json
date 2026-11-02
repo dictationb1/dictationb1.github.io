@@ -692,6 +692,7 @@
   "versionFamily": "9.0.0",
   "encVault": "SDP_ENC_V2:AAA=",
   "classSettings": {
+    "lang": "en",
     "mode": "paper",
     "writeSecs": 8,
     "repeats": 3,
