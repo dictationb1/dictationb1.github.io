@@ -36,6 +36,11 @@
     speaking: false,
     queueId: 0,
     audioEl: null,
+    /* D11: the REAL onstart flag. It is set only inside utter.onstart — never
+       by the synchronous state.speaking bookkeeping — so the watchdogs can
+       tell a genuinely speaking engine from a silently dropped utterance. */
+    utterStarted: false,
+    audioPlaying: false,
     /* VOX-01: the live utterance and queue live at MODULE scope. v0.0.1.c kept
        `var utter` inside next(), so Chrome's GC could collect the utterance
        mid-sentence and onend never fired — the queue froze for 30+ seconds. */
@@ -50,6 +55,16 @@
     /* VOX-09: Chrome drops a speak() issued in the same tick as cancel(). */
     lastCancelAt: 0
   };
+
+  /* D10/D12: one honest read of the platform voice list. Brave desktop and
+     locked-down kiosks expose zero voices; every watchdog keys off this. */
+  function getVoicesSafe() {
+    try {
+      var synth = global.speechSynthesis;
+      if (!synth || typeof synth.getVoices !== 'function') return [];
+      return synth.getVoices() || [];
+    } catch (e) { return []; }
+  }
 
   /* ── shared <audio> element: same element, many sources, clean replay ── */
   function sharedAudio() {
@@ -93,6 +108,7 @@
   function stopAll() {
     state.queueId += 1;
     state.speaking = false;
+    state.utterStarted = false;
     state.activeUtter = null;
     state.activeQueue = null;
     state.activeIndex = 0;
@@ -251,8 +267,13 @@
   }
 
   /* VOX-02: a slow, deliberate 0.92-rate professor needs ~85 ms per character;
-     the old 62 ms estimate cut long lines off mid-word on real devices. */
+     the old 62 ms estimate cut long lines off mid-word on real devices.
+     D12: on a voiceless engine (getVoices() is empty) the estimate is capped
+     at 1200 ms so a headless or offline browser never stalls ~40 s waiting
+     for an onend that will never fire — the queue falls through to the
+     <audio> tiers immediately instead. */
   function estimateMs(text, rate) {
+    if (getVoicesSafe().length === 0) return 1200;
     var perChar = Number(rate) < 1 ? 85 : 65;
     return Math.max(2600, Math.round(str(text).length * perChar) + 2400);
   }
@@ -316,6 +337,9 @@
         var guardExtended = false;
         var guardMs = estimateMs(line, rate);
         var guard = null;
+        var wordWatch = null;
+        /* D10: the ONLY writer of the real-onstart flag. */
+        utter.onstart = function () { state.utterStarted = true; };
         var armGuard = function (ms) {
           guard = global.setTimeout(function () {
             if (advanced || myId !== state.queueId) return;
@@ -332,10 +356,35 @@
             next();
           }, ms);
         };
+        /* D10/D12: the 800 ms real-onstart word watchdog. A voiceless engine,
+           or one that silently drops the utterance (no onstart), is cancelled
+           at once; opts.fallbackAudioUrl (the word's real human British
+           recording) then plays through <audio> so a word is NEVER silent. */
+        var armWordWatchdog = function () {
+          wordWatch = global.setTimeout(function () {
+            wordWatch = null;
+            if (advanced || myId !== state.queueId) return;
+            if (state.utterStarted) return;
+            try { if (synth && synth.cancel) synth.cancel(); } catch (e) {}
+            if (guard) global.clearTimeout(guard);
+            advanced = true;
+            state.activeUtter = null;
+            var fallbackUrl = str(opts.fallbackAudioUrl);
+            if (fallbackUrl) {
+              playUrl(fallbackUrl, { rate: rate, volume: volume, timeoutMs: 9000 }, function () {
+                if (myId !== state.queueId) return;
+                next();
+              });
+              return;
+            }
+            next();
+          }, 800);
+        };
         utter.onend = function () {
           if (advanced) return;
           advanced = true;
           global.clearTimeout(guard);
+          if (wordWatch) global.clearTimeout(wordWatch);
           /* VOX-01: release the module-scope reference only when done. */
           if (state.activeUtter === utter) state.activeUtter = null;
           next();
@@ -344,6 +393,7 @@
           if (advanced) return;
           advanced = true;
           global.clearTimeout(guard);
+          if (wordWatch) global.clearTimeout(wordWatch);
           if (state.activeUtter === utter) state.activeUtter = null;
           next();
         };
@@ -352,8 +402,10 @@
         state.activeQueue = queue;
         state.activeIndex = at - 1;
         state.speaking = true;
+        state.utterStarted = false;
         startKeepAlive();
         armGuard(guardMs);
+        armWordWatchdog();
         /* VOX-09: Chrome drops a speak() issued in the same tick as cancel(). */
         var sinceCancel = nowMs() - (Number(state.lastCancelAt) || 0);
         if (sinceCancel >= 0 && sinceCancel < 200) {
@@ -387,11 +439,13 @@
     function finish(ok) {
       if (done) return;
       done = true;
+      state.audioPlaying = false;
       if (timer) global.clearTimeout(timer);
       cb(ok ? null : new Error('audio_failed'));
     }
     try {
       el.pause();
+      state.audioPlaying = true; /* D11: the views guide watchdog reads this */
       /* D-M1: a data:audio/mpeg manifest entry becomes a cached Blob URL. */
       el.src = playableUrl(url);
       el.volume = volume;
@@ -491,12 +545,16 @@
     return '';
   }
 
-  /* E3 / VOX-04: tier enforcement per voiceSource / voiceLock.
-   * lecturer=[1]  alice=[2]  dictionary=[3]  professor TTS=[4]
-   * voiceLock 'unified' (the shipped default) returns [1, 2, 4] ONLY: Tier 3
-   * dict.youdao.com serves whichever voice it likes (often male, always
-   * third-party), which broke the single 25–35 British female persona. Tier 3
-   * survives only for an explicit voiceSource/voiceLock of 'custom'. */
+  /* E3 / VOX-04 / D10: the bulletproof word ladder under voiceLock 'unified'.
+   * 1 'lecturer'   committed lecturer clip
+   * 2 'eleven'     cached ElevenLabs Alice clip (0 credits to replay)
+   * 3 'neural_tts' ONLY a verified Tier-1 Neural UK Female voice (score >= 100)
+   * 4 'dictionary' real human British pronunciation (dict.youdao.com type=1)
+   * 5 'tts'        browser speechSynthesis, always last
+   * v0.0.1.d dropped the dictionary tier under 'unified', so Brave (0 voices)
+   * stayed silent and Windows fell back to robotic US Zira. Now the real human
+   * UK recording ALWAYS precedes low-quality synth, and the neural tier exists
+   * only when a genuinely British female neural voice is verified present. */
   function resolveTiers(wordObj, opts) {
     opts = opts || {};
     var w = isObj(wordObj) ? wordObj : { w: wordObj };
@@ -512,10 +570,11 @@
     if (source === 'alice') return [{ tier: 'eleven', url: eleven }];
     if (source === 'device') return [{ tier: 'tts', url: '' }];
     var unified = voiceLock === 'unified' && source !== 'custom';
-    /* Lecturer clip -> ElevenLabs Alice clip -> (custom: dictionary) -> TTS. */
+    var hasTier1Neural = !!cachedProfVoice && scoreVoice(cachedProfVoice) >= 100 && getVoicesSafe().length > 0;
     if (lecturer) tiers.push({ tier: 'lecturer', url: lecturer });
     if (eleven) tiers.push({ tier: 'eleven', url: eleven });
-    if (dictionary && !unified) tiers.push({ tier: 'dictionary', url: dictionary });
+    if (unified && hasTier1Neural) tiers.push({ tier: 'neural_tts', url: '' });
+    if (dictionary) tiers.push({ tier: 'dictionary', url: dictionary });
     tiers.push({ tier: 'tts', url: '' });
     return tiers;
   }
@@ -535,6 +594,51 @@
     if (entry && isObj(entry)) return str(entry.url || entry.src || entry.file || '');
     return '';
   }
+  /* D11: four concise British-English fallback lines for the guide. When the
+     browser never fires utter.onstart (Brave desktop, voiceless kiosks), the
+     guide plays the REAL human British recording of these lines from the
+     dictionary CDN through plain <audio> — the steps are never silent. */
+  var GUIDE_AUDIO_FALLBACK_LINES = [
+    'Choose how you learn.',
+    'Listen and write against the timer.',
+    'Check all thirty words and see your score.',
+    'Practise the words you missed.'
+  ];
+  function shortGuideLine(stepIdx) {
+    var i = Number(stepIdx);
+    if (!(i >= 0) || i > GUIDE_AUDIO_FALLBACK_LINES.length - 1) i = 0;
+    return GUIDE_AUDIO_FALLBACK_LINES[i] || GUIDE_AUDIO_FALLBACK_LINES[0];
+  }
+  function youdaoAudioUrl(text) {
+    return 'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(text);
+  }
+  /* D11: say() the step AND arm a 700 ms real-onstart watchdog. If
+     state.utterStarted is still false (or the device has no voices at all),
+     speechSynthesis is cancelled and the cloud British-female fallback line
+     plays through <audio> (state.lastTier = 'guide_audio'). Only when that
+     <audio> playback also fails does the caller reveal #guideTapBanner. */
+  function narrateGuideStep(stepIdx, stepText, rate, volume, cb) {
+    var watchdog = null;
+    var finished = false;
+    function done() {
+      if (finished) return;
+      finished = true;
+      if (watchdog) { global.clearTimeout(watchdog); watchdog = null; }
+      cb(null);
+    }
+    watchdog = global.setTimeout(function () {
+      watchdog = null;
+      if (finished) return;
+      if (state.utterStarted) return;
+      var synth = global.speechSynthesis;
+      try { if (synth && synth.cancel) synth.cancel(); } catch (e) {}
+      stopAll(); /* the silent utterance queue is dead; this watchdog owns the step */
+      state.lastTier = 'guide_audio';
+      playUrl(youdaoAudioUrl(shortGuideLine(stepIdx)), { rate: 1, volume: volume, timeoutMs: 9000 }, function () { done(); });
+    }, 700);
+    say([stepText], { lang: 'en-GB', rate: rate, pitch: 1.03, volume: volume }, function () { done(); });
+    return true;
+  }
   function playGuideStep(a, b, c, d) {
     var stepIdx = -1, stepText = '', o = {}, cb = noop;
     if (typeof a === 'number') {
@@ -547,29 +651,31 @@
     }
     var rate = o.rate !== undefined ? o.rate : 0.94;
     var volume = o.volume;
+    /* 1. A committed Alice guide clip always wins (zero credits). */
     var clip = guideClipUrl(stepIdx);
     if (clip) {
       state.speaking = true;
       playUrl(playableUrl(clip), { rate: rate, volume: volume }, function (err) {
         state.speaking = false;
-        if (!err) { cb(null); return; }
+        if (!err) { state.lastTier = 'guide_clip'; cb(null); return; }
         /* A broken cached clip must still narrate the step. */
-        say([stepText], { lang: 'en-GB', rate: rate, pitch: 1.03, volume: volume }, cb);
+        narrateGuideStep(stepIdx, stepText, rate, volume, cb);
       });
       return true;
     }
-    say([stepText], { lang: 'en-GB', rate: rate, pitch: o.pitch !== undefined ? o.pitch : 1.03, volume: volume }, cb);
+    /* 2. Professor TTS with the 700 ms real-onstart watchdog + cloud fallback. */
+    narrateGuideStep(stepIdx, stepText, rate, volume, cb);
     return false;
   }
 
-  /* ══ SDP.Speech.playWord — 4-tier chain, bounded at every step ═════════ */
+  /* ══ SDP.Speech.playWord — the D10 5-tier chain, bounded at every step ══ */
   /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 tier order */
   function playWord(word, opts, cb) {
     if (typeof opts === 'function') { cb = opts; opts = {}; }
     opts = opts || {};
     cb = cb || noop;
-    var tiers = opts.tiers || resolveTiers(word);
     var at = 0;
+    var tiers = null;
     state.lastTier = '';
     function attempt() {
       if (at >= tiers.length) {
@@ -579,10 +685,12 @@
       }
       var current = tiers[at];
       at += 1;
-      if (current.tier === 'tts') {
-        state.lastTier = 'tts';
-        /* E2 professor cadence for device/TTS speech. */
-        say([str(word && word.w ? word.w : word)], { rate: 0.92, pitch: 1.03, volume: opts.volume }, function () { cb(null); });
+      if (current.tier === 'tts' || current.tier === 'neural_tts') {
+        state.lastTier = current.tier;
+        /* E2 professor cadence. D10: the utterance carries the word's real
+           human British recording as its 800 ms watchdog fallback, so even
+           the TTS tier can never leave a word silent. */
+        say([str(word && word.w ? word.w : word)], { rate: 0.92, pitch: 1.03, volume: opts.volume, fallbackAudioUrl: str(word && word.audio) }, function () { cb(null); });
         return;
       }
       playUrl(current.url, { rate: opts.rate, volume: opts.volume, timeoutMs: opts.timeoutMs }, function (err) {
@@ -594,11 +702,17 @@
         attempt();
       });
     }
+    function run() {
+      tiers = opts.tiers || resolveTiers(word);
+      attempt();
+    }
+    /* Resolve the ladder AFTER the clip manifest is in hand, otherwise the
+       Alice tier looks empty on the very first word after boot. */
     if (!opts.tiers && !state.manifest && !state.manifestRequested) {
-      loadManifest(function () { attempt(); });
+      loadManifest(function () { run(); });
       return;
     }
-    attempt();
+    run();
   }
 
   /* VOX-08: the old test only called say() and always claimed 'Alice'. It now
@@ -620,7 +734,15 @@
     return true;
   }
   function lastTierName() {
-    var names = { lecturer: 'Lecturer clip', eleven: 'Alice (ElevenLabs)', dictionary: 'Dictionary', tts: 'Professor voice' };
+    var names = {
+      lecturer: 'Lecturer clip',
+      eleven: 'Alice (ElevenLabs)',
+      neural_tts: 'Professor neural voice (UK female)',
+      dictionary: 'British human audio',
+      guide_clip: 'Alice guide clip',
+      guide_audio: 'British guide audio',
+      tts: 'Professor voice'
+    };
     return names[state.lastTier] || str(state.lastTier) || 'Professor voice';
   }
 
@@ -650,6 +772,13 @@
     activeUtter: function () { return state.activeUtter; },
     lastUtterances: function () { return state.lastUtterances.slice(); },
     isSpeaking: function () { return !!state.speaking; },
+    /* D11: the real utter.onstart flag and the shared <audio> playing flag —
+       the views guide watchdog checks these instead of state.speaking. */
+    hasStarted: function () { return !!state.utterStarted; },
+    isAudioPlaying: function () { return !!state.audioPlaying; },
+    getVoicesSafe: getVoicesSafe,
+    youdaoAudioUrl: youdaoAudioUrl,
+    shortGuideLine: shortGuideLine,
     hasSynth: function () { return !!(global.speechSynthesis && global.SpeechSynthesisUtterance); }
   };
 

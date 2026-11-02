@@ -694,20 +694,24 @@
     if (banner.hidden) return false;
     return !(banner.classList && banner.classList.contains('hidden'));
   }
-  /* 600 ms after the guide opens, if nothing is audible the student is told to
-     tap. Mobile Chrome, iOS Safari and Smart Board browsers all block
-     un-gestured speechSynthesis, so silence is expected there — not a bug. */
+  /* D11: 700 ms after the guide opens, if no utterance has REALLY started
+     (utter.onstart) and no <audio> fallback is playing, the student is told to
+     tap. The v0.0.1.d watchdog read the synchronous state.speaking flag, which
+     is true the moment say() is called — so the banner never showed on
+     voiceless browsers like Brave Desktop even though nothing was audible. */
   function armGuideWatchdog() {
     if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} }
     guideState.watchdog = global.setTimeout(function () {
       guideState.watchdog = null;
       var modal = byId('guideModal');
       if (!modal || modal.hidden) return;
-      var speaking = false;
-      try { speaking = !!(SDP.Speech && SDP.Speech.isSpeaking && SDP.Speech.isSpeaking()); } catch (e) { speaking = false; }
-      if (!speaking && !guideState.narrating) showGuideTapBanner();
-      else if (!speaking) showGuideTapBanner();
-    }, 600);
+      var audible = false;
+      try {
+        audible = !!(SDP.Speech && SDP.Speech.hasStarted && SDP.Speech.hasStarted()) ||
+          !!(SDP.Speech && SDP.Speech.isAudioPlaying && SDP.Speech.isAudioPlaying());
+      } catch (e) { audible = false; }
+      if (!audible) showGuideTapBanner();
+    }, 700);
   }
   function clearGuideWatchdog() {
     if (guideState.watchdog) { try { global.clearTimeout(guideState.watchdog); } catch (e) {} guideState.watchdog = null; }
