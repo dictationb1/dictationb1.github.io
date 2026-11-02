@@ -497,3 +497,34 @@ Every shipped file is inside its cap: `index.html` 28,658 B,
 `sw.js` 7,335 B.
 
 Released under: `Release Smart Dictation Player v0.0.1.d (Guaranteed Lecturer Sync, PIN Gate & Unified Voice)`.
+
+### Release verification (2026-11-02, full twelve-gate run on the release tree)
+
+```
+shasum -a 256 -c /tmp/sdp-preserve.sha256   → 4 × OK
+node tests/check.cjs                        → G1  88 PASS / 0 FAIL
+node --test tests/upgrade.test.cjs          → G2  10 pass / 0 fail
+node tests/phase1.cjs                       → G3  76 PASS / 0 FAIL
+node tests/server.cjs                       → G4   8 PASS / 0 FAIL
+node tests/browser.cjs                      → G5  46 PASS / 0 FAIL
+node tests/upgrade-browser.cjs              → G6  15 PASS / 0 FAIL
+node tests/e2e.cjs                          → G7  52 PASS / 0 FAIL
+node tests/live-lab.cjs                     → G8  39 PASS / 0 FAIL
+node tests/audit-v42.cjs                    → G9  47 PASS / 0 FAIL
+node tests/voice-guide.cjs                  → G10 21 PASS / 0 FAIL
+node tests/vault-sync.cjs                   → G11 28 PASS / 0 FAIL
+node tests/studio-safety.cjs                → G12 33 PASS / 0 FAIL
+                                              ─────────────────────
+                                              463 assertions, 0 FAIL
+```
+
+### Byte budgets actually used
+
+`index.html` 29,348 / 35,000 · `sdp-ui.css` 41,201 / 60,000 · `sdp-data-sync.js`
+64,924 / 65,000 · `sdp-audio-speech.js` 36,513 / 48,000 ·
+`sdp-dictation-engine.js` 36,597 / 58,000 · `sdp-ui-views.js` 103,620 / 110,000 ·
+`studio.js` 71,851 / 85,000 · `data-meter.js` 21,740 / 22,000 ·
+`data.html` = `data/index.html` 27,905 / 60,000 · `sw.js` 10,759 / 12,000 ·
+`docs/*.md` 34,609 / 18,660 / 18,310 / 16,064 / 11,878 (cap 40,000, template 18,000).
+
+Released under: `Release Smart Dictation Player v0.0.1.e (Honest Sync, British English Default, Guaranteed Voice & Bento UI)`.
