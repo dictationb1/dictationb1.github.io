@@ -1,4 +1,4 @@
-/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.d)
+/*! Smart Dictation Player — storage, sync & SDP_ENC_V2 vault (v0.0.1.e)
  * Strict ES5, dependency free, no build step.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R1, §R7, §R8, §R9
  * contract: docs/ARCHITECTURE_MAP.md §R6 two-layer sync */
@@ -6,15 +6,15 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.1.d';
-  SDP.build = '2026-11-01';
-  SDP.ver = 4;
+  SDP.version = '0.0.1.e';
+  SDP.build = '2026-11-02';
+  SDP.ver = 5;
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.1.d';
-  var SCHEMA = 4;
-  var SETTINGS_REV = 4;
+  var APP_VERSION = '0.0.1.e';
+  var SCHEMA = 5;
+  var SETTINGS_REV = 5;
   /* D1 guard: the in-session upgrade reload fires at most once per version. */
   var appVersionChanged = false;
   /* D5 guard: visibilitychange is registered at most once per module load. */
