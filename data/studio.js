@@ -61,6 +61,16 @@
     try { current = Number((sync() && sync().version() && sync().version().settingsRev) || 0); } catch (e) { current = 0; }
     return Math.max(schemaVer(), current + 1);
   }
+  /** D19: ONE monotonic publish clock. Every JSON file committed in the same
+   * publish (config / session / voice pack / version) is stamped with this
+   * same syncRev, so a device can never see a config newer than its version.
+   * Date.now() wins unless the previous publish is somehow ahead of it, in
+   * which case we step exactly one tick past it. */
+  function nextSyncRev() {
+    var prev = 0;
+    try { prev = Number((sync() && sync().version() && sync().version().syncRev) || 0); } catch (e) { prev = 0; }
+    return Math.max(Date.now(), prev + 1);
+  }
 
   var ST = {
     unlocked: false,
@@ -197,7 +207,7 @@
       session: str(sessionNo || '8'),
       title: str(title || 'Session ' + str(sessionNo || '8')),
       updatedAt: nowIso,
-      syncRev: Number(syncRev) || Date.now()
+      syncRev: Number(syncRev) || nextSyncRev()
     };
   }
   function buildSessionPayload(words, opts) {
@@ -215,9 +225,14 @@
     var clean = [];
     for (i = 0; i < (words || []).length; i++) {
       var w = words[i] || {};
-      clean.push({
+      var cleanWord = {
         w: str(w.w), p: str(w.p), pos: str(w.pos), m: str(w.m), si: str(w.si), s: str(w.s)
-      });
+      };
+      /* D19: keep the dictionary pronunciation URL. Stripping it made every
+         freshly published word fall to robotic TTS on voiceless browsers —
+         the real British human recording must survive a Studio publish. */
+      if (str(w.audio)) cleanWord.audio = str(w.audio);
+      clean.push(cleanWord);
     }
     list.words = clean;
     list.active = true;
@@ -234,7 +249,7 @@
     base.updatedAt = new Date().toISOString();
     return base;
   }
-  function voicePackPayload() {
+  function voicePackPayload(syncRev) {
     var base = { version: appVersion(), appVersion: appVersion(), ver: schemaVer(), schema: schemaVer(), settingsRev: nextSettingsRev() };
     var remote = null;
     try { remote = SDP.Speech && SDP.Speech.state ? SDP.Speech.state.manifest : null; } catch (e) { remote = null; }
@@ -243,7 +258,8 @@
     base.modelId = VOICE_MODEL;
     base.clips = ST.voicePack.clips || {};
     base.updatedAt = new Date().toISOString();
-    base.syncRev = Date.now();
+    /* D19: same publish clock as config.json / version.json in this commit. */
+    base.syncRev = Number(syncRev) || nextSyncRev();
     return base;
   }
   function buildPublishPayloads(words, opts) {
@@ -252,7 +268,7 @@
     var version = buildVersionPayload(
       opts.sessionNo || (session.session && session.session.no) || '8',
       opts.title || (session.session && session.session.title) || '',
-      opts.syncRev || Date.now());
+      opts.syncRev || nextSyncRev());
     var cfgBase = sync() && sync().config ? JSON.parse(JSON.stringify(sync().config() || {})) : {};
     /* D-S2: v0.0.1.b cloned the remote config and never set encVault, so the
        very next publish erased the lecturer's encrypted keys from GitHub. */
@@ -342,7 +358,7 @@
     var liveVersion = sync().version ? (sync().version() || {}) : {};
     var liveSession = str(liveVersion.session || '8') || '8';
     var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
-    var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+    var versionBody = buildVersionPayload(liveSession, liveTitle, nextSyncRev());
     var rev = Number(versionBody.settingsRev);
     var nowIso = new Date().toISOString();
     cfgBody.settingsRev = rev;
@@ -481,7 +497,7 @@
       var liveVersion = sync().version ? (sync().version() || {}) : {};
       var liveSession = str(liveVersion.session || '8') || '8';
       var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
-      var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+      var versionBody = buildVersionPayload(liveSession, liveTitle, nextSyncRev());
       cfgBody.settingsRev = Number(versionBody.settingsRev);
       cfgBody.syncRev = Number(versionBody.syncRev);
       publishVaultFiles(buildVaultFiles(cfgBody, versionBody, 'Studio vault ' + appVersion()), token, noop);
@@ -549,7 +565,7 @@
       var liveVersion = sync() && sync().version ? (sync().version() || {}) : {};
       var liveSession = str(liveVersion.session || (sync() && sync().sessionNo ? sync().sessionNo() : '8')) || '8';
       var liveTitle = str(liveVersion.title || (sync() && sync().sessionTitle ? sync().sessionTitle() : '')) || ('Session ' + liveSession);
-      var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+      var versionBody = buildVersionPayload(liveSession, liveTitle, nextSyncRev());
       var rev = Number(versionBody.settingsRev);
       var cfgBody = sync() && sync().config ? JSON.parse(JSON.stringify(sync().config() || {})) : {};
       cfgBody.ver = schemaVer(); cfgBody.appVersion = appVersion(); cfgBody.version = appVersion();
@@ -965,10 +981,18 @@
     v.encryptV2(ST.secrets, pin).then(function (envelope) {
       ST.envelope = envelope;
       persistEnvelope(envelope);
+      /* D13: ALWAYS recompute config.pinVerifier on an explicit save, from the
+         salt already published in config.json (a fresh 16-byte salt only when
+         no verifier exists yet). The v0.0.1.d code gated this on v.PIN_SALT —
+         a property that does not exist on the vault — so the verifier silently
+         went stale after every PIN change and a fresh device could not
+         bootstrap. Now the published verifier always matches the PIN that
+         sealed this vault. */
       var verifierPromise = null;
-      /* SEC-03: config.pinVerifier always matches the PIN that seals the vault. */
-      if (v.computePinVerifier && v.PIN_SALT) {
-        verifierPromise = v.computePinVerifier(pin, v.PIN_SALT).then(function (verifier) {
+      var currentVerifier = pinVerifier();
+      var currentSalt = currentVerifier && isObj(currentVerifier) ? str(currentVerifier.salt) : '';
+      if (v && v.computePinVerifier) {
+        verifierPromise = v.computePinVerifier(pin, currentSalt).then(function (verifier) {
           var cfg = sync() && sync().config ? sync().config() : null;
           if (cfg) cfg.pinVerifier = verifier;
           return verifier;
@@ -992,7 +1016,7 @@
         var liveVersion = sync().version ? (sync().version() || {}) : {};
         var liveSession = str(liveVersion.session || '8') || '8';
         var liveTitle = str(liveVersion.title || '') || ('Session ' + liveSession);
-        var versionBody = buildVersionPayload(liveSession, liveTitle, Date.now());
+        var versionBody = buildVersionPayload(liveSession, liveTitle, nextSyncRev());
         cfgBody.settingsRev = Number(versionBody.settingsRev);
         cfgBody.syncRev = Number(versionBody.syncRev);
         publishVaultFiles(buildVaultFiles(cfgBody, versionBody, 'Studio vault ' + appVersion()), token, function (err) {
@@ -1038,19 +1062,52 @@
 
   /* ── publishing: sequential Contents API (D-S5) ─────────────────────── */
   /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 publishing */
+  /* D13/D19: the pre-publish checklist. Every problem is a plain-language
+     string; an empty array means the payload is coherent: words present and
+     spelled, pronunciation URLs preserved, the vault envelope carried, the
+     PIN verifier published, and syncRev strictly forward under ONE clock. */
+  function publishChecklist(payloads) {
+    var problems = [];
+    var session = isObj(payloads.session) ? payloads.session : {};
+    var words = Array.isArray(session.words) ? session.words : [];
+    var i;
+    if (!words.length) problems.push('session has no words');
+    for (i = 0; i < words.length; i++) {
+      if (!str(words[i] && words[i].w)) { problems.push('word #' + (i + 1) + ' has no spelling'); break; }
+    }
+    var cfg = isObj(payloads.config) ? payloads.config : {};
+    var env = str(cfg.encVault);
+    if (!env) problems.push('vault envelope missing');
+    if (!isObj(cfg.pinVerifier) || !str(cfg.pinVerifier.hash)) problems.push('pinVerifier missing');
+    var version = isObj(payloads.version) ? payloads.version : {};
+    var prevRev = 0;
+    try { prevRev = Number((sync() && sync().version() && sync().version().syncRev) || 0); } catch (e) { prevRev = 0; }
+    if (!(Number(version.syncRev) > prevRev)) problems.push('syncRev did not move forward');
+    if (Number(version.settingsRev) < schemaVer()) problems.push('settingsRev went backwards');
+    return problems;
+  }
   function publish(cb) {
     cb = cb || noop;
     if (!ST.unlocked) { msg(t('studioLocked'), 'bad'); cb(new Error('locked')); return; }
     var token = str(ST.secrets.ghToken);
     if (!token) { msg(t('studioNoToken'), 'bad'); cb(new Error('no_token')); return; }
     var payloads = buildPublishPayloads(currentWords(), {});
+    /* D19: the coherence checklist runs BEFORE anything is committed — a
+       broken payload is refused with a plain-language reason instead of being
+       pushed to thirty student devices. */
+    var problems = publishChecklist(payloads);
+    if (problems.length) {
+      msg(t('studioPublishFail') + ' · ' + problems.join(' · '), 'bad');
+      cb(new Error('checklist_failed'));
+      return;
+    }
     var message = 'Smart Dictation publish ' + appVersion();
     var files = [
       { path: 'data/session.json', content: payloads.files['data/session.json'], message: message },
       { path: 'data/config.json', content: payloads.files['data/config.json'], message: message }
     ];
     if (ST.voicePack.loaded && ST.voicePack.clips) {
-      files.push({ path: 'data/elevenlabs-audio.json', content: JSON.stringify(voicePackPayload(), null, 2), message: 'Alice voice pack ' + appVersion() });
+      files.push({ path: 'data/elevenlabs-audio.json', content: JSON.stringify(voicePackPayload(payloads.version.syncRev), null, 2), message: 'Alice voice pack ' + appVersion() });
     }
     files.push({ path: 'data/version.json', content: payloads.files['data/version.json'], message: message });
     if (!sync() || !sync().publishFilesSequential) { msg(t('studioNoToken'), 'bad'); cb(new Error('no_sync')); return; }
@@ -1482,6 +1539,8 @@
     classSettingsSnapshot: classSettingsSnapshot,
     classSettingKeys: CLASS_SETTING_KEYS,
     voicePackPayload: voicePackPayload,
+    publishChecklist: publishChecklist,
+    nextSyncRev: nextSyncRev,
     openPublishPreview: openPublishPreview,
     publishPreviewWords: publishPreviewWords,
     publish: publish,
