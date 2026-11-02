@@ -423,24 +423,10 @@
     } catch (e) {}
   };
   checkNow();
-  /* D1 in-session version watcher: a Smart Board or phone left open across
-     the school day still sees the 0.0.1.d reload within two minutes, and
-     again as soon as the tab becomes visible. */
-  var watcher = null;
-  function startWatcher() {
-    if (watcher) return;
-    watcher = setInterval(checkNow, 30000);
-  }
-  if (typeof document !== 'undefined' && document.addEventListener) {
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') checkNow();
-    }, false);
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      startWatcher();
-    } else {
-      document.addEventListener('DOMContentLoaded', startWatcher, false);
-    }
-  }
+  /* D18: this inline script is the ONE-SHOT boot version check only. The 30 s
+     background cadence belongs to SDP.Sync.startWatch(30000), which also feeds
+     every tick into the honest sync badge (D16) — a duplicate setInterval here
+     polled version.json twice as often and painted nothing. */
 })();
 </script>
 

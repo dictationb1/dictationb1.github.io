@@ -1473,32 +1473,56 @@
     }
     if (status) { status.textContent = label; status.setAttribute('data-state', state.state || 'synced'); status.setAttribute('title', label); }
   }
+  /* R2/D1: checkForUpdates(cb) is node-style — it calls cb(err, result) where
+     result is the SECOND argument. v0.0.1.d read arg 1 (null) and painted
+     "Check failed — retry" even on a healthy 200 OK. This one shared handler
+     is the single honest painter for the manual check AND every 30 s tick. */
+  function handleSyncCheckResult(err, result) {
+    var res = (result && typeof result === 'object') ? result : ((err && typeof err === 'object' && 'ok' in err) ? err : {});
+    var hasErr = (result !== undefined && !!err) || !res.ok;
+    if (hasErr) {
+      paintSyncBadge({ state: res.error === 'no_fetch' ? 'offline' : 'error', session: syncSessionNo() });
+      return;
+    }
+    if (res.appVersionChanged) {
+      paintSyncBadge({ state: 'update', session: res.session || syncSessionNo() });
+      return;
+    }
+    paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
+  }
+  function syncSessionNo() {
+    var n = '8';
+    try { if (SDP.Sync && SDP.Sync.sessionNo) n = SDP.Sync.sessionNo() || '8'; } catch (e) {}
+    return str(n);
+  }
   function checkForUpdate() {
     setUpdateStatus(t('updateChecking'), '');
     try {
-      SDP.Sync.checkForUpdates(function (result) {
-        if (!result || !result.ok) {
-          var state = (result && result.error === 'no_fetch') ? 'offline' : 'error';
-          paintSyncBadge({ state: state });
+      SDP.Sync.checkForUpdates(function (err, result) {
+        var res = (result && typeof result === 'object') ? result : ((err && typeof err === 'object' && 'ok' in err) ? err : {});
+        var failed = (result !== undefined && !!err) || !res.ok;
+        if (failed) {
+          var state = (res && res.error === 'no_fetch') ? 'offline' : 'error';
+          paintSyncBadge({ state: state, session: syncSessionNo() });
           setUpdateStatus(state === 'offline' ? t('syncBadgeOffline') : t('syncBadgeRetry'), state === 'offline' ? '' : 'bad');
           return;
         }
-        if (result.appVersionChanged) {
-          paintSyncBadge({ state: 'update', session: result.session, appVersion: result.appVersion });
+        if (res.appVersionChanged) {
+          paintSyncBadge({ state: 'update', session: res.session || syncSessionNo(), appVersion: res.appVersion });
           setUpdateStatus(t('syncBadgeUpdate'), 'ok');
           return;
         }
-        if (result.updated) {
-          paintSyncBadge({ state: 'synced', session: result.session });
-          setUpdateStatus(t('updateFound') + ' · Session ' + str(result.session), 'ok');
+        if (res.updated) {
+          paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
+          setUpdateStatus(t('updateFound') + ' · Session ' + str(res.session), 'ok');
           onDataReady();
           return;
         }
-        paintSyncBadge({ state: 'synced', session: result.session });
+        paintSyncBadge({ state: 'synced', session: res.session || syncSessionNo() });
         setUpdateStatus(t('updateNone'), '');
       });
     } catch (e) {
-      paintSyncBadge({ state: 'error' });
+      paintSyncBadge({ state: 'error', session: syncSessionNo() });
       setUpdateStatus(t('syncBadgeRetry'), 'bad');
     }
   }
@@ -1776,6 +1800,13 @@
       showToast(rev ? t('lecturerSyncedToast') + rev + ')' : t('teacherUpdatedToast'));
       renderAll();
     }, false);
+    /* D16: SDP.Sync publishes every 30 s watcher tick and every
+       visibilitychange check on this event; the badge repaints from the real
+       (err, result) pair instead of being frozen at boot-time optimism. */
+    doc.addEventListener('sdp:sync-status', function (ev) {
+      var d = (ev && ev.detail) || {};
+      handleSyncCheckResult(d.err, d.result);
+    }, false);
     return true;
   }
 
@@ -1805,7 +1836,10 @@
     try { if (SDP.Speech && SDP.Speech.loadManifest) SDP.Speech.loadManifest(noop); } catch (e) {}
     try { if (SDP.Studio && SDP.Studio.onDataReady) SDP.Studio.onDataReady(); } catch (e) {}
     if (!err && global.__SDP_NO_LIVE__ !== true) {
-      try { SDP.Sync.startWatch(120000); } catch (e) {}
+      /* D18: this is the ONLY background poller. startWatch(30000) owns the
+         30-second cadence and feeds every tick into the honest sync badge;
+         index.html keeps just its one-shot boot version check. */
+      try { SDP.Sync.startWatch(30000); } catch (e) {}
     }
     return true;
   }
