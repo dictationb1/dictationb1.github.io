@@ -1,8 +1,42 @@
 # CHANGELOG_LEDGER — Smart Dictation Player
 
 Newest release first. Every row is a fact verified by a gate, not a promise.
-When you ship `0.0.1.d`, copy the block, rename it, and fill in the real numbers
+When you ship a release, copy the block, rename it, and fill in the real numbers
 from the twelve gates.
+
+---
+
+## v0.0.1.e — 2026-11-02 — Honest Sync, British English Default, Guaranteed Voice & Bento UI
+
+**Release type:** defect-fix + UI release over v0.0.1.d (no classroom data migration; `sdp.progress` is never overwritten; one one-time settings migration `langResetV001e`).
+**Audience:** CCBE Galle Branch — B1 English Class. Persona A: Android 360×640–390×844 on unstable 3G/offline. Persona B: Smart Board 1280×720 / 1920×1080, weak OPS box, no keyboard.
+**Attribution:** Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu) · නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini.
+
+### What this release is
+
+Twenty verified defects (D1–D20) closed across four workstreams:
+
+1. **Honest sync (D1, D2, D5, D17, D18).** `checkForUpdates` reports `cb(err, result)` and one shared `handleSyncCheckResult` paints the badge — no more double toasts from a callback fired twice. The service worker's **fetch handler gates by origin first**: only same-origin requests and `dict.youdao.com` audio are intercepted; `?t=` URLs are never cached and are purged on activate; data reads use a 10 s network-first with an `ignoreSearch` fallback and an honest 503 JSON when offline. `checkForUpdates` is **never-red dual-source**: same-origin `./data/version.json?t=` first, then `raw.githubusercontent.com`; either HTTP 200 means `ok: true` — the badge goes red only when both sources fail. The 30 s watch tick and `visibilitychange` both feed the badge; the duplicate inline watcher in `index.html` is gone (one-shot boot check remains). `parseRemoteAppVer()` is the one shared reader of string-or-object `version` fields.
+2. **British English by default (D7, R3).** Fresh devices and pre-0.0.1.e profiles boot `lang: 'en'`; a one-time migration flag `langResetV001e` inside `sdp.settings` forces English exactly once and never touches the student's later choice — `lang` stays personal, out of `CLASS_SETTING_KEYS`, so a published `classSettings` can never flip a class back to Sinhala. Language pills get bold/accent active styling.
+3. **Guaranteed voice (D10, D11, D12).** The unified ladder is now lecturer clip → cached Alice clip → (only a verified Tier-1 Neural UK Female voice, score ≥ 100) → **the dictionary's real human British recording (`dict.youdao.com` type=1)** → browser TTS last. `state.utterStarted` is set **only** in `utter.onstart`; an 800 ms word watchdog cancels a silent engine and plays the word's own `word.audio` through the shared `<audio>`; the guide arms a 700 ms real-onstart watchdog that falls back to four short British-English cloud lines (`guide_audio` tier) and shows `#guideTapBanner` only when even that audio fails. On a voiceless engine `estimateMs` caps at 1200 ms so the queue never stalls ~40 s waiting for an `onend` that never fires.
+4. **Coherent Studio publishing (D13, D19) + Bento home (D14–D16).** `saveKeys()` **always** recomputes `config.pinVerifier` from the published salt (the dead `v.PIN_SALT` gate is gone), so the verifier always matches the PIN that sealed the vault. Every publish stamps **one monotonic clock** `Math.max(Date.now(), prevSyncRev + 1)` into config/session/voice-pack/version alike, keeps `session.clips` (word→clip URLs survive a publish), and a pre-publish checklist refuses incoherent payloads in plain language. Home is a two-column Bento board at ≥ 1024 px (7fr/5fr, credits spanning the full row), the 1-2-3 journey uses 28 px circular step badges instead of typed `1. ` prefixes, and Quick Practice is four rich cards (icon + title + subtitle, ≥ 64 px tall) instead of four small buttons.
+
+### Preserved, byte for byte (Appendix A lock)
+
+| File | Bytes | SHA-256 (first 12) |
+| --- | --- | --- |
+| `data/session.json` | 46,403 | `e0e86c807fc6` |
+| `data/gas-source.txt` | 13,764 | `591b9b086f6d` |
+| `assets/fonts/NotoSansSinhala-Regular.woff2` | 48,520 | `23f1503e1e75` |
+| `assets/fonts/NotoSansSinhala-Bold.woff2` | 48,748 | `bf59c1487b0a` |
+
+### Version bump set
+
+`data/version.json` / `data/config.json` / `data/elevenlabs-audio.json`: `ver:5, schema:5, settingsRev:5, syncRev:1793585000000` (identical stamp in all three — one publish clock), `appVersion/version: '0.0.1.e'`, `buildDate: 2026-11-02`. `index.html` boot `TARGET`, `#sdpVerPill`, `#aboutVersion`; `data/sdp-data-sync.js` `APP_VERSION`/`SDP.version`/`SDP.ver=5`; `data/sdp-dictation-engine.js` header; `sw.js` `SW_VERSION='sdp-v0.0.1.e'` / `SHELL_CACHE='sdp-v0.0.1.e-shell'`; `manifest.webmanifest` description/start_url/shortcuts; `data.html` = `data/index.html`.
+
+### Gate results
+
+See the *Release verification* block at the end of this file — filled by the release commit from a full twelve-gate run.
 
 ---
 
