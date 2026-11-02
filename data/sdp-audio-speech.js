@@ -676,10 +676,14 @@
     cb = cb || noop;
     var at = 0;
     var tiers = null;
+    var settled = false;
+    var gen = 0;
     state.lastTier = '';
     function attempt() {
+      var myGen = gen;
       if (at >= tiers.length) {
         state.lastTier = state.lastTier || 'tts';
+        settled = true;
         cb(null);
         return;
       }
@@ -690,27 +694,41 @@
         /* E2 professor cadence. D10: the utterance carries the word's real
            human British recording as its 800 ms watchdog fallback, so even
            the TTS tier can never leave a word silent. */
-        say([str(word && word.w ? word.w : word)], { rate: 0.92, pitch: 1.03, volume: opts.volume, fallbackAudioUrl: str(word && word.audio) }, function () { cb(null); });
+        say([str(word && word.w ? word.w : word)], { rate: 0.92, pitch: 1.03, volume: opts.volume, fallbackAudioUrl: str(word && word.audio) }, function () {
+          if (myGen !== gen || settled) return;
+          settled = true;
+          cb(null);
+        });
         return;
       }
       playUrl(current.url, { rate: opts.rate, volume: opts.volume, timeoutMs: opts.timeoutMs }, function (err) {
+        if (myGen !== gen || settled) return;
         if (!err) {
           state.lastTier = current.tier;
+          settled = true;
           cb(null);
           return;
         }
         attempt();
       });
     }
+    /* D10 correction: never WAIT for the manifest — the d behaviour started
+       playing at once, and a hanging manifest fetch must never mute a word.
+       The chain starts immediately; if the manifest lands during the very
+       first word and nothing has succeeded yet, the ladder is restarted once
+       (stale tier results are dropped by the generation counter). */
     function run() {
       tiers = opts.tiers || resolveTiers(word);
       attempt();
     }
-    /* Resolve the ladder AFTER the clip manifest is in hand, otherwise the
-       Alice tier looks empty on the very first word after boot. */
     if (!opts.tiers && !state.manifest && !state.manifestRequested) {
-      loadManifest(function () { run(); });
-      return;
+      loadManifest(function () {
+        if (settled || opts.tiers || !state.manifest) return;
+        gen += 1;
+        at = 0;
+        tiers = resolveTiers(word);
+        attempt();
+      });
     }
     run();
   }
