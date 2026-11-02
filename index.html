@@ -70,9 +70,9 @@
         <h2 class="card-title" data-i18n="homeJourneyTitle">Your 3 steps today</h2>
         <p id="homeReadyBadge" class="ready-badge" role="status" data-i18n="homeReadyBadge">Session 8 ready · 30 words</p>
         <ol class="journey-list">
-          <li data-i18n="homeJourney1">1. Listen &amp; write</li>
-          <li data-i18n="homeJourney2">2. Check your 30 words</li>
-          <li data-i18n="homeJourney3">3. Train weak words</li>
+          <li><span class="step-badge" aria-hidden="true">1</span><span data-i18n="homeJourney1">Listen &amp; write</span></li>
+          <li><span class="step-badge" aria-hidden="true">2</span><span data-i18n="homeJourney2">Check your 30 words</span></li>
+          <li><span class="step-badge" aria-hidden="true">3</span><span data-i18n="homeJourney3">Train weak words</span></li>
         </ol>
       </div>
 
@@ -84,11 +84,23 @@
 
       <div id="homeQuickPractice" class="card">
         <h2 class="card-title" data-i18n="quickPractice">Quick practice</h2>
-        <div class="chip-row">
-          <button type="button" class="btn btn-sm" data-prac="flash" data-i18n="flashcards">Flashcards</button>
-          <button type="button" class="btn btn-sm" data-prac="quiz" data-i18n="quiz">4-Choice Quiz</button>
-          <button type="button" class="btn btn-sm" data-prac="listen" data-i18n="listening">Listening Drill</button>
-          <button type="button" class="btn btn-sm" data-prac="weak" data-i18n="weakWords">Weak Words</button>
+        <div class="practice-grid">
+          <button type="button" class="practice-card" data-prac="flash">
+            <span class="prac-ico" aria-hidden="true">🗂️</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="flashcards">Flashcards</span><span class="prac-sub" data-i18n="flashcardsSub">Flip through all 30 words</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="quiz">
+            <span class="prac-ico" aria-hidden="true">✅</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="quiz">4-Choice Quiz</span><span class="prac-sub" data-i18n="quizSub">Pick the right meaning</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="listen">
+            <span class="prac-ico" aria-hidden="true">🎧</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="listening">Listening Drill</span><span class="prac-sub" data-i18n="listeningSub">Hear it, then choose</span></span>
+          </button>
+          <button type="button" class="practice-card" data-prac="weak">
+            <span class="prac-ico" aria-hidden="true">🎯</span>
+            <span class="prac-copy"><span class="prac-title" data-i18n="weakWords">Weak Words</span><span class="prac-sub" data-i18n="weakWordsSub">Retry the ones you missed</span></span>
+          </button>
         </div>
       </div>
 
