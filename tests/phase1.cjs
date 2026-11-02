@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* G3 — jsdom behavioural and regression gate for the v0.0.1.d shell.
+/* G3 — jsdom behavioural and regression gate for the v0.0.1.e shell.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 (storage), §R5 (vault), §R2 (guide)
  * contract: docs/ARCHITECTURE_MAP.md §R3, §R4, §R5, §R6
  * Deterministic: fake timers, stubbed fetch, WebCrypto from Node. */
@@ -27,7 +27,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
         w.localStorage.setItem('sdp.progress', '{not json at all');
         w.localStorage.setItem('sdp.settings', 'null');
         w.localStorage.setItem('sdp.session', '[]]');
-        w.localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.e');
       }
     });
     const progress = JSON.parse(app.w.localStorage.getItem('sdp.progress'));
@@ -44,7 +44,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 2. studio PIN lockout ──────────────────────────────────────────── */
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R5 PIN attempt tracking
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     const envelope = await app.SDP.Sync.Vault.encryptV2({ ghToken: 'ghp_t', elevenKey: 'sk_t' }, '246813');
     app.SDP.Studio.setEnvelope(envelope);
     app.SDP.Sync.Vault.resetLock();
@@ -79,13 +79,13 @@ const sinhala = /[\u0D80-\u0DFF]/;
     app.byId('guideLangPill').click();
     app.byId('btnGuideClose').click();
     // contract: docs/ARCHITECTURE_MAP.md §R2 + W7 — the stamp is the version string
-    check('G3.3e closing stores sdp.guide_seen = the running version', app.w.localStorage.getItem('sdp.guide_seen') === '0.0.1.d');
+    check('G3.3e closing stores sdp.guide_seen = the running version', app.w.localStorage.getItem('sdp.guide_seen') === '0.0.1.e');
     check('G3.3f the modal is hidden after closing', app.byId('guideModal').hidden === true);
     check('G3.3g no fake guide audio stubs exist', !fs.existsSync(path.join(ROOT, 'assets/audio/guide-si-1.mp3')));
     check('G3.3h the header guide button reopens it', (app.byId('btnGuideTop').click(), app.byId('guideModal').hidden === false));
     app.byId('btnGuideClose').click();
     // a returning visitor is not interrupted
-    const again = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const again = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     check('G3.3i returning students are not interrupted by the guide', again.byId('guideModal').hidden === true);
     again.close();
     app.close();
@@ -96,10 +96,10 @@ const sinhala = /[\u0D80-\u0DFF]/;
   {
     const app = await createApp({
       before(w) {
-        w.localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.e');
         // appliedSettingsRev pins the seeded pacing against a classSettings
         // adoption, and guideAutoPlay:false keeps Start on the fast path.
-        w.localStorage.setItem('sdp.settings', JSON.stringify({ mode: 'paper', writeSecs: 3, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: false, appliedSettingsRev: 4 }));
+        w.localStorage.setItem('sdp.settings', JSON.stringify({ mode: 'paper', writeSecs: 3, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: false, appliedSettingsRev: 5 }));
       }
     });
     check('G3.4a boot loads the 30-word active list', app.SDP.Sync.wordCount() === 30, app.SDP.Sync.wordCount());
@@ -107,8 +107,9 @@ const sinhala = /[\u0D80-\u0DFF]/;
     check('G3.4b Start opens the cockpit screen', app.q('.screen.active').id === 'screen-player');
     check('G3.4c paper mode has no #typeInput in the DOM', app.byId('typeInput') === null);
     check('G3.4d the beat starts in listening', /Listening/.test(app.byId('beatStateText').textContent), app.byId('beatStateText').textContent);
-    /* ENG-01: the speech-wait grace is 8 s now, so step past the utterance. */
-    await app.advance(5000);
+    /* D10: the ladder answers in milliseconds now, so the first writing
+       window opens ~1.3 s in — 2.5 s lands inside it. */
+    await app.advance(2500);
     check('G3.4e the beat advances into writing', /Write Now/.test(app.byId('beatStateText').textContent), app.byId('beatStateText').textContent);
     app.SDP.Engine.pause();
     const paused = app.byId('beatStateText').textContent;
@@ -171,7 +172,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 5. language purity ─────────────────────────────────────────────── */
   // contract: docs/UI_COMPONENT_GUIDE.md §5 language purity (W7)
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     app.byId('tab-dict').click();
     const cards = app.byId('dictList').querySelectorAll('.dict-card');
     check('G3.5a the Words tab renders all 30 cards', cards.length === 30, cards.length);
@@ -207,19 +208,27 @@ const sinhala = /[\u0D80-\u0DFF]/;
   /* ── 6. settings order and the studio accordion ─────────────────────── */
   // contract: docs/UI_COMPONENT_GUIDE.md §student-first settings order
   {
-    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } });
+    const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } });
     const order = app.SDP.Views.settingsOrder();
     check('G3.6a settings has exactly six sections', order.length === 6, order.join(','));
     check('G3.6b About is the fifth section and the studio accordion stays last',
       order[4] === 'aboutCard' && order[5] === 'studioAccordion', order.join(','));
     check('G3.6c the studio accordion is collapsed by default', app.byId('studioAccordion').open === false);
     check('G3.6d the repeats select is built once with 1x-5x', app.byId('setRepeats').options.length === 5, app.byId('setRepeats').options.length);
-    // contract: docs/CHANGELOG_LEDGER.md §v0.0.1.d VOX-08 — the test now plays
+    // contract: docs/CHANGELOG_LEDGER.md §v0.0.1.e VOX-08 — the test now plays
     // the first session word through the real tier chain and names the tier.
     app.byId('btnTestVoice').click();
+    /* D10: the chain is async now (dictionary <audio> first, TTS last). jsdom
+       fires no media events, so run past the 12 s playUrl backstop to let the
+       chain hand over and name the tier that actually played. */
+    await app.advance(13000);
     const said = app.SDP.Speech.lastUtterances();
+    const dictTiers = app.SDP.Speech.resolveTiers(app.SDP.Sync.word(0)).filter(function (t) { return t.tier === 'dictionary'; });
     check('G3.6e Test Voice plays the first session word through the tier chain',
-      said.length >= 1 && /afraid/i.test(said.join(' ')), JSON.stringify(said));
+      (said.length >= 1 && /afraid/i.test(said.join(' '))) ||
+        (/British human audio/i.test(String(app.SDP.Speech.lastTierName())) &&
+         dictTiers.length === 1 && /dict\.youdao\.com/.test(dictTiers[0].url) && /audio=afraid/i.test(dictTiers[0].url)),
+      JSON.stringify({ said: said, tier: app.SDP.Speech.lastTierName(), dict: dictTiers }));
     check('G3.6f Test Voice reports the tier that actually played',
       typeof app.SDP.Speech.lastTierName() === 'string' && app.SDP.Speech.lastTierName().length > 0,
       app.SDP.Speech.lastTierName());
@@ -237,12 +246,12 @@ const sinhala = /[\u0D80-\u0DFF]/;
     const app = await createApp({
       files: { 'data/config.json': JSON.stringify(cfg), 'data/version.json': JSON.stringify(ver) },
       before(w) {
-        w.localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.e');
         /* The student touched every classroom key — the lecturer still wins. */
         w.localStorage.setItem('sdp.settings', JSON.stringify({
           mode: 'typing', writeSecs: 3, repeats: 1, pauseSecs: 0.5, autoAdvance: false,
           pacingPreset: 'exam', voiceLock: 'custom', voiceSource: 'custom', rate: 1.1, theme: 'board',
-          lang: 'si', volume: 0.4, appliedSettingsRev: 0,
+          lang: 'si', volume: 0.4, appliedSettingsRev: 0, langResetV001e: true,
           touchedKeys: { writeSecs: true, repeats: true, theme: true, rate: true, pauseSecs: true }
         }));
       }
@@ -271,7 +280,7 @@ const sinhala = /[\u0D80-\u0DFF]/;
     ver.syncRev = 1762000000012;
     const app = await createApp({
       files: { 'data/config.json': JSON.stringify(cfg), 'data/version.json': JSON.stringify(ver) },
-      before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.d'); }
+      before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.1.e'); }
     });
     const s = app.SDP.Data.settings();
     check('G3.8a a brand-new device adopts the teacher settings on its first boot (SYNC-02)',
@@ -288,10 +297,10 @@ const sinhala = /[\u0D80-\u0DFF]/;
   {
     const app = await createApp({
       before(w) {
-        w.localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+        w.localStorage.setItem('sdp.guide_seen', '0.0.1.e');
         w.localStorage.setItem('sdp.settings', JSON.stringify({
           mode: 'paper', writeSecs: 3, repeats: 1, pauseSecs: 0.5, autoAdvance: true,
-          rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: true, appliedSettingsRev: 4
+          rate: 1, volume: 1, lang: 'en', theme: 'dark', guideAutoPlay: true, appliedSettingsRev: 5
         }));
       }
     });

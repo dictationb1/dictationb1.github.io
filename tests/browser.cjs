@@ -40,7 +40,7 @@ async function openPage(browser, origin, viewport, opts) {
      the guide itself is exercised by G7. */
   await context.addInitScript((seedGuide) => {
     window.__SDP_NO_LIVE__ = true;
-    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } catch (e) {}
+    try { if (seedGuide) localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } catch (e) {}
   }, opts.guide !== true);
   const page = await context.newPage();
   const errors = [];
@@ -58,10 +58,10 @@ async function bootSettings(page, settings) {
   /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.2 — appliedSettingsRev pins
      the test's own pacing against a classSettings adoption, and guideAutoPlay
      keeps Start on the fast path (the quick guide is G3/G7's job). */
-  const seed = Object.assign({ appliedSettingsRev: 4, guideAutoPlay: false }, settings);
+  const seed = Object.assign({ appliedSettingsRev: 5, guideAutoPlay: false }, settings);
   await page.evaluate((s) => {
     localStorage.setItem('sdp.settings', JSON.stringify(s));
-    localStorage.setItem('sdp.guide_seen', '0.0.1.d');
+    localStorage.setItem('sdp.guide_seen', '0.0.1.e');
   }, seed);
   await page.reload({ waitUntil: 'domcontentloaded' });
 }
@@ -272,7 +272,7 @@ async function bootSettings(page, settings) {
     }
 
     /* ── 7b. R5: 48px touch targets in the cockpit and Settings ─────────── */
-    // contract: docs/UI_COMPONENT_GUIDE.md §v0.0.1.d touch targets
+    // contract: docs/UI_COMPONENT_GUIDE.md §v0.0.1.e touch targets
     {
       const { context, page } = await openPage(browser, server.origin, { width: 390, height: 844 });
       await bootSettings(page, { mode: 'paper', writeSecs: 8, repeats: 1, pauseSecs: 1, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark' });

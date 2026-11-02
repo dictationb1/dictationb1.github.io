@@ -64,38 +64,38 @@ function bootSync(seed) {
 }
 
 /* ── R1 ─────────────────────────────────────────────────────────────────── */
-test('R1: app, schema and service-worker constants are all 0.0.1.d', () => {
+test('R1: app, schema and service-worker constants are all 0.0.1.e', () => {
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R1 version & cache constants
   const { SDP } = bootSync();
-  assert.equal(SDP.version, '0.0.1.d');
-  assert.equal(SDP.build, '2026-11-01');
-  assert.equal(SDP.ver, 4);
+  assert.equal(SDP.version, '0.0.1.e');
+  assert.equal(SDP.build, '2026-11-02');
+  assert.equal(SDP.ver, 5);
   assert.equal(SDP.SDPCore, undefined); // alias lives on window, not inside SDP
   assert.equal(SDP.Sync.Vault.PREFIX, 'SDP_ENC_V2:');
   assert.equal(SDP.Sync.Vault.ITERATIONS, 250000);
 
   const version = readJSON('data/version.json');
-  assert.equal(version.ver, 4);
-  assert.equal(version.appVersion, '0.0.1.d');
-  assert.equal(version.version, '0.0.1.d');
-  assert.equal(version.schema, 4);
-  assert.equal(version.settingsRev, 4);
+  assert.equal(version.ver, 5);
+  assert.equal(version.appVersion, '0.0.1.e');
+  assert.equal(version.version, '0.0.1.e');
+  assert.equal(version.schema, 5);
+  assert.equal(version.settingsRev, 5);
   assert.equal(String(version.session), '8');
 
   const cfg = readJSON('data/config.json');
-  assert.equal(cfg.ver, 4);
-  assert.equal(cfg.appVersion, '0.0.1.d');
-  assert.equal(cfg.version, '0.0.1.d');
-  assert.equal(cfg.schema, 4);
-  assert.equal(cfg.settingsRev, 4);
+  assert.equal(cfg.ver, 5);
+  assert.equal(cfg.appVersion, '0.0.1.e');
+  assert.equal(cfg.version, '0.0.1.e');
+  assert.equal(cfg.schema, 5);
+  assert.equal(cfg.settingsRev, 5);
   assert.equal(cfg.encVault, 'SDP_ENC_V2:AAA=');
 
   const sw = read('sw.js');
-  assert.match(sw, /SW_VERSION = 'sdp-v0\.0\.1\.d'/);
-  assert.match(sw, /SHELL_CACHE = 'sdp-v0\.0\.1\.d-shell'/);
+  assert.match(sw, /SW_VERSION = 'sdp-v0\.0\.1\.e'/);
+  assert.match(sw, /SHELL_CACHE = 'sdp-v0\.0\.1\.e-shell'/);
   assert.match(sw, /PRESERVE_CACHES = \['sdp-youdao-v1', 'sdp-audio-clips'\]/);
   const index = read('index.html');
-  assert.match(index, /var TARGET = '0\.0\.1\.d'/);
+  assert.match(index, /var TARGET = '0\.0\.1\.e'/);
 });
 
 test('R1: the five localStorage keys and the settings default shape are exact', () => {
@@ -107,14 +107,17 @@ test('R1: the five localStorage keys and the settings default shape are exact', 
     ['sdp.guide_seen', 'sdp.migrated_from_legacy', 'sdp.progress', 'sdp.session', 'sdp.settings']
   );
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R4 — v0.0.1.b added guideAutoPlay,
-  // pacingPreset and voiceLock; v0.0.1.d adds touchedKeys (R7: the teacher must
+  // pacingPreset and voiceLock; v0.0.1.e adds touchedKeys (R7: the teacher must
   // never clobber a field the student changed by hand).
   const defaults = SDP.Data.settings();
   assert.deepEqual(Object.keys(defaults).sort(), [
-    'appliedSettingsRev', 'autoAdvance', 'guideAutoPlay', 'hints', 'lang', 'mode',
-    'pacingPreset', 'pauseSecs', 'rate', 'repeats', 'theme', 'touchedKeys',
-    'vaultLock', 'voiceLock', 'voiceSource', 'volume', 'writeSecs'
+    'appliedSettingsRev', 'autoAdvance', 'guideAutoPlay', 'hints', 'lang',
+    'langResetV001e', 'mode', 'pacingPreset', 'pauseSecs', 'rate', 'repeats',
+    'theme', 'touchedKeys', 'vaultLock', 'voiceLock', 'voiceSource', 'volume', 'writeSecs'
   ]);
+  // D7: the one-time British English migration has run by the time settings()
+  // first returns, and it lives INSIDE sdp.settings (never a sixth key).
+  assert.equal(defaults.langResetV001e, true);
   // contract: docs/SYNC_AND_DATA_CONTRACT.md §R11.2 / §R11.4 — the two new
   // sub-keys stay INSIDE sdp.settings so the five-key law is untouched.
   assert.equal(defaults.appliedSettingsRev, 0, 'the first boot adopts the teacher settings');
@@ -300,7 +303,7 @@ test('R7: GitHub Contents payload, CORS-simple GAS relay and 40K word chunking',
   assert.equal(parsed.pin, undefined, 'relay must not carry the PIN');
   assert.equal(relay.indexOf('246813'), -1, 'the PIN must not appear anywhere in the body');
   // contract: docs/CHANGELOG_LEDGER.md §Release ledger — relay pins the current build version
-  assert.equal(parsed.ver, '0.0.1.d');
+  assert.equal(parsed.ver, '0.0.1.e');
 
   const longWords = Array.from({ length: 1200 }, (_, i) => ({
     w: 'word' + i,

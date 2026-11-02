@@ -63,7 +63,7 @@ async function newPage(browser, origin, opts) {
   opts = opts || {};
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
   await ctx.addInitScript(MOCK);
-  if (opts.guideSeen) await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.d'); } catch (e) {} });
+  if (opts.guideSeen) await ctx.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.1.e'); } catch (e) {} });
   if (opts.settings) await ctx.addInitScript((s) => { try { localStorage.setItem('sdp.settings', JSON.stringify(s)); } catch (e) {} }, opts.settings);
   const page = await ctx.newPage();
   const errors = [];
@@ -78,7 +78,7 @@ async function newPage(browser, origin, opts) {
 }
 
 /* appliedSettingsRev pins this pacing against a classSettings adoption (R11.2). */
-const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', appliedSettingsRev: 4 };
+const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdvance: true, rate: 1, volume: 1, lang: 'en', theme: 'dark', appliedSettingsRev: 5 };
 
 (async function main() {
   const server = await start({ root: ROOT });
@@ -101,7 +101,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     await page.click('#btnGuideClose');
     await page.waitForTimeout(150);
     const afterGuide = await page.evaluate(() => localStorage.getItem('sdp.guide_seen'));
-    check('G7.1d closing the guide records the visit', afterGuide === '0.0.1.d', afterGuide);
+    check('G7.1d closing the guide records the visit', afterGuide === '0.0.1.e', afterGuide);
 
     /* ── 2. credits: on Home and in About, never floating ─────────────── */
     // contract: docs/ARCHITECTURE_MAP.md §R7 attribution placement
@@ -137,7 +137,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     {
       const { ctx, page } = await newPage(browser, server.origin, {
         guideSeen: true,
-        settings: Object.assign({}, FAST, { guideAutoPlay: true, appliedSettingsRev: 4 })
+        settings: Object.assign({}, FAST, { guideAutoPlay: true, appliedSettingsRev: 5 })
       });
       await page.waitForTimeout(500);
       /* Hold the narration open so the modal behaves like a real 20 s guide. */
@@ -205,8 +205,14 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     const countdown = await page.evaluate(async () => {
       const read = () => parseFloat(document.getElementById('beatSeconds').textContent) || 0;
       const before = read();
-      await new Promise((r) => setTimeout(r, 700));
-      return { before, after: read() };
+      let after = before;
+      /* Two reads can land in the same ceil-second bucket (or straddle a phase
+         flip, which resets the counter UP) — sample until a real decrease. */
+      for (let i = 0; i < 6 && after >= before; i++) {
+        await new Promise((r) => setTimeout(r, 300));
+        after = read();
+      }
+      return { before, after };
     });
     check('G7.3g the countdown ticks down in real time', countdown.after < countdown.before, JSON.stringify(countdown));
 
@@ -345,7 +351,7 @@ const FAST = { mode: 'paper', writeSecs: 2, repeats: 1, pauseSecs: 0.5, autoAdva
     check('G7.6b the backup carries progress, settings and provenance',
       ['app', 'schema', 'exportedAt', 'progress', 'settings', 'appVersion'].every((k) => k in backup), Object.keys(backup).join(','));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — backups pin the current build
-    check('G7.6c the backup pins the running appVersion', backup.appVersion === '0.0.1.d', backup.appVersion);
+    check('G7.6c the backup pins the running appVersion', backup.appVersion === '0.0.1.e', backup.appVersion);
     fs.unlinkSync(savedTo);
 
     /* ── 7. the transparency pair is reachable ────────────────────────── */
