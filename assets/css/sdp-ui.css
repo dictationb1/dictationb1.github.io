@@ -3224,3 +3224,25 @@ html[data-theme='dark'] .studio-alert-row { background: rgba(120, 53, 15, 0.25);
 }
 .studio-access-notice-ico { font-size: 16px; }
 [data-theme='dark'] .studio-access-notice { background: rgba(180, 83, 9, 0.14); color: #FCD34D; }
+
+/* ══ v0.0.7.g BUG-G4: the 5-Step Connection Doctor & Auto-Repair panel ══
+   Every step paints a green ✅ / red ❌ badge with the exact bilingual
+   cause + fix — never a vague "Relay unreachable" again. */
+.studio-al-doctor {
+  display: flex; flex-direction: column; gap: 0; margin-top: 4px;
+  border: 1px solid var(--stroke, #94A3B8); border-radius: 10px; overflow: hidden;
+}
+.studio-al-docstep {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px 12px;
+  border-bottom: 1px solid var(--stroke, rgba(148, 163, 184, 0.4));
+  background: var(--bg-sunken, #F1F5F9);
+}
+.studio-al-docstep:last-child { border-bottom: none; }
+.studio-al-docstep[data-state='ok'] { background: rgba(5, 150, 105, 0.08); }
+.studio-al-docstep[data-state='bad'] { background: rgba(185, 28, 28, 0.08); }
+.studio-al-docbadge { font-size: 14px; line-height: 1.2; }
+.studio-al-doctitle { font-size: 12.5px; font-weight: 700; }
+.studio-al-docdetail { font-size: 12px; color: var(--text-muted, #64748B); }
+.studio-al-docdetail p { margin: 2px 0; overflow-wrap: anywhere; }
+.studio-al-docstep[data-state='bad'] .studio-al-docdetail { color: #B91C1C; }
+[data-theme='dark'] .studio-al-docstep[data-state='bad'] .studio-al-docdetail { color: #FCA5A5; }

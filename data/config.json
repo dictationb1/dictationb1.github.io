@@ -56,8 +56,8 @@
     "defaultsResetV001f": true,
     "appliedSettingsRev": 6
   },
-  "ver": 46,
-  "version": "0.0.7.f",
+  "ver": 47,
+  "version": "0.0.7.g",
   "buildDate": "2026-11-21",
   "credits": {
     "createdBy": "Hansana",
@@ -91,8 +91,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "0.0.7.f",
-  "settingsRev": 82,
+  "appVersion": "0.0.7.g",
+  "settingsRev": 80,
   "performance": {
     "mode": "paper",
     "lite": {},
@@ -419,7 +419,7 @@
   },
   "updatedAt": "2026-11-21T19:07:13.101Z",
   "updatedAtMs": 1793448000000,
-  "schema": 46,
+  "schema": 47,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 14 - Communications & Technology",
   "sessionCode": "Session 14",
@@ -784,7 +784,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000031,
+  "syncRev": 1797000000029,
   "versionFamily": "10.0.0",
   "encVault": "SDP_ENC_V2:vzRrM4fbecpYGnxXtIa8bIoygvByx0s4N+ClNQNK4iOGxxnWcgtFIKN2u6CWCNICl8kdIDpAO5+cVoJ4dWQoZI+V2ypTpFYkC4+T/8BkT00EDHUk4IGliDGFFbKFsEgZxm/qxZXC/4SeeOUD2f0ha/LVvFbDhfRgyY7un/A4busUDT/nqpwrSJx8RoXmk2Ckh6OY9ZodpEcLFK2n2bwgGT6Lfn6sX95yZjrISCF4X1DUVRkVlIx7XyhTO8NFlohEbBt8oq/fhavXayQU6y2uE2qNaKMoC0sS50EGEEoukVLVxGGERvwKVdnQQix4btKjFfILtfIBniafIwVwcN+hpVCqAzrUTew6hDbNyMXyHzpKWMWhcHH9mDaHxCozdQQp2XEpskyDbGu4MyyTKpuBnSt2K3gVVoDvK6lDuSqyzQbMEcnNeh2IJ0q6qvF8a+Eg/VX8e+fr4gpDIr53KCGp2CCOAhlT+KCXYcr0NQy9hGzxOJk0ABrvcxBbJJ9inwg7IdQWv43h/mWnQYKs7XYEhrWcWnAvDKH68cSksI/Yk0rZy2VDun8SDIuioeCROVvCFEdCYQJuCkkYwYBxAM8pCd/TKiEsExpBMtphFb58Zd+5tIYigBUdPk/oHDKeYHAXjistDKT2wph+D5nU4hD9YnuQ3KxrrkcoLydRPYA4ccKX1lkXyfTGJwUK4/Xqw0gLw9iTcVHeaphHAC+Lmdv3TgF6/jfZ72EpLlyq6ttcXgvSDl4et1RBTJbdiCDr2VZJa0m7seUDJRF+Vb0+hrHzeI5qq+/FCptRQfJT7JzDmyR+7y654K8MBMdUrrfEb19Nt5b4XRDMhCFUvGuLUsNQ/B9XRlXkITuxQiZjeudWJCaV57jpr+rfEYcnD0t6UNg3v0RKW7ACT1Y5ku/t90nbPfswzGIgM6sXwS6ykmUt6rYaZpDTdS/X15NjC3DMdAeyWIwfTzftEGuInWJ4lliChlqw9gcX/lvrq298mAQYdhiSYgUvuo55CKXuEtO1aqj/T3yEugxAGNBg/9VIFgyZfNZUdA75FOhXlN4l5DEkHfLo9b+1oPOaj767Se76AD6iwOTKJHVo4l2MAI57EbC7hTqY5nFNGp1OB9M5nowv3RsywIKSvkb1qZJfDNJnXXNNyclDI41GLe3g681rYPpccNAqhYjgRqMgkKL9OjFJ6A==",
   "classSettings": {
@@ -807,7 +807,7 @@
     "hash": "VlIxxCOF1uxtFMz5C1hPwqoe5gp5Tn/uUetPH2xCKsY="
   },
   "voicePersona": "British English female educator (Alice-class)",
-  "wordsRev": 1797000000028,
+  "wordsRev": 1797000000029,
   "accessLock": {
     "on": false,
     "mode": "approval+code",

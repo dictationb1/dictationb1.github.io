@@ -1,10 +1,10 @@
 {
-  "version": "0.0.7.f",
-  "appVersion": "0.0.7.f",
-  "ver": 46,
-  "schema": 46,
-  "settingsRev": 82,
-  "syncRev": 1797000000031,
+  "version": "0.0.7.g",
+  "appVersion": "0.0.7.g",
+  "ver": 47,
+  "schema": 47,
+  "settingsRev": 80,
+  "syncRev": 1797000000029,
   "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
   "voiceName": "Alice",
   "modelId": "eleven_flash_v2_5",
@@ -835,5 +835,5 @@
   },
   "briefingVoiceId": "JBFqnCBsd6RMkjVDRZzb",
   "briefingVoiceName": "George (British Master Narrator)",
-  "wordsRev": 1797000000031
+  "wordsRev": 1797000000029
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
-/* G26 — tests/v007f-telegram-center.cjs — the v0.0.7.f Telegram Command Center gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.f
+/* G26 — tests/v007f-telegram-center.cjs — the v0.0.7.g Telegram Command Center gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
  * Executes the exact shipped data/gas-source.txt inside a vm with a faithful
  * Apps Script mock and asserts the two-way Telegram command center laws:
  *   C1  POST webhook law — Telegram updates arrive as HTTP POST and are
@@ -305,7 +305,7 @@ function tgSent(rt) { return tgCalls(rt, 'sendMessage'); }
   const sent2 = tgSent(rt).length;
   check('C7a the same device login twice inside 45 s pushes only ONE Telegram message',
     sent2 === sent1, sent1 + ' -> ' + sent2);
-  /* v0.0.7.f law: tg_event carries a pure 240/hour per-device cap (no min-gap,
+  /* v0.0.7.g law: tg_event carries a pure 240/hour per-device cap (no min-gap,
      so a grant → session summary burst always lands) — a genuine flood is
      throttled by the hourly counter, and the per-kind window counter queues
      the overflow into the 60 s digest instead of spamming Telegram. */
