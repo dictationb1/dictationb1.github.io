@@ -21,9 +21,9 @@
  * masked by a stale cache. */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.7.d-s43'; /* v0.0.7.d */
-var SHELL_CACHE = 'sdp-v0.0.7.d-s43-shell'; /* v0.0.7.d */
-var SW_RELEASE = '0.0.7.d';
+var SW_VERSION = 'sdp-v0.0.7.e-s44'; /* v0.0.7.e */
+var SHELL_CACHE = 'sdp-v0.0.7.e-s44-shell'; /* v0.0.7.e */
+var SW_RELEASE = '0.0.7.e';
 var PRESERVE_CACHES = ['sdp-audio-clips', 'sdp-youdao-v1'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';
@@ -51,7 +51,8 @@ var SHELL = [
   './data/sdp-audio-normalize.js',
   './data/sdp-telemetry.js',
   './data/sdp-selfheal.js',
-  './data/sdp-live-lab.js'
+  './data/sdp-live-lab.js',
+  './data/sdp-access-lock.js'
 ];
 
 /* D2: the only external host this worker may touch is the dictionary audio

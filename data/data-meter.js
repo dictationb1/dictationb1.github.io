@@ -9,7 +9,7 @@
   /* D20: the /data meter cache is version-keyed. Every release bumps this
      literal, so a cached asset size from an older release can never be shown
      as today's byte count; Studio also calls clearCache() after a publish. */
-  var CACHE_VERSION = 'sdp-v0.0.7.d';
+  var CACHE_VERSION = 'sdp-v0.0.7.e';
   var AUDIO_ESTIMATE = 11000;
   var STORAGE = { daily: 'sdp.dataMeter.daily', allTime: 'sdp.dataMeter.allTime', price: 'sdp.dataPriceLkrPerGb', plan: 'sdp.dataPricePlan', manifest: 'sdp.mediaManifest.v1', buffer: 'sdp.dataMeter.videoHW' };
   var KNOWN_ASSETS = {};

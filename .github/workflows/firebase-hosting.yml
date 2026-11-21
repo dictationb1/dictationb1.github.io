@@ -1,14 +1,16 @@
 name: Deploy to Firebase Hosting (dictationb1.web.app)
 
-# Keeps https://dictationb1.web.app/ in lockstep with main: every push that
-# passes the release gates publishes the same tree GitHub Pages serves.
+# v0.0.7.e: manual opt-in mirror for https://dictationb1.web.app/ only — the
+# canonical live site is GitHub Pages and this never auto-runs on PRs/pushes.
 # Setup (one time): Firebase console -> Project settings -> Service accounts ->
 # Generate new private key, then add it as the repository secret
 # FIREBASE_SERVICE_ACCOUNT_DICTATIONB1 (Settings -> Secrets and variables ->
 # Actions). No key, no deploy — the job skips cleanly.
+# v0.0.7.e: GitHub Pages ONLY (https://dictationb1.github.io/). Firebase
+# Hosting is NOT used for deploys — this workflow is manual opt-in only so it
+# can never run red on PRs/pushes. Keep firebase.json/.firebaserc valid for
+# any prior gate checks that read them.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

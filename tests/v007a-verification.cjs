@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-/* G19 — the v0.0.7.d studio-UX / unlimited-words / key-pool / reuse release gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.d
- * (0.0.7.d / ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000026 / SW s41) — v0.0.7.d lockstep
+/* G19 — the v0.0.7.e studio-UX / unlimited-words / key-pool / reuse release gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.e
+ * (0.0.7.e / ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000027 / SW s41) — v0.0.7.e lockstep
  * The seven pillars verified LIVE in headless Chromium (plus static pins):
  * A1: Unlimited custom word count (5–∞) with 100% lock/unlock/reload persistence.
  * A2: Consolidated multi-key ElevenLabs pool + pre-flight credit check + failover.
@@ -34,22 +34,22 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── A6 static pins ────────────────────────────────────────────────────── */
-check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000026, 0.0.7.d',
-  version.ver === 44 && version.schema === 44 && version.appVersion === '0.0.7.d' && version.version === '0.0.7.d' && version.settingsRev === 77 && version.syncRev === 1797000000026,
+check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000027, 0.0.7.e',
+  version.ver === 45 && version.schema === 45 && version.appVersion === '0.0.7.e' && version.version === '0.0.7.e' && version.settingsRev === 78 && version.syncRev === 1797000000027,
   JSON.stringify({ ver: version.ver, schema: version.schema, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
-check('A6b config.json + session.json pins (ver 42/66, settingsRev 76, syncRev 0021, 0.0.7.d)',
-  config.ver === 44 && config.appVersion === '0.0.7.d' && session.ver === 67 && session.settingsRev === 77 && session.syncRev === 1797000000026 && session.appVersion === '0.0.7.d',
+check('A6b config.json + session.json pins (ver 42/66, settingsRev 76, syncRev 0021, 0.0.7.e)',
+  config.ver === 45 && config.appVersion === '0.0.7.e' && session.ver === 68 && session.settingsRev === 78 && session.syncRev === 1797000000027 && session.appVersion === '0.0.7.e',
   JSON.stringify({ cfgVer: config.ver, sesVer: session.ver, sesRev: session.settingsRev, sync: session.syncRev }));
-check('A6c sw.js pins the s43 shell + s41 release + 0.0.7.d',
-  /sdp-v0\.0\.7\.d-s43-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.d'/.test(sw));
-check('A6d index.html boots at the 0.0.7.d target and every data module moved off 0.0.7.d functionally',
-  /var TARGET = '0\.0\.7\.d'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
+check('A6c sw.js pins the s43 shell + s41 release + 0.0.7.e',
+  /sdp-v0\.0\.7\.e-s44-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.e'/.test(sw));
+check('A6d index.html boots at the 0.0.7.e target and every data module moved off 0.0.7.e functionally',
+  /var TARGET = '0\.0\.7\.e'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
 check('A6e attribution credits preserved verbatim (Hansana / Ms. Sumodya Sewmini / Ayya01 Lesandu)',
   /Hansana/.test(readText('index.html')) && /Sumodya/.test(readText('index.html')),
   'attribution strings in index.html');
 check('A6f the 4 George briefing MP3 payloads are byte-identical (week-4 stamps preserved)',
   (function () {
-    const expected = { _intro_male_1: 'df414b60aad0eeab', _intro_male_2: 'b95edc911775985b', _intro_male_3: 'aa09dc4efd98b570', _intro_male_4: 'b515ab0232dccd21' }; /* v0.0.7.d -21 LUFS masters */
+    const expected = { _intro_male_1: 'df414b60aad0eeab', _intro_male_2: 'b95edc911775985b', _intro_male_3: 'aa09dc4efd98b570', _intro_male_4: 'b515ab0232dccd21' }; /* v0.0.7.e -21 LUFS masters */
     for (const k in expected) {
       const e = pack.clips[k];
       if (!e || crypto.createHash('sha256').update(e.b64).digest('hex').slice(0, 16) !== expected[k]) return false;
@@ -111,6 +111,15 @@ var g19Live = (async function live() {
       });
       await page.goto(server.origin + '/index.html', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2400);
+      /* v0.0.7.e G19 harness determinism: the Studio's 10-second security
+         auto-lock drops ST.secrets to {} when it fires, which can
+         land inside a long synthesis leg (the 429 retry alone is 5 s) and wipe
+         the key pool the failover leg just planted. The app exposes
+         __SDP_AUTOLOCK__ === false for exactly this (same law as
+         __SDP_ALLOW_AUTOGEN); the explicit lock()/unlock() legs below still
+         exercise the vault. This keeps LIVE-5a/5b deterministic without
+         weakening them — a real rotation is still required. */
+      await page.evaluate(() => { window.__SDP_AUTOLOCK__ = false; });
       await page.evaluate(() => { const r = document.getElementById('rail-studio'); if (r) r.click(); });
       await page.waitForTimeout(300);
       /* (1) Words Card #1 & Session Card #2 above the voice/alerts/advanced drawers */
@@ -236,7 +245,26 @@ var g19Live = (async function live() {
         page.evaluate(([a, b]) => new Promise((resolve) => {
           SDP.Studio.state.secrets.elevenKey = '';
           SDP.Studio.state.secrets.keyPool = [{ p: 'elevenlabs', k: a }, { p: 'elevenlabs', k: b }];
+          window.__SDP_AUTOLOCK__ = false;
+          try { if (SDP.Studio.__testAutoLock) SDP.Studio.__testAutoLock.cancel(true); } catch (eAL) {}
           const el = document.getElementById('elKeyInput'); if (el) el.value = '';
+          /* v0.0.7.e G19 harness determinism: the Studio re-merges the pool from
+             the DOM (mergeKeyPoolInputs) whenever a clip is saved mid-batch, so
+             the slot inputs must mirror the state we just wrote — otherwise slot
+             #2 falls back to its 'groq' default and the ElevenLabs pool collapses
+             to a single key, which silently disables the 429 rotation this leg
+             asserts. Drive the panel exactly as a lecturer would. */
+          const slotOf = (n) => document.getElementById('kpSlot' + n);
+          const provOf = (n) => document.getElementById('kpProv' + n);
+          [[1, a], [2, b]].forEach(([n, k]) => {
+            const p = provOf(n); if (p) { p.value = 'elevenlabs'; p.dispatchEvent(new Event('change', { bubbles: true })); }
+            const s = slotOf(n); if (s) { s.value = k; s.setAttribute('data-dirty', '1'); s.dispatchEvent(new Event('input', { bubbles: true })); }
+          });
+          [3, 4, 5].forEach((n) => {
+            const p = provOf(n), s = slotOf(n);
+            if (p) { p.value = 'groq'; p.dispatchEvent(new Event('change', { bubbles: true })); }
+            if (s) { s.value = ''; s.setAttribute('data-dirty', '1'); s.dispatchEvent(new Event('input', { bubbles: true })); }
+          });
           SDP.Studio.generateClips({ words: [{ w: 'g19failoverword' }], noCommit: true }, function (err, info) {
             resolve({ err: err ? String(err.message) : null, made: (info && info.made) ? info.made.length : -1 });
           });
@@ -318,7 +346,7 @@ function g19Report() {
   clearInterval(g19KeepAlive);
   /* ── report ── */
   const fails = results.filter((r) => r.status === 'FAIL');
-  console.log('\n──── G19 · v0.0.7.d verification ────');
+  console.log('\n──── G19 · v0.0.7.e verification ────');
   results.forEach((r) => console.log((r.status === 'PASS' ? '  ✓ ' : '  ✗ ') + r.test + (r.detail ? ' — ' + r.detail : '')));
   console.log('──── ' + (results.length - fails.length) + '/' + results.length + ' PASS · ' + fails.length + ' FAIL ────');
   if (fails.length) process.exit(1);

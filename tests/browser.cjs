@@ -390,7 +390,7 @@ async function bootSettings(page, settings) {
         }));
         // contract: docs/ARCHITECTURE_MAP.md §I1 — the storage audit lists all 12 honest localStorage keys
         check('G5.9 [' + route + '] renders byte table, 5 plans and storage audit',
-          info.rows >= 4 && info.plans === 5 && info.storage === 12 && info.hasTitle && info.noVideo, JSON.stringify(info));
+          info.rows >= 4 && info.plans === 5 && info.storage === 13 && info.hasTitle && info.noVideo /* v0.0.7.e: +the Access Lock device key */, JSON.stringify(info));
       }
       const si = await (async () => {
         await page.goto(server.origin + '/data/?lang=si', { waitUntil: 'domcontentloaded' });
@@ -582,7 +582,7 @@ async function bootSettings(page, settings) {
       const tag = flag || '(clean url)';
       const wantsBeta = flag === '?beta' || flag === '#beta';
       check('G5.13a ' + tag + ' the governed Beta channel state matches the URL',
-        main.betaActive === wantsBeta && main.betaSub === '0.0.7.d.beta',
+        main.betaActive === wantsBeta && main.betaSub === '0.0.7.e.beta',
         JSON.stringify(main));
       check('G5.13a2 ' + tag + ' the Beta channel replays the Project Briefing',
         main.briefingOpen === wantsBeta, JSON.stringify(main));
@@ -594,7 +594,7 @@ async function bootSettings(page, settings) {
         !/Beta|Creator Note|Guide|Synced|Lecturer Admin|v0\.0\.6/.test(main.headerText),
         JSON.stringify(main));
       check('G5.13c ' + tag + ' the relocated triggers live inside the About card',
-        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.d', JSON.stringify(main));
+        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.e', JSON.stringify(main));
       check('G5.13d ' + tag + ' the release fixes are live on the main UI', main.fixLive, JSON.stringify(main));
       await context.close();
     }

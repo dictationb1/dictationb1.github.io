@@ -172,7 +172,7 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
   check('W4a lab.html ships at the repo root (≤ 30000 B, unified Live Lab) with the 9 station sections',
     labHtml.length <= 30000 && (labHtml.match(/<section class="card">/g) || []).length === 9,
     String(labHtml.length));
-  check('W4b data/sdp-live-lab.js ships (≤ 92000 B, unified 0.0.7.d Live Lab + Station 7) and parses as strict ES5 (acorn ecmaVersion 5)',
+  check('W4b data/sdp-live-lab.js ships (≤ 92000 B, unified 0.0.7.e Live Lab + Station 7) and parses as strict ES5 (acorn ecmaVersion 5)',
     labJs.length <= 92000 && (function () { try { acorn.parse(labJs, { ecmaVersion: 5, sourceType: 'script' }); return true; } catch (e) { return false; } })(),
     String(labJs.length));
   check('W4c the LiveLab engine exposes window.SDP.LiveLab with all 6 stations + report exports',
@@ -198,10 +198,10 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     /Run Full Live Diagnostic Suite/.test(labHtml) && /Download Full Live Lab Report/.test(labHtml), 'station6');
   check('W4j sw.js precaches the lab files and pins the sdp-v0.0.6.z-s39 shell',
     /'\.\/data\/sdp-live-lab\.js'/.test(readText('sw.js')) &&
-    /SW_VERSION = 'sdp-v0\.0\.7\.d-s43'/.test(readText('sw.js')), 'sw precache');
-  check('W4k the pack header carries the unified v0.0.7.d / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000026',
-    pack.version === '0.0.7.d' && pack.ver === 44 && pack.schema === 44 &&
-    pack.settingsRev === 77 && Number(pack.syncRev) === 1797000000026,
+    /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(readText('sw.js')), 'sw precache');
+  check('W4k the pack header carries the unified v0.0.7.e / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000027',
+    pack.version === '0.0.7.e' && pack.ver === 45 && pack.schema === 45 &&
+    pack.settingsRev === 78 && Number(pack.syncRev) === 1797000000027,
     JSON.stringify([pack.version, pack.ver, pack.schema, pack.settingsRev, pack.syncRev]));
 
   /* ── report ───────────────────────────────────────────────────────────── */

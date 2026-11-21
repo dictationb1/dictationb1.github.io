@@ -67,8 +67,8 @@ check('Y2f the shipped pack has ZERO orphaned words.* keys (the 44-key live-repo
   Object.keys(pack.clips).filter((k) => /^words\./.test(k) && /^(num|cmd|guide)\./.test(k.replace(/^words\./, '')) && pack.clips['words.' + k.replace(/^words\./, '')] !== pack.clips[k.replace(/^words\./, '')]).length === 0);
 check('Y2g the shipped pack carries exactly the 76 canonical clips (31 words + 31 num + 6 cmd + 4 guide + 4 briefing)',
   Object.keys(pack.clips).length === 76);
-check('Y2h the pack header is the unified v0.0.7.d / ver 43 / schema 43 / settingsRev 76 / syncRev+wordsRev 1797000000026',
-  pack.version === '0.0.7.d' && pack.ver === 44 && pack.schema === 44 && pack.settingsRev === 77 && Number(pack.syncRev) === 1797000000026 && Number(pack.wordsRev) === 1797000000026);
+check('Y2h the pack header is the unified v0.0.7.e / ver 43 / schema 43 / settingsRev 76 / syncRev+wordsRev 1797000000027',
+  pack.version === '0.0.7.e' && pack.ver === 45 && pack.schema === 45 && pack.settingsRev === 78 && Number(pack.syncRev) === 1797000000027 && Number(pack.wordsRev) === 1797000000027);
 
 /* ── Y3: the student → lecturer alert channel ─────────────────────────── */
 check('Y3a sdp-telemetry.js ships sendLecturerAlert + pullLecturerAlerts + clearLecturerAlerts',
@@ -99,8 +99,8 @@ check('Y4e every new button id has a CLICK_ACTIONS or onStudio binding',
 /* ── Y5: Live Lab v3.0 ────────────────────────────────────────────────── */
 check('Y5a lab.html ships Station 2B (Voice Sample AI Analyzer sandbox) and Station 3B (stale-clip simulator)',
   /STATION 2B/.test(labHtml) && /STATION 3B/.test(labHtml));
-check('Y5b sdp-live-lab.js carries the unified 0.0.7.d version with the low-credit verifier + reference simulation + stale simulator',
-  /version: '0\.0\.7\.d'/.test(liveLab) && /labSimulateSample/.test(liveLab) && /labStaleSimulator/.test(liveLab) && /lowCreditVerify/.test(liveLab));
+check('Y5b sdp-live-lab.js carries the unified 0.0.7.e version with the low-credit verifier + reference simulation + stale simulator',
+  /version: '0\.0\.7\.e'/.test(liveLab) && /labSimulateSample/.test(liveLab) && /labStaleSimulator/.test(liveLab) && /lowCreditVerify/.test(liveLab));
 check('Y5c the lab carries the guard banner host element',
   /id="sdpVoiceClipGuardBanner"/.test(labHtml));
 check('Y5d the lab ES5-parses (strict ES5 law)', (() => { try { require('acorn').parse(liveLab, { ecmaVersion: 5 }); return true; } catch (e) { return false; } })());
@@ -112,7 +112,7 @@ check('Y6b data.html === data/index.html byte parity',
   readText('data.html') === readText('data/index.html'));
 check('Y6c .gitignore bans *.zip archives',
   /^\*\.zip$/m.test(readText('.gitignore')));
-check('Y6d the four George briefing clips stay byte-for-byte identical to the v0.0.7.d −21 LUFS masters (JBFqnCBsd6RMkjVDRZzb)', (() => {
+check('Y6d the four George briefing clips stay byte-for-byte identical to the v0.0.7.e −21 LUFS masters (JBFqnCBsd6RMkjVDRZzb)', (() => {
   const PINS = {
     _intro_male_1: 'f92763267f27e59e3b23db6bd2ce04584533903ac0dc9fc64ca6af4df5f3a5c0',
     _intro_male_2: '5d4071b4a9ed82b3cb44ac6784cbd500f0a5752cf0a55f9d0d16aed6e1f81b4d',
@@ -128,9 +128,9 @@ check('Y6d the four George briefing clips stay byte-for-byte identical to the v0
   return true;
 })());
 check('Y6e the service worker pins the s39 shell caches',
-  /SW_VERSION = 'sdp-v0\.0\.7\.d-s43'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.d-s43-shell'/.test(sw));
-check('Y6f session.json carries the unified v0.0.7.d pins (ver 66 / settingsRev 76 / syncRev 1797000000026)',
-  session.ver === 67 && session.settingsRev === 77 && Number(session.syncRev) === 1797000000026 && session.appVersion === '0.0.7.d');
+  /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.e-s44-shell'/.test(sw));
+check('Y6f session.json carries the unified v0.0.7.e pins (ver 66 / settingsRev 76 / syncRev 1797000000027)',
+  session.ver === 68 && session.settingsRev === 78 && Number(session.syncRev) === 1797000000027 && session.appVersion === '0.0.7.e');
 
 /* ── Y2/Y3/Y5 live headless-Chromium verification (the boot law) ──────── */
 (async function live() {
@@ -244,7 +244,7 @@ check('Y6f session.json carries the unified v0.0.7.d pins (ver 66 / settingsRev 
           return { pass: c.pass, fail: c.fail, warn: c.warn, badge: document.getElementById('labScoreBadge').getAttribute('data-state'), ver: document.getElementById('labVerPill').textContent, s2b: document.getElementById('labSampleReport').innerHTML.length, s3b: document.getElementById('labStaleTrace').innerHTML.length };
         });
         check('Y5e Live Lab fresh-visit boot: simulators run, ALL PASS (0 FAIL), 76 clips decoded',
-          lab.fail === 0 && lab.warn === 0 && lab.badge === 'pass' && lab.ver === '0.0.7.d' && lab.s2b > 100 && lab.s3b > 100 && errors.length === 0,
+          lab.fail === 0 && lab.warn === 0 && lab.badge === 'pass' && lab.ver === '0.0.7.e' && lab.s2b > 100 && lab.s3b > 100 && errors.length === 0,
           JSON.stringify(lab) + ' | ' + errors.slice(0, 2).join(','));
         await ctx.close();
       }

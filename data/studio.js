@@ -2379,6 +2379,274 @@
   return true;
  }
  /* ══ Card 3 — classroom settings */
+
+ /* ══ v0.0.7.e — PRIVATE WEB APP ACCESS LOCK (Architecture D) ════════════
+    The complete control panel lives STRICTLY inside DRAWER C (Advanced
+    Tools & Settings) — never at the top of the Studio, so the daily words
+    workflow stays clean. The Master Toggle, password/PIN, live roster and
+    one-time codes all ride the Apps Script relay (gasLockRelay). */
+ function accessLockCardMarkup() {
+  var st = accessLockSnapshot();
+  return '<section id="studioCardAccessLock" class="studio-card studio-card-accesslock">' +
+   '<h4 class="studio-h4"><span class="studio-step-tag">LOCK</span>🔐 Private Web App Access Lock <span class="studio-al-pill" id="studioAlPill" data-state="' + (st.on ? 'on' : 'off') + '">' + (st.on ? 'LOCK ON' : 'LOCK OFF') + '</span></h4>' +
+   '<p class="studio-hint" data-i18n="studioAlIntro">' + T('studioAlIntro') + '</p>' +
+   '<div class="studio-al-master">' +
+   '<label class="checkline" for="studioAlMaster"><input type="checkbox" id="studioAlMaster"' + (st.on ? ' checked' : '') + '> <span data-i18n="studioAlMaster">' + T('studioAlMaster') + '</span></label>' +
+   btn('btnAlApplyMaster', t('studioAlApply', 'Apply Master Lock'), 'btn-primary', 'data-atomic-al="1"', 'lock') +
+   '</div>' +
+   '<div class="studio-al-grid">' +
+   '<div class="studio-al-cell">' +
+   '<label class="lbl" for="studioAlPassword" data-i18n="studioAlPasswordLbl">' + T('studioAlPasswordLbl') + '</label>' +
+   '<input id="studioAlPassword" class="input" type="password" autocomplete="new-password" data-pristine="1" placeholder="' + T('studioAlPasswordPh') + '">' +
+   btn('btnAlSetPassword', t('studioAlSetPassword', 'Set / Change Password'), 'btn-ghost', '', 'key') +
+   '</div>' +
+   '<div class="studio-al-cell">' +
+   '<label class="lbl" for="studioAlPin" data-i18n="studioAlPinLbl">' + T('studioAlPinLbl') + '</label>' +
+   '<input id="studioAlPin" class="input pin-mask" type="text" inputmode="numeric" autocomplete="off" data-pristine="1" maxlength="8" placeholder="' + T('studioAlPinPh') + '">' +
+   btn('btnAlSetPin', t('studioAlSetPin', 'Set Break-Glass PIN'), 'btn-ghost', '', 'key') +
+   '</div>' +
+   '</div>' +
+   '<div class="studio-al-codes">' +
+   '<label class="lbl" for="studioAlCodeCount" data-i18n="studioAlCodeCountLbl">' + T('studioAlCodeCountLbl') + '</label>' +
+   '<div class="key-row"><input id="studioAlCodeCount" class="input" type="number" min="1" max="50" value="5"><button type="button" class="btn btn-sm" id="btnAlGenCodes"><span class="i18n-label">' + esc(t('studioAlGenCodes', 'Generate One-Time Codes')) + '</span></button>' +
+   btn('btnAlLockAllNow', t('studioAlLockAll', 'Lock All Now (Exam Mode)'), 'btn-ghost', '', 'lock') + '</div>' +
+   '<pre id="studioAlCodesSlip" class="studio-al-slip" hidden></pre>' +
+   '</div>' +
+   '<h4 class="studio-h4" data-i18n="studioAlRosterTitle">' + T('studioAlRosterTitle') + '</h4>' +
+   '<div id="studioAlRoster" class="studio-al-roster" role="region" aria-live="polite">' +
+   '<p class="studio-msg" id="studioAlRosterMsg" role="status"></p>' +
+   '<div id="studioAlPending" class="studio-al-list"><p class="muted" data-i18n="studioAlPendingEmpty">' + T('studioAlPendingEmpty') + '</p></div>' +
+   '<div id="studioAlApproved" class="studio-al-list"><p class="muted" data-i18n="studioAlApprovedEmpty">' + T('studioAlApprovedEmpty') + '</p></div>' +
+   '</div>' +
+   '<p class="studio-hint" data-i18n="studioAlSecretsLaw">' + T('studioAlSecretsLaw') + '</p>' +
+   '</section>';
+ }
+ /* v0.0.7.e: the cached lock snapshot driving the pill + toggle paint. */
+ function accessLockSnapshot() {
+  var snap = { on: false, hasPassword: false, hasPin: false };
+  try {
+   var cfg = sync() && sync().config ? sync().config() : null;
+   if (cfg && isObj(cfg.accessLock)) {
+    snap.on = !!cfg.accessLock.on;
+    snap.hasPassword = !!cfg.accessLock.hasPassword;
+    snap.hasPin = !!cfg.accessLock.hasPin;
+   }
+  } catch (e) {}
+  try {
+   var saved = dataSettings().accessLockCloud || null;
+   if (saved && typeof saved.on !== 'undefined') snap.on = !!saved.on;
+  } catch (e2) {}
+  return snap;
+ }
+ /* v0.0.7.e: the dismissible FIRST-TIME notice banner (EN|SI). Shown the first
+    time the owner unlocks the Studio while the Access Lock is unconfigured;
+    the Dismiss is persisted via sdp.settings (five-key law) so it never nags
+    again once dismissed or configured. */
+ function studioFirstTimeNoticeMarkup() {
+  var show = false;
+  try {
+   var settingsNow = dataSettings();
+   show = !settingsNow.accessLockNoticeDismissed && !settingsNow.accessLockCloud;
+  } catch (e) { show = false; }
+  if (!show) return '';
+  return '<div id="studioAccessNotice" class="studio-access-notice" role="status" aria-live="polite">' +
+   '<span class="studio-access-notice-ico">🌐</span> ' +
+   '<span class="i18n-label" data-i18n="studioAlNoticeBody">' + T('studioAlNoticeBody') + '</span> ' +
+   btn('btnAlNoticeJump', t('studioAlNoticeJump', 'Open Advanced Settings → Access Lock'), 'btn-primary', '', 'gear') +
+   btn('btnAlNoticeDismiss', t('studioAlNoticeDismiss', 'Dismiss'), 'btn-ghost') +
+   '</div>';
+ }
+ function dismissAccessNotice() {
+  try { dataSaveSettings({ accessLockNoticeDismissed: true }); } catch (e) {}
+  var node = byId('studioAccessNotice');
+  if (node) node.parentNode.removeChild(node);
+  msg('Notice dismissed — configure the Access Lock anytime under Advanced Settings. දැනුම්දීම වසා දමන ලදී.', 'ok');
+ }
+ /* v0.0.7.e: the Apps Script lock relay — posts with the Studio gasUrl secret
+    (public endpoint; carries NO raw secret material in the body). */
+ function gasLockRelay(body, cb) {
+  cb = cb || noop;
+  var url = '';
+  try { url = str(ST.secrets.gasUrl); } catch (e0) {}
+  if (!url) {
+   try {
+    var cfg = sync() && sync().config ? sync().config() : null;
+    if (cfg && cfg.accessLock && cfg.accessLock.relayUrl) url = str(cfg.accessLock.relayUrl);
+   } catch (e1) {}
+  }
+  if (!url) { cb(new Error('set the Apps Script relay URL in Advanced Tools first')); return false; }
+  body = body || {};
+  if (!body.pin && ST.pin) body.pin = ST.pin;
+  var D = (global.SDP && SDP.Data && SDP.Data.postRelay) ? SDP.Data : null;
+  if (!D || !D.postRelay) { cb(new Error('no_relay')); return false; }
+  D.postRelay(url, JSON.stringify(body), function (err, data) { cb(err, data); });
+  return true;
+ }
+ function accessLockMsg(text, state) {
+  var node = byId('studioAlRosterMsg');
+  if (node) { node.textContent = str(text); node.setAttribute('data-state', state || ''); }
+  msg(text, state || '');
+ }
+ function paintAccessLockPanel() {
+  var host = byId('studioCardAccessLock');
+  if (!host) return false;
+  var st = accessLockSnapshot();
+  var pill = byId('studioAlPill');
+  if (pill) { pill.textContent = st.on ? 'LOCK ON' : 'LOCK OFF'; pill.setAttribute('data-state', st.on ? 'on' : 'off'); }
+  var master = byId('studioAlMaster');
+  if (master) master.checked = !!st.on;
+  return true;
+ }
+ function accessRosterRow(kind, row) {
+  var dev = str(row.deviceId), name = str(row.name) || '(no name)', cls = str(row.classId) || '—';
+  var when = row.ts ? new Date(Number(row.ts) || Date.now()).toLocaleString() : '';
+  if (kind === 'pending') {
+   return '<div class="studio-al-row studio-al-row--pending" data-device="' + esc(dev) + '">' +
+   '<span class="studio-al-name">' + esc(name) + ' · <span class="muted">' + esc(cls) + '</span></span>' +
+   '<span class="studio-al-dev" title="' + esc(dev) + '">' + esc(dev.substring(0, 12)) + '…</span>' +
+   '<span class="studio-al-when muted">' + esc(when) + '</span>' +
+   '<span class="studio-al-actions">' +
+   '<button type="button" class="btn btn-sm btn-primary" data-al="approve" data-al-dev="' + esc(dev) + '">✅ Approve</button>' +
+   '<button type="button" class="btn btn-sm btn-ghost" data-al="reject" data-al-dev="' + esc(dev) + '">❌ Reject</button>' +
+   '</span></div>';
+  }
+  var exp = row.expires ? new Date(Number(row.expires)).toLocaleString() : '—';
+  return '<div class="studio-al-row studio-al-row--approved" data-device="' + esc(dev) + '">' +
+   '<span class="studio-al-name">' + esc(name) + ' · <span class="muted">' + esc(cls) + '</span></span>' +
+   '<span class="studio-al-dev" title="' + esc(dev) + '">' + esc(dev.substring(0, 12)) + '…</span>' +
+   '<span class="studio-al-when muted">' + esc(exp) + '</span>' +
+   '<span class="studio-al-actions">' +
+   '<button type="button" class="btn btn-sm btn-ghost" data-al="kick" data-al-dev="' + esc(dev) + '">👢 Kick / Revoke</button>' +
+   '<button type="button" class="btn btn-sm btn-ghost" data-al="extend" data-al-dev="' + esc(dev) + '">⏱️ Extend</button>' +
+   '</span></div>';
+ }
+ function paintAccessRoster(out) {
+  var pendingHost = byId('studioAlPending');
+  var approvedHost = byId('studioAlApproved');
+  if (!pendingHost || !approvedHost) return false;
+  var pending = (out && Array.isArray(out.pending)) ? out.pending : [];
+  var approved = (out && Array.isArray(out.approved)) ? out.approved : [];
+  var html = '', i;
+  if (!pending.length) html = '<p class="muted" data-i18n="studioAlPendingEmpty">' + T('studioAlPendingEmpty') + '</p>';
+  else { for (i = 0; i < pending.length; i++) html += accessRosterRow('pending', pending[i]); }
+  pendingHost.innerHTML = html;
+  html = '';
+  if (!approved.length) html = '<p class="muted" data-i18n="studioAlApprovedEmpty">' + T('studioAlApprovedEmpty') + '</p>';
+  else { for (i = 0; i < approved.length; i++) html += accessRosterRow('approved', approved[i]); }
+  approvedHost.innerHTML = html;
+  return true;
+ }
+ function refreshAccessLockRoster(quiet) {
+  gasLockRelay({ action: 'access_roster' }, function (err, out) {
+   if (err || !out || !out.ok) {
+    if (!quiet) accessLockMsg(T('studioAlRelayMissing'), 'bad');
+    return;
+   }
+   paintAccessRoster(out);
+   if (!quiet) accessLockMsg('Roster refreshed · ' + out.pending.length + ' pending · ' + out.approved.length + ' approved.', 'ok');
+  });
+ }
+ function alApplyMaster() {
+  var master = byId('studioAlMaster');
+  var on = !!(master && master.checked);
+  withBusy('btnAlApplyMaster', function (d) {
+   gasLockRelay({ action: 'set_lock_config', on: on }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    try { dataSaveSettings({ accessLockCloud: { on: !!(out.lock && out.lock.on), hasPassword: !!(out.lock && out.lock.hasPassword) } }); } catch (eS) {}
+    try {
+     var cfg = sync() && sync().config ? sync().config() : null;
+     if (cfg && isObj(cfg.accessLock)) cfg.accessLock.on = !!(out.lock && out.lock.on);
+     else if (cfg) cfg.accessLock = { on: !!(out.lock && out.lock.on), graceHours: 72 };
+    } catch (eC) {}
+    paintAccessLockPanel();
+    paintStudioActionAuditBanner('Access Lock master ' + (on ? 'ON' : 'OFF'), on ? 'every unapproved visitor stops at the Entry Lock' : 'Open to all students');
+    accessLockMsg(on ? '🔒 LOCK ON — the web app is now private. Students request access and you approve on your phone.' : '🔓 LOCK OFF — the web app is open to all students and visitors.', 'ok');
+    d();
+   });
+  });
+ }
+ function alSetPassword() {
+  var node = byId('studioAlPassword');
+  var pw = str(node && node.value);
+  if (pw.length < 6) { accessLockMsg('Password must be at least 6 characters. අවම අක්ෂර 6.', 'bad'); return; }
+  withBusy('btnAlSetPassword', function (d) {
+   gasLockRelay({ action: 'set_lock_config', password: pw }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    try { node.value = ''; node.setAttribute('data-pristine', '1'); } catch (e0) {}
+    paintStudioActionAuditBanner('Access Lock password updated', 'stored ONLY as an HMAC-SHA256 digest server-side');
+    accessLockMsg('✓ Access Lock password saved (hashed server-side — the raw password never leaves this device again).', 'ok');
+    d();
+   });
+  });
+ }
+ function alSetPin() {
+  var node = byId('studioAlPin');
+  var pin = str(node && node.value).replace(/[^0-9]/g, '');
+  if (!/^\d{4,8}$/.test(pin)) { accessLockMsg('The Break-Glass PIN must be 4–8 digits. අංක 4–8 අවශ්‍යයි.', 'bad'); return; }
+  withBusy('btnAlSetPin', function (d) {
+   gasLockRelay({ action: 'set_lock_config', accessPin: pin }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    try { node.value = ''; node.setAttribute('data-pristine', '1'); } catch (e0) {}
+    paintStudioActionAuditBanner('Break-Glass PIN updated', 'stored ONLY as an HMAC-SHA256 digest server-side');
+    accessLockMsg('✓ Admin Break-Glass PIN saved (hashed server-side).', 'ok');
+    d();
+   });
+  });
+ }
+ function alGenCodes() {
+  var countNode = byId('studioAlCodeCount');
+  var count = Math.min(Math.max(Number(countNode && countNode.value) || 5, 1), 50);
+  withBusy('btnAlGenCodes', function (d) {
+   gasLockRelay({ action: 'generate_codes', count: count, ttlHours: 48 }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    var slip = byId('studioAlCodesSlip');
+    if (slip) {
+     var lines = ['SMART DICTATION — ONE-TIME STUDENT ACCESS CODES', 'Valid 48 hours · each code works on ONE device only', ''],
+         i;
+     for (i = 0; i < out.codes.length; i++) lines.push('  ' + (i + 1) + '.  ' + out.codes[i]);
+     lines.push('', 'Give each student ONE code. Forwarding on WhatsApp will not work on a second phone.');
+     slip.textContent = lines.join('\n');
+     slip.hidden = false;
+    }
+    paintStudioActionAuditBanner('One-time codes generated', count + ' codes · 48 h ttl · single-device burn law');
+    accessLockMsg('✓ ' + out.codes.length + ' one-time codes generated — the printable slip is below. එක් වරක් පමණක් වලංගුයි.', 'ok');
+    d();
+   });
+  });
+ }
+ function alLockAllNow() {
+  withBusy('btnAlLockAllNow', function (d) {
+   gasLockRelay({ action: 'lock_all' }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    try { dataSaveSettings({ accessLockCloud: { on: true } }); } catch (eS) {}
+    paintAccessLockPanel();
+    paintStudioActionAuditBanner('Exam mode armed', 'LOCK ON for every visitor');
+    accessLockMsg('🔒 Lock All Now armed — every visitor stops at the Entry Lock (exam mode).', 'ok');
+    d();
+   });
+  });
+ }
+ function alRosterAction(dev, op) {
+  var body = { deviceId: dev };
+  if (op === 'approve' || op === 'reject') body.action = 'access_decision', body.decision = op;
+  else if (op === 'kick') body.action = 'revoke_device';
+  else if (op === 'extend') { body.action = 'extend_device'; body.hours = 168; }
+  else return;
+  gasLockRelay(body, function (err, out) {
+   if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); return; }
+   var verb = op === 'approve' ? 'approved' : op === 'reject' ? 'rejected' : op === 'kick' ? 'revoked' : 'extended by 1 week';
+   accessLockMsg((op === 'approve' ? '✅ ' : op === 'reject' ? '❌ ' : op === 'kick' ? '👢 ' : '⏱️ ') + 'Device ' + str(dev).substring(0, 12) + '… ' + verb + '.', 'ok');
+   refreshAccessLockRoster(true);
+  });
+ }
+ function alJumpToPanel() {
+  var drawer = byId('studioAdvancedDrawer');
+  if (drawer) drawer.open = true;
+  var card = byId('studioCardAccessLock');
+  if (card && card.scrollIntoView) { try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e0) { try { card.scrollIntoView(); } catch (e1) {} } }
+  paintStudioActionAuditBanner('Access Lock panel opened', 'Advanced Settings → Private Web App Access Lock');
+ }
+
  function settingsCardMarkup() {
   return '<section id="studioCardSettings" class="studio-card studio-card-settings">' + '<h4 class="studio-h4"><span class="studio-step-tag">' + t('studioStep3', 'STEP 3 · BROADCAST TO CLASS') + '</span>' + T('studioCardSettings') + '</h4>' +
    '<label class="lbl" for="studioNewPin">' + T('studioPinLabel') + ' — new (4–8 digits)</label>' +
@@ -2987,6 +3255,8 @@
  }
  function unlockedMarkup() {
   return securityBarMarkup() +
+   /* v0.0.7.e: the dismissible first-time Access Lock notice (EN|SI). */
+   studioFirstTimeNoticeMarkup() +
    /* ══ v0.0.7.a A4 — the instant post-action audit banner + compact status
       pills: key pool chip (A2), classroom lock, voice lock, coverage. ══ */
    '<div id="studioActionAuditBanner" class="studio-action-audit-banner" data-state="ok" role="status" aria-live="polite">✓ Studio ready — actions verified here in real time. ක්‍රියා තහවුරු කිරීම මෙහිම.</div>' +
@@ -3038,7 +3308,7 @@
       classroom settings incl. PIN, the ElevenLabs multi-key pool, GitHub
       token, Gemini/LLM keys, diagnostics, Live Lab launcher). */
    '<details id="studioAdvancedDrawer" class="studio-advanced-drawer"><summary class="studio-h4">' + ico('gear', 16) + '<span class="studio-step-tag">DRAWER C</span>' + T('studioAdvancedToggle') + '</summary>' +
-   '<div class="studio-adv-body">' + briefingVoicesCardMarkup() + settingsCardMarkup() + keysCardMarkup() + diagCardMarkup() + '</div></details>' +
+   '<div class="studio-adv-body">' + accessLockCardMarkup() + briefingVoicesCardMarkup() + settingsCardMarkup() + keysCardMarkup() + diagCardMarkup() + '</div></details>' +
    /* v0.0.6.m Pillar 4: the dedicated User Reviews & Session Telemetry
       drawer stays at the very bottom. */
    reviewsCardMarkup();
@@ -3431,6 +3701,23 @@
     if (drawer) { drawer.open = true; }
     try { paintKeyPoolChip(); } catch (eC) {}
    });
+   /* ══ v0.0.7.e — Private Web App Access Lock wiring ═════════════════ */
+   onStudio('btnAlApplyMaster', 'click', function () { alApplyMaster(); });
+   onStudio('btnAlSetPassword', 'click', function () { alSetPassword(); });
+   onStudio('btnAlSetPin', 'click', function () { alSetPin(); });
+   onStudio('btnAlGenCodes', 'click', function () { alGenCodes(); });
+   onStudio('btnAlLockAllNow', 'click', function () { alLockAllNow(); });
+   onStudio('btnAlNoticeJump', 'click', function () { alJumpToPanel(); });
+   onStudio('btnAlNoticeDismiss', 'click', function () { dismissAccessNotice(); });
+   onStudio('studioAlRoster', 'click', function (ev) {
+    var ev2 = ev || global.event, target = ev2 && (ev2.target || ev2.srcElement);
+    var op = target && target.getAttribute ? str(target.getAttribute('data-al')) : '';
+    var dev = target && target.getAttribute ? str(target.getAttribute('data-al-dev')) : '';
+    if (op && dev) { ev2.stopPropagation(); alRosterAction(dev, op); }
+   });
+   try { paintAccessLockPanel(); } catch (eAL1) {}
+   try { refreshAccessLockRoster(true); } catch (eAL2) {}
+
    onStudio('btnRefreshLecturerAlerts', 'click', function () {
     withBusy('btnRefreshLecturerAlerts', function (d) {
      try {
@@ -8826,6 +9113,14 @@ function setStudioWords(list, source) {
   paintPinDots: paintPinDots,
   paintQuickButton: paintQuickButton,
   toggleSecretField: toggleSecretField,
+  /* v0.0.7.e — the Private Web App Access Lock controller API. */
+  accessLockSnapshot: accessLockSnapshot,
+  paintAccessLockPanel: paintAccessLockPanel,
+  refreshAccessLockRoster: refreshAccessLockRoster,
+  alApplyMaster: alApplyMaster,
+  alJumpToPanel: alJumpToPanel,
+  dismissAccessNotice: dismissAccessNotice,
+  gasLockRelay: gasLockRelay,
   onDataReady: onDataReady,
   onLangChange: onLangChange,
   refreshEditor: refreshEditor,

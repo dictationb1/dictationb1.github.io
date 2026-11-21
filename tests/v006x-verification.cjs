@@ -115,7 +115,7 @@ function mp3Signature(buf) {
     const missingLex = sessionWords.filter((w) => !lex[w]);
     check('X3f CAMBRIDGE_B1_RP_LEXICON carries all 90 entries (Sessions 11 + 12 + 14)',
       lexKeys.length === 90, String(lexKeys.length));
-    check('X3g every active Session-14 word ships complete p + pos + m + si + s in session.json (the v0.0.7.d repaired-data law)',
+    check('X3g every active Session-14 word ships complete p + pos + m + si + s in session.json (the v0.0.7.e repaired-data law)',
       session.words.every((w) => /^\//.test(String(w.p)) && /\.$/.test(String(w.pos)) && String(w.m).length >= 15 && /[\u0D80-\u0DFF]/.test(String(w.si)) && String(w.s).length > 10),
       missingLex.join(','));
     check('X3h session.json words carry the repaired Cambridge IPA + natural B1 sentences + clean UK audio URLs (no -us/-au.mp3)',
@@ -141,8 +141,8 @@ function mp3Signature(buf) {
     /caches\.open\('sdp-audio-clips'\)/.test(studio) &&
     /generateClips\(\{ force: true, keys: wk \}/.test(studio),
     'force regen');
-  check('X4d the pack header advances wordsRev (1797000000026) so older packs purge their stale words',
-    Number(pack.wordsRev) === 1797000000026 && Number(pack.syncRev) === 1797000000026,
+  check('X4d the pack header advances wordsRev (1797000000027) so older packs purge their stale words',
+    Number(pack.wordsRev) === 1797000000027 && Number(pack.syncRev) === 1797000000027,
     String(pack.wordsRev));
 
   /* ── X5 — the unified Voice & Clone Control Center ───────────────────── */
@@ -183,7 +183,7 @@ function mp3Signature(buf) {
   }
 
   /* ── X6 — Live Lab v2.0 ──────────────────────────────────────────────── */
-  check('X6a lab.html ships 9 stations (unified 0.0.7.d: +Station 2B +Station 3B +Station 7) + the 1-click batch word repair tool',
+  check('X6a lab.html ships 9 stations (unified 0.0.7.e: +Station 2B +Station 3B +Station 7) + the 1-click batch word repair tool',
     (labHtml.match(/<section class="card">/g) || []).length === 9 && /STATION 2B/.test(labHtml) && /STATION 3B/.test(labHtml) &&
     /btnLabBatchRepairWords/.test(labHtml) && /labBatchStatus/.test(labHtml) && /STATION 7/.test(labHtml) &&
     /v4\.0/.test(labHtml) === false && /0\.0\.6\.z/.test(labHtml) === false,
@@ -204,12 +204,12 @@ function mp3Signature(buf) {
     /caches\.open\('sdp-audio-clips'\)/.test(labJs) &&
     /raw offline is informational/.test(labJs),
     'station5');
-  check('X6e SDP.LiveLab exports the unified 0.0.7.d with the low-credit verifier + batch repair + the no-key legs are informational (never a fresh-visit FAIL)',
-    /version: '0\.0\.7\.d'/.test(labJs) && /lowCreditVerify: lowCreditVerify/.test(labJs) && /labBatchRepairWords: labBatchRepairWords/.test(labJs) && /labStaleSimulator: labStaleSimulator/.test(labJs) && /labSimulateSample: labSimulateSample/.test(labJs) &&
+  check('X6e SDP.LiveLab exports the unified 0.0.7.e with the low-credit verifier + batch repair + the no-key legs are informational (never a fresh-visit FAIL)',
+    /version: '0\.0\.7\.e'/.test(labJs) && /lowCreditVerify: lowCreditVerify/.test(labJs) && /labBatchRepairWords: labBatchRepairWords/.test(labJs) && /labStaleSimulator: labStaleSimulator/.test(labJs) && /labSimulateSample: labSimulateSample/.test(labJs) &&
     /no key on this device — the live \/v1\/voices leg stays informational/.test(labJs),
     'exports');
   check('X6f sw.js precaches the lab files and pins the sdp-v0.0.6.z-s39 shell',
-    /'\.\/data\/sdp-live-lab\.js'/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.d-s43'/.test(sw),
+    /'\.\/data\/sdp-live-lab\.js'/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(sw),
     'sw pin');
 
   /* X6g — the real-Chromium boot: lab.html opens ✓ ALL PASS (0 FAIL) */

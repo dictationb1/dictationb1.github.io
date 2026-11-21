@@ -1,4 +1,4 @@
-/*! data/sdp-studio-guide.js — v1.0.0 (v0.0.7.d)
+/*! data/sdp-studio-guide.js — v1.0.0 (v0.0.7.e)
  * The Interactive Animated Lecturer Studio Guide (strict ES5). Exposed as
  * window.SDP.StudioGuide. A playable spotlight walkthrough — NOT a static
  * document: one target button/card at a time, a smooth glowing ring + shade,

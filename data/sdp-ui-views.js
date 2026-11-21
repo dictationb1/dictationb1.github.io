@@ -7,7 +7,7 @@
   var APP_VERSION = (function () {
     try { if (SDP && SDP.version) return String(SDP.version); } catch (e) {}
     try { if (global.__SDP_BOOT_VERSION__) return String(global.__SDP_BOOT_VERSION__); } catch (e) {}
-    return '0.0.7.d';
+    return '0.0.7.e';
   })();
   /* v0.0.6.m (P1/P3): the governed Beta channel stays URL-driven for the
      Project Briefing suite. The v0.0.6.m features are permanent on Main;
@@ -406,6 +406,26 @@
     fabFaqPaperA: 'Paper Mode is for writing in your exercise book: listen twice, write, and at the results screen tap “✓ Mark All Unmarked as Correct”, then tap Missed on just the one or two words you got wrong. Typing Mode checks your spelling automatically.',
     fabFaqSync: '🔄 Classroom words not updating?',
     fabFaqSyncA: 'Check your internet connection and the sync badge on Home. Lecturers publish new words through Lecturer Mode at any time; your device picks them up automatically. Already-downloaded words keep working offline.',
+    studioAlIntro: 'Architecture D — the Hybrid Smart Classroom Gate. LOCK ON stops every unapproved visitor at a full-screen Entry Lock before any student data; LOCK OFF opens the whole web app to everyone.',
+    studioAlMaster: 'Master Lock — turn the Private Web App Access Lock ON or OFF anytime (synced to the Apps Script cloud)',
+    studioAlApply: ' Apply Master Lock',
+    studioAlPasswordLbl: 'Access Lock Password (min 6 characters)',
+    studioAlPasswordPh: 'Set / change the class access password…',
+    studioAlSetPassword: ' Set / Change Password',
+    studioAlPinLbl: 'Admin Break-Glass PIN (4–8 digits)',
+    studioAlPinPh: '1234',
+    studioAlSetPin: ' Set Break-Glass PIN',
+    studioAlCodeCountLbl: 'How many one-time student codes? (1–50)',
+    studioAlGenCodes: ' Generate One-Time Codes',
+    studioAlLockAll: ' Lock All Now (Exam Mode)',
+    studioAlRosterTitle: 'Live Access Roster — pending requests & approved devices',
+    studioAlPendingEmpty: 'No pending access requests right now.',
+    studioAlApprovedEmpty: 'No approved devices yet.',
+    studioAlSecretsLaw: 'Security law: passwords and PINs are hashed (HMAC-SHA256) server-side in Google Apps Script — raw secrets never live in GitHub or this page.',
+    studioAlRelayMissing: 'The lock needs the Apps Script relay URL — paste it under Advanced Tools first.',
+    studioAlNoticeBody: 'The Web App is currently OPEN (unlocked). Configure the Private Web App Access Lock under Advanced Settings so only approved students can enter.',
+    studioAlNoticeJump: ' Open Advanced Settings → Access Lock',
+    studioAlNoticeDismiss: ' Dismiss',
     fabFromAnywhere: 'Send a review from any screen — it reaches the creator even if you skip the results card.'
   };
 
@@ -773,6 +793,26 @@
     fabFaqPaperA: 'කඩදාසි ප්‍රකාරය ලේඛන පොතේ ලිවීමට: දෙවරක් අසා, ලියා, ප්‍රතිඵල තිරයේ “✓ ලකුණු නොකළ සියල්ල නිවැරදි ලෙස සලකුණු කරන්න” තට්ටු කර, වැරදුණු එක් දෙකකට පමණක් “වැරදුණා” තට්ටු කරන්න. ටයිප් කිරීමේ ප්‍රකාරය ඔබේ අක්ෂර වින්‍යාසය ස්වයංක්‍රීයව පරීක්ෂා කරයි.',
     fabFaqSync: '🔄 පන්ති වචන යාවත්කාලීන නොවෙනවාද?',
     fabFaqSyncA: 'අන්තර්ජාල සම්බන්ධතාවය සහ මුල් පිටුවේ සමමුහූර්ත ලාංඡනය පරීක්ෂා කරන්න. දේශනවරු ඕනෑම වේලාවක නව වචන ප්‍රකාශයට පත් කරති; ඔබේ උපාංගය ඒවා ස්වයංක්‍රීයව ලබා ගනී. බාගත කළ වචන ඕෆ්ලයින්වත් වැඩ කරයි.',
+    studioAlIntro: 'Architecture D — මිශ්‍ර ක්‍රියාකාරී පන්ති දොරටුව. LOCK ON දෙන විට අනුමත නොකළ සෑම අමුත්තකුම සිසු දත්ත පෙනෙන පෙරම පූර්ණ-තිර ප්‍රවේශ අගුළුවක නවතිති; LOCK OFF දෙන විට සම්පූර්ණ වෙබ් යෙදුම සියලුදෙනාට විවෘතයි.',
+    studioAlMaster: 'ප්‍රධාන අගුළුව — පෞද්ගලික වෙබ් යෙදුම් ප්‍රවේශ අගුළුව ඕනෑම වේලාවක ON/OFF කරන්න (Apps Script වලවලට සමමුහූර්තයි)',
+    studioAlApply: ' ප්‍රධාන අගුළුව යොදන්න',
+    studioAlPasswordLbl: 'ප්‍රවේශ මුර-පදය (අවම අක්ෂර 6)',
+    studioAlPasswordPh: 'පන්ති ප්‍රවේශ මුර-පදය සකසන්න…',
+    studioAlSetPassword: ' මුර-පදය සකසන්න / වෙනස් කරන්න',
+    studioAlPinLbl: 'පරිපාලක අතෘප්ත මුර-අංකය (අංක 4–8)',
+    studioAlPinPh: '1234',
+    studioAlSetPin: ' අතෘප්ත මුර-අංකය සකසන්න',
+    studioAlCodeCountLbl: 'එක් වරක් වලංගු සිසු කේත කීයද? (1–50)',
+    studioAlGenCodes: ' එක්-වරක් කේත සාදන්න',
+    studioAlLockAll: ' සියල්ලටම දැන් අගුළු දමන්න (විභාග ප්‍රකාරය)',
+    studioAlRosterTitle: 'සජීවී ප්‍රවේශ නාමාවරය — අපේක්ෂිත ඉල්ලීම් සහ අනුමත උපාංග',
+    studioAlPendingEmpty: 'දැනට අපේක්ෂිත ඉල්ලීම් නැත.',
+    studioAlApprovedEmpty: 'දැනට අනුමත උපාංග නැත.',
+    studioAlSecretsLaw: 'ආරක්ෂණ නීතිය: මුර-පද සහ මුර-අංක Google Apps Script තුළ සේවාදානයේදීම කේතනය (HMAC-SHA256) වේ — අමු රහස් කිසිවිටෙකත් GitHub හෝ මෙම පිටුවේ නොතැනේ.',
+    studioAlRelayMissing: 'අගුළුවට Apps Script relay URL අවශ්‍යයි — පළමුව උසස් මෙවලම් යට අලවන්න.',
+    studioAlNoticeBody: 'වෙබ් යෙදුම දැනට විවෘතයි (අගුළු නොවුණු). උසස් සැකසුම් යට පෞද්ගලික වෙබ් යෙදුම් ප්‍රවේශ අගුළුව සකසන්න, එවිට අනුමත සිසුන්ට පමණක් ඇතුළු විය හැක.',
+    studioAlNoticeJump: ' උසස් සැකසුම් → ප්‍රවේශ අගුළුව විවෘත කරන්න',
+    studioAlNoticeDismiss: ' වසා දමන්න',
     fabFromAnywhere: 'ඕනෑම තිරයකින් සමාලෝචනයක් යවන්න — ප්‍රතිඵල කාඩ්පත මඟහැරුවත් එය නිර්මාණකරුට ළඟා වේ.'
   };
 
@@ -3267,7 +3307,7 @@
    *     "Tap Anywhere to Start Voice Briefing" pill takes over and the
    *     narration WAITS for the first gesture — never silently skipping.
    * No age detail is ever shown or spoken. */
-  var BETA_SUBVERSION = '0.0.7.d.beta';
+  var BETA_SUBVERSION = '0.0.7.e.beta';
   var BRIEFING_GATE_MS = 10000;
   var PROJECT_START_ISO = '2026-10-22';
   function weeksSinceStart() {

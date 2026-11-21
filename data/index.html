@@ -8,12 +8,12 @@
    color-scheme meta follows only this page's own theme button. -->
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="only light">
-<meta name="description" content="Smart Dictation Player 0.0.7.d — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
-<title>Data &amp; Cache Transparency · Smart Dictation 0.0.7.d</title>
+<meta name="description" content="Smart Dictation Player 0.0.7.e — network, cache, storage and mobile-data transparency for the CCBE Galle B1 class.">
+<title>Data &amp; Cache Transparency · Smart Dictation 0.0.7.e</title>
 <script>
 (function () {
   var vUrl = location.pathname.indexOf('/data/') !== -1 ? './version.json' : './data/version.json';
-  var TARGET = '0.0.7.d';
+  var TARGET = '0.0.7.e';
   if (typeof fetch !== 'function') return;
   fetch(vUrl + '?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r && r.ok ? r.json() : null; })
@@ -192,7 +192,7 @@
       </thead>
       <tbody id="storageTable"></tbody>
     </table>
-    <p class="muted" data-t="storageNote">The player writes only five keys; the data meter writes six and this page one theme key — twelve in total. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.</p>
+    <p class="muted" data-t="storageNote">The player writes only five keys; the data meter writes six, this page one theme key and the v0.0.7.e Access Lock one device key — thirteen in total. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.</p>
   </section>
 
   <section class="card">
@@ -208,7 +208,7 @@
     <span class="credit-pill">CREDITS GOES TO Hansana</span>
     <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
     <p lang="si" style="font-family:'Noto Sans Sinhala',sans-serif">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
-    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player 0.0.7.d</p>
+    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player 0.0.7.e</p>
   </footer>
 </main>
 
@@ -230,7 +230,7 @@
       cacheTitle: 'Caches on this device', colCache: 'Cache', colEntries: 'Entries', colRole: 'Role',
       calcTitle: 'Mobile data cost (Sri Lanka)', storageTitle: 'Storage audit',
       colKey: 'Key', colWhat: 'What it holds',
-      storageNote: 'The player writes only the five R8 keys; the data meter writes its own six keys and this page adds one theme key — twelve keys in total, nothing hidden. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
+      storageNote: 'The player writes only the five R8 keys; the data meter writes its own six keys, this page adds one theme key and the v0.0.7.e Access Lock adds one device key — thirteen keys in total, nothing hidden. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
       offlineTitle: 'Offline behaviour',
       offline1: 'The shell, the fonts and the 30-word session are pre-cached, so the app opens without a network.',
       offline2: 'A published session appears on your device the next time you open the app while online.',
@@ -362,7 +362,7 @@
   }
 
   function renderCaches() {
-    var roles = { 'sdp-v0.0.7.d-s43-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
+    var roles = { 'sdp-v0.0.7.e-s44-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
     function paint(entries) {
       var html = '', i;
       if (!entries) { $('cacheTable').innerHTML = '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>'; return; }
@@ -422,7 +422,8 @@
       { k: 'sdp.dataPricePlan', what: lang === 'si' ? 'තෝරාගත෇ සැලසුම' : 'chosen plan id (Dialog/Mobitel/Hutch/Airtel/SLT)' },
       { k: 'sdp.dataMeter.videoHW', what: lang === 'si' ? 'වීඩියෝ යන්ත්‍රය' : 'video hardware probe byte' },
       { k: 'sdp.mediaManifest.v1', what: lang === 'si' ? 'මාධ්‍ය ලක්ෂ්‍ය සංකේතය' : 'media manifest index (fonts, audio estimates)' },
-      { k: 'sdp.dataPage.theme', what: lang === 'si' ? 'තේමාව' : 'transparency page theme (dark/light)' }
+      { k: 'sdp.dataPage.theme', what: lang === 'si' ? 'තේමාව' : 'transparency page theme (dark/light)' },
+      { k: 'sdp.access_lock', what: lang === 'si' ? 'ලුණු-කළ උපාංග හැඳුනුම + අත්සන් කළ ප්‍රවේශ ටෝකනය (පැය 72 ක ඕෆ්ලයින් අනුකම්පාව)' : 'salted device ID + the HMAC-SHA256 signed access token with the 72 h offline grace (v0.0.7.e Access Lock; approved by the lecturer)' }
     ];
     var html = '', i;
     for (i = 0; i < keys.length; i++) {

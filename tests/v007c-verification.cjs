@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-/* G21 — the v0.0.7.d unified release verification gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.d
- * (0.0.7.d / ver 43 / schema 43 / session ver 66 / settingsRev 76 /
- *  syncRev+wordsRev 1797000000026 / SW sdp-v0.0.7.d-s43)
+/* G21 — the v0.0.7.e unified release verification gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.e
+ * (0.0.7.e / ver 43 / schema 43 / session ver 66 / settingsRev 76 /
+ *  syncRev+wordsRev 1797000000027 / SW sdp-v0.0.7.e-s44)
  * C/D/M/L pillars, verified LIVE in headless Chromium at desktop 1280 AND
  * mobile 375×812 plus the Live Lab:
  *  C1/D1-D3 (BUG-01) probe-verified Offline Mode: no false offline banner,
@@ -47,24 +47,24 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── C0 · unified lockstep pins ─────────────────────────────────────────── */
-check('C0a version.json pins 0.0.7.d / 43 / 76 / 1797000000026 / Session 14',
-  version.ver === 44 && version.schema === 44 && version.appVersion === '0.0.7.d' && version.version === '0.0.7.d' &&
-  version.settingsRev === 77 && Number(version.syncRev) === 1797000000026 && version.session === '14' && version.buildDate === '2026-11-20',
+check('C0a version.json pins 0.0.7.e / 43 / 76 / 1797000000027 / Session 14',
+  version.ver === 45 && version.schema === 45 && version.appVersion === '0.0.7.e' && version.version === '0.0.7.e' &&
+  version.settingsRev === 78 && Number(version.syncRev) === 1797000000027 && version.session === '14' && version.buildDate === '2026-11-21',
   JSON.stringify({ ver: version.ver, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
-check('C0b session.json pins ver 66 / 0.0.7.d / 76 / …025 / 31 words',
-  session.ver === 67 && session.appVersion === '0.0.7.d' && session.settingsRev === 77 &&
-  Number(session.syncRev) === 1797000000026 && Number(session.wordsRev) === 1797000000026 && session.wordCount === 31,
+check('C0b session.json pins ver 66 / 0.0.7.e / 76 / …025 / 31 words',
+  session.ver === 68 && session.appVersion === '0.0.7.e' && session.settingsRev === 78 &&
+  Number(session.syncRev) === 1797000000027 && Number(session.wordsRev) === 1797000000027 && session.wordCount === 31,
   JSON.stringify({ ver: session.ver, appVersion: session.appVersion, settingsRev: session.settingsRev, syncRev: session.syncRev, wordsRev: session.wordsRev }));
-check('C0c config.json + pack headers pin 43 / 0.0.7.d / 76 / …025 (+ pack wordsRev …025)',
-  config.ver === 44 && config.appVersion === '0.0.7.d' && config.settingsRev === 77 && Number(config.syncRev) === 1797000000026 &&
-  pack.ver === 44 && pack.appVersion === '0.0.7.d' && pack.settingsRev === 77 && Number(pack.syncRev) === 1797000000026 && Number(pack.wordsRev) === 1797000000026,
+check('C0c config.json + pack headers pin 43 / 0.0.7.e / 76 / …025 (+ pack wordsRev …025)',
+  config.ver === 45 && config.appVersion === '0.0.7.e' && config.settingsRev === 78 && Number(config.syncRev) === 1797000000027 &&
+  pack.ver === 45 && pack.appVersion === '0.0.7.e' && pack.settingsRev === 78 && Number(pack.syncRev) === 1797000000027 && Number(pack.wordsRev) === 1797000000027,
   JSON.stringify({ cfg: [config.ver, config.appVersion, config.settingsRev, config.syncRev], pack: [pack.ver, pack.appVersion, pack.settingsRev, pack.syncRev, pack.wordsRev] }));
-check('C0d sw.js pins the s43 shell (sdp-v0.0.7.d-s43) + release 0.0.7.d',
-  /SW_VERSION = 'sdp-v0\.0\.7\.d-s43'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.d-s43-shell'/.test(sw) && /SW_RELEASE = '0\.0\.7\.d'/.test(sw));
-check('C0e index.html boots at 0.0.7.d and data.html + the meter follow the same release',
-  /var TARGET = '0\.0\.7\.d'/.test(indexHtml) &&
-  readText('data.html').indexOf("var TARGET = '0.0.7.d'") > 0 &&
-  readText('data/data-meter.js').indexOf("CACHE_VERSION = 'sdp-v0.0.7.d'") > 0);
+check('C0d sw.js pins the s43 shell (sdp-v0.0.7.e-s44) + release 0.0.7.e',
+  /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.e-s44-shell'/.test(sw) && /SW_RELEASE = '0\.0\.7\.e'/.test(sw));
+check('C0e index.html boots at 0.0.7.e and data.html + the meter follow the same release',
+  /var TARGET = '0\.0\.7\.e'/.test(indexHtml) &&
+  readText('data.html').indexOf("var TARGET = '0.0.7.e'") > 0 &&
+  readText('data/data-meter.js').indexOf("CACHE_VERSION = 'sdp-v0.0.7.e'") > 0);
 check('C0f zero stale 0.0.7.b live pins anywhere in the app or the tests',
   (function () {
     const files = ['index.html', 'lab.html', 'sw.js', 'manifest.webmanifest', 'data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data.html', 'data/index.html'];
@@ -95,7 +95,7 @@ check('C1b the 2-strike law: one failed tick never latches Offline (noteSyncFail
   /function noteSyncFailed\(\) \{/.test(viewsSrc) && /offlineStrikes >= 2/.test(viewsSrc) && /function noteSyncReachable\(\) \{/.test(viewsSrc) &&
   viewsSrc.indexOf('noteSyncReachable(); } catch (eO2) {}') > 0);
 check('C1c the banner AND the Studio blind always move together (applyProbeResult)',
-  /paintOfflineBanner\(!ok\);\s*\n\s*\/\* v0\.0\.7\.d \(BUG-01\): the banner and the Lecturer Studio blind ALWAYS/.test(viewsSrc.replace(/\r/g, '')) ||
+  /paintOfflineBanner\(!ok\);\s*\n\s*\/\* v0\.0\.7\.e \(BUG-01\): the banner and the Lecturer Studio blind ALWAYS/.test(viewsSrc.replace(/\r/g, '')) ||
   (/function applyProbeResult/.test(viewsSrc) && /paintStudioOffline\(!ok\)/.test(viewsSrc)));
 check('C1d the Retry Connection button ships + binds + resets the strike counter',
   indexHtml.indexOf('btnOfflineRetry') > 0 && /obRetry\.addEventListener\('click', function \(\) \{/.test(viewsSrc) && /offlineStrikes = 0;\s*\n\s*refreshOfflineState\(true\)/.test(viewsSrc.replace(/\r/g, '')) || /offlineStrikes = 0;/.test(viewsSrc));
@@ -166,7 +166,7 @@ check('C3d the diagnostics + gate strings are bilingual (EN + SI tables)',
 /* ── C5 · BUG-05 UI laws ────────────────────────────────────────────────── */
 check('C5a reveal-open keeps the 4 action buttons + the deck captions (the hiding rule is gone)',
   !/\.cockpit\.reveal-open \.cockpit-helpers,/.test(css) && !/\.cockpit\.reveal-open \.orbital \.deck-cap \{ display: none; \}/.test(css) &&
-  /v0\.0\.7\.d \(BUG-05\): while the reveal card is open/.test(css));
+  /v0\.0\.7\.e \(BUG-05\): while the reveal card is open/.test(css));
 check('C5b the play/pause burst lives in the NORTH of the ring (never over the 00 s digits)',
   /place-items:start center;padding-top:12px/.test(css) && /\.ring-tap-overlay svg\{width:42px;height:42px\}/.test(css) && /#beatSeconds \{ font-size: 40px; line-height: 1; \}/.test(css));
 check('C5c the Pause/Resume caption follows the phase (paintDeckCap + phase keys)',
@@ -182,11 +182,11 @@ check('C5f every screen clears the sticky header (scroll-margin + tab-switch scr
 
 /* ── C6 · BUG-06 unified Live Lab ───────────────────────────────────────── */
 check('C6a lab.html carries NO independent version (no v4.0) and paints the unified pill from data/version.json',
-  labHtml.indexOf('v4.0') < 0 && /id="labVerPill">0\.0\.7\.d</.test(labHtml) && /\.\/data\/version\.json\?t='/.test(labHtml));
+  labHtml.indexOf('v4.0') < 0 && /id="labVerPill">0\.0\.7\.e</.test(labHtml) && /\.\/data\/version\.json\?t='/.test(labHtml));
 check('C6b SDP.LiveLab.version joins the ONE progressive version + the report follows',
-  /version: '0\.0\.7\.d',/.test(liveLab) && /labVersion: '0\.0\.7\.d',/.test(liveLab) && !/'4\.0\.0'/.test(liveLab));
-check('C6c Station 7 ships the five v0.0.7.d release probes + joins the full suite',
-  /STATION 7<\/span>v0\.0\.7\.d Unified Release Verification/.test(labHtml) && /btnLabRunStation7/.test(labHtml) &&
+  /version: '0\.0\.7\.e',/.test(liveLab) && /labVersion: '0\.0\.7\.e',/.test(liveLab) && !/'4\.0\.0'/.test(liveLab));
+check('C6c Station 7 ships the five v0.0.7.e release probes + joins the full suite',
+  /STATION 7<\/span>v0\.0\.7\.e Unified Release Verification/.test(labHtml) && /btnLabRunStation7/.test(labHtml) &&
   /function station7\(\)/.test(liveLab) && /bindBtn\('btnLabRunStation7', station7\)/.test(liveLab) && /try \{ station7\(\); \} catch \(e7\)/.test(liveLab));
 
 /* ── C7 · attribution invariants (verbatim) ─────────────────────────────── */
@@ -214,7 +214,7 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
-      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.d'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.d', guideAutoPlay: false })); } catch (e) {} });
+      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.e'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.e', guideAutoPlay: false })); } catch (e) {} });
       await page.goto(server.origin + '/', { waitUntil: 'load' });
       await page.waitForTimeout(2600);
 
@@ -383,7 +383,7 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
       const mpage = await mctx.newPage();
       const merrors = [];
       mpage.on('pageerror', (e) => merrors.push(String(e).slice(0, 140)));
-      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.d'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.d', guideAutoPlay: false })); } catch (e) {} });
+      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.e'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.e', guideAutoPlay: false })); } catch (e) {} });
       await mpage.goto(server.origin + '/', { waitUntil: 'load' });
       await mpage.waitForTimeout(2200);
       await mpage.evaluate(() => { document.getElementById('tab-settings').click(); });
@@ -419,8 +419,8 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
         h1: (document.querySelector('header.lab-head h1') || {}).textContent || '',
         station7: !!document.getElementById('btnLabRunStation7'),
       }));
-      check('L1 the Live Lab boots on the unified version (pill 0.0.7.d, zero v4.0, Station 7 present)',
-        labBoot.pill === '0.0.7.d' && labBoot.title.indexOf('v4.0') < 0 && labBoot.h1.indexOf('v4.0') < 0 && labBoot.station7 === true,
+      check('L1 the Live Lab boots on the unified version (pill 0.0.7.e, zero v4.0, Station 7 present)',
+        labBoot.pill === '0.0.7.e' && labBoot.title.indexOf('v4.0') < 0 && labBoot.h1.indexOf('v4.0') < 0 && labBoot.station7 === true,
         JSON.stringify(labBoot));
       await lpage.evaluate(() => { const b = document.getElementById('btnLabRunAll'); if (b) b.click(); });
       await lpage.waitForTimeout(26000);

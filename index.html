@@ -9,7 +9,7 @@
    may switch to the native dark theme. -->
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="only light">
-<meta name="description" content="Smart Dictation Player 0.0.7.d — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
+<meta name="description" content="Smart Dictation Player 0.0.7.e — CCBE Galle Branch B1 English class dictation cockpit by Hansana.">
 <title>Smart Dictation · CCBE B1</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./assets/css/sdp-ui.css">
@@ -102,7 +102,7 @@ if(window.MutationObserver){try{new MutationObserver(function(){shield();syncSch
   <div id="sdpOfflineModeBanner" class="offline-mode-banner" data-state="hidden" role="alert" hidden>
    <span class="ob-icon" aria-hidden="true">📡</span>
    <span class="ob-text"><strong id="obTitle">Running in Offline Mode</strong><small id="obSub">Cached audio &amp; sessions active</small></span>
-   <!-- v0.0.7.d (BUG-01): manual Retry Connection — a transient probe failure
+   <!-- v0.0.7.e (BUG-01): manual Retry Connection — a transient probe failure
         is always clearable by hand, and the probe re-runs immediately. -->
    <button id="btnOfflineRetry" type="button" class="btn btn-sm ob-help">Retry Connection</button>
    <button id="btnOfflineHelp" type="button" class="btn btn-sm ob-help">Get Help</button>
@@ -570,7 +570,7 @@ if(window.MutationObserver){try{new MutationObserver(function(){shield();syncSch
         status bar stays ultra-clean, while every secondary control keeps
         its DOM id contract (tests + the Lecturer tab still bind them). -->
      <div class="about-tools">
-      <span id="sdpVerPill">0.0.7.d</span>
+      <span id="sdpVerPill">0.0.7.e</span>
       <button id="syncBadge" class="hbtn sync-badge" type="button" aria-live="polite" data-i18n="syncBadgeSynced">Synced</button>
      </div>
      <div class="chip-row about-links-row">
@@ -580,15 +580,18 @@ if(window.MutationObserver){try{new MutationObserver(function(){shield();syncSch
       <button id="btnStudioQuick" type="button" class="btn btn-sm" aria-label="Open the Lecturer Admin Studio"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg> <span class="studio-quick-label">Lecturer Admin</span></button>
      </div>
      <ul class="about-list">
-      <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.7.d</span></li>
+      <li><span data-i18n="aboutVersionLabel">Version</span>: <span id="aboutVersion">0.0.7.e</span></li>
       <li><span data-i18n="aboutBuiltLabel">Built</span>: <span id="aboutBuilt">2026-11-20</span></li>
       <!-- 0.0.6.q Pillar 1: the weekly release note lives HERE in About —
          changelog information — so it takes 0px away from the spacious
          #briefingLyrics reading stage. The DOM id contract is preserved. -->
-      <li id="briefingUpdateBadge" class="about-release-note">📦 Latest Weekly Update (0.0.7.d) · NEW home https://dictationb1.web.app/ (Firebase Hosting; GitHub Pages mirror stays live) · the dictationb1 repository migration completed with zero broken sync, audio or Studio features ·
+      <li id="briefingUpdateBadge" class="about-release-note">📦 Latest Weekly Update (0.0.7.e) · NEW: Complete Private Web App Access Lock (Architecture D) —
+       the Master Lock in Lecturer Admin Studio → Advanced Settings stops every unapproved visitor at a bilingual full-screen Entry Lock, with phone
+       Approve/Reject (Telegram + ntfy), single-use burnable student codes, device-bound HMAC tokens and the 72 h offline grace · CI hygiene: Firebase
+       Hosting deploy is manual-only (GitHub Pages is the ONE live host), the duplicate G22 CI step is gone and the test-suite ceiling moved in lockstep ·
        Probe-verified Offline Mode (no false offline banner, Lecturer Studio never locks out while online, Retry Connection button) ·
        Check for session update always completes in 8 s with a clear result · Repaired Session-14 data: complete B1 meanings + natural Sinhala for all 31 words ·
-       Dynamic word counts everywhere (no stale 30 labels) · Show Current Word keeps every control visible · Pause/Resume label fixed · Unified v0.0.7.d version across app + Live Lab ·
+       Dynamic word counts everywhere (no stale 30 labels) · Show Current Word keeps every control visible · Pause/Resume label fixed · Unified v0.0.7.e version across app + Live Lab ·
        Per-provider API key tests (ElevenLabs · Groq · Gemini) with live HTTP diagnostics · 100% bilingual UI (EN | SI)</li>
       <li><a id="aboutDataLink" href="./data/" data-i18n="aboutDataLink">See every byte this app stores</a></li>
      </ul>
@@ -813,7 +816,7 @@ if(window.MutationObserver){try{new MutationObserver(function(){shield();syncSch
 
 <script>
 (function () {
- var TARGET = '0.0.7.d';
+ var TARGET = '0.0.7.e';
  window.__SDP_BOOT_VERSION__ = TARGET;
  var doReload = function (remoteVersion) {
   try { sessionStorage.setItem('sdp_upgraded_to', remoteVersion); } catch (e) {}
@@ -869,5 +872,6 @@ if(window.MutationObserver){try{new MutationObserver(function(){shield();syncSch
 <script src="./data/sdp-studio-guide.js" defer></script>
 <script src="./data/sdp-selfheal.js" defer></script>
 <script src="./data/sdp-morphe-hooks.js" defer></script>
+<script src="./data/sdp-access-lock.js" defer></script>
 </body>
 </html>

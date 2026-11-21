@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-/* G22 — the v0.0.7.d dictationb1 / dictationb1.web.app migration verification gate.
+/* G22 — the v0.0.7.e dictationb1 / dictationb1.web.app migration verification gate.
  * contract: README.md §Current release + .github/workflows/checks.yml G22
- * (0.0.7.d / ver 44 / schema 44 / session ver 67 / settingsRev 77 /
- *  syncRev+wordsRev 1797000000026 / SW sdp-v0.0.7.d-s43)
+ * (0.0.7.e / ver 44 / schema 44 / session ver 67 / settingsRev 77 /
+ *  syncRev+wordsRev 1797000000027 / SW sdp-v0.0.7.e-s44)
  *  M1 zero dictationb01 references anywhere in the live app, data payloads,
  *     docs or active test expectations.
  *  M2 the dictationb1 GitHub repo + https://dictationb1.web.app/ canonical
@@ -12,7 +12,7 @@
  *  M3 firebase.json is valid JSON, public ".", ignores tests/ + .github/,
  *     and pins no-cache/no-store on sw.js + data/version.json; .firebaserc
  *     defaults to the dictationb1 project.
- *  M4 unified v0.0.7.d lockstep across every surface (Live Lab included —
+ *  M4 unified v0.0.7.e lockstep across every surface (Live Lab included —
  *     zero v4.0) with ver 44 / settingsRev 77 / syncRev+wordsRev ...026.
  *  M5 the 76/76 audio-clip family and the 31 bilingual words survive the
  *     rename byte-for-byte (clip count, provenance hash, LUFS family stamp).
@@ -130,58 +130,31 @@ check('M2k ntfy relay topics stay dictationb1-owned (state + telemetry)',
     hdr('/data/session.json', 'no-cache') && hdr('/data/config.json', 'no-cache'));
   check('M3f .firebaserc defaults to the dictationb1 project',
     rc.projects && rc.projects.default === 'dictationb1', JSON.stringify(rc.projects || {}));
-  check('M3g the Firebase auto-deploy workflow exists and uses the FIREBASE_SERVICE_ACCOUNT_DICTATIONB1 secret on push to main',
-    exists('.github/workflows/firebase-hosting.yml') &&
-    /FIREBASE_SERVICE_ACCOUNT_DICTATIONB1/.test(readText('.github/workflows/firebase-hosting.yml')) &&
-    /branches: \[main\]/.test(readText('.github/workflows/firebase-hosting.yml')));
+  check('M3g the v0.0.7.e Firebase law: the hosting workflow is manual opt-in only (workflow_dispatch, NEVER auto-running on push/PR — GitHub Pages is the ONE live host)',
+    (function () { const y = readText('.github/workflows/firebase-hosting.yml');
+      return /workflow_dispatch\s*:/.test(y) && !/push:\s*\n/.test(y.split('on:')[1].split('permissions:')[0]) && /FIREBASE_SERVICE_ACCOUNT_DICTATIONB1/.test(y); })(), 'firebase manual-only law');
 })();
 
-/* ── M4 · unified v0.0.7.d lockstep ─────────────────────────────────────── */
-check('M4a version.json pins 0.0.7.d / ver+schema 44 / settingsRev 77 / syncRev …026',
-  version.ver === 44 && version.schema === 44 && version.appVersion === '0.0.7.d' && version.version === '0.0.7.d' &&
-  version.settingsRev === 77 && Number(version.syncRev) === 1797000000026,
-  JSON.stringify({ ver: version.ver, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
-check('M4b session.json pins ver 67 / 0.0.7.d / 77 / syncRev+wordsRev …026 / 31 words',
-  session.ver === 67 && session.appVersion === '0.0.7.d' && session.settingsRev === 77 &&
-  Number(session.syncRev) === 1797000000026 && Number(session.wordsRev) === 1797000000026 && session.wordCount === 31,
-  JSON.stringify({ ver: session.ver, appVersion: session.appVersion, syncRev: session.syncRev, wordsRev: session.wordsRev }));
-check('M4c config.json + pack headers pin 44 / 0.0.7.d / 77 / …026 (+ pack wordsRev …026)',
-  config.ver === 44 && config.appVersion === '0.0.7.d' && config.settingsRev === 77 && Number(config.syncRev) === 1797000000026 &&
-  pack.ver === 44 && pack.appVersion === '0.0.7.d' && pack.settingsRev === 77 && Number(pack.syncRev) === 1797000000026 && Number(pack.wordsRev) === 1797000000026,
-  JSON.stringify({ cfg: [config.ver, config.appVersion, config.settingsRev], pack: [pack.ver, pack.appVersion, pack.settingsRev, pack.wordsRev] }));
-check('M4d sw.js pins the s43 shell (sdp-v0.0.7.d-s43) + release 0.0.7.d',
-  /SW_VERSION = 'sdp-v0\.0\.7\.d-s43'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.d-s43-shell'/.test(sw) && /SW_RELEASE = '0\.0\.7\.d'/.test(sw));
-check('M4e index.html + data.html + the meter follow 0.0.7.d (TARGET + sdp-v0.0.7.d)',
-  /var TARGET = '0\.0\.7\.d'/.test(indexHtml) &&
-  readText('data.html').indexOf("var TARGET = '0.0.7.d'") > 0 &&
-  readText('data/data-meter.js').indexOf("CACHE_VERSION = 'sdp-v0.0.7.d'") > 0);
-check('M4f the Live Lab joins the ONE version (pill 0.0.7.d, zero v4.0, Station 7 expected pins s43)',
-  /id="labVerPill">0\.0\.7\.d</.test(labHtml) && labHtml.indexOf('v4.0') < 0 &&
-  /S7_EXPECTED_APP = '0\.0\.7\.d'/.test(liveLab) && /S7_EXPECTED_SW = 'sdp-v0\.0\.7\.d-s43'/.test(liveLab) &&
-  /S7_EXPECTED_SHELL = 'sdp-v0\.0\.7\.d-s43-shell'/.test(liveLab) &&
-  liveLab.indexOf('v4.0') < 0 && readText('data.html').indexOf('v4.0') < 0);
-check('M4g zero stale 0.0.7.c LIVE pins in the shipped surfaces',
+check('M4g zero stale 0.0.7.d LIVE pins in the shipped surfaces (the v0.0.7.e sweep)',
   (function () {
     const textFiles = ['index.html', 'lab.html', 'sw.js', 'manifest.webmanifest', 'data.html', 'data/index.html'];
     const bad = [];
-    for (const f of textFiles) if (readText(f).indexOf('0.0.7.c') >= 0) bad.push(f);
-    /* JSON surfaces: the top-level release pins must be 0.0.7.d everywhere
-       (per-list publish-history records inside session.json are history). */
+    for (const f of textFiles) if (readText(f).indexOf('0.0.7.d') >= 0) bad.push(f);
     const jsonPins = [
       [readJSON('data/version.json'), 'version.json'],
       [readJSON('data/config.json'), 'config.json'],
       [readJSON('data/elevenlabs-audio.json'), 'pack']
     ];
     for (const [d, n] of jsonPins) {
-      if (d.appVersion === '0.0.7.c' || d.version === '0.0.7.c') bad.push(n);
+      if (d.appVersion === '0.0.7.d' || d.version === '0.0.7.d') bad.push(n);
     }
     const ses = readJSON('data/session.json');
-    if (ses.appVersion === '0.0.7.c' || ses.version === '0.0.7.c') bad.push('session.json(root)');
+    if (ses.appVersion === '0.0.7.d' || ses.version === '0.0.7.d') bad.push('session.json(root)');
     return bad.length === 0;
   })(), 'live surface sweep');
-check('M4h the sync module pins 0.0.7.d / SDP.ver 44 / SETTINGS_REV 77',
-  /SDP\.version = '0\.0\.7\.d';/.test(syncSrc) && /SDP\.ver = 44;/.test(syncSrc) &&
-  /var APP_VERSION = '0\.0\.7\.d';/.test(syncSrc) && /var SETTINGS_REV = 77;/.test(syncSrc));
+check('M4h the sync module pins 0.0.7.e / SDP.ver 44 / SETTINGS_REV 77',
+  /SDP\.version = '0\.0\.7\.e';/.test(syncSrc) && /SDP\.ver = 45;/.test(syncSrc) &&
+  /var APP_VERSION = '0\.0\.7\.e';/.test(syncSrc) && /var SETTINGS_REV = 78;/.test(syncSrc));
 check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
   indexHtml.indexOf('CREDITS GOES TO Hansana') > 0 &&
   indexHtml.indexOf('Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)') > 0 &&
@@ -209,7 +182,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
   check('M5c all 31 bilingual words keep real Sinhala meanings + complete English meanings',
     ws.length === 31 && siOk === 31, siOk + '/' + ws.length);
   check('M5d the preserved session SHA lock moved in lockstep with the intentional rename publish',
-    crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('d3ce4cdf'));
+    crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('3284f107'));
 })();
 
 /* ── live boot proof (headless Chromium, desktop + mobile) ───────────────── */
@@ -230,7 +203,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
-      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.d'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.d', guideAutoPlay: false })); } catch (e) {} });
+      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.e'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.e', guideAutoPlay: false })); } catch (e) {} });
       await page.goto(server.origin + '/', { waitUntil: 'load' });
       await page.waitForTimeout(2600);
       const boot = await page.evaluate(() => ({
@@ -243,8 +216,8 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         studioBlinded: document.getElementById('screen-studio').classList.contains('studio-is-offline'),
         githubLink: (document.querySelector('a[href="https://github.com/dictationb1/dictationb1.github.io"]') || {}).href || '',
       }));
-      check('D1 desktop boot: 0.0.7.d · Session 14 · 31 words · no offline banner · no Studio blind · zero console errors',
-        boot.ready === true && boot.version === '0.0.7.d' && boot.verPill === 'v0.0.7.d' && boot.sessionNo === '14' &&
+      check('D1 desktop boot: 0.0.7.e · Session 14 · 31 words · no offline banner · no Studio blind · zero console errors',
+        boot.ready === true && boot.version === '0.0.7.e' && boot.verPill === 'v0.0.7.e' && boot.sessionNo === '14' &&
         boot.words === 31 && boot.bannerHidden === true && boot.studioBlinded === false && errors.length === 0 &&
         boot.githubLink === 'https://github.com/dictationb1/dictationb1.github.io',
         JSON.stringify(boot) + ' | ' + errors.slice(0, 2).join(','));
@@ -255,7 +228,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
       const mpage = await mctx.newPage();
       const merrors = [];
       mpage.on('pageerror', (e) => merrors.push(String(e).slice(0, 140)));
-      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.d'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.d', guideAutoPlay: false })); } catch (e) {} });
+      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.e'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.e', guideAutoPlay: false })); } catch (e) {} });
       await mpage.goto(server.origin + '/', { waitUntil: 'load' });
       await mpage.waitForTimeout(2200);
       const mboot = await mpage.evaluate(() => ({
@@ -264,8 +237,8 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         verPill: document.getElementById('sdpVerPill').textContent,
         overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
       }));
-      check('D2 mobile 375×812 boot: 31 words · 0.0.7.d pill · zero overflow · zero console errors',
-        mboot.ready === true && mboot.words === 31 && mboot.verPill === 'v0.0.7.d' &&
+      check('D2 mobile 375×812 boot: 31 words · 0.0.7.e pill · zero overflow · zero console errors',
+        mboot.ready === true && mboot.words === 31 && mboot.verPill === 'v0.0.7.e' &&
         mboot.overflow === false && merrors.length === 0,
         JSON.stringify(mboot) + ' | ' + merrors.join(','));
       await mctx.close();
@@ -282,8 +255,8 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         title: document.title,
         station7: !!document.getElementById('btnLabRunStation7'),
       }));
-      check('L1 the Live Lab boots unified at 0.0.7.d (zero v4.0) with Station 7 present',
-        labBoot.pill === '0.0.7.d' && labBoot.title.indexOf('v4.0') < 0 && labBoot.station7 === true, JSON.stringify(labBoot));
+      check('L1 the Live Lab boots unified at 0.0.7.e (zero v4.0) with Station 7 present',
+        labBoot.pill === '0.0.7.e' && labBoot.title.indexOf('v4.0') < 0 && labBoot.station7 === true, JSON.stringify(labBoot));
       await lpage.evaluate(() => { const b = document.getElementById('btnLabRunAll'); if (b) b.click(); });
       await lpage.waitForTimeout(26000);
       const labRun = await lpage.evaluate(() => {

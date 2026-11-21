@@ -79,8 +79,18 @@ jobs:
       - name: G12 · credit-saver delta, 34-clip pack and locked-studio zero-widget proof
         run: node tests/studio-safety.cjs
 
-      - name: G22 · v0.0.7.d dictationb1 migration verification gate
+      - name: G22 · v0.0.7.e dictationb1 migration verification gate
         run: node tests/v007d-verification.cjs
+
+      # v0.0.7.e: the Private Web App Access Lock gates (Architecture D).
+      - name: G23 · Access Lock backend contract (GAS actions, HMAC tokens, burnable codes)
+        run: node tests/v007e-gas-lock.cjs
+
+      - name: G24 · Access Lock student UX (real Chromium, both viewports, 72 h grace)
+        run: node tests/v007e-lock-ux.cjs
+
+      - name: G25 · Lecturer Studio Access Lock control panel (Advanced Settings only)
+        run: node tests/v007e-studio-lock.cjs
 
       # Pins mirror PRESERVED_SHA in tests/check.cjs (the single source of truth).
       - name: Lab Environment - spacious overview, Studio-Briefing bridge, cache purge, karaoke, mic-release, feedback (Step 13b)
@@ -125,16 +135,13 @@ jobs:
       - name: G21 · v0.0.7.d unified release verification gate
         run: node tests/v007c-verification.cjs
 
-      - name: G22 · v0.0.7.d dictationb1 migration verification gate
-        run: node tests/v007d-verification.cjs
-
       # Pins mirror PRESERVED_SHA in tests/check.cjs (the single source of truth).
       - name: Preserved payloads must still match their SHA-256 lock
         run: |
           node -e '
             const fs=require("fs"),c=require("crypto");
             const want={
-              "data/session.json":"d3ce4cdf","data/gas-source.txt":"b7bbd23c",
+              "data/session.json":"3284f107","data/gas-source.txt":"a375dff9",
               "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
               "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
             let bad=0;

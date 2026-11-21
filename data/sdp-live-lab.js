@@ -1,4 +1,4 @@
-/* data/sdp-live-lab.js — unified app version 0.0.7.d — window.SDP.LiveLab (strict ES5).
+/* data/sdp-live-lab.js — unified app version 0.0.7.e — window.SDP.LiveLab (strict ES5).
  * Powers the real-time stations of lab.html through REAL browser APIs only
  * (AudioContext.decodeAudioData, <audio> playback, live fetch) — zero mocks.
  * Z3: the pack spectral/LUFS broadcast-signature consistency check
@@ -44,9 +44,9 @@
   /* v0.0.7.c (BUG-06): Station 1's last full measurement pass + the Station 7
      release-verification probes all live in this module. */
   var lastS1 = null;
-  var S7_EXPECTED_APP = '0.0.7.d';
-  var S7_EXPECTED_SW = 'sdp-v0.0.7.d-s43';
-  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.d-s43-shell';
+  var S7_EXPECTED_APP = '0.0.7.e';
+  var S7_EXPECTED_SW = 'sdp-v0.0.7.e-s44';
+  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.e-s44-shell';
 
   function record(station, name, ok, detail) {
     if (!LAB.results[station]) LAB.results[station] = [];
@@ -171,7 +171,7 @@
     var host = byId('labClipTableBody');
     if (!host) return false;
     setTxt('labPackStatus', 'Loading live /data/elevenlabs-audio.json …');
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.d', { cache: 'no-store' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.e', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack || !isObj(pack.clips)) { setTxt('labPackStatus', '✗ pack unavailable (offline?)'); record('S1', 'manifest loads', false, 'fetch failed'); return; }
@@ -244,7 +244,7 @@
   }
 
   function playKey(key) {
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.d', { cache: 'default' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.e', { cache: 'default' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack) return;
@@ -453,7 +453,7 @@
     var c = counts();
     LAB.report = {
       lab: 'SDP Real-Time Live Voice & Clone Lab',
-      labVersion: '0.0.7.d',
+      labVersion: '0.0.7.e',
       appVersion: (global.SDP && SDP.version) || '0.0.7.c',
       at: new Date().toISOString(),
       href: str(global.location && global.location.href),
@@ -599,7 +599,7 @@
     var words = [];
     try { if (global.SDP && SDP.Sync && SDP.Sync.words) words = SDP.Sync.words() || []; } catch (eW) {}
     if (words.length) { labBatchRun(words, key); return true; }
-    global.fetch('./data/session.json?v=0.0.7.d', { cache: 'no-store' })
+    global.fetch('./data/session.json?v=0.0.7.e', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (s) {
         if (s && Array.isArray(s.words) && s.words.length) labBatchRun(s.words, key);
@@ -1279,8 +1279,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var verApp = ver && str(ver.appVersion);
-        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 44 / schema 44 / settingsRev 77 / syncRev 1797000000026)',
-          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 44 && Number(ver && ver.settingsRev) === 77 && Number(ver && ver.syncRev) === 1797000000026,
+        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 45 / schema 45 / settingsRev 78 / syncRev 1797000000027)',
+          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 45 && Number(ver && ver.settingsRev) === 78 && Number(ver && ver.syncRev) === 1797000000027,
           JSON.stringify(ver || null));
         record('S7', 'version lockstep: the Lab pill (' + pill + ') == SDP.version (' + sdVer + ') == data/version.json (' + verApp + ')',
           pill === S7_EXPECTED_APP && sdVer === S7_EXPECTED_APP && verApp === S7_EXPECTED_APP,
@@ -1413,7 +1413,7 @@
 
   SDP.LiveLab = {
     /* v0.0.7.c: the Live Lab shares the app's ONE progressive version. */
-    version: '0.0.7.d',
+    version: '0.0.7.e',
     labKey: labKey,
     labBatchRepairWords: labBatchRepairWords,
     testVoiceSynthesis: testVoiceSynthesis,
