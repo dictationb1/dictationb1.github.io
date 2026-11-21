@@ -97,8 +97,35 @@
     if (/safari\//i.test(ua)) return 'Safari';
     return 'Other';
   }
+  function browserVersion() {
+    var ua = '';
+    try { ua = String((global.navigator && global.navigator.userAgent) || ''); } catch (e) { ua = ''; }
+    var m = ua.match(/(?:chrome|crios|firefox|fxios|edg\/?|opr\/|samsungbrowser)\/(\d+)/i);
+    return m ? m[1] : '';
+  }
+  function tzName() {
+    try { return String((global.Intl && global.Intl.DateTimeFormat && global.Intl.DateTimeFormat().resolvedOptions && global.Intl.DateTimeFormat().resolvedOptions().timeZone) || ''); } catch (e) { return ''; }
+  }
+  function storageHealth() {
+    /* honest browser capability: THIS app's own localStorage only — browsers
+       never expose other sites' cookies or storage to a web page. */
+    var bytes = 0, keys = 0;
+    try {
+      for (var i = 0; i < global.localStorage.length; i++) {
+        var k = global.localStorage.key(i);
+        bytes += (k || '').length + String(global.localStorage.getItem(k) || '').length;
+        keys += 1;
+      }
+    } catch (e) {}
+    return (keys ? (bytes < 1024 ? bytes + ' B' : (Math.round(bytes / 102.4) / 10) + ' kB') : 'empty') + ' / ' + keys + ' keys';
+  }
   function deviceTelemetry() {
     var sc = global.screen || {};
+    var nav = global.navigator || {};
+    var pwa = false;
+    try { pwa = (global.matchMedia && global.matchMedia('(display-mode: standalone)').matches) || (global.navigator && nav.standalone === true); } catch (eP) { pwa = false; }
+    var sw = 'none';
+    try { if (global.navigator && nav.serviceWorker && nav.serviceWorker.controller) sw = String((nav.serviceWorker.controller.state || 'active')); } catch (eS) { sw = 'none'; }
     return {
       class: deviceClass(),
       dpr: Math.round((global.devicePixelRatio || 1) * 100) / 100,
@@ -106,20 +133,35 @@
       vh: global.innerHeight || 0,
       screen: (Number(sc.width) || 0) + 'x' + (Number(sc.height) || 0),
       os: osFamily(),
+      osv: (function () { var m = ''; try { m = String((global.navigator && global.navigator.userAgent) || '').match(/android\s(\d[\d.]*)|cpu\siphone\sos\s(\d[\d_]*)/i); } catch (e) {} return m ? (m[1] || (m[2] || '').replace(/_/g, '.')) : ''; })(),
       browser: browserFamily(),
+      browserV: browserVersion(),
+      uaClass: (function () { try { return String((global.navigator && global.navigator.userAgent) || '').indexOf('Mobile') >= 0 ? 'mobile UA' : 'desktop UA'; } catch (e) { return ''; } })(),
+      lang: (function () { try { return String((global.navigator && global.navigator.language) || ''); } catch (e) { return ''; } })(),
+      tz: tzName(),
       online: (function () { try { return global.navigator && global.navigator.onLine !== false; } catch (e) { return true; } })(),
-      net: (function () { try { return String((global.navigator && global.navigator.connection && global.navigator.connection.effectiveType) || 'unknown'); } catch (e) { return 'unknown'; } })()
+      net: (function () { try { return String((global.navigator && global.navigator.connection && global.navigator.connection.effectiveType) || 'unknown'); } catch (e) { return 'unknown'; } })(),
+      downlink: (function () { try { return global.navigator && global.navigator.connection ? Number(global.navigator.connection.downlink) || 0 : 0; } catch (e) { return 0; } })(),
+      rtt: (function () { try { return global.navigator && global.navigator.connection ? Number(global.navigator.connection.rtt) || 0 : 0; } catch (e) { return 0; } })(),
+      cookies: (function () { try { return global.navigator ? global.navigator.cookieEnabled !== false : true; } catch (e) { return true; } })(),
+      storage: storageHealth(),
+      pwa: pwa,
+      sw: sw,
+      appVersion: String(SDP.version || '')
     };
   }
 
   function sessionStart() {
     var t = ledger();
+    var wasFirst = Number(t.visitCount || 0) === 0;
     t.visitCount = Number(t.visitCount || 0) + 1;
     t.__startedAt = Date.now();
     t.__hiddenMs = 0;
     t.__lastVisible = Date.now();
     saveSettings({ telemetry: t });
     log('telemetry_session_start', { sessionNo: t.visitCount, clientId: t.clientId });
+    /* v0.0.7.f Pillar 3: the SESSION START Telegram event */
+    try { pushEvent('session_start', { sessionNo: String(t.visitCount), visitCount: t.visitCount, firstVisit: wasFirst, mode: (settings().mode || ''), voice: String(settings().voice || '') }); } catch (eP1) {}
     return t;
   }
 
@@ -164,6 +206,9 @@
     /* v0.0.7.b B6 — LIVE beacon: a finished session reaches the Lecturer
        Studio the moment it completes, never only on tab close. */
     try { pushTelemetryEnvelope(function () {}); } catch (ePB) {}
+    /* v0.0.7.f Pillar 3: the SESSION END Telegram event (words, score, exact
+       dwell time, mode + full device summary for the Lecturer's feed). */
+    try { pushEvent('session_end', { sessionNo: String(rec.sessionNo), words: rec.wordsCompleted, score: rec.score, dwellSec: rec.dwellSec, mode: String(settings().mode || ''), voice: rec.audioTierUsed, device: rec.device }); } catch (ePE) {}
     return rec;
   }
 
@@ -215,7 +260,70 @@
     };
   }
 
-  /* Push (best-effort, text/plain so ntfy never preflights). */
+  /* ══ v0.0.7.f Pillar 3/4: the Telegram telemetry event relay (tg_event).
+     Every student event — session start/end, activity + dwell time, tab
+     leave (sendBeacon), voice errors, troubleshooting, feedback — rides the
+     PUBLIC Apps Script relay URL (sdp.settings.gasUrl →
+     config.json accessLock.relayUrl) to the Lecturer's Telegram with the
+     server-side anti-spam throttle + digest batching. Client-side: events
+     fire-and-forget with keepalive, deduped, and NEVER block the student. ══ */
+  function gasRelayUrl() {
+    try { var s = settings(); if (s && s.gasUrl) return String(s.gasUrl); } catch (e1) {}
+    try {
+      if (global.SDP && SDP.Sync && SDP.Sync.config && SDP.Sync.config()) {
+        var cfg = SDP.Sync.config();
+        if (cfg && cfg.accessLock && cfg.accessLock.relayUrl) return String(cfg.accessLock.relayUrl);
+      }
+    } catch (e2) {}
+    return '';
+  }
+  var evtLast = {}; /* client-side per-kind dedupe (min 3 s between identical kinds) */
+  function pushEvent(kind, data) {
+    kind = String(kind || '');
+    if (!kind) return false;
+    var t = ledger();
+    var now = Date.now();
+    if (evtLast[kind] && now - evtLast[kind] < 3000) return false; /* dedupe race */
+    evtLast[kind] = now;
+    var url = gasRelayUrl();
+    if (!url || typeof global.fetch !== 'function') return false;
+    var body = JSON.stringify({
+      action: 'tg_event',
+      deviceId: (global.SDP && SDP.AccessLock && SDP.AccessLock.deviceId) ? SDP.AccessLock.deviceId() : t.clientId,
+      kind: kind,
+      data: data && typeof data === 'object' ? data : {}
+    });
+    try {
+      global.fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: body, keepalive: true }).catch(function () {});
+    } catch (e) {}
+    return true;
+  }
+  function pushEventBeacon(kind, data) {
+    /* the pagehide/tab-leave path: sendBeacon survives the tab closing */
+    var t = ledger();
+    var url = gasRelayUrl();
+    if (!url) return false;
+    try {
+      if (global.navigator && global.navigator.sendBeacon) {
+        return global.navigator.sendBeacon(url, JSON.stringify({
+          action: 'tg_event',
+          deviceId: (global.SDP && SDP.AccessLock && SDP.AccessLock.deviceId) ? SDP.AccessLock.deviceId() : t.clientId,
+          kind: kind, data: data || {}
+        }));
+      }
+    } catch (e) {}
+    return pushEvent(kind, data);
+  }
+  function activitySnapshot(screenName) {
+    /* the live activity + dwell-time summary the Lecturer receives */
+    var t = ledger();
+    return {
+      screen: screenName || '',
+      dwellSec: t.__startedAt ? Math.max(0, Math.round((Date.now() - Number(t.__startedAt) - Number(t.__hiddenMs || 0)) / 1000)) : 0,
+      name: (global.SDP && SDP.AccessLock && SDP.AccessLock.state) ? '' : '',
+      appVersion: String(SDP.version || '')
+    };
+  }
   function pushTelemetryEnvelope(cb) {
     cb = cb || function () {};
     var body = JSON.stringify(envelope());
@@ -233,7 +341,7 @@
     try {
       var gasUrl = '';
       try { gasUrl = String((settings().gasUrl) || ''); } catch (eG) {}
-      if (gasUrl) global.fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }).then(null, null);
+      if (gasUrl) { try { global.fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }).catch(function () {}); } catch (eGF) {} }
     } catch (e2) {}
     global.setTimeout(function () { finish(new Error('push_timeout'), false); }, 8000);
     return true;
@@ -356,7 +464,7 @@
     try {
       var gasUrl = '';
       try { gasUrl = String((settings().gasUrl) || ''); } catch (eG) {}
-      if (gasUrl) global.fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }).then(null, null);
+      if (gasUrl) { try { global.fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }).catch(function () {}); } catch (eGF) {} }
     } catch (e2) {}
     global.setTimeout(function () { cb(null, rec); }, 0);
     return rec;
@@ -429,6 +537,23 @@
 
   /* Boot binding: session lifecycle + pagehide beacon. */
   function bindLifecycle() {
+    /* v0.0.7.f Pillar 4: uncaught JS runtime errors + unhandled rejections
+       reach the Lecturer's Telegram (window.onerror / unhandledrejection),
+       with the same client-side 3 s dedupe so a burst never floods. */
+    try {
+      if (global.addEventListener) {
+        global.addEventListener('error', function (ev) {
+          try {
+            pushEvent('app_error', { detail: 'Uncaught error: ' + String((ev && ev.message) || 'unknown').slice(0, 160) + (ev && ev.filename ? ' @ ' + String(ev.filename).split('/').pop() + ':' + (ev.lineno || 0) : '') });
+          } catch (e) {}
+        }, false);
+        global.addEventListener('unhandledrejection', function (ev) {
+          try {
+            pushEvent('app_error', { detail: 'Unhandled promise rejection: ' + String((ev && ev.reason && (ev.reason.message || ev.reason)) || 'unknown').slice(0, 160) });
+          } catch (e) {}
+        }, false);
+      }
+    } catch (eER) {}
     if (global.document && global.document.addEventListener) {
       global.document.addEventListener('visibilitychange', function () {
         visibilityTick(global.document.visibilityState === 'hidden');
@@ -436,6 +561,13 @@
     }
     if (global.addEventListener) {
       global.addEventListener('pagehide', function () {
+        /* v0.0.7.f Pillar 3: the TAB LEAVE dwell-time Telegram event rides a
+           sendBeacon so it survives the tab closing mid-request. */
+        try {
+          var t = ledger();
+          var dwell = t.__startedAt ? Math.max(0, Math.round((Date.now() - Number(t.__startedAt) - Number(t.__hiddenMs || 0)) / 1000)) : 0;
+          if (dwell >= 5) pushEventBeacon('tab_leave', { dwellSec: dwell, screen: 'left app', appVersion: String(SDP.version || '') });
+        } catch (eTL) {}
         var rec = sessionEnd({});
         if (rec) {
           try {
@@ -452,7 +584,7 @@
   }
 
   SDP.Telemetry = {
-    version: '1.2.0',
+    version: '1.3.0',
     ledger: ledger,
     owner: owner,
     telemetryTopic: telemetryTopic,
@@ -464,6 +596,11 @@
     envelope: envelope,
     pushTelemetryEnvelope: pushTelemetryEnvelope,
     pullTelemetryLedger: pullTelemetryLedger,
+    /* v0.0.7.f: the Telegram telemetry event relay (Pillars 3 + 4). */
+    pushEvent: pushEvent,
+    pushEventBeacon: pushEventBeacon,
+    activitySnapshot: activitySnapshot,
+    gasRelayUrl: gasRelayUrl,
     /* v0.0.7.a Pillar 3 (Y3): the Student → Lecturer/Admin alert channel. */
     sendLecturerAlert: sendLecturerAlert,
     pullLecturerAlerts: pullLecturerAlerts,

@@ -1,5 +1,5 @@
-/*! data/sdp-access-lock.js — v0.0.7.e — window.SDP.AccessLock (strict ES5).
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.e
+/*! data/sdp-access-lock.js — v0.0.7.f — window.SDP.AccessLock (strict ES5).
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.f
  * The Private Web App Access Lock client (Architecture D — Hybrid Smart
  * Classroom Gate). When the Lecturer arms the Master Lock the whole web app
  * stops at a bilingual full-screen Entry Lock BEFORE any student data paints:
@@ -137,6 +137,7 @@
   var state = {
     armed: false, /* the lock overlay is up */
     lockOn: false, /* last known cloud master state */
+    mode: 'approval+code', /* v0.0.7.f: the unlock policy mode */
     deviceId: '',
     fp: '',
     name: '',
@@ -194,9 +195,10 @@
 
   /* ── the relay URL (public endpoint; never a secret) ─────────────────── */
   function relayUrl() {
-    /* v0.0.7.e: the sdp.settings gasUrl (five-key law) is read FIRST so the
-       gate can run before any Studio unlock — the same relay URL the Studio
-       and telemetry use. */
+    /* v0.0.7.f BUG-F1 FIX: the same strict priority chain as the Studio —
+       sdp.settings.gasUrl (the five-key law) → Studio secrets →
+       config.json accessLock.relayUrl (now ACTUALLY populated by every
+       publish, so student phones discover the relay on boot). */
     try {
       var st = global.localStorage ? JSON.parse(global.localStorage.getItem('sdp.settings') || '{}') : null;
       if (st && st.gasUrl) return str(st.gasUrl);
@@ -292,6 +294,17 @@
   }
 
   /* ── actions ─────────────────────────────────────────────────────────── */
+  function unlockMode() {
+    /* v0.0.7.f BUG-F3: the unlock policy mode from the last access_state —
+       'approval' hides the code/password path (server enforces too). */
+    return str(state.mode || 'approval+code');
+  }
+  function paintCodePath() {
+    var node = byId('sdpAccessCodePath');
+    if (!node) return;
+    if (unlockMode() === 'approval') node.setAttribute('hidden', 'hidden');
+    else node.removeAttribute('hidden');
+  }
   function requestAccess() {
     var nameNode = byId('sdpAccessName');
     var classNode = byId('sdpAccessClass');
@@ -321,7 +334,12 @@
       pollCount += 1;
       relay({ action: 'check_device', deviceId: state.deviceId, token: state.token }, function (err, out) {
         if (err || !out) return; /* offline: keep polling quietly */
-        if (out.approved) { if (out.token) { state.token = str(out.token); state.grantedAt = nowMs(); save(); } stopPoll(); grant('approved'); }
+        if (out.approved) {
+          /* v0.0.7.f: a firstGrant answer carries the freshly-issued HMAC
+             token from the Telegram approval — store it, then unlock. */
+          if (out.token) { state.token = str(out.token); state.grantedAt = nowMs(); save(); }
+          stopPoll(); grant('approved');
+        }
         else if (out.err === 'revoked') { stopPoll(); status(t('rejected'), 'bad'); }
       });
       /* the poll also refreshes the config-side state (LOCK ON→OFF flips) */
@@ -344,6 +362,13 @@
         if (err || !out) { status(t('net'), 'bad'); return; }
         if (out.err === 'rate') { status(t('rate'), 'bad'); return; }
         if (out.ok) { if (out.token) { state.token = str(out.token); state.grantedAt = nowMs(); save(); } grant(out.by || 'secret'); return; }
+        /* v0.0.7.f Pillar 1: the wrong-password / bad-code SECURITY Telegram
+           alert (the server fires its own; the client event adds context). */
+        try {
+          if (global.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
+            SDP.Telemetry.pushEvent('security', { detail: 'Wrong code/password attempt on the Entry Lock (' + str(out.err).slice(0, 60) + ')', name: state.name });
+          }
+        } catch (eSC) {}
         status(out.err === 'invalid code' || out.err === 'code already burned on another device (single-use law)' ? t('codeBad') : t('codeBad'), 'bad');
       });
     });
@@ -355,6 +380,19 @@
     state.pending = false;
     save();
     status(t('approved'), 'ok');
+    /* v0.0.7.f Pillar 1: the USER LOGIN / APP OPENED Telegram event — fires
+       on every unlock (approved token, password, PIN, one-time code, open
+       mode) so Hansana always knows who just entered, even when LOCK OFF. */
+    try {
+      if (global.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
+        var tel = SDP.Telemetry.ledger ? SDP.Telemetry.ledger() : null;
+        SDP.Telemetry.pushEvent('login', {
+          name: state.name, classId: state.classId, method: by,
+          firstVisit: !!(tel && Number(tel.visitCount || 0) <= 1),
+          visitCount: Number((tel && tel.visitCount) || 1)
+        });
+      }
+    } catch (eTG) {}
     global.setTimeout(function () {
       stopHeartbeat();
       unmountOverlay();
@@ -412,6 +450,8 @@
     relay({ action: 'access_state' }, function (err, out) {
       if (err || !out || !out.lock) { cb(false, null); return; }
       state.lockOn = !!out.lock.on;
+      if (out.lock.mode) state.mode = str(out.lock.mode);
+      paintCodePath();
       cb(false, out.lock);
     });
   }
@@ -492,15 +532,16 @@
 
   /* ── public API ──────────────────────────────────────────────────────── */
   SDP.AccessLock = {
-    version: '0.0.7.e',
+    version: '0.0.7.f',
     key: STORE_KEY,
     gate: gate,
     arm: arm,
     disarm: function () { stopPoll(); stopHeartbeat(); unmountOverlay(); state.armed = false; return true; },
     isArmed: function () { return !!(state.armed || byId('sdpAccessLock')); },
+    unlockMode: unlockMode,
     state: function () {
       return {
-        armed: state.armed, lockOn: state.lockOn, deviceId: state.deviceId,
+        armed: state.armed, lockOn: state.lockOn, mode: state.mode, deviceId: state.deviceId,
         fp: state.fp, token: state.token, grantedAt: state.grantedAt,
         lastHeartbeat: state.lastHeartbeat, pending: state.pending,
         withinGrace: !!state.token && (nowMs() - state.grantedAt) <= GRACE_MS
@@ -511,13 +552,14 @@
     fingerprint: fingerprint,
     heartbeat: heartbeat,
     refreshState: refreshState,
+    relayUrl: relayUrl,
     deviceId: function () { load(); return state.deviceId; },
     strings: function () { return { en: L.en, si: L.si }; }
   };
 
   /* boot: when the DOM exists, run the gate once (LOCK OFF passes silently). */
   function boot() { gate(); }
-  /* v0.0.7.e: the first gate runs pre-data (config may not be loaded yet, so a
+  /* v0.0.7.f: the first gate runs pre-data (config may not be loaded yet, so a
      missing relay reads as unknown). When SDP.Sync finishes booting it emits
      sdp:ready — re-run the gate so a late config.accessLock / relay URL is
      honoured and an armed overlay is removed if the cloud says LOCK OFF. */
@@ -528,7 +570,7 @@
   if (doc) {
     if (doc.readyState === 'loading' && doc.body === null) doc.addEventListener('DOMContentLoaded', function () { boot(); }, false);
     else boot();
-    /* v0.0.7.e FIX: a defer script at the end of body can evaluate while
+    /* v0.0.7.f FIX: a defer script at the end of body can evaluate while
        readyState is still 'loading' WITH a body present — the DOMContentLoaded
        listener would then fire correctly, but some embedded webviews deliver
        'interactive' before body parsing finishes. The belt-and-braces fallback

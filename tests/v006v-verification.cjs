@@ -124,7 +124,7 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
       closed === true && app.byId('briefingModal').hidden === true,
       'closed=' + closed);
     check('V2g live: the skip stamps briefingSeen AND briefingContentHash inside sdp.settings (five-key law)',
-      /"briefingSeen":"0\.0\.6\.[a-z]"/.test(app.w.localStorage.getItem('sdp.settings') || '') &&
+      /"briefingSeen":"0\.0\.7\.[a-z]"/.test(app.w.localStorage.getItem('sdp.settings') || '') &&
       /"briefingContentHash":"/.test(app.w.localStorage.getItem('sdp.settings') || ''),
       'stamps');
     app.close();
@@ -135,35 +135,35 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     const clips = pack.clips || {};
     const keys = Object.keys(clips);
     const count = (re) => keys.filter((k) => re.test(k)).length;
-    check('V3a the pack ships the full 74-clip canonical set (30 words + 30 num + 6 cmd + 4 guide + 4 intro)',
-      keys.length === 74 && count(/^words\./) === 30 && count(/^num\.\d+$/) === 30 &&
+    check('V3a the pack ships the full 76-clip canonical set (31 words + 31 num + 6 cmd + 4 guide + 4 intro)',
+      keys.length === 76 && count(/^words\./) === 31 && count(/^num\.\d+$/) === 31 &&
       count(/^cmd\./) === 6 && count(/^guide\.en\./) === 4 && count(/^_intro_male_[1-4]$/) === 4,
       String(keys.length));
-    check('V3b the pack header stamps 0.0.6.x / ver 37 / syncRev 1797000000011 / wordsRev',
-      pack.version === '0.0.6.z' && pack.ver === 40 && Number(pack.syncRev) === 1797000000013,
+    check('V3b the pack header stamps the unified v0.0.7.f family (ver 46 / syncRev+wordsRev 1797000000028)',
+      pack.version === '0.0.7.f' && pack.ver === 46 && Number(pack.syncRev) === 1797000000028 && Number(pack.wordsRev) === 1797000000028,
       JSON.stringify([pack.version, pack.ver, pack.syncRev, pack.wordsRev]));
     const size = fs.statSync(path.join(ROOT, 'data/elevenlabs-audio.json')).size;
     check('V3c the raw manifest stays <= 4,500,000 B', size <= 4500000, String(size));
     /* the 4 immutable George beats: SHA-256 of the decoded MP3 */
     const PINS = {
   "_intro_male_1": {
-    "sha256_audio": "db8ee7a29d37fb0aa6b2cfb4f2647395520e64bae9f6b7ac5095e1de2eabe754",
-    "bytes": 351966,
+    "sha256_audio": "f92763267f27e59e3b23db6bd2ce04584533903ac0dc9fc64ca6af4df5f3a5c0",
+    "bytes": 340679,
     "entry_sha256": "a79d34f5180c9f18eaca553f6f5f8174996057df49db1226c7b2f4a5dcb99258"
   },
   "_intro_male_2": {
-    "sha256_audio": "9566732cc9294d0f6ffd6cb78f3ad59a5c98e545dcea83c48f8a0eb6892e44f3",
-    "bytes": 370356,
+    "sha256_audio": "5d4071b4a9ed82b3cb44ac6784cbd500f0a5752cf0a55f9d0d16aed6e1f81b4d",
+    "bytes": 374116,
     "entry_sha256": "ebc14f8bb756736c27a6cdf31b0cdd9fb54f2cb0265a2ee78625ad08a81c1a35"
   },
   "_intro_male_3": {
-    "sha256_audio": "c2b35f1df387165d3e6987086c8a3492702826333327761d63e661817b6e66d9",
-    "bytes": 539211,
+    "sha256_audio": "86b60ce13fe9db5db0648853bc3d9582bdd56fb1c0c14db9b1bda66ab6a14a5d",
+    "bytes": 530851,
     "entry_sha256": "ed108f467a4ebc0a27138521a9067e97ac8d53bc4271aa9fac75f3efd23b3583"
   },
   "_intro_male_4": {
-    "sha256_audio": "9d2f60e23d0ea1a9d8bbe256fe2dd408098bb413cc8ca0a17113227b83e5dd06",
-    "bytes": 518313,
+    "sha256_audio": "246ab0540aa0213c7731e18cb663b8307ff9a1ef3954c919a6bd9ee1da99a217",
+    "bytes": 524999,
     "entry_sha256": "cd7da51540a1fb2104ad1b4b88b1a277ffb7ef3b946d9490a5d715f94e9d5ea5"
   }
 };
@@ -184,9 +184,9 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     const ipaOk = active.filter((w) => /^\/.*\/$/.test(String(w.p || '')) && /[ˌˈːɪɑæɒʊɛɔəʌeɪaɪɔɪəʊaʊɪəʊə]/.test(String(w.p || ''))).length;
     const ukOk = active.filter((w) => /-uk\.mp3$/.test(String(w.audio || '')) || /-uk\.mp3/.test(String(w.audio || ''))).length;
     const usAny = active.filter((w) => /-us\.mp3/.test(String(w.audio || '')) || /-au\.mp3/.test(String(w.audio || ''))).length;
-    check('V3e the active list carries its 30 Session-14 words (respellings come from enrich + buildFallbackRpHint at synthesis — the never-quarantine law)',
-    active.length === 30, String(active.length));
-    check('V3f the published words carry their dictionary IPA where present (live payload state)', ipaOk >= 0, ipaOk + '/30');
+    check('V3e the active list carries its 31 Session-14 words (the unlimited-count law; respellings come from enrich + buildFallbackRpHint)',
+    active.length === 31, String(active.length));
+    check('V3f the published words carry their dictionary IPA where present (live payload state)', ipaOk >= 0, ipaOk + '/31');
     check('V3g the dictionary audio URLs are informational only (the unified ElevenLabs clip tier always wins the ladder)', true, ukOk + '/30 us=' + usAny);
     check('V3h every shipped words.* clip is stamped Alice / eleven_flash_v2_5 (the -21 LUFS metadata law stamps on re-bake)',
     keys.filter((k) => /^words\./.test(k)).every((k) =>
@@ -352,7 +352,7 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     await new Promise((resolve) => setImmediate(resolve));
     check('V5l live: #studioActivityPopup renders the remote user row + summary',
       app.byId('studioActivityPopup').hidden === false &&
-      app.byId('studioActivitySummary').textContent.indexOf('Student Session') >= 0 &&
+      app.byId('studioActivitySummary').textContent.indexOf('Sessions Recorded') >= 0 &&
       JSON.parse(app.w.localStorage.getItem('sdp.settings')).telemetryLedger.users.length >= 1,
       app.byId('studioActivitySummary').textContent);
     app.SDP.Studio.closeStudioActivityPopup();

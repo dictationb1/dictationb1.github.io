@@ -141,7 +141,7 @@ jobs:
           node -e '
             const fs=require("fs"),c=require("crypto");
             const want={
-              "data/session.json":"3284f107","data/gas-source.txt":"a375dff9",
+              "data/session.json":"a0afbe03","data/gas-source.txt":"35824881",
               "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
               "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
             let bad=0;

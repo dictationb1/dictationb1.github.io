@@ -52,22 +52,22 @@ const BUDGET = {
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
   'data/sdp-data-sync.js': 162000, /* v0.0.6.y */ /* v0.0.6.v: +repoFromOrigin +30 RP lexicon entries + words purge */
-  'data/sdp-audio-speech.js': 114000, /* v0.0.6.z: +Z1 locked-word-ladder silent_locked tier */ /* v0.0.6.y */ /* v0.0.6.x: +UklGR mime detect + gainLinear playback */
+  'data/sdp-audio-speech.js': 116000, /* v0.0.7.f: +tgVoiceError hooks */ /* v0.0.6.z: +Z1 locked-word-ladder silent_locked tier */ /* v0.0.6.y */ /* v0.0.6.x: +UklGR mime detect + gainLinear playback */
   'data/sdp-dictation-engine.js': 80000, /* v0.0.6.y */
   'data/sdp-ui-views.js': 305000, /* v0.0.6.z: +Z4 lock overlay paint +startDictation guard */
   /* v0.0.6.m: the studio gained the reviews/telemetry drawer and
      autoEnsureSystemClips; the ceiling moved with it, in lockstep with
      audit-v42.cjs. */
-  'data/studio.js': 470000, /* v0.0.7.e: +Access Lock panel */ /* v0.0.7.e: +B1 honest coverage + B2 sanitizers/variants + B4 publish-leave + auto-lock + guide wiring */ /* v0.0.7.a: +A1-A6 unlimited words, key pool, reuse library, quota dialog */ /* v0.0.6.z: +Z1 clone-removal revert +Z2 free-speech/quick-apply/transcription +Z4 audit banner +Z5 word-count & session-meta cards */ /* v0.0.6.y */
+  'data/studio.js': 480000, /* v0.0.7.f: +relay chain + mode selector + test buttons */ /* v0.0.7.e: +B1 honest coverage + B2 sanitizers/variants + B4 publish-leave + auto-lock + guide wiring */ /* v0.0.7.a: +A1-A6 unlimited words, key pool, reuse library, quota dialog */ /* v0.0.6.z: +Z1 clone-removal revert +Z2 free-speech/quick-apply/transcription +Z4 audit banner +Z5 word-count & session-meta cards */ /* v0.0.6.y */
   'data/data-meter.js': 26000,
   /* v0.0.5.b: ES5 transition hooks (lit cards, theme fade, accordion
      measurement, scroll reveals) - class toggles + custom properties only. */
   'data/sdp-morphe-hooks.js': 8000,
-  'data/session.json': 48880, /* v0.0.7.e root pin (exact: 31-word repaired Session 14) */
-  'data/config.json': 42000,
+  'data/session.json': 62961, /* v0.0.7.f root pin (exact: 31-word Session 14 + restored mobile phone variants) */
+  'data/config.json': 44000, /* v0.0.7.f: +accessLock.relayUrl + mode */
   'data/version.json': 2000,
-  'data/gas-source.txt': 27880, /* v0.0.7.e: +Access Lock backend (HMAC tokens, burnable codes, Telegram + ntfy) */ /* v0.0.6.v: +telemetry_sync/telemetry_pull */
-  'data/sdp-access-lock.js': 26000, /* v0.0.7.e: the client Access Lock gate (overlay + 4 s poll + 72 h grace + sdp:ready re-gate) */
+  'data/gas-source.txt': 48338, /* v0.0.7.f: the Telegram Command Center (doPost webhook, inline buttons, 10 commands, tg_event relay, setupTelegramWebhook) */
+  'data/sdp-access-lock.js': 30000, /* v0.0.7.f: +mode-aware overlay + relayUrl chain + firstGrant token handoff */
   /* v0.0.6.q: the pack carries the 131 authentic Alice clips PLUS the four
      committed real British-male George Project-Overview beats
      (_intro_male_1..4) baked in by the v0.0.6.q release so every student
@@ -77,11 +77,11 @@ const BUDGET = {
      4 guide + 4 George beats) — 141 stale Session-11 words purged, the 30
      active words re-baked to -21.0 LUFS. */
   'data/elevenlabs-audio.json': 4500000,
-  'data.html': 34000,
-  'data/index.html': 34000,
+  'data.html': 40000, /* v0.0.7.f: +telemetry disclosure */
+  'data/index.html': 40000, /* v0.0.7.f: +telemetry disclosure */
   'data/sdp-audio-normalize.js': 11000, /* v0.0.6.v: strict-ES5 BS.1770-4 normalizer */
-  'data/sdp-telemetry.js': 22000, /* v0.0.6.y */ /* v0.0.6.v: cross-device telemetry ledger */
-  'data/sdp-selfheal.js': 23000, /* v0.0.7.e: +B7 Student Troubleshooting Guide */ /* v0.0.6.v: student self-heal assistant T1-T7 */
+  'data/sdp-telemetry.js': 30000, /* v0.0.7.f: +pushEvent relay + rich deviceTelemetry */ /* v0.0.6.y */ /* v0.0.6.v: cross-device telemetry ledger */
+  'data/sdp-selfheal.js': 24000, /* v0.0.7.f: +troubleshoot telemetry */ /* v0.0.7.e: +B7 Student Troubleshooting Guide */ /* v0.0.6.v: student self-heal assistant T1-T7 */
   'data/sdp-studio-guide.js': 28000, /* v0.0.7.e B5: interactive spotlight tour engine */
   'sw.js': 18000, /* v0.0.6.x: +sdp-live-lab precache */
   'lab.html': 30000, /* v0.0.6.y */ /* v0.0.6.x: the Real-Time Live Voice & Clone Lab shell */
@@ -113,8 +113,8 @@ const PRESERVED_SHA = {
       intentional GitHub owner/repository metadata update. */
     /* v0.0.6.v: the intentional Session-12 RP repair publish + the GAS
        telemetry actions moved both pins in lockstep. */
-    'data/session.json': '3284f10743eea954b372cde468603d7176fb911fa9ad87ddefbe6f83e2403faf', /* v0.0.7.e: repaired 31-word Session 14 (clean UK audio + variants) */
-  'data/gas-source.txt': 'a375dff956bc085b955e1a0be2b71d681b62f2d42a0d6bfb120f83cef5083f53', /* v0.0.7.e: the Access Lock backend */
+    'data/session.json': 'a0afbe032326c32956f3f12da941d266447f5965ab4b1afb4e5aba5f42f23598', /* v0.0.7.f: 31-word Session 14 + restored mobile phone variants */
+  'data/gas-source.txt': '3582488149d019584d94c89dd8d4756d2637710f3532264e86f4176f5eb9dd67', /* v0.0.7.f: the Telegram Command Center backend */
   'assets/fonts/NotoSansSinhala-Regular.woff2': '23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280',
   'assets/fonts/NotoSansSinhala-Bold.woff2': 'bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e'
 };
@@ -127,6 +127,8 @@ const TEST_FILES = [
   'tests/test-pin.cjs', 'tests/package.json',
   /* v0.0.1.e registers three more gates: voice/guide, vault/sync, studio safety */
   'tests/voice-guide.cjs', 'tests/vault-sync.cjs', 'tests/studio-safety.cjs',
+  /* v0.0.7.f: the Telegram Command Center + relay e2e gates. */
+  'tests/v007f-telegram-center.cjs', 'tests/v007f-lock-relay-e2e.cjs',
   /* v0.0.7.e: the Access Lock gates. */
   'tests/v007e-gas-lock.cjs', 'tests/v007e-lock-ux.cjs', 'tests/v007e-studio-lock.cjs',
   /* v0.0.6.m: the dedicated briefing + feedback lab environment suite. */
@@ -149,7 +151,7 @@ const TEST_FILES = [
   'tests/v006z-verification.cjs'
 ];
 /* v0.0.6.m: +G5.14/G3.12 critical-fix + clean-header assertions */
-const TEST_BUDGET = 860000; /* v0.0.7.e: +v007e-gas-lock/lock-ux/studio-lock gates (21 suites) */ /* v0.0.6.z: +v006z-verification gate (18 suites) */ /* v0.0.6.y: +v006y-verification gate (17 suites) */ /* v0.0.6.x: +v006w-verification gate */ /* v0.0.6.q: the P1/P2/P3 + LAB1m/LAB1n2/LAB2m assertions + shot-v006q captures moved the ceiling in lockstep */
+const TEST_BUDGET = 940000; /* v0.0.7.f: +v007f-telegram-center + v007f-lock-relay-e2e (23 suites) */ /* v0.0.6.z: +v006z-verification gate (18 suites) */ /* v0.0.6.y: +v006y-verification gate (17 suites) */ /* v0.0.6.x: +v006w-verification gate */ /* v0.0.6.q: the P1/P2/P3 + LAB1m/LAB1n2/LAB2m assertions + shot-v006q captures moved the ceiling in lockstep */
 
 /* contract: docs/ARCHITECTURE_MAP.md §H2 — retired v42–v60 ids/strings must be
  * gone from every shipped byte, never merely hidden with display:none (W8). */
@@ -307,10 +309,10 @@ function pending(p) {
   if (exists('data/version.json')) {
     const v = JSON.parse(readText('data/version.json'));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.6.m ships ver 27 / schema 26 / settingsRev 42
-    const ok = v.ver === 45 && v.appVersion === '0.0.7.e' && v.version === '0.0.7.e' &&
-      v.schema === 45 && v.settingsRev === 78 && String(v.session) === '14';
-    record('version.json carries the v0.0.7.e schema', ok, JSON.stringify(v).slice(0, 220));
-    record('version.json pins syncRev 1797000000027', Number(v.syncRev) === 1797000000027, JSON.stringify(v).slice(0, 200));
+    const ok = v.ver === 46 && v.appVersion === '0.0.7.f' && v.version === '0.0.7.f' &&
+      v.schema === 46 && v.settingsRev === 79 && String(v.session) === '14';
+    record('version.json carries the v0.0.7.f schema', ok, JSON.stringify(v).slice(0, 220));
+    record('version.json pins syncRev 1797000000028', Number(v.syncRev) === 1797000000028, JSON.stringify(v).slice(0, 200));
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R14.1 — the module constant and the
        shipped pointer must never disagree, or a device re-adopts stale classSettings. */
     const syncSrc = exists('data/sdp-data-sync.js') ? readText('data/sdp-data-sync.js') : '';
@@ -330,8 +332,8 @@ function pending(p) {
       'preserved payload trimmed');
     record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.5.c bump set
-    record('config.json carries v0.0.7.e version fields',
-      c.ver === 45 && c.appVersion === '0.0.7.e' && c.version === '0.0.7.e' && c.schema === 45 && c.settingsRev === 78,
+    record('config.json carries v0.0.7.f version fields',
+      c.ver === 46 && c.appVersion === '0.0.7.f' && c.version === '0.0.7.f' && c.schema === 46 && c.settingsRev === 79,
       JSON.stringify([c.ver, c.appVersion, c.schema, c.settingsRev]));
     record('config.json keeps the credits block verbatim',
       c.credits.en === 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini' &&
@@ -481,7 +483,7 @@ function pending(p) {
   record('index.html loads the nine modules in the fixed R10 order', ordered, JSON.stringify(positions));
   record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
   // contract: docs/ARCHITECTURE_MAP.md §R1 boot target is a single TARGET constant
-  record('index.html declares the v0.0.7.e boot target', html.indexOf("'0.0.7.e'") > 0 || html.indexOf('"0.0.7.e"') > 0);
+  record('index.html declares the v0.0.7.f boot target', html.indexOf("'0.0.7.f'") > 0 || html.indexOf('"0.0.7.f"') > 0);
   const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings', 'tab-studio'];
   record('index.html contains the six tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
   const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings', 'screen-studio'];
@@ -566,9 +568,9 @@ function pending(p) {
     record('index.html ships exactly the two spotlight buttons (start / exit)',
       /id="btnGuideSkipStart"/.test(html) && /id="btnGuideClose"/.test(html) &&
       !/guideNextStep/.test(html) && !/guideReplayStep/.test(html) && !/guidePauseVoice/.test(html));
-    record('index.html boots at the v0.0.7.e target', /var TARGET = '0\.0\.7\.e'/.test(html));
-    record('service worker pins the v0.0.7.e s43 shell caches',
-      /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.e-s44-shell'/.test(sw));
+    record('index.html boots at the v0.0.7.f target', /var TARGET = '0\.0\.7\.f'/.test(html));
+    record('service worker pins the v0.0.7.f s45 shell caches',
+      /SW_VERSION = 'sdp-v0\.0\.7\.f-s45'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.f-s45-shell'/.test(sw));
     /* W7: the studio must stamp whatever SDP.version says — never a frozen literal. */
     var studioCode = readText('data/studio.js').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     record('studio.js never hardcodes a release literal (reads SDP.version)',
@@ -588,28 +590,28 @@ function pending(p) {
     }
     var man = exists('manifest.webmanifest') ? readText('manifest.webmanifest') : '';
     record('manifest start_url carries the PWA source tag', /source=pwa/.test(man));
-    record('manifest start_url and shortcuts carry v0.0.7.e',
-      /"start_url":"\.\/\?v=0.0.7.e/.test(man) &&
-      (man.match(/v=0.0.7.e/g) || []).length >= 3, (man.match(/v=0.0.7.e/g) || []).length);
+    record('manifest start_url and shortcuts carry v0.0.7.f',
+      /"start_url":"\.\/\?v=0.0.7.f/.test(man) &&
+      (man.match(/v=0.0.7.f/g) || []).length >= 3, (man.match(/v=0.0.7.f/g) || []).length);
     /* D15 (v0.0.2.b): every versioned surface must agree, byte for byte, on the
        release literal and on ver 9 — no file may drift on its own. */
-    var app = '0.0.7.e';
+    var app = '0.0.7.f';
     var agree = {
       'index.html': html.indexOf(app) > 0,
       'data.html': exists('data.html') ? readText('data.html').indexOf(app) > 0 : false,
-      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 45;/.test(sync),
+      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 46;/.test(sync),
       'sw.js': sw.indexOf('sdp-v' + app) > 0,
       'manifest.webmanifest': man.indexOf(app) > 0,
-      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 45,
-      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 45
+      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 46,
+      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 46
     };
     var drifted = Object.keys(agree).filter(function (k) { return !agree[k]; });
-    record('D15 all seven versioned surfaces agree on 0.0.7.e / ver 43',
+    record('D15 all seven versioned surfaces agree on 0.0.7.f / ver 46',
       drifted.length === 0, drifted.join(', ') + ' ' + JSON.stringify(agree));
     var pack = JSON.parse(readText('data/elevenlabs-audio.json'));
-    record('voice pack carries the v0.0.7.e header',
-      pack.version === '0.0.7.e' && pack.appVersion === '0.0.7.e' && pack.ver === 45 && pack.schema === 45 &&
-      pack.settingsRev === 78 && Number(pack.syncRev) === 1797000000027 &&
+    record('voice pack carries the v0.0.7.f header',
+      pack.version === '0.0.7.f' && pack.appVersion === '0.0.7.f' && pack.ver === 46 && pack.schema === 46 &&
+      pack.settingsRev === 79 && Number(pack.syncRev) === 1797000000028 &&
       pack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && pack.hashAlgo === 'sha1',
       JSON.stringify([pack.version, pack.ver, pack.settingsRev, pack.syncRev]));
     /* v0.0.6.q PILLAR 2 law: the shipped pack carries EXACTLY the 135
@@ -751,7 +753,7 @@ function pending(p) {
     record('A6c the floating Beta stamp and Beta pill are gone for good',
       !/id="sdpBetaStamp"/.test(html) && !/id="sdpBetaPill"/.test(html) &&
       !/\.beta-stamp/.test(css) && !/\.beta-pill/.test(css) &&
-      /BETA_SUBVERSION = '0\.0\.7\.e\.beta'/.test(views) &&
+      /BETA_SUBVERSION = '0\.0\.7\.f\.beta'/.test(views) &&
       /function betaActive/.test(views) && /function applyBetaChannel/.test(views));
   })();
 
@@ -841,9 +843,9 @@ function pending(p) {
         return c(/^num\.\d+$/) === 31 && c(/^cmd\./) === 6 && c(/^guide\.en\./) === 4 && c(/^_intro_male_[1-4]$/) === 4 && c(/^words\./) === 31 && pk.length === 76;
       })());
     var swText1 = readText('sw.js');
-    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s43 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
-      /SW_VERSION = 'sdp-v0\.0\.7\.e-s44'/.test(swText1) &&
-      /var SW_RELEASE = '0\.0\.7\.e';/.test(swText1) &&
+    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s45 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
+      /SW_VERSION = 'sdp-v0\.0\.7\.f-s45'/.test(swText1) &&
+      /var SW_RELEASE = '0\.0\.7\.f';/.test(swText1) &&
       /function staleWhileRevalidateDataJson/.test(swText1) &&
       /x-sdp-release/.test(swText1) &&
       /isPointer = \/\\\/data\\\/version\\\.json\$\/i\.test\(url\.pathname\)/.test(swText1) &&

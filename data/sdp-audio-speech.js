@@ -184,6 +184,18 @@
     return el;
   }
 
+  /* v0.0.7.f Pillar 4: the voice/audio TROUBLESHOOTING Telegram relay —
+     MP3 decode failures, missing/tiny clips (<512 B), autoplay blocks and
+     unexpected fallback voices reach the Lecturer instantly with the exact
+     clip key + device context (the GAS side throttles and batches). */
+  function tgVoiceError(detail, clipKey) {
+    try {
+      if (global.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
+        SDP.Telemetry.pushEvent('voice_error', { detail: String(detail || 'voice failure'), clipKey: String(clipKey || ''), appVersion: String(global.SDP && SDP.version || '') });
+      }
+    } catch (e) {}
+  }
+
   function stopKeepAlive() {
     if (state.keepAlive) {
       try { global.clearInterval(state.keepAlive); } catch (e) {}
@@ -635,6 +647,7 @@
             state.activeUtter = null;
             var fallbackUrl = str(opts.fallbackAudioUrl);
             if (fallbackUrl) {
+              tgVoiceError('Voice watchdog fired — unexpected fallback voice recording used (engine silent after 800 ms)', fallbackUrl.substring(0, 60));
               playUrl(fallbackUrl, { rate: rate, volume: volume, timeoutMs: 9000 }, function () {
                 if (myId !== state.queueId) return;
                 next();
@@ -780,7 +793,7 @@
       el.volume = volume;
       try { el.playbackRate = Math.min(1.2, Math.max(0.7, Number(opts.rate || conf.rate) || 1)); } catch (e) {}
       el.onended = function () { finish(true); };
-      el.onerror = function () { finish(false); };
+      el.onerror = function () { tgVoiceError('MP3 decode/playback failure', str(srcUrl).replace(/^.*\/([^\/?]+)(\?.*)?$/, '$1').substring(0, 60)); finish(false); };
       /* v0.0.6.m (Pillar 1): the briefing narration needs the clip's real
          duration (word-flow karaoke timing) and a positive "audio actually
          started" signal (the fresh-Chrome autoplay handshake). */
@@ -837,6 +850,7 @@
               }
               var na = new Error('autoplay_blocked');
               na.autoplayBlocked = true;
+              tgVoiceError('Audio autoplay blocked by the browser (NotAllowedError) — student must tap once');
               cb(na);
             }
             return;
@@ -1065,7 +1079,7 @@
          tick + no-store bust so a proven publish can never be masked by a
          stale cache. */
       var fresh = force === true;
-      var url = './data/elevenlabs-audio.json?v=0.0.7.e' + (fresh ? '&t=' + nowMs() : '');
+      var url = './data/elevenlabs-audio.json?v=0.0.7.f' + (fresh ? '&t=' + nowMs() : '');
       global.fetch(url, { cache: fresh ? 'no-store' : 'default' })
         .then(function (res) { return res && res.ok ? res.json() : null; })
         .then(function (data) {
@@ -1887,7 +1901,13 @@
         }
         if (SYSTEM_CLIP_RE.test(bare) || bare.indexOf('_intro_') === 0) { report.clean.push(k); continue; }
         if (!active[wkey] && !active[bare]) { report.orphaned.push(k); continue; }
-        if (!isValidMp3B64(isObj(entry) ? entry.b64 : entry)) { report.corrupted.push(k); continue; }
+        if (!isValidMp3B64(isObj(entry) ? entry.b64 : entry)) {
+          report.corrupted.push(k);
+          /* v0.0.7.f Pillar 4: a missing or <512 B clip reaches the Lecturer
+             instantly with the exact clip key. */
+          tgVoiceError('Missing or corrupt/tiny clip (below the 512 B audio minimum)', k);
+          continue;
+        }
         if (expectedVid && isObj(entry) && str(entry.voiceId) && str(entry.voiceId) !== expectedVid) { report.voiceMismatch.push(k); continue; }
         if (isObj(entry) && Number(entry.wordsRev) && Number(src.wordsRev) && Number(entry.wordsRev) < Number(src.wordsRev)) { report.stale.push(k); continue; }
         report.clean.push(k);

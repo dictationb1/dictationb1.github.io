@@ -6,15 +6,15 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.7.e';
+  SDP.version = '0.0.7.f';
   SDP.build = '2026-11-21';
-  SDP.ver = 45; /* v0.0.7.e */
+  SDP.ver = 46; /* v0.0.7.f */
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.7.e'; /* v0.0.7.e */
+  var APP_VERSION = '0.0.7.f'; /* v0.0.7.f */
   var SCHEMA = 42;
-  var SETTINGS_REV = 78; /* v0.0.7.e */
+  var SETTINGS_REV = 79; /* v0.0.7.f */
   /* D1 guard: the in-session upgrade reload fires at most once per version. */
   var appVersionChanged = false;
   /* D5 guard: visibilitychange / focus are registered at most once per load. */
@@ -145,6 +145,20 @@
   function parseRemoteAppVer(v) {
     if (isObj(v)) return str(v.appVersion || (isObj(v.version) ? (v.version.appVersion || v.version.version) : v.version));
     return str(typeof v === 'string' ? v : '');
+  }
+
+  /* v0.0.7.f (BUG-F4): the in-session upgrade fires ONLY when the remote
+     appVersion is STRICTLY NEWER (semantic compare) — a remote main that is
+     OLDER than the running build (a pre-release PR not yet merged) is NEVER
+     treated as an upgrade, so the app can never auto-downgrade-reload. */
+  function versionNewer(remote, local) {
+    var r = String(remote || '').split('.'), l = String(local || '').split('.');
+    for (var i = 0; i < 3; i++) {
+      var rv = parseInt(r[i], 10) || 0, lv = parseInt(l[i], 10) || 0;
+      if (rv > lv) return true;
+      if (rv < lv) return false;
+    }
+    return false;
   }
 
   var Data = {
@@ -2150,7 +2164,7 @@
         var targetSyncRev = Number(remote.syncRev || 0);
         /* SYNC-04 / D17: share one parser for the remote app version. */
         var remoteAppVer = parseRemoteAppVer(remote);
-        var appChanged = !!remoteAppVer && remoteAppVer !== APP_VERSION;
+        var appChanged = !!remoteAppVer && remoteAppVer !== APP_VERSION && versionNewer(remoteAppVer, APP_VERSION);
         state.lastCheck = nowMs();
         var primarySource = useRaw ? 'raw' : 'origin';
         state.lastCheckSource = primarySource;
