@@ -332,7 +332,8 @@ function get(rt, param) { return rt.context.handleGet({ parameter: param }); }
   check('L9b tg_callback surfaces the 1-tap approve decision with the device id',
     good.ok === true && good.decision === 'approve' && good.device === 'dev-tg-1', JSON.stringify(good));
   const empty = rt.context.handleGet({ parameter: { action: 'tg_callback', secret_token: 'tgwhs_test_secret' }, postData: { contents: '{}' } });
-  check('L9c a payload without callback_query is refused cleanly', empty.ok === false && empty.err === 'no callback_query', JSON.stringify(empty));
+  check('L9c a payload without callback_query/message is ignored cleanly (never a crash, never an approval)',
+    empty.ok === true && empty.note === 'ignored update', JSON.stringify(empty));
   const tg2 = rt.urlFetchLog.filter((f) => f.url.indexOf('api.telegram.org') >= 0);
   check('L9d the surfaced decision reaches the owner channel (audit trail)', tg2.length >= 1, JSON.stringify(tg2.length));
 }

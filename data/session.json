@@ -307,7 +307,7 @@
     {
       "id": "list_session_8_feelings",
       "name": "Session 14 - Communications & Technology",
-      "version": "0.0.7.e",
+      "version": "0.0.7.f",
       "published": true,
       "session": "Session 14",
       "date": "2026-10-29",
@@ -590,7 +590,11 @@
           "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
           "si": "ජංගම දුරකථනය",
           "s": "I called you on my mobile phone, but you did not answer.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
+          "pronunciationVariants": [
+            "/ˈməʊ.baɪl fəʊn/",
+            "/ˌməʊ.baɪl ˈfəʊn/"
+          ]
         }
       ]
     },
@@ -896,11 +900,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "0.0.7.e",
-  "updatedAt": "2026-11-21T15:07:55.250Z",
-  "version": "0.0.7.e",
-  "buildDate": "2026-11-20",
-  "settingsRev": 81,
+  "appVersion": "0.0.7.f",
+  "updatedAt": "2026-11-21T16:00:00.000Z",
+  "version": "0.0.7.f",
+  "buildDate": "2026-11-21",
+  "settingsRev": 79,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -1209,7 +1213,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000030,
+  "syncRev": 1797000000028,
   "words": [
     {
       "w": "communications",
@@ -1488,11 +1492,15 @@
       "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
       "si": "ජංගම දුරකථනය",
       "s": "I called you on my mobile phone, but you did not answer.",
-      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
+      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
+      "pronunciationVariants": [
+        "/ˈməʊ.baɪl fəʊn/",
+        "/ˌməʊ.baɪl ˈfəʊn/"
+      ]
     }
   ],
   "versionFamily": "9.0.0",
-  "wordsRev": 1797000000027,
+  "wordsRev": 1797000000028,
   "wordCount": 31,
   "wordCountMode": "custom"
 }

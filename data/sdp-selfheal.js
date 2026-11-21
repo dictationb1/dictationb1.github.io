@@ -169,6 +169,13 @@
         result = 'dismissed';
       }
     } catch (e) { result = 'error'; }
+    /* v0.0.7.f Pillar 4: every 1-tap self-heal fix run reaches the Lecturer's
+       Telegram (the GAS side throttles + batches to protect the quotas). */
+    try {
+      if (global.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
+        SDP.Telemetry.pushEvent('troubleshoot', { action: '1-tap fix: ' + act, detail: type + ' → ' + result, appVersion: String(global.SDP && global.SDP.version || '') });
+      }
+    } catch (eTG) {}
     try {
       if (SDP.Diagnostics && SDP.Diagnostics.log) SDP.Diagnostics.log('selfheal_action', { type: type, action: act, result: result });
     } catch (e2) {}
@@ -313,6 +320,12 @@
     if (!m) return false;
     var host = byId('sdpTroubleshootBody');
     if (!host) return false;
+    /* v0.0.7.f Pillar 4: the guide-open event reaches the Lecturer. */
+    try {
+      if (global.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
+        SDP.Telemetry.pushEvent('troubleshoot', { action: 'guide opened', detail: 'section ' + String(section || 'general'), appVersion: String(global.SDP && global.SDP.version || '') });
+      }
+    } catch (eTG) {}
     var html = '', i, k;
     for (i = 0; i < tsOrder.length; i++) {
       k = tsOrder[i];

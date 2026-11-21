@@ -2380,19 +2380,40 @@
  }
  /* ══ Card 3 — classroom settings */
 
- /* ══ v0.0.7.e — PRIVATE WEB APP ACCESS LOCK (Architecture D) ════════════
+ /* ══ v0.0.7.f — PRIVATE WEB APP ACCESS LOCK (Architecture D) ════════════
     The complete control panel lives STRICTLY inside DRAWER C (Advanced
     Tools & Settings) — never at the top of the Studio, so the daily words
     workflow stays clean. The Master Toggle, password/PIN, live roster and
     one-time codes all ride the Apps Script relay (gasLockRelay). */
  function accessLockCardMarkup() {
   var st = accessLockSnapshot();
+  var mode = str(st.mode || 'approval+code');
   return '<section id="studioCardAccessLock" class="studio-card studio-card-accesslock">' +
    '<h4 class="studio-h4"><span class="studio-step-tag">LOCK</span>🔐 Private Web App Access Lock <span class="studio-al-pill" id="studioAlPill" data-state="' + (st.on ? 'on' : 'off') + '">' + (st.on ? 'LOCK ON' : 'LOCK OFF') + '</span></h4>' +
    '<p class="studio-hint" data-i18n="studioAlIntro">' + T('studioAlIntro') + '</p>' +
    '<div class="studio-al-master">' +
    '<label class="checkline" for="studioAlMaster"><input type="checkbox" id="studioAlMaster"' + (st.on ? ' checked' : '') + '> <span data-i18n="studioAlMaster">' + T('studioAlMaster') + '</span></label>' +
    btn('btnAlApplyMaster', t('studioAlApply', 'Apply Master Lock'), 'btn-primary', 'data-atomic-al="1"', 'lock') +
+   '</div>' +
+   /* v0.0.7.f BUG-F3: the Unlock Policy mode selector — (a) phone approval only,
+      (b) phone approval + one-time codes / password, (c) open mode (LOCK OFF). */
+   '<div class="studio-al-grid">' +
+   '<div class="studio-al-cell">' +
+   '<label class="lbl" for="studioAlMode" data-i18n="studioAlModeLbl">' + t('studioAlModeLbl', 'Unlock Policy Mode') + '</label>' +
+   '<select id="studioAlMode" class="input">' +
+   '<option value="approval"' + (mode === 'approval' ? ' selected' : '') + '>' + t('studioAlModeApproval', '📱 Phone Approval Only (no codes)') + '</option>' +
+   '<option value="approval+code"' + (mode === 'approval+code' ? ' selected' : '') + '>' + t('studioAlModeBoth', '📱 + 🔢 One-Time Codes / Password') + '</option>' +
+   '<option value="open"' + (mode === 'open' ? ' selected' : '') + '>' + t('studioAlModeOpen', '🔓 Open Mode (Lock OFF)') + '</option>' +
+   '</select>' +
+   btn('btnAlApplyMode', t('studioAlApplyMode', 'Apply Unlock Policy'), 'btn-ghost', '', 'gear') +
+   '</div>' +
+   /* v0.0.7.f BUG-F1: the 1-tap relay + Telegram verification, right inside the lock panel. */
+   '<div class="studio-al-cell">' +
+   '<label class="lbl" for="studioAlRelayProbe" data-i18n="studioAlRelayLbl">' + t('studioAlRelayLbl', 'Relay & Telegram health') + '</label>' +
+   btn('btnAlSaveTestRelay', t('studioAlSaveTest', '💾 Save & Test Relay + Telegram'), 'btn-ghost', '', 'send') +
+   btn('btnAlTestTelegram', t('studioAlTestTg', '🔔 Send Test Telegram Alert'), 'btn-ghost', '', 'bell') +
+   '<p id="studioAlRelayProbe" class="studio-msg" role="status" aria-live="polite"></p>' +
+   '</div>' +
    '</div>' +
    '<div class="studio-al-grid">' +
    '<div class="studio-al-cell">' +
@@ -2421,24 +2442,28 @@
    '<p class="studio-hint" data-i18n="studioAlSecretsLaw">' + T('studioAlSecretsLaw') + '</p>' +
    '</section>';
  }
- /* v0.0.7.e: the cached lock snapshot driving the pill + toggle paint. */
+ /* v0.0.7.f: the cached lock snapshot driving the pill + toggle paint. */
+ /* v0.0.7.f BUG-F3: the snapshot also carries the unlock policy mode. */
  function accessLockSnapshot() {
-  var snap = { on: false, hasPassword: false, hasPin: false };
+  var snap = { on: false, hasPassword: false, hasPin: false, mode: 'approval+code' };
   try {
    var cfg = sync() && sync().config ? sync().config() : null;
    if (cfg && isObj(cfg.accessLock)) {
     snap.on = !!cfg.accessLock.on;
     snap.hasPassword = !!cfg.accessLock.hasPassword;
     snap.hasPin = !!cfg.accessLock.hasPin;
+    snap.mode = str(cfg.accessLock.mode || 'approval+code');
    }
   } catch (e) {}
   try {
    var saved = dataSettings().accessLockCloud || null;
    if (saved && typeof saved.on !== 'undefined') snap.on = !!saved.on;
+   if (saved && saved.mode) snap.mode = str(saved.mode);
   } catch (e2) {}
+  if (['approval', 'approval+code', 'open'].indexOf(snap.mode) < 0) snap.mode = 'approval+code';
   return snap;
  }
- /* v0.0.7.e: the dismissible FIRST-TIME notice banner (EN|SI). Shown the first
+ /* v0.0.7.f: the dismissible FIRST-TIME notice banner (EN|SI). Shown the first
     time the owner unlocks the Studio while the Access Lock is unconfigured;
     the Dismiss is persisted via sdp.settings (five-key law) so it never nags
     again once dismissed or configured. */
@@ -2462,18 +2487,54 @@
   if (node) node.parentNode.removeChild(node);
   msg('Notice dismissed — configure the Access Lock anytime under Advanced Settings. දැනුම්දීම වසා දමන ලදී.', 'ok');
  }
- /* v0.0.7.e: the Apps Script lock relay — posts with the Studio gasUrl secret
-    (public endpoint; carries NO raw secret material in the body). */
- function gasLockRelay(body, cb) {
-  cb = cb || noop;
+ /* v0.0.7.f BUG-F1 FIX: the Apps Script lock relay — reads the relay URL from
+    ALL sources in strict priority order (#studioGasUrl.value → ST.secrets.gasUrl
+    → sdp.settings.gasUrl → cfg.accessLock.relayUrl) so the Access Lock panel
+    works the instant the owner pastes the URL, even before a vault re-save.
+    The /exec URL is a PUBLIC endpoint by design — it carries ZERO secrets. */
+ function gasRelayUrl() {
   var url = '';
-  try { url = str(ST.secrets.gasUrl); } catch (e0) {}
+  try {
+   var el = byId('studioGasUrl');
+   if (el && str(el.value).indexOf('http') === 0) url = str(el.value).trim();
+  } catch (eD) {}
+  if (!url) { try { url = str(ST.secrets.gasUrl); } catch (e0) {} }
+  if (!url) {
+   try {
+    var s = dataSettings();
+    if (s && s.gasUrl) url = str(s.gasUrl);
+   } catch (eS) {}
+  }
   if (!url) {
    try {
     var cfg = sync() && sync().config ? sync().config() : null;
     if (cfg && cfg.accessLock && cfg.accessLock.relayUrl) url = str(cfg.accessLock.relayUrl);
    } catch (e1) {}
   }
+  return url;
+ }
+ /* v0.0.7.f BUG-F1 FIX: persist the pasted relay URL immediately (input/blur/
+    Save & Test) into ST.secrets + sdp.settings.gasUrl (the five-key law) so it
+    survives reload without a vault unlock, and every student phone receives it
+    through data/config.json accessLock.relayUrl on the next publish. */
+ function saveRelayUrlQuiet() {
+  var url = '';
+  try {
+   var el = byId('studioGasUrl');
+   if (el && str(el.value).indexOf('http') === 0) url = str(el.value).trim();
+  } catch (e) {}
+  if (!url) return false;
+  try { if (!isObj(ST.secrets)) ST.secrets = {}; ST.secrets.gasUrl = url; } catch (e2) {}
+  try {
+   var s = dataSettings();
+   s.gasUrl = url;
+   dataSaveSettings({ gasUrl: url });
+  } catch (e3) {}
+  return true;
+ }
+ function gasLockRelay(body, cb) {
+  cb = cb || noop;
+  var url = gasRelayUrl();
   if (!url) { cb(new Error('set the Apps Script relay URL in Advanced Tools first')); return false; }
   body = body || {};
   if (!body.pin && ST.pin) body.pin = ST.pin;
@@ -2645,6 +2706,82 @@
   var card = byId('studioCardAccessLock');
   if (card && card.scrollIntoView) { try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e0) { try { card.scrollIntoView(); } catch (e1) {} } }
   paintStudioActionAuditBanner('Access Lock panel opened', 'Advanced Settings → Private Web App Access Lock');
+ }
+
+ /* ══ v0.0.7.f BUG-F1/F3: Save & Test Relay + Telegram, the Unlock Policy
+    apply, and the 1-tap Telegram alert test — all inside the lock panel. ══ */
+ function alRelayProbeMsg(text, state) {
+  var node = byId('studioAlRelayProbe');
+  if (node) { node.textContent = str(text); node.setAttribute('data-state', state || ''); }
+ }
+ function alSaveTestRelay() {
+  var saved = saveRelayUrlQuiet();
+  if (!saved) { alRelayProbeMsg(t('studioAlRelayMissing'), 'bad'); accessLockMsg(T('studioAlRelayMissing'), 'bad'); return; }
+  withBusy('btnAlSaveTestRelay', function (d) {
+   gasLockRelay({ action: 'ping' }, function (err, out) {
+    if (err || !out || !out.ok) {
+     alRelayProbeMsg('❌ Relay unreachable — check the URL and re-deploy the Web App.', 'bad');
+     accessLockMsg('❌ Relay test failed — the Apps Script URL did not answer ping.', 'bad');
+     d(); return;
+    }
+    /* relay answered: probe the lock state, then fire the Telegram test alert */
+    gasLockRelay({ action: 'access_state' }, function (err2, st) {
+     var lockLine = (st && st.lock) ? ('Lock ' + (st.lock.on ? 'ON' : 'OFF') + ' · mode ' + str(st.lock.mode || 'approval+code')) : 'state unknown';
+     gasLockRelay({ action: 'tg_test' }, function (err3, tg) {
+      if (tg && tg.ok && tg.telegram) {
+       alRelayProbeMsg('✅ Relay OK (' + lockLine + ') · ✅ Telegram alert delivered — check your phone!', 'ok');
+       accessLockMsg('✓ Relay + Telegram verified: ' + lockLine + '. The test alert was delivered to your Telegram.', 'ok');
+       paintStudioActionAuditBanner('Relay + Telegram verified', lockLine);
+      } else {
+       alRelayProbeMsg('✅ Relay OK (' + lockLine + ') · ⚠️ Telegram not verified — set TG_BOT_TOKEN + TG_CHAT_ID in Apps Script Script Properties, then tap Test again.', 'warn');
+       accessLockMsg('Relay OK but Telegram failed — check TG_BOT_TOKEN / TG_CHAT_ID Script Properties.', 'bad');
+      }
+      d();
+     });
+    });
+   });
+  });
+ }
+ function alTestTelegram() {
+  withBusy('btnAlTestTelegram', function (d) {
+   gasLockRelay({ action: 'tg_test' }, function (err, out) {
+    if (err || !out || !out.ok) { alRelayProbeMsg(t('studioAlRelayMissing'), 'bad'); accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    if (out.telegram) {
+     alRelayProbeMsg('🔔 Test Telegram alert delivered — check your phone!', 'ok');
+     accessLockMsg('✓ Test Telegram alert delivered to your chat.', 'ok');
+     paintStudioActionAuditBanner('Telegram test alert', 'Apps Script + Sheets + Telegram round trip');
+    } else {
+     alRelayProbeMsg('⚠️ Apps Script answered but the Telegram send failed — check TG_BOT_TOKEN / TG_CHAT_ID.', 'warn');
+     accessLockMsg('Telegram send failed — check the Script Properties.', 'bad');
+    }
+    d();
+   });
+  });
+ }
+ function alApplyMode() {
+  var node = byId('studioAlMode');
+  var mode = str(node && node.value) || 'approval+code';
+  withBusy('btnAlApplyMode', function (d) {
+   gasLockRelay({ action: 'set_lock_config', mode: mode }, function (err, out) {
+    if (err || !out || !out.ok) { accessLockMsg(T('studioAlRelayMissing'), 'bad'); d(); return; }
+    var lockOn = !!(out.lock && out.lock.on);
+    try {
+     dataSaveSettings({ accessLockCloud: { on: lockOn, hasPassword: !!(out.lock && out.lock.hasPassword), mode: str(out.lock && out.lock.mode || mode) } });
+    } catch (eS) {}
+    try {
+     var cfg = sync() && sync().config ? sync().config() : null;
+     if (cfg && isObj(cfg.accessLock)) { cfg.accessLock.on = lockOn; cfg.accessLock.mode = str(out.lock && out.lock.mode || mode); }
+     else if (cfg) cfg.accessLock = { on: lockOn, mode: str(out.lock && out.lock.mode || mode), graceHours: 72 };
+    } catch (eC) {}
+    paintAccessLockPanel();
+    var verb = mode === 'open' ? '🔓 Open Mode — the web app is open to everyone (Lock OFF)' :
+     mode === 'approval' ? '📱 Phone Approval Only — students request access, no codes' :
+     '📱+🔢 Approval + One-Time Codes / Password';
+    paintStudioActionAuditBanner('Unlock policy → ' + mode, verb);
+    accessLockMsg('✓ Unlock Policy applied: ' + verb, 'ok');
+    d();
+   });
+  });
  }
 
  function settingsCardMarkup() {
@@ -3255,7 +3392,7 @@
  }
  function unlockedMarkup() {
   return securityBarMarkup() +
-   /* v0.0.7.e: the dismissible first-time Access Lock notice (EN|SI). */
+   /* v0.0.7.f: the dismissible first-time Access Lock notice (EN|SI). */
    studioFirstTimeNoticeMarkup() +
    /* ══ v0.0.7.a A4 — the instant post-action audit banner + compact status
       pills: key pool chip (A2), classroom lock, voice lock, coverage. ══ */
@@ -3701,7 +3838,7 @@
     if (drawer) { drawer.open = true; }
     try { paintKeyPoolChip(); } catch (eC) {}
    });
-   /* ══ v0.0.7.e — Private Web App Access Lock wiring ═════════════════ */
+   /* ══ v0.0.7.f — Private Web App Access Lock wiring ═════════════════ */
    onStudio('btnAlApplyMaster', 'click', function () { alApplyMaster(); });
    onStudio('btnAlSetPassword', 'click', function () { alSetPassword(); });
    onStudio('btnAlSetPin', 'click', function () { alSetPin(); });
@@ -3709,6 +3846,14 @@
    onStudio('btnAlLockAllNow', 'click', function () { alLockAllNow(); });
    onStudio('btnAlNoticeJump', 'click', function () { alJumpToPanel(); });
    onStudio('btnAlNoticeDismiss', 'click', function () { dismissAccessNotice(); });
+   /* v0.0.7.f BUG-F1/F3: Save & Test Relay + Telegram, the Unlock Policy apply
+      and the 1-tap Telegram alert test — plus the quiet auto-save of the
+      pasted relay URL on input/blur so the panel works before a vault save. */
+   onStudio('btnAlSaveTestRelay', 'click', function () { alSaveTestRelay(); });
+   onStudio('btnAlTestTelegram', 'click', function () { alTestTelegram(); });
+   onStudio('btnAlApplyMode', 'click', function () { alApplyMode(); });
+   onStudio('studioGasUrl', 'input', function () { try { saveRelayUrlQuiet(); } catch (eR1) {} });
+   onStudio('studioGasUrl', 'blur', function () { try { saveRelayUrlQuiet(); } catch (eR2) {} });
    onStudio('studioAlRoster', 'click', function (ev) {
     var ev2 = ev || global.event, target = ev2 && (ev2.target || ev2.srcElement);
     var op = target && target.getAttribute ? str(target.getAttribute('data-al')) : '';
@@ -6149,6 +6294,20 @@ function priorIPAFor(w) {
   body.syncRev = Number(rev);
   body.updatedAt = new Date().toISOString();
   if (envelope) body.encVault = str(envelope);
+  /* v0.0.7.f BUG-F1 FIX: the settings-only publish path ALSO stamps the
+     public relay URL + lock state (student phones learn the relay on boot). */
+  try {
+   var alUrl2 = gasRelayUrl();
+   var alSnap2 = accessLockSnapshot();
+   if (isObj(body.accessLock)) {
+    if (alUrl2) body.accessLock.relayUrl = alUrl2;
+    body.accessLock.on = alSnap2.on;
+    body.accessLock.mode = alSnap2.mode;
+    body.accessLock.graceHours = 72;
+   } else if (alUrl2) {
+    body.accessLock = { on: alSnap2.on, mode: alSnap2.mode, graceHours: 72, relayUrl: alUrl2 };
+   }
+  } catch (eAL2) {}
   if (!token || !sync() || !sync().publishFilesSequential) { cb(new Error('no_token'), null, versionBody); return versionBody; }
   publishVaultFiles(buildVaultFiles(body, versionBody, label || ('Studio vault ' + appVersion())), token, function (err, info) {
    cb(err, info, versionBody);
@@ -6184,6 +6343,22 @@ function priorIPAFor(w) {
   if (isObj(verifier)) cfg.pinVerifier = verifier;
   cfg.classSettings = classSettingsPayload();
   cfg.updatedAt = new Date().toISOString();
+  /* v0.0.7.f BUG-F1 FIX: every publish stamps the PUBLIC relay URL + lock
+     state into data/config.json accessLock so every student phone discovers
+     the relay and the lock mode on boot (the /exec URL is public by design
+     and contains ZERO secrets — secrets stay in Script Properties only). */
+  try {
+   var alUrl = gasRelayUrl();
+   var alSnap = accessLockSnapshot();
+   if (isObj(cfg.accessLock)) {
+    if (alUrl) cfg.accessLock.relayUrl = alUrl;
+    cfg.accessLock.on = alSnap.on;
+    cfg.accessLock.mode = alSnap.mode;
+    cfg.accessLock.graceHours = 72;
+   } else if (alUrl) {
+    cfg.accessLock = { on: alSnap.on, mode: alSnap.mode, graceHours: 72, relayUrl: alUrl };
+   }
+  } catch (eAL) {}
   var pack = voicePackPayload(syncRev);
   /* v0.0.6.v — publish law: only the ACTIVE 30 words.* keys ship, and the
      pack stamps wordsRev so every client purges its stale word clips. */
@@ -9113,7 +9288,7 @@ function setStudioWords(list, source) {
   paintPinDots: paintPinDots,
   paintQuickButton: paintQuickButton,
   toggleSecretField: toggleSecretField,
-  /* v0.0.7.e — the Private Web App Access Lock controller API. */
+  /* v0.0.7.f — the Private Web App Access Lock controller API. */
   accessLockSnapshot: accessLockSnapshot,
   paintAccessLockPanel: paintAccessLockPanel,
   refreshAccessLockRoster: refreshAccessLockRoster,
