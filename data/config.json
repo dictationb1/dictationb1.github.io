@@ -92,7 +92,7 @@
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
   "appVersion": "0.0.7.e",
-  "settingsRev": 79,
+  "settingsRev": 80,
   "performance": {
     "mode": "paper",
     "lite": {},
@@ -417,7 +417,7 @@
       "credit": "One 3.2s intro followed by one 8s spotlight cycle"
     }
   },
-  "updatedAt": "2026-11-21T14:32:18.402Z",
+  "updatedAt": "2026-11-21T15:07:04.616Z",
   "updatedAtMs": 1793448000000,
   "schema": 45,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
@@ -784,9 +784,9 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000028,
+  "syncRev": 1797000000029,
   "versionFamily": "10.0.0",
-  "encVault": "SDP_ENC_V2:7l3nq6wbsXo7kQJspL/pEF3RTb8m6X82fJPj6tcjdDXYikj4o43vIzGrJUv+y8lGctb6AuFlpS+6pX9cPmNbmKi+0DCsgnPj1/a/uOUFYa7dDZbXDZ7o/rxqPUF8XakdkkV1fTwlhCXH96xlmAe6BqO6+qw+puFtlKqiA9wHNMxthcGgnHBVYfDjcXUUziQJDtaKmYIypRVFKsqusovvQBtVOv7Yxnu+WMl06Ogt59gpXu+ATEja+uXqyOAA85N6qH8f+iqUigFLK60gEANFFnTft5nMsy9QmPyLvA6pr0lxt7fzeAPtHd7yNSoSB01K6POILOWoxi51L6kQqKahNzBn7BGCfoq4fYi3dc5tTeh3fjc7HfW3PAGO40N5qHoAHLaEYQpCZuA3LGP6xZxzCcesqvRM+xnkzgApCq5pyQwFf7XnNFqLus4NJbt+ZTyshW89zkhO9xmyzll25t0Wl9eo38MF2ElGjWXprJSXNd0LxFh4GfKAYkgUnfsQx33PEC5looFGgmHfW21o+5WmdFjUimyUbZBTXo+i+7ZSm0oOEytkNuYK4Twdvrvr+KkAbduZHpVQe8R+3oqHjTG6Pb98y9n1PQfpiqKZjrSySfC2PHy40W2Wer3rCsN66D2h58CKlv4NViTJZdLImG+Amq0AN4Vq3najrZJ4VUc+iE/fQvBs+kdpiiMRN3zG7DPrJ7l8auzlugf4e1xxx2243GQFQBYQ/JSPTKMkpmZ+Qkycu59UN3ibkMpDRYwrhbkC7K9DIEe2U6+l0HvgZZbwyTDxhBhjohs5zRXd/0GO9P+Lii6HSwQKd1tJmpEAlAKgKYguO8mqzwvNjN19u2uowVQJ8ToS/krV+JpsEukpf4rXtCD5KrTndNMlK2jnLlEa3FnFod+s1TwY/LyaapL9N5MuuVSxeP+SBi/BqjF0QYMp92w8nZCSgY1va8yBwTiVobi2usUc3hiGNDjGTcWnR/WEEs1GD+lhuwmD6KmH1O/PQQQvwIt1Z1YmNHhBu8q9tjzLuI7x3lkKUZJ5p3yK",
+  "encVault": "SDP_ENC_V2:VuAm2CJ8G7pkURYZCCLtvfN1AQvnbIbhW1WbSsK6iW7jgrhfUtURZ6ukS7vp/5KlnZzqtN/AZ7HVO8POAYPs0TwbQww2H/Fike18ZUlVT3LFVZuKKDOYtORtd/h3x1g60NywjzPWcVuMfgl5aZ7dxk7sRjmjCoGe986etPGtRXDZJRYEkJpGEPgWREQkKkYk4oUlcCJmp+oQ245G0W8Bg89tPPa3EF4nEB/NTtGNaEuSiReLnM3inhuFz4tK+5uziOiW/vajLzPz/XLAzQ9T/ZcTxR4qrdo7xqBm7rj2UTmueP9eIYhIkm57+4yWEkCY/X78oq+nGjBuBUWb9HjZHcq73s424igafQcVm3cfyq3Z3HnJ56ojAxg1eg8SXOH2TXJtEkNZTTOJzofZpRvRPIw5Kj795m0g5W9rEGzCWM8H52cGdENZ567Dga3FCOZnG7e2TuvX8fm4Wyiokxsz5jgraNv61WFkQJgT36umzbBF00hMIBGeX1umjEPJxp6E8ML7h6VvZpneCWo48mWUiFtcJ69ORVOSKzOgEJCuEmJteXHVzRivN210UBLwh5JeTiVlp9ozSSiobrZd1LAiimUozMYFQnEwnAq1KU73ih2qOA/sdELTRnMs1HarjUfnWYxpts4p4A+owL5YafJ98WdLzq7GUyvEvAIzuBmHqoILkHvOw63PqH+xwTJutz4KO8p88LsvizRpkZW51INea5/laY7Jr0XnCGHyHi4y4gID+By/9jHqUVR9N9DsULUVGxYMhT+LqMdtPO+uWWi+t2dapobqnNaCAZwT2o7EPUdWsgObqisbKkfF7K15ZlsvX9cTOlJnIGhzgsY54KTSC/27S+1bb0qhte0XW81CMSgBgF5KPP+yCM+2wotKO2qacswoOQ/YiQ95ZcroalfmyVKeTEuROOAGYLGahQoyCfOvjxqAXp4W74T6IklvSbprKGyxD99I+DXpa0n0lTT092WtOTUgGY+Ma/H0O26QIxL+ZtlC6YMDPYy2ba/ChKIckcdQ2cwbauWp1IJRnZ3kI/7e1hD28IZ8JE4xgq8Yoep4/q5lcKdEHfIcCQ+R2AL/SAHcbMp6BEJWZKBUc+ejwn+sU0/+zCgdg/xd/+YXobnYFVG9d9Sv6TAdIml2r7j9x50QUvpINgTt3NCYnu8NfjLIaqmhcCRS64/fyaYJmw==",
   "classSettings": {
     "mode": "paper",
     "writeSecs": 5,
