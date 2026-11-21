@@ -3,8 +3,8 @@
   "appVersion": "0.0.7.f",
   "ver": 46,
   "schema": 46,
-  "settingsRev": 79,
-  "syncRev": 1797000000028,
+  "settingsRev": 82,
+  "syncRev": 1797000000031,
   "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
   "voiceName": "Alice",
   "modelId": "eleven_flash_v2_5",
@@ -793,7 +793,7 @@
   "voiceModel": "eleven_flash_v2_5",
   "generatedAt": "2026-11-20T05:20:00.000Z",
   "buildDate": "2026-11-20",
-  "updatedAt": "2026-11-21T15:07:55.251Z",
+  "updatedAt": "2026-11-21T19:07:13.102Z",
   "versionFamily": "0.0.1",
   "manifestSource": "raw",
   "persona": "British English female educator (Alice-class)",
@@ -835,5 +835,5 @@
   },
   "briefingVoiceId": "JBFqnCBsd6RMkjVDRZzb",
   "briefingVoiceName": "George (British Master Narrator)",
-  "wordsRev": 1797000000028
+  "wordsRev": 1797000000031
 }
