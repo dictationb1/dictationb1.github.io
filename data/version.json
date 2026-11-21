@@ -4,11 +4,11 @@
   "version": "0.0.7.f",
   "buildDate": "2026-11-21",
   "schema": 46,
-  "settingsRev": 80,
+  "settingsRev": 81,
   "session": "14",
   "title": "Session 14 - Communications & Technology",
-  "updatedAt": "2026-11-21T18:59:53.370Z",
-  "syncRev": 1797000000029,
+  "updatedAt": "2026-11-21T19:02:50.335Z",
+  "syncRev": 1797000000030,
   "payloadFiles": [
     "data/config.json",
     "data/version.json"
