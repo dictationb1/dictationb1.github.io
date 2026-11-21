@@ -111,6 +111,15 @@ var g19Live = (async function live() {
       });
       await page.goto(server.origin + '/index.html', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2400);
+      /* v0.0.7.e G19 harness determinism: the Studio's 10-second security
+         auto-lock drops ST.secrets to {} when it fires, which can
+         land inside a long synthesis leg (the 429 retry alone is 5 s) and wipe
+         the key pool the failover leg just planted. The app exposes
+         __SDP_AUTOLOCK__ === false for exactly this (same law as
+         __SDP_ALLOW_AUTOGEN); the explicit lock()/unlock() legs below still
+         exercise the vault. This keeps LIVE-5a/5b deterministic without
+         weakening them — a real rotation is still required. */
+      await page.evaluate(() => { window.__SDP_AUTOLOCK__ = false; });
       await page.evaluate(() => { const r = document.getElementById('rail-studio'); if (r) r.click(); });
       await page.waitForTimeout(300);
       /* (1) Words Card #1 & Session Card #2 above the voice/alerts/advanced drawers */
@@ -236,7 +245,26 @@ var g19Live = (async function live() {
         page.evaluate(([a, b]) => new Promise((resolve) => {
           SDP.Studio.state.secrets.elevenKey = '';
           SDP.Studio.state.secrets.keyPool = [{ p: 'elevenlabs', k: a }, { p: 'elevenlabs', k: b }];
+          window.__SDP_AUTOLOCK__ = false;
+          try { if (SDP.Studio.__testAutoLock) SDP.Studio.__testAutoLock.cancel(true); } catch (eAL) {}
           const el = document.getElementById('elKeyInput'); if (el) el.value = '';
+          /* v0.0.7.e G19 harness determinism: the Studio re-merges the pool from
+             the DOM (mergeKeyPoolInputs) whenever a clip is saved mid-batch, so
+             the slot inputs must mirror the state we just wrote — otherwise slot
+             #2 falls back to its 'groq' default and the ElevenLabs pool collapses
+             to a single key, which silently disables the 429 rotation this leg
+             asserts. Drive the panel exactly as a lecturer would. */
+          const slotOf = (n) => document.getElementById('kpSlot' + n);
+          const provOf = (n) => document.getElementById('kpProv' + n);
+          [[1, a], [2, b]].forEach(([n, k]) => {
+            const p = provOf(n); if (p) { p.value = 'elevenlabs'; p.dispatchEvent(new Event('change', { bubbles: true })); }
+            const s = slotOf(n); if (s) { s.value = k; s.setAttribute('data-dirty', '1'); s.dispatchEvent(new Event('input', { bubbles: true })); }
+          });
+          [3, 4, 5].forEach((n) => {
+            const p = provOf(n), s = slotOf(n);
+            if (p) { p.value = 'groq'; p.dispatchEvent(new Event('change', { bubbles: true })); }
+            if (s) { s.value = ''; s.setAttribute('data-dirty', '1'); s.dispatchEvent(new Event('input', { bubbles: true })); }
+          });
           SDP.Studio.generateClips({ words: [{ w: 'g19failoverword' }], noCommit: true }, function (err, info) {
             resolve({ err: err ? String(err.message) : null, made: (info && info.made) ? info.made.length : -1 });
           });
