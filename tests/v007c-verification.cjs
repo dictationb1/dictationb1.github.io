@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-/* G21 — the v0.0.7.f unified release verification gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.f
- * (0.0.7.f / ver 43 / schema 43 / session ver 66 / settingsRev 76 /
- *  syncRev+wordsRev 1797000000028 / SW sdp-v0.0.7.f-s44)
+/* G21 — the v0.0.7.g unified release verification gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
+ * (0.0.7.g / ver 43 / schema 43 / session ver 66 / settingsRev 76 /
+ *  syncRev+wordsRev 1797000000029 / SW sdp-v0.0.7.g-s44)
  * C/D/M/L pillars, verified LIVE in headless Chromium at desktop 1280 AND
  * mobile 375×812 plus the Live Lab:
  *  C1/D1-D3 (BUG-01) probe-verified Offline Mode: no false offline banner,
@@ -47,24 +47,24 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── C0 · unified lockstep pins ─────────────────────────────────────────── */
-check('C0a version.json pins 0.0.7.f / 43 / 76 / 1797000000028 / Session 14',
-  version.ver === 46 && version.schema === 46 && version.appVersion === '0.0.7.f' && version.version === '0.0.7.f' &&
-  version.settingsRev === 79 && Number(version.syncRev) === 1797000000028 && version.session === '14' && version.buildDate === '2026-11-21',
+check('C0a version.json pins 0.0.7.g / 43 / 76 / 1797000000029 / Session 14',
+  version.ver === 47 && version.schema === 47 && version.appVersion === '0.0.7.g' && version.version === '0.0.7.g' &&
+  version.settingsRev === 80 && Number(version.syncRev) === 1797000000029 && version.session === '14' && version.buildDate === '2026-11-21',
   JSON.stringify({ ver: version.ver, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
-check('C0b session.json pins ver 66 / 0.0.7.f / 76 / …025 / 31 words',
-  session.ver === 68 && session.appVersion === '0.0.7.f' && session.settingsRev === 79 &&
-  Number(session.syncRev) === 1797000000028 && Number(session.wordsRev) === 1797000000028 && session.wordCount === 31,
+check('C0b session.json pins ver 66 / 0.0.7.g / 76 / …025 / 31 words',
+  session.ver === 68 && session.appVersion === '0.0.7.g' && session.settingsRev === 80 &&
+  Number(session.syncRev) === 1797000000029 && Number(session.wordsRev) === 1797000000029 && session.wordCount === 31,
   JSON.stringify({ ver: session.ver, appVersion: session.appVersion, settingsRev: session.settingsRev, syncRev: session.syncRev, wordsRev: session.wordsRev }));
-check('C0c config.json + pack headers pin 43 / 0.0.7.f / 76 / …025 (+ pack wordsRev …025)',
-  config.ver === 46 && config.appVersion === '0.0.7.f' && config.settingsRev === 79 && Number(config.syncRev) === 1797000000028 &&
-  pack.ver === 46 && pack.appVersion === '0.0.7.f' && pack.settingsRev === 79 && Number(pack.syncRev) === 1797000000028 && Number(pack.wordsRev) === 1797000000028,
+check('C0c config.json + pack headers pin 43 / 0.0.7.g / 76 / …025 (+ pack wordsRev …025)',
+  config.ver === 47 && config.appVersion === '0.0.7.g' && config.settingsRev === 80 && Number(config.syncRev) === 1797000000029 &&
+  pack.ver === 47 && pack.appVersion === '0.0.7.g' && pack.settingsRev === 80 && Number(pack.syncRev) === 1797000000029 && Number(pack.wordsRev) === 1797000000029,
   JSON.stringify({ cfg: [config.ver, config.appVersion, config.settingsRev, config.syncRev], pack: [pack.ver, pack.appVersion, pack.settingsRev, pack.syncRev, pack.wordsRev] }));
-check('C0d sw.js pins the s43 shell (sdp-v0.0.7.f-s44) + release 0.0.7.f',
-  /SW_VERSION = 'sdp-v0\.0\.7\.f-s45'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.f-s45-shell'/.test(sw) && /SW_RELEASE = '0\.0\.7\.f'/.test(sw));
-check('C0e index.html boots at 0.0.7.f and data.html + the meter follow the same release',
-  /var TARGET = '0\.0\.7\.f'/.test(indexHtml) &&
-  readText('data.html').indexOf("var TARGET = '0.0.7.f'") > 0 &&
-  readText('data/data-meter.js').indexOf("CACHE_VERSION = 'sdp-v0.0.7.f'") > 0);
+check('C0d sw.js pins the s43 shell (sdp-v0.0.7.g-s44) + release 0.0.7.g',
+  /SW_VERSION = 'sdp-v0\.0\.7\.g-s46'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.g-s46-shell'/.test(sw) && /SW_RELEASE = '0\.0\.7\.g'/.test(sw));
+check('C0e index.html boots at 0.0.7.g and data.html + the meter follow the same release',
+  /var TARGET = '0\.0\.7\.g'/.test(indexHtml) &&
+  readText('data.html').indexOf("var TARGET = '0.0.7.g'") > 0 &&
+  readText('data/data-meter.js').indexOf("CACHE_VERSION = 'sdp-v0.0.7.g'") > 0);
 check('C0f zero stale 0.0.7.b live pins anywhere in the app or the tests',
   (function () {
     const files = ['index.html', 'lab.html', 'sw.js', 'manifest.webmanifest', 'data/version.json', 'data/config.json', 'data/session.json', 'data/elevenlabs-audio.json', 'data.html', 'data/index.html'];
@@ -182,11 +182,11 @@ check('C5f every screen clears the sticky header (scroll-margin + tab-switch scr
 
 /* ── C6 · BUG-06 unified Live Lab ───────────────────────────────────────── */
 check('C6a lab.html carries NO independent version (no v4.0) and paints the unified pill from data/version.json',
-  labHtml.indexOf('v4.0') < 0 && /id="labVerPill">0\.0\.7\.f</.test(labHtml) && /\.\/data\/version\.json\?t='/.test(labHtml));
+  labHtml.indexOf('v4.0') < 0 && /id="labVerPill">0\.0\.7\.g</.test(labHtml) && /\.\/data\/version\.json\?t='/.test(labHtml));
 check('C6b SDP.LiveLab.version joins the ONE progressive version + the report follows',
-  /version: '0\.0\.7\.f',/.test(liveLab) && /labVersion: '0\.0\.7\.f',/.test(liveLab) && !/'4\.0\.0'/.test(liveLab));
-check('C6c Station 7 ships the five v0.0.7.f release probes + joins the full suite',
-  /STATION 7<\/span>v0\.0\.7\.f Unified Release Verification/.test(labHtml) && /btnLabRunStation7/.test(labHtml) &&
+  /version: '0\.0\.7\.g',/.test(liveLab) && /labVersion: '0\.0\.7\.g',/.test(liveLab) && !/'4\.0\.0'/.test(liveLab));
+check('C6c Station 7 ships the five v0.0.7.g release probes + joins the full suite',
+  /STATION 7<\/span>v0\.0\.7\.g Unified Release Verification/.test(labHtml) && /btnLabRunStation7/.test(labHtml) &&
   /function station7\(\)/.test(liveLab) && /bindBtn\('btnLabRunStation7', station7\)/.test(liveLab) && /try \{ station7\(\); \} catch \(e7\)/.test(liveLab));
 
 /* ── C7 · attribution invariants (verbatim) ─────────────────────────────── */
@@ -214,7 +214,7 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
-      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.f'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.f', guideAutoPlay: false })); } catch (e) {} });
+      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.g'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.g', guideAutoPlay: false })); } catch (e) {} });
       await page.goto(server.origin + '/', { waitUntil: 'load' });
       await page.waitForTimeout(2600);
 
@@ -383,7 +383,7 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
       const mpage = await mctx.newPage();
       const merrors = [];
       mpage.on('pageerror', (e) => merrors.push(String(e).slice(0, 140)));
-      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.f'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.f', guideAutoPlay: false })); } catch (e) {} });
+      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.g'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.g', guideAutoPlay: false })); } catch (e) {} });
       await mpage.goto(server.origin + '/', { waitUntil: 'load' });
       await mpage.waitForTimeout(2200);
       await mpage.evaluate(() => { document.getElementById('tab-settings').click(); });
@@ -419,8 +419,8 @@ check('C7 the credit pill + both bilingual credit lines stay verbatim everywhere
         h1: (document.querySelector('header.lab-head h1') || {}).textContent || '',
         station7: !!document.getElementById('btnLabRunStation7'),
       }));
-      check('L1 the Live Lab boots on the unified version (pill 0.0.7.f, zero v4.0, Station 7 present)',
-        labBoot.pill === '0.0.7.f' && labBoot.title.indexOf('v4.0') < 0 && labBoot.h1.indexOf('v4.0') < 0 && labBoot.station7 === true,
+      check('L1 the Live Lab boots on the unified version (pill 0.0.7.g, zero v4.0, Station 7 present)',
+        labBoot.pill === '0.0.7.g' && labBoot.title.indexOf('v4.0') < 0 && labBoot.h1.indexOf('v4.0') < 0 && labBoot.station7 === true,
         JSON.stringify(labBoot));
       await lpage.evaluate(() => { const b = document.getElementById('btnLabRunAll'); if (b) b.click(); });
       await lpage.waitForTimeout(26000);

@@ -1955,6 +1955,14 @@
    '<p id="studioFreeNoKey" class="studio-free-badge"' + (freeNoKeyVisible() ? '' : ' hidden') + '>' + T('studioFreeNoKey') + '</p>' +
    keyRowMarkup('studioAiKey', t('studioAiKey'), 'gsk_… / AIza… / sk-or-…', 'Ai') +
    '<label class="lbl" for="studioGasUrl">Apps Script relay URL</label>' + '<div class="key-row">' + '<input id="studioGasUrl" class="input" type="url" autocomplete="off" data-pristine="1" placeholder="https://script.google.com/…">' + btn('btnClearGasUrl', t('studioClear')) + '</div>' +
+   /* v0.0.7.g BUG-G3: the live /dev URL detector — a /dev TEST URL can never
+      receive Telegram updates or student posts (Google answers it with a
+      Sign-In page), so warn the instant one is pasted and offer the 1-click
+      swap to the SAME deployment's /exec URL. */
+   '<div id="studioGasUrlDevWarn" class="studio-msg" data-state="bad" hidden>' +
+   '⚠️ This is the <b>/dev TEST URL</b> — Telegram and student phones can NEVER reach it (Google answers /dev with a Sign-In page). ' +
+   '<button type="button" class="btn btn-sm" id="btnGasDevFix">🔁 Use the /exec URL instead</button>' +
+   '</div>' +
    /* ══ v0.0.6.m Pillar 2: the Multi-API Key Pool (6-key $0 layout) ══ */
    '<label class="lbl">Multi-API Key Pool · 5 slots — 1× ElevenLabs Backup (credit-exhaustion failover) + 2× Groq Free Tier (auto-rotation on 429) + 2× OpenRouter Free Models (free LLM failover)</label>' +
    keyPoolMarkup() +
@@ -2407,12 +2415,15 @@
    '</select>' +
    btn('btnAlApplyMode', t('studioAlApplyMode', 'Apply Unlock Policy'), 'btn-ghost', '', 'gear') +
    '</div>' +
-   /* v0.0.7.f BUG-F1: the 1-tap relay + Telegram verification, right inside the lock panel. */
+   /* v0.0.7.f BUG-F1 + v0.0.7.g BUG-G4: the 1-tap relay auto-fix + the
+      5-step Connection Doctor, right inside the lock panel. */
    '<div class="studio-al-cell">' +
    '<label class="lbl" for="studioAlRelayProbe" data-i18n="studioAlRelayLbl">' + t('studioAlRelayLbl', 'Relay & Telegram health') + '</label>' +
-   btn('btnAlSaveTestRelay', t('studioAlSaveTest', '💾 Save & Test Relay + Telegram'), 'btn-ghost', '', 'send') +
+   btn('btnAlSaveTestRelay', t('studioAlSaveTest', '💾 Save & Auto-Fix Relay + Telegram'), 'btn-primary', '', 'send') +
    btn('btnAlTestTelegram', t('studioAlTestTg', '🔔 Send Test Telegram Alert'), 'btn-ghost', '', 'bell') +
+   btn('btnAlDoctor', t('studioAlDoctor', '🩺 Run Connection Doctor'), 'btn-ghost', '', 'activity') +
    '<p id="studioAlRelayProbe" class="studio-msg" role="status" aria-live="polite"></p>' +
+   '<div id="studioAlDoctor" class="studio-al-doctor" role="region" aria-live="polite"></div>' +
    '</div>' +
    '</div>' +
    '<div class="studio-al-grid">' +
@@ -2531,6 +2542,21 @@
    dataSaveSettings({ gasUrl: url });
   } catch (e3) {}
   return true;
+ }
+ /* v0.0.7.g BUG-G3: the live /dev URL detector on #studioGasUrl — warns
+    the instant a /dev TEST URL is pasted (Telegram + students can never
+    reach it) and offers the 1-click swap to the SAME deployment's /exec
+    URL. The warning node + #btnGasDevFix button live in the secrets card. */
+ function alDevUrlGuard() {
+  var el = byId('studioGasUrl'), warn = byId('studioGasUrlDevWarn');
+  if (!warn) return;
+  var v = str(el && el.value).trim();
+  if (/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/dev\/?$/.test(v)) {
+   warn.hidden = false;
+   warn.setAttribute('data-state', 'bad');
+  } else {
+   warn.hidden = true;
+  }
  }
  function gasLockRelay(body, cb) {
   cb = cb || noop;
@@ -2708,39 +2734,172 @@
   paintStudioActionAuditBanner('Access Lock panel opened', 'Advanced Settings → Private Web App Access Lock');
  }
 
- /* ══ v0.0.7.f BUG-F1/F3: Save & Test Relay + Telegram, the Unlock Policy
+ /* ══ v0.0.7.f BUG-F1/F3 + v0.0.7.g BUG-G3/G4: Save & Auto-Fix Relay +
+    Telegram, the 5-Step Connection Doctor & Auto-Repair, the Unlock Policy
     apply, and the 1-tap Telegram alert test — all inside the lock panel. ══ */
  function alRelayProbeMsg(text, state) {
   var node = byId('studioAlRelayProbe');
   if (node) { node.textContent = str(text); node.setAttribute('data-state', state || ''); }
  }
- function alSaveTestRelay() {
-  var saved = saveRelayUrlQuiet();
-  if (!saved) { alRelayProbeMsg(t('studioAlRelayMissing'), 'bad'); accessLockMsg(T('studioAlRelayMissing'), 'bad'); return; }
-  withBusy('btnAlSaveTestRelay', function (d) {
-   gasLockRelay({ action: 'ping' }, function (err, out) {
-    if (err || !out || !out.ok) {
-     alRelayProbeMsg('❌ Relay unreachable — check the URL and re-deploy the Web App.', 'bad');
-     accessLockMsg('❌ Relay test failed — the Apps Script URL did not answer ping.', 'bad');
-     d(); return;
-    }
-    /* relay answered: probe the lock state, then fire the Telegram test alert */
-    gasLockRelay({ action: 'access_state' }, function (err2, st) {
-     var lockLine = (st && st.lock) ? ('Lock ' + (st.lock.on ? 'ON' : 'OFF') + ' · mode ' + str(st.lock.mode || 'approval+code')) : 'state unknown';
-     gasLockRelay({ action: 'tg_test' }, function (err3, tg) {
-      if (tg && tg.ok && tg.telegram) {
-       alRelayProbeMsg('✅ Relay OK (' + lockLine + ') · ✅ Telegram alert delivered — check your phone!', 'ok');
-       accessLockMsg('✓ Relay + Telegram verified: ' + lockLine + '. The test alert was delivered to your Telegram.', 'ok');
-       paintStudioActionAuditBanner('Relay + Telegram verified', lockLine);
-      } else {
-       alRelayProbeMsg('✅ Relay OK (' + lockLine + ') · ⚠️ Telegram not verified — set TG_BOT_TOKEN + TG_CHAT_ID in Apps Script Script Properties, then tap Test again.', 'warn');
-       accessLockMsg('Relay OK but Telegram failed — check TG_BOT_TOKEN / TG_CHAT_ID Script Properties.', 'bad');
+ /* v0.0.7.g BUG-G4: the deterministic 5-step diagnostic — every step paints
+    a green ✅ / red ❌ badge with the EXACT bilingual cause + fix inside the
+    Access Lock card. NEVER a vague "Relay unreachable" again. */
+ var AL_DOCTOR_STEPS = [
+  { id: 'url', title: 'Step 1 · URL Check' },
+  { id: 'ping', title: 'Step 2 · Cloud Reachability & Auto-Sheet (ping)' },
+  { id: 'pin', title: 'Step 3 · Admin PIN Verification' },
+  { id: 'hook', title: 'Step 4 · Auto-Register Telegram /exec Webhook' },
+  { id: 'tg', title: 'Step 5 · Live Telegram Round-Trip & Cloud Sync' }
+ ];
+ function alDoctorHost() { return byId('studioAlDoctor'); }
+ function alDoctorReset() {
+  var host = alDoctorHost();
+  if (!host) return;
+  var html = '', i;
+  for (i = 0; i < AL_DOCTOR_STEPS.length; i++) {
+   html += '<div class="studio-al-docstep" data-step="' + AL_DOCTOR_STEPS[i].id + '" data-state="wait">' +
+   '<span class="studio-al-docbadge">⏳</span><span class="studio-al-doctitle">' + esc(AL_DOCTOR_STEPS[i].title) + '</span>' +
+   '<div class="studio-al-docdetail"></div></div>';
+  }
+  host.innerHTML = html;
+  host.hidden = false;
+ }
+ function alDoctorPaint(stepId, state, badge, lines) {
+  var host = alDoctorHost();
+  if (!host) return;
+  var row = null;
+  try { row = host.querySelector('.studio-al-docstep[data-step="' + stepId + '"]'); } catch (eQ) { row = null; }
+  if (!row) return;
+  row.setAttribute('data-state', state || '');
+  var b = row.querySelector ? row.querySelector('.studio-al-docbadge') : null;
+  if (b) b.textContent = badge || '…';
+  var d = row.querySelector ? row.querySelector('.studio-al-docdetail') : null;
+  if (d) {
+   var html = '', i;
+   for (i = 0; i < (lines || []).length; i++) html += '<p>' + esc(lines[i]) + '</p>';
+   d.innerHTML = html;
+  }
+ }
+ function alDoctorFail(stepId, diag, done) {
+  var lines = [];
+  lines.push('❌ ' + (diag && diag.en ? diag.en : 'This step failed.'));
+  if (diag && diag.si) lines.push(diag.si + ' · ' + str(diag.code || ''));
+  else if (diag && diag.code) lines.push('Error code: ' + diag.code);
+  alDoctorPaint(stepId, 'bad', '❌', lines);
+  alRelayProbeMsg('❌ Connection Doctor stopped at ' + stepId.toUpperCase() + ' — ' + (diag && diag.en ? str(diag.en).slice(0, 140) : 'see the exact fix above.'), 'bad');
+  accessLockMsg('❌ Connection Doctor: ' + (diag && diag.code ? diag.code : 'failed at step ' + stepId) + ' — the exact bilingual fix is inside the Access Lock card.', 'bad');
+  if (done) done();
+ }
+ /* the doctor's one classifier bridge — SDP.Data.relayClassify when present */
+ function relayDiagOf(err, out) {
+  try {
+   if (global.SDP && SDP.Data && SDP.Data.relayClassify) {
+    var d = SDP.Data.relayClassify(err, out);
+    if (d) return d;
+   }
+  } catch (e) {}
+  if (err) return { code: 'ERR_NETWORK', en: str(err && err.message), si: '' };
+  return null;
+ }
+ function alRunConnectionDoctor(done) {
+  done = done || noop;
+  alDoctorReset();
+  saveRelayUrlQuiet();
+  var url = str(gasRelayUrl()).trim();
+  /* ── Step 1 · URL Check ─────────────────────────────────────────────── */
+  if (!url) {
+   alDoctorFail('url', { code: 'ERR_NO_URL', en: 'No Apps Script URL is set. Paste your /exec Web App URL above (Advanced Tools → Apps Script relay URL), then run the Doctor again.', si: 'Apps Script URL එකක් සකසා නැත — Advanced Tools → Apps Script relay URL යටතේ ඔබගේ /exec URL එක paste කර Doctor එක නැවත run කරන්න.' }, done);
+   return;
+  }
+  if (/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/dev\/?$/.test(url)) {
+   alDoctorFail('url', { code: 'ERR_DEV_URL',
+    en: 'This is the /dev TEST URL — Telegram and student phones can NEVER reach it (Google answers /dev with a Sign-In page). Click "🔁 Use the /exec URL instead" above, or copy the /exec URL from Apps Script → Deploy → Manage deployments.',
+    si: 'මෙය /dev TEST URL එකකි — Telegram සහ සිසු දුරකථන කිසිවිටෙක එය ළඟා විය නොහැක (Google /dev සඳහා Sign-In පිටුවක් පෙන්වයි). ඉහත "🔁 Use the /exec URL instead" ඔබන්න, නැතහොත් Deploy → Manage deployments හි /exec URL එක copy කරන්න.' }, done);
+   return;
+  }
+  /* v0.0.7.g: local /exec relay URLs (127.0.0.1/localhost) are accepted —
+     the e2e gates drive the full doctor against an in-process relay. */
+  var localExec = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/exec\/?$/.test(url);
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/.test(url) && !localExec) {
+   alDoctorFail('url', { code: 'ERR_BAD_URL', en: 'The URL is not a valid Apps Script /exec Web App URL. It must look like https://script.google.com/macros/s/…/exec — copy it exactly from Deploy → Manage deployments.', si: 'මෙය වලංගු /exec Web App URL එකක් නොවේ — එය https://script.google.com/macros/s/…/exec ආකාරයේ විය යුතුය. Deploy → Manage deployments හි ඇති URL එක නියමයෙන් copy කරන්න.' }, done);
+   return;
+  }
+  alDoctorPaint('url', 'ok', '✅', ['Valid /exec Web App URL: ' + url.replace(/\/macros\/s\/([^\/]+)\/exec/, '/macros/s/$1…/exec')]);
+  /* ── Step 2 · Cloud Reachability & Auto-Sheet (ping) ────────────────── */
+  gasLockRelay({ action: 'ping' }, function (err, out) {
+   var diag = relayDiagOf(err, out);
+   if (diag) { alDoctorFail('ping', diag, done); return; }
+   if (!out || out.ok !== true) {
+    alDoctorFail('ping', { code: 'ERR_NO_PONG', en: 'The Apps Script answered, but not with a healthy ping. Update the backend code from Advanced Tools (gas-source.txt) and re-deploy, then run the Doctor again.', si: 'Apps Script එක පිළිතුරු දුන්නද සෞඛ්‍යමත් ping එකක් නොවේ. gas-source.txt කේතය යාවත්කාලීන කර නැවත deploy කරන්න.' }, done);
+    return;
+   }
+   var h = [], flags = [];
+   h.push('Apps Script answered ping' + (out.gas ? ' · backend ' + str(out.gas) : '') + (out.ver ? ' · ver ' + str(out.ver) : ''));
+   if (out.sheetBound) h.push('Google Sheet bound' + (out.sheetUrl ? ' — ' + str(out.sheetUrl) : ' (auto-created/healed if it was missing)'));
+   if (out.hasTgBot === false) flags.push('TG_BOT_TOKEN missing');
+   if (out.hasTgChat === false) flags.push('TG_CHAT_ID missing');
+   if (out.hasTgSecret === false) flags.push('TG_WEBHOOK_SECRET missing');
+   if (out.hasAdminPin === false) flags.push('ADMIN_PIN missing');
+   if (flags.length) h.push('⚠️ Script Properties to set in Apps Script → Project Settings → Script Properties: ' + flags.join(', '));
+   else if (out.hasTgBot !== undefined) h.push('All Script Properties present (TG_BOT_TOKEN · TG_CHAT_ID · TG_WEBHOOK_SECRET · ADMIN_PIN)');
+   if (out.webhookUrl) h.push('Registered Telegram webhook: ' + str(out.webhookUrl));
+   alDoctorPaint('ping', 'ok', '✅', h);
+   /* refresh the lock line (keeps the roster + lock paint fresh) */
+   gasLockRelay({ action: 'access_state' }, function (err2, st) {
+    var lockLine = (st && st.lock) ? ('Lock ' + (st.lock.on ? 'ON' : 'OFF') + ' · mode ' + str(st.lock.mode || 'approval+code')) : 'state unknown';
+    /* ── Step 3 · Admin PIN Verification ──────────────────────────────── */
+    gasLockRelay({ action: 'access_roster' }, function (err3, rost) {
+     var diag3 = relayDiagOf(err3, rost);
+     if (diag3) { alDoctorFail('pin', diag3, done); return; }
+     alDoctorPaint('pin', 'ok', '✅', ['Studio PIN matches the Apps Script ADMIN_PIN — admin actions are authorised.' + (lockLine ? ' Current cloud state: ' + lockLine + '.' : '')]);
+     /* ── Step 4 · Auto-Register Telegram /exec Webhook ────────────────── */
+     gasLockRelay({ action: 'auto_setup_webhook', execUrl: url }, function (err4, hook) {
+      var diag4 = relayDiagOf(err4, hook);
+      if (diag4) { alDoctorFail('hook', diag4, done); return; }
+      if (!hook || hook.ok !== true) {
+       var detail = hook && hook.detail ? hook.detail : (hook && hook.err ? hook.err : 'the Apps Script refused the webhook registration');
+       alDoctorFail('hook', { code: 'ERR_WEBHOOK', en: 'Telegram webhook registration failed: ' + detail, si: 'Telegram webhook ලියාපදිංචිය අසාර්ථක විය: ' + detail }, done);
+       return;
       }
-      d();
+      var hw = ['Production /exec webhook registered with Telegram' + (hook.webhookUrl ? ': ' + str(hook.webhookUrl) : '') + (hook.telegramDesc ? ' — ' + str(hook.telegramDesc) : '') + '. Any old broken /dev webhook is replaced.'];
+      alDoctorPaint('hook', 'ok', '✅', hw);
+      /* ── Step 5 · Live Telegram Round-Trip & Cloud Sync ─────────────── */
+      gasLockRelay({ action: 'tg_test' }, function (err5, tg) {
+       var diag5 = relayDiagOf(err5, tg);
+       if (diag5) { alDoctorFail('tg', diag5, done); return; }
+       if (!tg || tg.ok !== true || tg.telegram !== true) {
+        alDoctorFail('tg', { code: 'ERR_TELEGRAM_SEND', en: 'The Apps Script answered, but the Telegram send failed — check TG_BOT_TOKEN and TG_CHAT_ID in Apps Script → Project Settings → Script Properties (the chat id must be YOUR chat with the bot).', si: 'Apps Script පිළිතුරු දුන්නද Telegram පණිවිඩය යැවීම අසාර්ථක විය — Script Properties තුළ TG_BOT_TOKEN සහ TG_CHAT_ID පරීක්ෂා කරන්න.' }, done);
+        return;
+       }
+       /* arm accessLock.relayUrl so the next Publish ships it to students */
+       try {
+        var cfg = sync() && sync().config ? sync().config() : null;
+        if (cfg) {
+         if (isObj(cfg.accessLock)) cfg.accessLock.relayUrl = url;
+         else cfg.accessLock = { on: false, mode: 'approval+code', graceHours: 72, relayUrl: url };
+        }
+       } catch (eC) {}
+       alDoctorPaint('tg', 'ok', '✅', [
+        'Test alert with the [✅ Buttons work] inline button delivered to your Telegram — check your phone!',
+        'data/config.json accessLock.relayUrl is armed — it ships to every student phone on your next Publish.'
+       ]);
+       alRelayProbeMsg('✅ Connection Doctor: all 5 steps green · ' + lockLine + ' · Telegram test alert delivered — check your phone!', 'ok');
+       accessLockMsg('✓ Connection Doctor passed all 5 steps (URL → ping/Sheet → PIN → /exec webhook → live Telegram round trip). ' + lockLine + '.', 'ok');
+       paintStudioActionAuditBanner('Connection Doctor all green', 'URL → ping → PIN → /exec webhook → live Telegram round trip');
+       done();
+      });
      });
     });
    });
   });
+ }
+ function alSaveTestRelay() {
+  var saved = saveRelayUrlQuiet();
+  if (!saved) { alDoctorReset(); alDoctorFail('url', { code: 'ERR_NO_URL', en: 'No Apps Script URL is set. Paste your /exec Web App URL above (Advanced Tools → Apps Script relay URL), then tap Save & Auto-Fix again.', si: 'Apps Script URL එකක් සකසා නැත — /exec URL එක paste කර නැවත ඔබන්න.' }); return; }
+  withBusy('btnAlSaveTestRelay', function (d) { alRunConnectionDoctor(d); });
+ }
+ function alDoctorRun() {
+  withBusy('btnAlDoctor', function (d) { alRunConnectionDoctor(d); });
  }
  function alTestTelegram() {
   withBusy('btnAlTestTelegram', function (d) {
@@ -3846,14 +4005,26 @@
    onStudio('btnAlLockAllNow', 'click', function () { alLockAllNow(); });
    onStudio('btnAlNoticeJump', 'click', function () { alJumpToPanel(); });
    onStudio('btnAlNoticeDismiss', 'click', function () { dismissAccessNotice(); });
-   /* v0.0.7.f BUG-F1/F3: Save & Test Relay + Telegram, the Unlock Policy apply
-      and the 1-tap Telegram alert test — plus the quiet auto-save of the
-      pasted relay URL on input/blur so the panel works before a vault save. */
+   /* v0.0.7.f BUG-F1/F3 + v0.0.7.g BUG-G3/G4: Save & Auto-Fix Relay +
+      Telegram (the 5-step Connection Doctor), the standalone Doctor button,
+      the Unlock Policy apply and the 1-tap Telegram alert test — plus the
+      quiet auto-save of the pasted relay URL on input/blur so the panel
+      works before a vault save. */
    onStudio('btnAlSaveTestRelay', 'click', function () { alSaveTestRelay(); });
+   onStudio('btnAlDoctor', 'click', function () { alDoctorRun(); });
    onStudio('btnAlTestTelegram', 'click', function () { alTestTelegram(); });
    onStudio('btnAlApplyMode', 'click', function () { alApplyMode(); });
-   onStudio('studioGasUrl', 'input', function () { try { saveRelayUrlQuiet(); } catch (eR1) {} });
-   onStudio('studioGasUrl', 'blur', function () { try { saveRelayUrlQuiet(); } catch (eR2) {} });
+   onStudio('studioGasUrl', 'input', function () { try { saveRelayUrlQuiet(); } catch (eR1) {} try { alDevUrlGuard(); } catch (eR1b) {} });
+   onStudio('studioGasUrl', 'blur', function () { try { saveRelayUrlQuiet(); } catch (eR2) {} try { alDevUrlGuard(); } catch (eR2b) {} });
+   onStudio('btnGasDevFix', 'click', function () {
+    try {
+     var el = byId('studioGasUrl');
+     if (el) {
+      el.value = str(el.value).trim().replace(/\/dev\/?$/, '/exec');
+      el.dispatchEvent(new (global.Event || global.window.Event || function () {})('input', { bubbles: true }));
+     }
+    } catch (eF) {}
+   });
    onStudio('studioAlRoster', 'click', function (ev) {
     var ev2 = ev || global.event, target = ev2 && (ev2.target || ev2.srcElement);
     var op = target && target.getAttribute ? str(target.getAttribute('data-al')) : '';

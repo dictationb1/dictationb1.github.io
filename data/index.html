@@ -8,12 +8,12 @@
    color-scheme meta follows only this page's own theme button. -->
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="only light">
-<meta name="description" content="Smart Dictation Player 0.0.7.f — network, cache, storage, privacy and mobile-data transparency for the CCBE Galle B1 class.">
-<title>Data &amp; Cache Transparency · Smart Dictation 0.0.7.f</title>
+<meta name="description" content="Smart Dictation Player 0.0.7.g — network, cache, storage, privacy and mobile-data transparency for the CCBE Galle B1 class.">
+<title>Data &amp; Cache Transparency · Smart Dictation 0.0.7.g</title>
 <script>
 (function () {
   var vUrl = location.pathname.indexOf('/data/') !== -1 ? './version.json' : './data/version.json';
-  var TARGET = '0.0.7.f';
+  var TARGET = '0.0.7.g';
   if (typeof fetch !== 'function') return;
   fetch(vUrl + '?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r && r.ok ? r.json() : null; })
@@ -192,11 +192,11 @@
       </thead>
       <tbody id="storageTable"></tbody>
     </table>
-    <p class="muted" data-t="storageNote">The player writes only five keys; the data meter writes six, this page one theme key and the v0.0.7.f Access Lock one device key — thirteen in total. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.</p>
+    <p class="muted" data-t="storageNote">The player writes only five keys; the data meter writes six, this page one theme key and the v0.0.7.g Access Lock one device key — thirteen in total. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.</p>
   </section>
 
   <section class="card">
-    <h2 data-t="teleTitle">What this app shares with your lecturer (v0.0.7.f)</h2>
+    <h2 data-t="teleTitle">What this app shares with your lecturer (v0.0.7.g)</h2>
     <p class="muted" data-t="teleIntro">When the Private Web App Access Lock or the classroom telemetry is active, the app sends an honest, minimal diagnostic picture to your lecturer through a Google Apps Script relay. This list is the complete list — nothing else is collected.</p>
     <ul class="sub" style="margin:0;padding-left:20px">
       <li data-t="tele1">Device class (phone / tablet / desktop), operating system + version family, browser + version, and whether the app runs as an installed PWA or a browser tab.</li>
@@ -222,7 +222,7 @@
     <span class="credit-pill">CREDITS GOES TO Hansana</span>
     <p>Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)</p>
     <p lang="si" style="font-family:'Noto Sans Sinhala',sans-serif">නිර්මාණය: Hansana · අදහස: Ayya01 (Lesandu) · භාරකාර කථිකාචාර්ය: Ms. Sumodya Sewmini</p>
-    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player 0.0.7.f</p>
+    <p>CCBE Galle Branch · B1 English Class · Smart Dictation Player 0.0.7.g</p>
   </footer>
 </main>
 
@@ -244,8 +244,8 @@
       cacheTitle: 'Caches on this device', colCache: 'Cache', colEntries: 'Entries', colRole: 'Role',
       calcTitle: 'Mobile data cost (Sri Lanka)', storageTitle: 'Storage audit',
       colKey: 'Key', colWhat: 'What it holds',
-      storageNote: 'The player writes only the five R8 keys; the data meter writes its own six keys, this page adds one theme key and the v0.0.7.f Access Lock adds one device key — thirteen keys in total, nothing hidden. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
-      teleTitle: 'What this app shares with your lecturer (v0.0.7.f)',
+      storageNote: 'The player writes only the five R8 keys; the data meter writes its own six keys, this page adds one theme key and the v0.0.7.g Access Lock adds one device key — thirteen keys in total, nothing hidden. Sinhala fonts and audio clips live in the service-worker cache, not in localStorage.',
+      teleTitle: 'What this app shares with your lecturer (v0.0.7.g)',
       teleIntro: 'When the Private Web App Access Lock or the classroom telemetry is active, the app sends an honest, minimal diagnostic picture to your lecturer through a Google Apps Script relay. This list is the complete list — nothing else is collected.',
       tele1: 'Device class (phone / tablet / desktop), operating system + version family, browser + version, and whether the app runs as an installed PWA or a browser tab.',
       tele2: 'Screen and viewport size, device pixel ratio, interface language, timezone, and network type (4G / 3G / Wi-Fi / offline) with downlink and round-trip estimates when the browser exposes them.',
@@ -280,7 +280,7 @@
       calcTitle: 'ජංගම දත්ත වියදම (ශ්‍රී ලංකා)', storageTitle: 'ගබඩා විගණනය',
       colKey: 'යතුර', colWhat: 'අඩංගු දේ',
       storageNote: 'යෙදුම ලියන්නේ යතුරු පහක් පමණි; දත්ත මීටරය තවත් යතුරු හයක් ද මෙම පිටුව තේමා යතුරක් ද ලියයි — මුළු යතුරු 12ක්, කිසිවක් සඟවා නැත. සිංහල අකුරු සහ හඬ පටි ගබඩා වන්නේ සේවා සේවක උපස්ථයේය, localStorage හි නොවේ.',
-      teleTitle: 'මෙම යෙදුම ඔබේ කථිකාචාර්‍යාට බෙදා ගන්නා දේ (v0.0.7.f)',
+      teleTitle: 'මෙම යෙදුම ඔබේ කථිකාචාර්‍යාට බෙදා ගන්නා දේ (v0.0.7.g)',
       teleIntro: 'පෞද්ගලික ප්‍රවේශ අගුල හෝ පන්ති දුරමේන් ක්‍රියාත්මක වන විට, යෙදුම ඔබේ උපාංගයේ අවම, අවංක තොරතුරු පින්තූරයක් Google Apps Script මගින් කථිකාචාර්‍යාට යවයි. මෙය සම්පූර්ණ ලැයිස්තුවයි — වෙනත් කිසිවක් රැස් කරන්නේ නැත.',
       tele1: 'උපාංග වර්ගය (දුරකථනය / ටැබ්ලට් / ඩෙස්ක්ටොප්), මෙහෙයුම් පද්ධතිය + අනුවාදය, බ්‍රව්සරය + අනුවාදය, සහ යෙදුම PWA එකක් ලෙසද බ්‍රව්සර් පිටුවක් ලෙසද ක්‍රියා කරනවාද යන්න.',
       tele2: 'තිරයේ සහ දර්ශන කවුළුවේ ප්‍රමාණය, පික්සල් අනුපාතය, භාෂාව, කාල කලාපය සහ ජාල වර්ගය (4G / 3G / Wi-Fi / ඕෆ්ලයින්).',
@@ -308,7 +308,7 @@
 
   var lang = 'en';
   var theme = 'dark';
-  var SESSION_BYTES = 62961; /* D20: updated repository metadata; re-derived live below */
+  var SESSION_BYTES = 62960; /* D20: updated repository metadata; re-derived live below */
   var APP_BYTES = 421000; /* D20: measured shell + six modules on 0.0.5.c */
   function utf8Bytes(text) { try { return new TextEncoder().encode(str(text || '')).length; } catch (e) { return String(text || '').length; } }
   function deriveSessionBytes() {
@@ -394,7 +394,7 @@
   }
 
   function renderCaches() {
-    var roles = { 'sdp-v0.0.7.f-s45-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
+    var roles = { 'sdp-v0.0.7.g-s46-shell': 'roleShell', 'sdp-youdao-v1': 'roleYoudao', 'sdp-audio-clips': 'roleClips' };
     function paint(entries) {
       var html = '', i;
       if (!entries) { $('cacheTable').innerHTML = '<tr><td colspan="3" class="muted">' + tr('noCaches') + '</td></tr>'; return; }
@@ -455,7 +455,7 @@
       { k: 'sdp.dataMeter.videoHW', what: lang === 'si' ? 'වීඩියෝ යන්ත්‍රය' : 'video hardware probe byte' },
       { k: 'sdp.mediaManifest.v1', what: lang === 'si' ? 'මාධ්‍ය ලක්ෂ්‍ය සංකේතය' : 'media manifest index (fonts, audio estimates)' },
       { k: 'sdp.dataPage.theme', what: lang === 'si' ? 'තේමාව' : 'transparency page theme (dark/light)' },
-      { k: 'sdp.access_lock', what: lang === 'si' ? 'ලුණු-කළ උපාංග හැඳුනුම + අත්සන් කළ ප්‍රවේශ ටෝකනය (පැය 72 ක ඕෆ්ලයින් අනුකම්පාව)' : 'salted device ID + the HMAC-SHA256 signed access token with the 72 h offline grace (v0.0.7.f Access Lock; approved by the lecturer)' }
+      { k: 'sdp.access_lock', what: lang === 'si' ? 'ලුණු-කළ උපාංග හැඳුනුම + අත්සන් කළ ප්‍රවේශ ටෝකනය (පැය 72 ක ඕෆ්ලයින් අනුකම්පාව)' : 'salted device ID + the HMAC-SHA256 signed access token with the 72 h offline grace (v0.0.7.g Access Lock; approved by the lecturer)' }
     ];
     var html = '', i;
     for (i = 0; i < keys.length; i++) {

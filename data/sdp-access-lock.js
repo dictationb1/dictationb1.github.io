@@ -1,5 +1,5 @@
-/*! data/sdp-access-lock.js — v0.0.7.f — window.SDP.AccessLock (strict ES5).
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.f
+/*! data/sdp-access-lock.js — v0.0.7.g — window.SDP.AccessLock (strict ES5).
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
  * The Private Web App Access Lock client (Architecture D — Hybrid Smart
  * Classroom Gate). When the Lecturer arms the Master Lock the whole web app
  * stops at a bilingual full-screen Entry Lock BEFORE any student data paints:
@@ -215,16 +215,29 @@
     } catch (e2) {}
     return '';
   }
+  /* v0.0.7.g BUG-G3 FIX: the Entry Lock relay now delegates to the diagnostic
+     SDP.Data.postRelay (redirect:'follow', credentials:'omit', 12 s timeout,
+     res.text() FIRST + the exact HTML/auth/exception classifier) so an HTML
+     answer from a broken deployment surfaces as a precise RelayDiag error
+     instead of a swallowed SyntaxError. The local fetch fallback stays for
+     harnesses that load the lock module standalone. */
   function relay(body, cb) {
     cb = cb || noop;
     var url = relayUrl();
     if (!url || typeof global.fetch !== 'function') { cb(new Error('no_relay'), null); return; }
+    if (global.SDP && SDP.Data && typeof SDP.Data.postRelay === 'function') {
+      try { SDP.Data.postRelay(url, JSON.stringify(body), cb); return; } catch (eD) {}
+    }
     global.fetch(url, {
-      method: 'POST',
+      method: 'POST', mode: 'cors', redirect: 'follow', credentials: 'omit',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(body)
-    }).then(function (res) { return res && res.json ? res.json() : null; })
-      .then(function (data) { cb(null, data); })
+    }).then(function (res) { return res && res.text ? res.text() : ''; })
+      .then(function (text) {
+        var data = null;
+        try { data = JSON.parse(text); } catch (eJ) { cb(new Error('relay_not_json'), null); return; }
+        cb(null, data);
+      })
       .catch(function (e) { cb(e || new Error('relay_failed'), null); });
   }
 
@@ -532,7 +545,7 @@
 
   /* ── public API ──────────────────────────────────────────────────────── */
   SDP.AccessLock = {
-    version: '0.0.7.f',
+    version: '0.0.7.g',
     key: STORE_KEY,
     gate: gate,
     arm: arm,

@@ -48,25 +48,25 @@ const BUDGET = {
   /* v0.0.5.b: the appended Morphe material layer (glass header, layered
      shadows, spring motion, screen/modal/accordion transitions, mobile
      collision fixes) moved the ceiling in lockstep with the release. */
-  'assets/css/sdp-ui.css': 160000, /* v0.0.7.e: +Access Lock overlay +studio panel */ /* v0.0.6.y */ /* v0.0.6.v: +skip-top +selfheal +activity popup */
+  'assets/css/sdp-ui.css': 168000, /* v0.0.7.g: +Connection Doctor checklist */ /* v0.0.7.e: +Access Lock overlay +studio panel */ /* v0.0.6.y */ /* v0.0.6.v: +skip-top +selfheal +activity popup */
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
-  'data/sdp-data-sync.js': 162000, /* v0.0.6.y */ /* v0.0.6.v: +repoFromOrigin +30 RP lexicon entries + words purge */
+  'data/sdp-data-sync.js': 176000, /* v0.0.7.g: +the diagnostic relay classifier (BUG-G3/G5) */ /* v0.0.6.y */ /* v0.0.6.v: +repoFromOrigin +30 RP lexicon entries + words purge */
   'data/sdp-audio-speech.js': 116000, /* v0.0.7.f: +tgVoiceError hooks */ /* v0.0.6.z: +Z1 locked-word-ladder silent_locked tier */ /* v0.0.6.y */ /* v0.0.6.x: +UklGR mime detect + gainLinear playback */
   'data/sdp-dictation-engine.js': 80000, /* v0.0.6.y */
   'data/sdp-ui-views.js': 305000, /* v0.0.6.z: +Z4 lock overlay paint +startDictation guard */
   /* v0.0.6.m: the studio gained the reviews/telemetry drawer and
      autoEnsureSystemClips; the ceiling moved with it, in lockstep with
      audit-v42.cjs. */
-  'data/studio.js': 480000, /* v0.0.7.f: +relay chain + mode selector + test buttons */ /* v0.0.7.e: +B1 honest coverage + B2 sanitizers/variants + B4 publish-leave + auto-lock + guide wiring */ /* v0.0.7.a: +A1-A6 unlimited words, key pool, reuse library, quota dialog */ /* v0.0.6.z: +Z1 clone-removal revert +Z2 free-speech/quick-apply/transcription +Z4 audit banner +Z5 word-count & session-meta cards */ /* v0.0.6.y */
+  'data/studio.js': 500000, /* v0.0.7.g: +5-step Connection Doctor + /dev URL guard (BUG-G4) */ /* v0.0.7.f: +relay chain + mode selector + test buttons */ /* v0.0.7.e: +B1 honest coverage + B2 sanitizers/variants + B4 publish-leave + auto-lock + guide wiring */ /* v0.0.7.a: +A1-A6 unlimited words, key pool, reuse library, quota dialog */ /* v0.0.6.z: +Z1 clone-removal revert +Z2 free-speech/quick-apply/transcription +Z4 audit banner +Z5 word-count & session-meta cards */ /* v0.0.6.y */
   'data/data-meter.js': 26000,
   /* v0.0.5.b: ES5 transition hooks (lit cards, theme fade, accordion
      measurement, scroll reveals) - class toggles + custom properties only. */
   'data/sdp-morphe-hooks.js': 8000,
-  'data/session.json': 62961, /* v0.0.7.f root pin (exact: 31-word Session 14 + restored mobile phone variants) */
+  'data/session.json': 62960, /* v0.0.7.g root pin (exact: the live 31-word Session 14 payload, header advanced to ver 47) */
   'data/config.json': 44000, /* v0.0.7.f: +accessLock.relayUrl + mode */
   'data/version.json': 2000,
-  'data/gas-source.txt': 48338, /* v0.0.7.f: the Telegram Command Center (doPost webhook, inline buttons, 10 commands, tg_event relay, setupTelegramWebhook) */
+  'data/gas-source.txt': 54185, /* v0.0.7.g: the self-healing backend (auto-creating ss(), JSON gas_exception envelope, enriched ping, auto_setup_webhook, /dev refusal) */
   'data/sdp-access-lock.js': 30000, /* v0.0.7.f: +mode-aware overlay + relayUrl chain + firstGrant token handoff */
   /* v0.0.6.q: the pack carries the 131 authentic Alice clips PLUS the four
      committed real British-male George Project-Overview beats
@@ -90,7 +90,7 @@ const BUDGET = {
   'docs/ARCHITECTURE_MAP.md': 56000,
   'docs/UI_COMPONENT_GUIDE.md': 52000,
   'docs/SYNC_AND_DATA_CONTRACT.md': 52000,
-  'docs/CHANGELOG_LEDGER.md': 120000 /* v0.0.6.v entry added; oldest v0.0.1.a archaeology archived away */,
+  'docs/CHANGELOG_LEDGER.md': 140000 /* v0.0.7.g: +the auto-heal release entry */ /* v0.0.6.v entry added; oldest v0.0.1.a archaeology archived away */,
   'docs/DAILY_UPGRADE_PROMPT_TEMPLATE.md': 26000
 };
 /* contract: docs/ARCHITECTURE_MAP.md §H1 — preserved read-only payloads are
@@ -113,8 +113,8 @@ const PRESERVED_SHA = {
       intentional GitHub owner/repository metadata update. */
     /* v0.0.6.v: the intentional Session-12 RP repair publish + the GAS
        telemetry actions moved both pins in lockstep. */
-    'data/session.json': 'a0afbe032326c32956f3f12da941d266447f5965ab4b1afb4e5aba5f42f23598', /* v0.0.7.f: 31-word Session 14 + restored mobile phone variants */
-  'data/gas-source.txt': '3582488149d019584d94c89dd8d4756d2637710f3532264e86f4176f5eb9dd67', /* v0.0.7.f: the Telegram Command Center backend */
+    'data/session.json': '2845e0a18596ee6112eb8fe3f150c77cded86fce5142f7780b81ca32b797bef1', /* v0.0.7.g: 31-word Session 14 + restored mobile phone variants */
+  'data/gas-source.txt': '49c69317378fb31c1da4c034b1232e0b28842fc4f8afe79cf2c6eaf2c6034818', /* v0.0.7.g: the Telegram Command Center backend */
   'assets/fonts/NotoSansSinhala-Regular.woff2': '23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280',
   'assets/fonts/NotoSansSinhala-Bold.woff2': 'bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e'
 };
@@ -127,7 +127,7 @@ const TEST_FILES = [
   'tests/test-pin.cjs', 'tests/package.json',
   /* v0.0.1.e registers three more gates: voice/guide, vault/sync, studio safety */
   'tests/voice-guide.cjs', 'tests/vault-sync.cjs', 'tests/studio-safety.cjs',
-  /* v0.0.7.f: the Telegram Command Center + relay e2e gates. */
+  /* v0.0.7.g: the Telegram Command Center + relay e2e gates. */
   'tests/v007f-telegram-center.cjs', 'tests/v007f-lock-relay-e2e.cjs',
   /* v0.0.7.e: the Access Lock gates. */
   'tests/v007e-gas-lock.cjs', 'tests/v007e-lock-ux.cjs', 'tests/v007e-studio-lock.cjs',
@@ -151,7 +151,7 @@ const TEST_FILES = [
   'tests/v006z-verification.cjs'
 ];
 /* v0.0.6.m: +G5.14/G3.12 critical-fix + clean-header assertions */
-const TEST_BUDGET = 940000; /* v0.0.7.f: +v007f-telegram-center + v007f-lock-relay-e2e (23 suites) */ /* v0.0.6.z: +v006z-verification gate (18 suites) */ /* v0.0.6.y: +v006y-verification gate (17 suites) */ /* v0.0.6.x: +v006w-verification gate */ /* v0.0.6.q: the P1/P2/P3 + LAB1m/LAB1n2/LAB2m assertions + shot-v006q captures moved the ceiling in lockstep */
+const TEST_BUDGET = 1020000; /* v0.0.7.g: +v007g-autoheal-relay self-heal + Connection Doctor gate (24 suites) */ /* v0.0.6.z: +v006z-verification gate (18 suites) */ /* v0.0.6.y: +v006y-verification gate (17 suites) */ /* v0.0.6.x: +v006w-verification gate */ /* v0.0.6.q: the P1/P2/P3 + LAB1m/LAB1n2/LAB2m assertions + shot-v006q captures moved the ceiling in lockstep */
 
 /* contract: docs/ARCHITECTURE_MAP.md §H2 — retired v42–v60 ids/strings must be
  * gone from every shipped byte, never merely hidden with display:none (W8). */
@@ -309,10 +309,10 @@ function pending(p) {
   if (exists('data/version.json')) {
     const v = JSON.parse(readText('data/version.json'));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.6.m ships ver 27 / schema 26 / settingsRev 42
-    const ok = v.ver === 46 && v.appVersion === '0.0.7.f' && v.version === '0.0.7.f' &&
-      v.schema === 46 && v.settingsRev === 79 && String(v.session) === '14';
-    record('version.json carries the v0.0.7.f schema', ok, JSON.stringify(v).slice(0, 220));
-    record('version.json pins syncRev 1797000000028', Number(v.syncRev) === 1797000000028, JSON.stringify(v).slice(0, 200));
+    const ok = v.ver === 47 && v.appVersion === '0.0.7.g' && v.version === '0.0.7.g' &&
+      v.schema === 47 && v.settingsRev === 80 && String(v.session) === '14';
+    record('version.json carries the v0.0.7.g schema', ok, JSON.stringify(v).slice(0, 220));
+    record('version.json pins syncRev 1797000000029', Number(v.syncRev) === 1797000000029, JSON.stringify(v).slice(0, 200));
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R14.1 — the module constant and the
        shipped pointer must never disagree, or a device re-adopts stale classSettings. */
     const syncSrc = exists('data/sdp-data-sync.js') ? readText('data/sdp-data-sync.js') : '';
@@ -332,8 +332,8 @@ function pending(p) {
       'preserved payload trimmed');
     record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.5.c bump set
-    record('config.json carries v0.0.7.f version fields',
-      c.ver === 46 && c.appVersion === '0.0.7.f' && c.version === '0.0.7.f' && c.schema === 46 && c.settingsRev === 79,
+    record('config.json carries v0.0.7.g version fields',
+      c.ver === 47 && c.appVersion === '0.0.7.g' && c.version === '0.0.7.g' && c.schema === 47 && c.settingsRev === 80,
       JSON.stringify([c.ver, c.appVersion, c.schema, c.settingsRev]));
     record('config.json keeps the credits block verbatim',
       c.credits.en === 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini' &&
@@ -483,7 +483,7 @@ function pending(p) {
   record('index.html loads the nine modules in the fixed R10 order', ordered, JSON.stringify(positions));
   record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
   // contract: docs/ARCHITECTURE_MAP.md §R1 boot target is a single TARGET constant
-  record('index.html declares the v0.0.7.f boot target', html.indexOf("'0.0.7.f'") > 0 || html.indexOf('"0.0.7.f"') > 0);
+  record('index.html declares the v0.0.7.g boot target', html.indexOf("'0.0.7.g'") > 0 || html.indexOf('"0.0.7.g"') > 0);
   const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings', 'tab-studio'];
   record('index.html contains the six tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
   const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings', 'screen-studio'];
@@ -568,9 +568,9 @@ function pending(p) {
     record('index.html ships exactly the two spotlight buttons (start / exit)',
       /id="btnGuideSkipStart"/.test(html) && /id="btnGuideClose"/.test(html) &&
       !/guideNextStep/.test(html) && !/guideReplayStep/.test(html) && !/guidePauseVoice/.test(html));
-    record('index.html boots at the v0.0.7.f target', /var TARGET = '0\.0\.7\.f'/.test(html));
-    record('service worker pins the v0.0.7.f s45 shell caches',
-      /SW_VERSION = 'sdp-v0\.0\.7\.f-s45'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.f-s45-shell'/.test(sw));
+    record('index.html boots at the v0.0.7.g target', /var TARGET = '0\.0\.7\.g'/.test(html));
+    record('service worker pins the v0.0.7.g s46 shell caches',
+      /SW_VERSION = 'sdp-v0\.0\.7\.g-s46'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.g-s46-shell'/.test(sw));
     /* W7: the studio must stamp whatever SDP.version says — never a frozen literal. */
     var studioCode = readText('data/studio.js').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     record('studio.js never hardcodes a release literal (reads SDP.version)',
@@ -590,28 +590,28 @@ function pending(p) {
     }
     var man = exists('manifest.webmanifest') ? readText('manifest.webmanifest') : '';
     record('manifest start_url carries the PWA source tag', /source=pwa/.test(man));
-    record('manifest start_url and shortcuts carry v0.0.7.f',
-      /"start_url":"\.\/\?v=0.0.7.f/.test(man) &&
-      (man.match(/v=0.0.7.f/g) || []).length >= 3, (man.match(/v=0.0.7.f/g) || []).length);
+    record('manifest start_url and shortcuts carry v0.0.7.g',
+      /"start_url":"\.\/\?v=0.0.7.g/.test(man) &&
+      (man.match(/v=0.0.7.g/g) || []).length >= 3, (man.match(/v=0.0.7.g/g) || []).length);
     /* D15 (v0.0.2.b): every versioned surface must agree, byte for byte, on the
        release literal and on ver 9 — no file may drift on its own. */
-    var app = '0.0.7.f';
+    var app = '0.0.7.g';
     var agree = {
       'index.html': html.indexOf(app) > 0,
       'data.html': exists('data.html') ? readText('data.html').indexOf(app) > 0 : false,
-      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 46;/.test(sync),
+      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 47;/.test(sync),
       'sw.js': sw.indexOf('sdp-v' + app) > 0,
       'manifest.webmanifest': man.indexOf(app) > 0,
-      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 46,
-      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 46
+      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 47,
+      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 47
     };
     var drifted = Object.keys(agree).filter(function (k) { return !agree[k]; });
-    record('D15 all seven versioned surfaces agree on 0.0.7.f / ver 46',
+    record('D15 all seven versioned surfaces agree on 0.0.7.g / ver 46',
       drifted.length === 0, drifted.join(', ') + ' ' + JSON.stringify(agree));
     var pack = JSON.parse(readText('data/elevenlabs-audio.json'));
-    record('voice pack carries the v0.0.7.f header',
-      pack.version === '0.0.7.f' && pack.appVersion === '0.0.7.f' && pack.ver === 46 && pack.schema === 46 &&
-      pack.settingsRev === 79 && Number(pack.syncRev) === 1797000000028 &&
+    record('voice pack carries the v0.0.7.g header',
+      pack.version === '0.0.7.g' && pack.appVersion === '0.0.7.g' && pack.ver === 47 && pack.schema === 47 &&
+      pack.settingsRev === 80 && Number(pack.syncRev) === 1797000000029 &&
       pack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && pack.hashAlgo === 'sha1',
       JSON.stringify([pack.version, pack.ver, pack.settingsRev, pack.syncRev]));
     /* v0.0.6.q PILLAR 2 law: the shipped pack carries EXACTLY the 135
@@ -753,7 +753,7 @@ function pending(p) {
     record('A6c the floating Beta stamp and Beta pill are gone for good',
       !/id="sdpBetaStamp"/.test(html) && !/id="sdpBetaPill"/.test(html) &&
       !/\.beta-stamp/.test(css) && !/\.beta-pill/.test(css) &&
-      /BETA_SUBVERSION = '0\.0\.7\.f\.beta'/.test(views) &&
+      /BETA_SUBVERSION = '0\.0\.7\.g\.beta'/.test(views) &&
       /function betaActive/.test(views) && /function applyBetaChannel/.test(views));
   })();
 
@@ -843,9 +843,9 @@ function pending(p) {
         return c(/^num\.\d+$/) === 31 && c(/^cmd\./) === 6 && c(/^guide\.en\./) === 4 && c(/^_intro_male_[1-4]$/) === 4 && c(/^words\./) === 31 && pk.length === 76;
       })());
     var swText1 = readText('sw.js');
-    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s45 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
-      /SW_VERSION = 'sdp-v0\.0\.7\.f-s45'/.test(swText1) &&
-      /var SW_RELEASE = '0\.0\.7\.f';/.test(swText1) &&
+    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s46 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
+      /SW_VERSION = 'sdp-v0\.0\.7\.g-s46'/.test(swText1) &&
+      /var SW_RELEASE = '0\.0\.7\.g';/.test(swText1) &&
       /function staleWhileRevalidateDataJson/.test(swText1) &&
       /x-sdp-release/.test(swText1) &&
       /isPointer = \/\\\/data\\\/version\\\.json\$\/i\.test\(url\.pathname\)/.test(swText1) &&

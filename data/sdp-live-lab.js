@@ -1,4 +1,4 @@
-/* data/sdp-live-lab.js — unified app version 0.0.7.f — window.SDP.LiveLab (strict ES5).
+/* data/sdp-live-lab.js — unified app version 0.0.7.g — window.SDP.LiveLab (strict ES5).
  * Powers the real-time stations of lab.html through REAL browser APIs only
  * (AudioContext.decodeAudioData, <audio> playback, live fetch) — zero mocks.
  * Z3: the pack spectral/LUFS broadcast-signature consistency check
@@ -44,9 +44,9 @@
   /* v0.0.7.c (BUG-06): Station 1's last full measurement pass + the Station 7
      release-verification probes all live in this module. */
   var lastS1 = null;
-  var S7_EXPECTED_APP = '0.0.7.f';
-  var S7_EXPECTED_SW = 'sdp-v0.0.7.f-s45';
-  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.f-s45-shell';
+  var S7_EXPECTED_APP = '0.0.7.g';
+  var S7_EXPECTED_SW = 'sdp-v0.0.7.g-s46';
+  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.g-s46-shell';
 
   function record(station, name, ok, detail) {
     if (!LAB.results[station]) LAB.results[station] = [];
@@ -171,7 +171,7 @@
     var host = byId('labClipTableBody');
     if (!host) return false;
     setTxt('labPackStatus', 'Loading live /data/elevenlabs-audio.json …');
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.f', { cache: 'no-store' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.g', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack || !isObj(pack.clips)) { setTxt('labPackStatus', '✗ pack unavailable (offline?)'); record('S1', 'manifest loads', false, 'fetch failed'); return; }
@@ -244,7 +244,7 @@
   }
 
   function playKey(key) {
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.f', { cache: 'default' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.g', { cache: 'default' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack) return;
@@ -456,7 +456,7 @@
     var c = counts();
     LAB.report = {
       lab: 'SDP Real-Time Live Voice & Clone Lab',
-      labVersion: '0.0.7.f',
+      labVersion: '0.0.7.g',
       appVersion: (global.SDP && SDP.version) || '0.0.7.c',
       at: new Date().toISOString(),
       href: str(global.location && global.location.href),
@@ -602,7 +602,7 @@
     var words = [];
     try { if (global.SDP && SDP.Sync && SDP.Sync.words) words = SDP.Sync.words() || []; } catch (eW) {}
     if (words.length) { labBatchRun(words, key); return true; }
-    global.fetch('./data/session.json?v=0.0.7.f', { cache: 'no-store' })
+    global.fetch('./data/session.json?v=0.0.7.g', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (s) {
         if (s && Array.isArray(s.words) && s.words.length) labBatchRun(s.words, key);
@@ -1272,7 +1272,7 @@
     return true;
   }
   function station7() {
-    setTxt('labS7Status', '🧪 v0.0.7.f release verification running …');
+    setTxt('labS7Status', '🧪 v0.0.7.g release verification running …');
     if (byId('labS7Trace')) byId('labS7Trace').innerHTML = '';
     var pill = str(byId('labVerPill') ? byId('labVerPill').textContent : '');
     var sdVer = str(global.SDP && SDP.version);
@@ -1282,8 +1282,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var verApp = ver && str(ver.appVersion);
-        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 46 / schema 46 / settingsRev 79 / syncRev 1797000000028)',
-          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 46 && Number(ver && ver.settingsRev) === 79 && Number(ver && ver.syncRev) === 1797000000028,
+        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 47 / schema 47 / settingsRev 80 / syncRev 1797000000029)',
+          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 47 && Number(ver && ver.settingsRev) === 80 && Number(ver && ver.syncRev) === 1797000000029,
           JSON.stringify(ver || null));
         record('S7', 'version lockstep: the Lab pill (' + pill + ') == SDP.version (' + sdVer + ') == data/version.json (' + verApp + ')',
           pill === S7_EXPECTED_APP && sdVer === S7_EXPECTED_APP && verApp === S7_EXPECTED_APP,
@@ -1416,7 +1416,7 @@
 
   SDP.LiveLab = {
     /* v0.0.7.c: the Live Lab shares the app's ONE progressive version. */
-    version: '0.0.7.f',
+    version: '0.0.7.g',
     labKey: labKey,
     labBatchRepairWords: labBatchRepairWords,
     testVoiceSynthesis: testVoiceSynthesis,

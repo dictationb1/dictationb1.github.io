@@ -6,15 +6,15 @@
   'use strict';
 
   var SDP = global.SDP = global.SDP || {};
-  SDP.version = '0.0.7.f';
+  SDP.version = '0.0.7.g';
   SDP.build = '2026-11-21';
-  SDP.ver = 46; /* v0.0.7.f */
+  SDP.ver = 47; /* v0.0.7.g */
   global.SDPCore = SDP;
 
   var doc = global.document;
-  var APP_VERSION = '0.0.7.f'; /* v0.0.7.f */
+  var APP_VERSION = '0.0.7.g'; /* v0.0.7.g */
   var SCHEMA = 42;
-  var SETTINGS_REV = 79; /* v0.0.7.f */
+  var SETTINGS_REV = 80; /* v0.0.7.g */
   /* D1 guard: the in-session upgrade reload fires at most once per version. */
   var appVersionChanged = false;
   /* D5 guard: visibilitychange / focus are registered at most once per load. */
@@ -887,7 +887,10 @@
            envelope is ALSO pushed to the Apps Script cloud relay (when the
            creator configured one) so nothing is ever lost, even if the
            device later clears its storage. */
-        try { Data.pushReviewEnvelope(str(envelope)); } catch (e0) {}
+        /* v0.0.7.g BUG-G5 FIX: this lived on Sync all along — calling it on
+           the localStorage Data object threw a silent TypeError, so the
+           sealed review cloud push NEVER fired in production. */
+        try { Sync.pushReviewEnvelope(str(envelope)); } catch (e0) {}
       }, function () {});
       return true;
     },
@@ -3005,7 +3008,9 @@
         contact: '',
         meta: head.slice(0, 200)
       };
-      Data.postRelay(relayUrl, JSON.stringify(body), function (err, data) {
+      /* v0.0.7.g BUG-G5 FIX: Sync.postRelay — this used to call the
+         nonexistent Data.postRelay, so the push silently died. */
+      Sync.postRelay(relayUrl, JSON.stringify(body), function (err, data) {
         try {
           Diagnostics.log('review_cloud_push', { ok: !err, relay: relayUrl.slice(0, 60) });
         } catch (e1) {}
@@ -3013,16 +3018,154 @@
       });
       return true;
     },
+    /* v0.0.7.g BUG-G3 FIX: the diagnostic relay POST. The old law called
+       res.json() blindly with no redirect/credentials/timeout — ANY HTML
+       answer (the Google Sign-In page a /dev or non-"Anyone" deployment
+       answers with, an Apps Script crash page, a 404) threw a bare
+       SyntaxError that every caller swallowed into a vague "Relay
+       unreachable". The new law: redirect:'follow' + credentials:'omit' +
+       mode:'cors', a strict 12 s AbortController timeout, res.text() FIRST,
+       then a precise classifier that names the exact cause (ERR_BAD_URL,
+       ERR_AUTH_NOT_ANYONE, ERR_GAS_EXCEPTION, ERR_NETWORK_OR_CORS,
+       ERR_TIMEOUT) with the bilingual EN + SI fix the Connection Doctor
+       renders verbatim. JSON answers (including {ok:false,...} envelopes)
+       still reach the callback as data, so every existing caller contract
+       is preserved. */
+    relayDiag: function (code, en, si, extra) {
+      var e = new Error(en);
+      e.code = code; e.en = en; e.si = si || '';
+      e.relayDiag = true;
+      if (extra) { for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) e[k] = extra[k]; } }
+      return e;
+    },
+    /* classifyRelayText — pure classifier over (bodyText, httpStatus, url):
+       HTML Sign-In pages, Apps Script exception pages, 404s and non-JSON
+       bodies become exact RelayDiag errors; valid JSON returns null. */
+    classifyRelayText: function (bodyText, status, url) {
+      var t = str(bodyText), low = t.toLowerCase(), head = t.replace(/^\s+/, '').slice(0, 600).toLowerCase();
+      var isHtml = head.slice(0, 1) === '<' || low.indexOf('<!doctype html') === 0 ||
+        (head.indexOf('<html') >= 0 && head.indexOf('</html>') > 0);
+      if (isHtml) {
+        if (low.indexOf('accounts.google.com') >= 0 || low.indexOf('servicelogin') >= 0 || low.indexOf('signinidentifier') >= 0) {
+          return Sync.relayDiag('ERR_AUTH_NOT_ANYONE',
+            "Web App access is NOT set to 'Anyone' (or you pasted a /dev URL). Google answered with its Sign-In page, so neither students nor Telegram can reach the relay. Re-deploy the Web App with 'Who has access: Anyone' and paste the /exec URL.",
+            "Web App එකේ access 'Anyone' ලෙස සකසා නැත (හෝ /dev URL එකක් paste කර ඇත). Google පිළිතුරු දී ඇත්තේ Sign-In පිටුවක් — එබැවින් සිසුන්ට හෝ Telegram ට relay එක ළඟා විය නොහැක. Apps Script → Deploy → New deployment → Web app → 'Who has access: Anyone' ලෙස නැවත deploy කර /exec URL එක paste කරන්න.",
+            { http: status, url: str(url) });
+        }
+        /* an Apps Script exception page — extract the exact error text */
+        var m = t.match(/<p[^>]*>([\s\S]{4,300}?)<\/p>/i), line = '';
+        var mt = t.match(/<title[^>]*>([\s\S]{2,200}?)<\/title>/i);
+        if (m) line = m[1]; else if (mt) line = mt[1];
+        line = str(line).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+        return Sync.relayDiag('ERR_GAS_EXCEPTION',
+          'The Apps Script itself crashed: ' + (line || 'uncaught exception (HTML error page)') + '. Open script.google.com, check the highlighted line, re-deploy, then run the Doctor again.',
+          'Apps Script එක ක්‍රෑෂ් විය: ' + (line || 'exception (HTML දෝෂ පිටුවක්)') + '. script.google.com විවෘත කර දෝෂය නිවැරදි කර නැවත deploy කර Doctor එක නැවත run කරන්න.',
+          { http: status, url: str(url), detail: line });
+      }
+      if (status === 404 || (status && status >= 400 && status < 500 && !isHtml)) {
+        return Sync.relayDiag('ERR_BAD_URL',
+          'The Apps Script answered ' + status + ' — script not found. The /exec URL is wrong or the deployment was deleted. Copy the exact /exec URL from Deploy → Manage deployments.',
+          'Apps Script එක ' + status + ' ලෙස පිළිතුරු දුන්නේය — script එක හමු නොවේ. Deploy → Manage deployments හි ඇති නිවැරදි /exec URL එක copy කර paste කරන්න.',
+          { http: status, url: str(url) });
+      }
+      return null;
+    },
+    /* relayClassify — the Connection Doctor entry point: turns whatever
+       postRelay produced (transport Error OR a JSON {ok:false} envelope)
+       into an exact RelayDiag, or null when the relay genuinely answered. */
+    relayClassify: function (err, data) {
+      if (err && err.relayDiag) return err;
+      if (err) {
+        var msg = str(err && err.message).toLowerCase();
+        if (msg.indexOf('timeout') >= 0 || msg.indexOf('aborted') >= 0 || msg.indexOf('abort') >= 0) {
+          return Sync.relayDiag('ERR_TIMEOUT',
+            'The relay did not answer within 12 seconds — the Apps Script may be cold-asleep, the URL wrong, or the network too slow.',
+            '12 තත්පරයක් තුළ relay එක පිළිතුරු නොදුන්නේය — URL එක වැරදි විය හැකිය හෝ ජාලය මන්දගාමී විය හැකිය.', {});
+        }
+        return Sync.relayDiag('ERR_NETWORK_OR_CORS',
+          'The browser could not reach script.google.com — is the internet connected, is the /exec URL valid, and is an ad-blocker blocking script.google.com?',
+          'script.google.com වෙත සම්බන්ධ විය නොහැක — අන්තර්ජාලය ක්‍රියාත්මකද, /exec URL එක නිවැරදිද, ad-blocker එකක් script.google.com අවහිර කරනවාද යන්න පරීක්ෂා කරන්න.', {});
+      }
+      if (data && data.ok === false) {
+        var e = str(data.err);
+        if (e === 'unauthorised' || e === 'bad_pin' || e === 'admin_pin_unset') {
+          var en = e === 'admin_pin_unset'
+            ? 'ADMIN_PIN is not set in the Apps Script Script Properties, so admin actions are refused.'
+            : "Your Studio PIN does not match ADMIN_PIN in the Apps Script Script Properties.";
+          var si = e === 'admin_pin_unset'
+            ? 'Apps Script හි Script Properties තුළ ADMIN_PIN සකසා නැත — admin ක්‍රියා ප්‍රතික්ෂේප වේ.'
+            : 'ඔබගේ Studio PIN එක Apps Script හි ADMIN_PIN එකට නොගැලපේ.';
+          return Sync.relayDiag('ERR_ADMIN_PIN_MISMATCH',
+            en + ' Fix: Apps Script → Project Settings → Script Properties → set ADMIN_PIN to the same PIN you use to unlock Lecturer Studio, then run the Doctor again.',
+            si + ' විසඳුම: Apps Script → Project Settings → Script Properties → ADMIN_PIN එකට Lecturer Studio අරින PIN එම අගයම දමා Doctor එක නැවත run කරන්න.', { data: data });
+        }
+        if (e === 'gas_exception') {
+          return Sync.relayDiag('ERR_GAS_EXCEPTION',
+            'The Apps Script itself crashed: ' + str(data.detail) + '. Open script.google.com, fix the highlighted line, re-deploy, then run the Doctor again.',
+            'Apps Script එක ක්‍රෑෂ් විය: ' + str(data.detail) + '. script.google.com විවෘත කර දෝෂය නිවැරදි කර නැවත deploy කරන්න.', { data: data });
+        }
+      }
+      return null;
+    },
     postRelay: function (relayUrl, body, cb) {
       cb = cb || noop;
       if (!relayUrl || typeof global.fetch !== 'function') { cb(new Error('no_relay')); return; }
-      global.fetch(relayUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body: str(body)
-      }).then(function (res) { return res && res.json ? res.json() : null; })
-        .then(function (data) { cb(null, data); })
-        .catch(function (e) { cb(e || new Error('relay_failed')); });
+      /* v0.0.7.g BUG-G5: Sync-scoped (not this-scoped) so the SDP.Data alias works */
+      var self = Sync;
+      var done = false, timer = null, ctl = null;
+      function finish(err, data) {
+        if (done) return; done = true;
+        if (timer) { global.clearTimeout(timer); timer = null; }
+        cb(err, data);
+      }
+      /* strict 12-second timeout — a dead relay can never hang a phone */
+      timer = global.setTimeout(function () {
+        finish(self.relayDiag('ERR_TIMEOUT',
+          'The relay did not answer within 12 seconds — the Apps Script may be cold-asleep, the URL wrong, or the network too slow.',
+          '12 තත්පරයක් තුළ relay එක පිළිතුරු නොදුන්නේය — URL එක වැරදි විය හැකිය හෝ ජාලය මන්දගාමී විය හැකිය.', {}));
+      }, 12000);
+      var opts = { method: 'POST', mode: 'cors', redirect: 'follow', credentials: 'omit',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: str(body) };
+      try {
+        if (typeof global.AbortController === 'function') {
+          ctl = new global.AbortController();
+          opts.signal = ctl.signal;
+        }
+      } catch (eAC) { ctl = null; }
+      global.fetch(relayUrl, opts).then(function (res) {
+        var status = 0;
+        try { status = Number(res && res.status) || 0; } catch (eSt) { status = 0; }
+        return (res && res.text ? res.text() : '').then(function (text) { return { status: status, text: text }; });
+      }).then(function (envelope) {
+        var text = str(envelope && envelope.text);
+        var status = Number(envelope && envelope.status) || 0;
+        var diag = self.classifyRelayText(text, status, relayUrl);
+        if (diag) { finish(diag, null); return; }
+        var data = null;
+        try { data = JSON.parse(text); } catch (eJ) {
+          finish(self.relayDiag('ERR_BAD_URL',
+            'The relay answered, but not with JSON — the /exec URL is wrong or the deployment answers HTML. Copy the exact /exec URL from Deploy → Manage deployments.',
+            'relay එක JSON ලෙස නොව HTML ලෙස පිළිතුරු දුන්නේය — /exec URL එක වැරදියි. Deploy → Manage deployments හි ඇති නිවැරදි URL එක paste කරන්න.',
+            { url: str(relayUrl), body: text.slice(0, 120) }), null);
+          return;
+        }
+        finish(null, data);
+      }).catch(function (e) {
+        var diag = null;
+        /* a /dev URL answers with a cross-origin Google Sign-In redirect the
+           browser can NEVER follow (no CORS headers) — the fetch rejects with
+           a bare TypeError. Name that exact cause instead of a vague network
+           error: this is the owner's live BUG-G2/BUG-G3 screenshot scenario. */
+        if (str(relayUrl).indexOf('/dev') >= 0) {
+          diag = self.relayDiag('ERR_AUTH_NOT_ANYONE',
+            "A /dev TEST URL was pasted — Google answers it with a Sign-In redirect the browser can never follow, so Telegram and students can never reach it. Click '🔁 Use the /exec URL instead' (or copy the /exec URL from Deploy → Manage deployments).",
+            'ඔබ paste කර ඇත්තේ /dev TEST URL එකකි — Google එයට පිළිතුරු දෙන්නේ browser එකට follow කළ නොහැකි Sign-In redirect එකකි, එබැවින් Telegram සහ සිසුන් කිසිවිටෙක එය ළඟා කරගත නොහැක. "🔁 Use the /exec URL instead" ඔබන්න (නැතහොත් Deploy → Manage deployments හි /exec URL එක copy කරන්න).',
+            { url: str(relayUrl) });
+        }
+        if (!diag) diag = self.relayClassify(e, null);
+        finish(diag || e || new Error('relay_failed'), null);
+      });
     },
 
     /* D8: bounded live-state poll — 8 second timeout, clean /json?poll=1 URL,
@@ -3132,6 +3275,17 @@
   };
 
   SDP.Data = Data;
+  /* v0.0.7.g BUG-G5 FIX (the missing production relay bridge): the Studio
+     (gasLockRelay) and the Access Lock have always addressed the relay
+     through SDP.Data.postRelay — but postRelay only ever existed on
+     SDP.Sync, so every Studio Access Lock relay button failed with a silent
+     no_relay, shown to the owner as a vague "Relay unreachable" even with a
+     perfect deployment. The diagnostic relay surface is now aliased onto
+     SDP.Data exactly where the callers expect it. */
+  SDP.Data.postRelay = Sync.postRelay;
+  SDP.Data.relayClassify = Sync.relayClassify;
+  SDP.Data.relayDiag = Sync.relayDiag;
+  SDP.Data.classifyRelayText = Sync.classifyRelayText;
   SDP.Sync = Sync;
   SDP.Sync.Vault = Vault;
   /* v0.0.6.j Pillar 3: the privacy-safe diagnostics ring buffer + the

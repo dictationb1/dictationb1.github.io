@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
-/* G27 — tests/v007f-lock-relay-e2e.cjs — the v0.0.7.f end-to-end lock + relay gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.f
+/* G27 — tests/v007f-lock-relay-e2e.cjs — the v0.0.7.g end-to-end lock + relay gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
  * Real Chromium + the shipped app + a faithful in-process Apps Script relay:
  *   E1  BUG-F1 — the Studio Access Lock panel reads #studioGasUrl live: the
  *       relay URL pasted into the Advanced Tools field (never re-saved to the
@@ -176,7 +176,7 @@ async function launch() {
         window.__SDP_NO_LIVE__ = true;
         window.__SDP_E2E_RELAY__ = relayUrl;
         try {
-          localStorage.setItem('sdp.guide_seen', '0.0.7.f');
+          localStorage.setItem('sdp.guide_seen', '0.0.7.g');
           /* NO sdp.settings.gasUrl — the student must find the relay via
              config.json accessLock.relayUrl (the BUG-F1 student-side law). */
         } catch (e) {}
@@ -434,8 +434,8 @@ async function launch() {
       const sentRelay = [];
       const app = await createApp({
         before(w) {
-          w.localStorage.setItem('sdp.guide_seen', '0.0.7.f');
-          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.f', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
+          w.localStorage.setItem('sdp.guide_seen', '0.0.7.g');
+          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.g', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
         }
       });
       /* record every relay post the studio makes */
@@ -453,7 +453,7 @@ async function launch() {
       if (drawer) drawer.open = true;
       await app.settle(3);
       const card = app.byId('studioCardAccessLock');
-      check('E1a the Access Lock panel paints the Unlock Policy selector + both relay test buttons (v0.0.7.f)',
+      check('E1a the Access Lock panel paints the Unlock Policy selector + both relay test buttons (v0.0.7.g)',
         !!(card && app.byId('studioAlMode') && app.byId('btnAlSaveTestRelay') && app.byId('btnAlTestTelegram')),
         'card=' + !!card + ' mode=' + !!app.byId('studioAlMode') + ' test=' + !!app.byId('btnAlSaveTestRelay') + ' tg=' + !!app.byId('btnAlTestTelegram'));
       /* the BUG-F1 core: paste a NEW relay URL into #studioGasUrl — the live
