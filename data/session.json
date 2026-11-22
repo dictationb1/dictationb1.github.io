@@ -590,11 +590,7 @@
           "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
           "si": "ජංගම දුරකථනය",
           "s": "I called you on my mobile phone, but you did not answer.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
-          "pronunciationVariants": [
-            "/ˈməʊ.baɪl fəʊn/",
-            "/ˌməʊ.baɪl ˈfəʊn/"
-          ]
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
         }
       ]
     },
@@ -901,10 +897,10 @@
   "announcement": null,
   "comments": [],
   "appVersion": "0.0.7.g",
-  "updatedAt": "2026-11-21T19:07:13.101Z",
+  "updatedAt": "2026-11-22T04:41:27.528Z",
   "version": "0.0.7.g",
   "buildDate": "2026-11-21",
-  "settingsRev": 80,
+  "settingsRev": 81,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -1213,7 +1209,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000029,
+  "syncRev": 1797000000030,
   "words": [
     {
       "w": "communications",
@@ -1492,11 +1488,7 @@
       "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
       "si": "ජංගම දුරකථනය",
       "s": "I called you on my mobile phone, but you did not answer.",
-      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
-      "pronunciationVariants": [
-        "/ˈməʊ.baɪl fəʊn/",
-        "/ˌməʊ.baɪl ˈfəʊn/"
-      ]
+      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
     }
   ],
   "versionFamily": "9.0.0",
