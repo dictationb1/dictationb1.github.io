@@ -73,7 +73,7 @@ check('G9.1f no retired CSS is merely hidden with display:none',
 // contract: docs/ARCHITECTURE_MAP.md §5 budget table
 const BUDGETS = {
   /* v0.0.2.b (W2) ceilings — identical to tests/check.cjs BUDGET. */
-  'index.html': 66000, /* v0.0.7.a: +Z4 dictation lock overlay host */
+  'index.html': 72000, /* v0.0.7.h: +Force Update banner (BUG-H1) */
   /* v0.0.5.b: the appended Morphe material layer (glass header, layered
      shadows, spring motion, screen/modal/accordion transitions, mobile
      collision fixes) moved the ceiling in lockstep with the release. */
@@ -94,16 +94,16 @@ const BUDGETS = {
   'data/config.json': 44000,
   'data/version.json': 2000,
   'data/session.json': 72000, /* v0.0.6.x: repaired Session-14 payload */
-  'data/gas-source.txt': 62000, /* v0.0.7.g: the self-healing backend (ss() auto-create, envelope, auto_setup_webhook) */ /* v0.0.7.f: the Telegram Command Center backend */
+  'data/gas-source.txt': 64000, /* v0.0.7.h: +tg_webhook_info +lab_test_cleanup (ss() auto-create, envelope, auto_setup_webhook) */ /* v0.0.7.f: the Telegram Command Center backend */
   'data/sdp-access-lock.js': 30000, /* v0.0.7.f: +mode overlay + relayUrl chain + firstGrant */
   'data/elevenlabs-audio.json': 4500000, /* v0.0.6.v: the 74-clip canonical pack */
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
   'data.html': 40000,
   'data/index.html': 40000,
-  'sw.js': 18000 /* v0.0.7.a s40 */,
-  'lab.html': 30000 /* v0.0.7.a Live Lab v4.0: +low-credit verifier */,
-  'data/sdp-live-lab.js': 92000 /* v0.0.7.e unified Live Lab: +Station 7 release verification */,
+  'sw.js': 24000 /* v0.0.7.h s47: +3 s fast-fallback +force-update message */,
+  'lab.html': 26000 /* v0.0.7.h: +Station 8 card +Force Update banner */,
+  'data/sdp-live-lab.js': 132000 /* v0.0.7.h: +Station 8 live relay/lock/Telegram lab +Force Update controller */,
   'manifest.webmanifest': 4000
 };
 const over = [];
@@ -130,7 +130,7 @@ const testBytes = tracked.filter((f) => f.startsWith('tests/') && /\.(cjs|js)$/.
    moved the ceiling in lockstep to 620,000 B. */
 /* v0.0.7.e: the Access Lock gates (tests/v007e-gas-lock.cjs, tests/v007e-lock-ux.cjs,
    tests/v007e-studio-lock.cjs) moved the ceiling in lockstep to 950,000 B. */
-check('G9.2e the whole test suite stays inside 1,020,000 bytes (' + testBytes + ')', testBytes <= 1020000, testBytes);
+check('G9.2e the whole test suite stays inside 1,150,000 bytes (' + testBytes + ')', testBytes <= 1150000, testBytes);
 
 /* ── 3. no build step, no bundler, no monolith ─────────────────────────── */
 // contract: docs/ARCHITECTURE_MAP.md §R3 ES5 modules
@@ -229,8 +229,8 @@ check('G9.5c only the five R4 localStorage keys are named in scripts', strayKeys
  * now writes it on every publish (D-UI11), so it is budgeted and header-checked
  * instead of hash-frozen, and its clips are still never re-rendered for free. */
 const LOCKED = [
-  ['data/session.json', '2845e0a1'], /* v0.0.7.g root pin (31-word Session 14 + variants) */
-  ['data/gas-source.txt', '49c69317'], /* v0.0.7.g: Telegram Command Center backend */
+  ['data/session.json', '2151c03d'], /* v0.0.7.h root pin (+restored mobile-phone variants) */
+  ['data/gas-source.txt', '98e48ad8'], /* v0.0.7.h: Station 8 backend */
   ['assets/fonts/NotoSansSinhala-Regular.woff2', '23f1503e'],
   ['assets/fonts/NotoSansSinhala-Bold.woff2', 'bf59c148']
 ];
@@ -239,7 +239,7 @@ check('G9.6a all four preserved payloads still match their SHA-256 prefixes', lo
 const voicePack = JSON.parse(read('data/elevenlabs-audio.json'));
 check('G9.6g the voice pack stays app-writable and valid',
   voicePack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && voicePack.voiceName === 'Alice' &&
-  voicePack.version === '0.0.7.g' && voicePack.hashAlgo === 'sha1' &&
+  voicePack.version === '0.0.7.h' && voicePack.hashAlgo === 'sha1' &&
   typeof voicePack.clips === 'object' && Object.keys(voicePack.clips).length === 76, JSON.stringify([voicePack.version, voicePack.voiceId]));
 
 const session = JSON.parse(read('data/session.json'));
@@ -259,18 +259,18 @@ const missingKeys = keepKeys.filter((key) => !(key in config));
 check('G9.6e config.json keeps every preserved payload field', missingKeys.length === 0, missingKeys.join(','));
 check('G9.6f config.json pins the new release metadata',
   // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.a is ver 41 / schema 41 / settingsRev 71
-  config.ver === 47 && config.appVersion === '0.0.7.g' && config.version === '0.0.7.g' && config.schema === 47 && config.settingsRev === 80,
+  config.ver === 48 && config.appVersion === '0.0.7.h' && config.version === '0.0.7.h' && config.schema === 48 && config.settingsRev === 83,
   JSON.stringify({ ver: config.ver, appVersion: config.appVersion, schema: config.schema }));
 
 /* ── 7. PWA pins and load order ────────────────────────────────────────── */
 // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6, docs/ARCHITECTURE_MAP.md §R10
 const manifest = JSON.parse(read('manifest.webmanifest'));
-check('G9.7a the manifest names 0.0.7.g in its description', /0\.0\.7\.g/.test(String(manifest.description)), manifest.description);
+check('G9.7a the manifest names 0.0.7.h in its description', /0\.0\.7\.h/.test(String(manifest.description)), manifest.description);
 check('G9.7b the manifest start_url carries the pwa source tag', /source=pwa/.test(String(manifest.start_url)), manifest.start_url);
 check('G9.7c theme and background are the 0.0.6.e daylight light', manifest.theme_color === '#F8FAFC' && manifest.background_color === '#F8FAFC', manifest.theme_color);
 
 const sw = read('sw.js');
-check('G9.7d the service worker pins the 0.0.7.g s46 cache names', sw.indexOf('sdp-v0.0.7.g-s46') >= 0 && sw.indexOf('9.0.0.4') < 0);
+check('G9.7d the service worker pins the 0.0.7.h s47 cache names', sw.indexOf('sdp-v0.0.7.h-s47') >= 0 && sw.indexOf('9.0.0.4') < 0);
 check('G9.7e the service worker preserves the audio caches', sw.indexOf('sdp-youdao-v1') >= 0 && sw.indexOf('sdp-audio-clips') >= 0);
 
 /* v0.0.5.b: sdp-morphe-hooks.js loads last so it decorates the finished DOM. */

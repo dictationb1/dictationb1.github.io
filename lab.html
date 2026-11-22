@@ -50,6 +50,20 @@ p.lab-stage[data-state="info"]{border-left-color:var(--acc)}
 .vgb-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .vgb-close{margin-left:auto;border:0;background:transparent;cursor:pointer;font-size:15px;line-height:1;padding:6px 8px;border-radius:8px;color:inherit;opacity:.75}
 .lab-warn{color:var(--warn);font-weight:700}
+#labForceUpdateBanner{margin:0 0 12px}
+#labForceUpdateBanner[hidden]{display:none}
+#labS8Cards .lab-s8card{border:1px solid var(--line);border-left:4px solid var(--mut);border-radius:10px;padding:10px 12px;margin:8px 0;background:#F8FAFC}
+#labS8Cards .lab-s8card[data-state="pass"]{border-left-color:var(--ok)}
+#labS8Cards .lab-s8card[data-state="warn"]{border-left-color:var(--warn)}
+#labS8Cards .lab-s8card[data-state="fail"]{border-left-color:var(--bad)}
+#labS8Cards .lab-s8card[data-state="run"]{border-left-color:var(--acc)}
+.lab-s8head{font-weight:800;font-size:13px}
+.lab-s8fix{font-size:12.5px;margin:4px 0 0;color:#334155}
+.lab-s8raw{font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;background:#0B1220;color:#BAE6FD;border-radius:8px;padding:6px 8px;margin-top:6px;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow:auto}
+.lab-s8props span{display:inline-block;margin:2px 4px 2px 0;font-size:12px;font-weight:700}
+.lab-s8lbl{font-size:12px;font-weight:800;color:var(--mut);display:block}
+.lab-s8url{max-width:640px}
+.lab-s8pin,.lab-s8pw{max-width:240px;display:inline-block}
 iframe#labAppProbe{width:100%;height:260px;border:1px dashed var(--line);border-radius:10px;background:#fff;margin-top:8px}
 footer.lab-foot{max-width:1080px;margin:12px auto 0;color:var(--mut);font-size:11.5px;text-align:center}
 @media (max-width:640px){body{padding:8px}section.card{padding:11px}table.lab-table{min-width:560px}}
@@ -57,11 +71,12 @@ footer.lab-foot{max-width:1080px;margin:12px auto 0;color:var(--mut);font-size:1
 </head>
 <body>
 <header class="lab-head">
- <h1>🔬 Live Lab — Real-Time Voice &amp; Clone Lab — Smart Dictation <span id="labVerPill">0.0.7.g</span></h1>
+ <h1>🔬 Live Lab — Real-Time Voice &amp; Clone Lab — Smart Dictation <span id="labVerPill">0.0.7.h</span></h1>
  <p>https://dictationb1.github.io/lab.html · live AudioContext · real &lt;audio&gt; playback · real fetch — zero mocks · CREDITS GOES TO Hansana · Ms. Sumodya Sewmini · Ayya01 (Lesandu)</p>
  <span id="labScoreBadge" data-state="pass">✓ ALL PASS</span>
  <span class="score" style="margin-left:10px"><span id="labScorePass">0</span> PASS · <span id="labScoreWarn">0</span> WARN · <span id="labScoreFail">0</span> FAIL</span>
 </header>
+<div id="labForceUpdateBanner" class="voice-clip-guard-banner" data-level="stale" role="alert" hidden></div>
 <main>
 
 <div id="sdpVoiceClipGuardBanner" class="voice-clip-guard-banner" data-level="ok" role="alert" hidden></div>
@@ -162,13 +177,39 @@ footer.lab-foot{max-width:1080px;margin:12px auto 0;color:var(--mut);font-size:1
 </section>
 
 <section class="card">
- <h2><span class="st">STATION 7</span>v0.0.7.g Unified Release Verification (5 Probes)</h2>
- <p class="hint">Verifies THIS release live in the browser: (1) Version Lockstep — the Lab pill, SDP.version, data/version.json and the service-worker cache all carry the ONE unified v0.0.7.g / s46 stamp; (2) Online Probe Accuracy — a reachable data/version.json can never mean Offline Mode (no false offline banner, Studio never falsely blinded); (3) the 76/76 −21 LUFS unified audio family gate (genuine MP3 · ≥512 bytes · 44.1 kHz · mono · −23.5…−19.0 LUFS); (4) Bilingual Data Integrity — every active word carries a complete English meaning, a real Sinhala meaning, IPA, part of speech and a matching example; (5) the Dynamic Count Gate — zero stale hardcoded “30” strings while the session word count differs.</p>
+ <h2><span class="st">STATION 7</span>v0.0.7.h Unified Release Verification (5 Probes)</h2>
+ <p class="hint">Verifies THIS release live in the browser: (1) Version Lockstep — the Lab pill, SDP.version, data/version.json and the service-worker cache all carry the ONE unified v0.0.7.h / s47 stamp; (2) Online Probe Accuracy — a reachable data/version.json can never mean Offline Mode (no false offline banner, Studio never falsely blinded); (3) the 76/76 −21 LUFS unified audio family gate (genuine MP3 · ≥512 bytes · 44.1 kHz · mono · −23.5…−19.0 LUFS); (4) Bilingual Data Integrity — every active word carries a complete English meaning, a real Sinhala meaning, IPA, part of speech and a matching example; (5) the Dynamic Count Gate — zero stale hardcoded “30” strings while the session word count differs.</p>
  <div class="btnrow">
-  <button id="btnLabRunStation7" class="lab-btn lab-btn--go" type="button">🧪 Run v0.0.7.g Release Verification</button>
+  <button id="btnLabRunStation7" class="lab-btn lab-btn--go" type="button">🧪 Run v0.0.7.h Release Verification</button>
  </div>
  <p class="status" id="labS7Status">idle — click to verify this release, or run the full suite below (Station 7 is included).</p>
  <div id="labS7Trace"></div>
+</section>
+
+<section class="card">
+ <h2><span class="st">STATION 8</span>v0.0.7.h Live Apps Script Relay, Access Lock, Password &amp; Telegram Interactive Verification Lab (8 Probes)</h2>
+ <p class="hint">Runs 100% live against YOUR real Apps Script /exec URL: version &amp; cache, URL &amp; deployment, ping + auto-sheet health + the 5 Script Properties, admin PIN auth, password / break-glass PIN unlock, single-use burnable code round-trip (2nd-device anti-sharing), student access_request → access_decision → check_device firstGrant token, and the Telegram webhook + phone alert. The Admin PIN and test password live ONLY in this page's memory — they are never saved, cached or committed.</p>
+ <div class="btnrow">
+  <label class="lab-s8lbl" for="labS8Url">Apps Script /exec URL</label>
+ </div>
+ <div class="btnrow">
+  <input id="labS8Url" class="lab-input lab-s8url" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+ </div>
+ <div class="btnrow">
+  <label class="lab-s8lbl" for="labS8Pin">Admin PIN (memory-only)</label>
+  <label class="lab-s8lbl" for="labS8Pw">Test Lock Password (optional, memory-only)</label>
+ </div>
+ <div class="btnrow">
+  <input id="labS8Pin" class="lab-input lab-s8pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••••••">
+  <input id="labS8Pw" class="lab-input lab-s8pw" type="password" autocomplete="off" placeholder="min 6 chars (to test live password unlock)">
+ </div>
+ <div class="btnrow">
+  <button id="btnLabS8Run" class="lab-btn lab-btn--go" type="button">🧪 Run Full Station 8 Live Relay &amp; Lock Verification</button>
+  <button id="btnLabS8AutoFix" class="lab-btn" type="button">🩺 Auto-Fix Webhook &amp; Send Telegram Test</button>
+  <button id="btnLabS8Copy" class="lab-btn" type="button">📋 Copy Redacted Station 8 Report</button>
+ </div>
+ <p class="status" id="labS8Status">idle — the /exec URL is pre-filled from data/config.json (accessLock.relayUrl); paste your Admin PIN and run.</p>
+ <div id="labS8Cards"></div>
 </section>
 
 <section class="card">
@@ -204,6 +245,10 @@ window.addEventListener('DOMContentLoaded', function () {
      .catch(function () {});
  } catch (e) {}
  try { if (window.SDP && SDP.LiveLab) { SDP.LiveLab.station1(false); SDP.LiveLab.station5(); } } catch (e2) {}
+ /* v0.0.7.h BUG-H1: the Lab Force Update banner — auto-check on boot + every 60 s. */
+ function labChk() { try { if (window.SDP && SDP.LiveLab && SDP.LiveLab.checkVersionAndOfferForceUpdate) SDP.LiveLab.checkVersionAndOfferForceUpdate({ bannerId: 'labForceUpdateBanner', quietWhenCurrent: true }); } catch (e3) {} }
+ labChk();
+ setInterval(labChk, 60000);
 });
 </script>
 </body>

@@ -3,7 +3,7 @@
 /* G20 — the v0.0.7.g seven-pillar release verification gate.
  * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
  * (0.0.7.g / ver 42 / schema 42 / session ver 66 / settingsRev 76 /
- *  syncRev+wordsRev 1797000000029 / SW s41)
+ *  syncRev+wordsRev 1797000000032 / SW s41)
  * B1: ONE unified high-professional voice (Xb7hH8MSUJpSbSDYk0k2) + the
  *     ZERO-BYTE LAW — a bytes:0 / sub-512-byte clip is NEVER Ready and the
  *     Studio is told loudly (honest coverage + reuse counters).
@@ -50,24 +50,24 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── V0 static version pins ───────────────────────────────────────────── */
-check('V0a version.json pins 0.0.7.g / 43 / 76 / 1797000000029',
-  version.ver === 47 && version.schema === 47 && version.appVersion === '0.0.7.g' && version.version === '0.0.7.g' && version.settingsRev === 80 && Number(version.syncRev) === 1797000000029,
+check('V0a version.json pins 0.0.7.g / 43 / 76 / 1797000000032',
+  version.ver === 48 && version.schema === 48 && version.appVersion === '0.0.7.h' && version.version === '0.0.7.h' && version.settingsRev === 83 && Number(version.syncRev) === 1797000000032,
   JSON.stringify({ ver: version.ver, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev, wordsRev: version.wordsRev }));
 check('V0b session.json pins ver 66 / 0.0.7.g / 72 / …0021 + wordCount 31',
-  session.ver === 68 && session.appVersion === '0.0.7.g' && session.settingsRev === 80 && Number(session.syncRev) === 1797000000029 && Number(session.wordsRev) === 1797000000029 && session.wordCount === 31,
+  session.ver === 69 && session.appVersion === '0.0.7.h' && session.settingsRev === 83 && Number(session.syncRev) === 1797000000032 && Number(session.wordsRev) === 1797000000032 && session.wordCount === 31,
   JSON.stringify({ ver: session.ver, appVersion: session.appVersion, settingsRev: session.settingsRev, syncRev: session.syncRev }));
 check('V0c config.json + pack headers pin 42 / 0.0.7.g / 72 / …0021',
-  config.ver === 47 && config.appVersion === '0.0.7.g' && config.settingsRev === 80 && Number(config.syncRev) === 1797000000029 &&
-  pack.ver === 47 && pack.appVersion === '0.0.7.g' && pack.settingsRev === 80 && Number(pack.syncRev) === 1797000000029 && Number(pack.wordsRev) === 1797000000029,
+  config.ver === 48 && config.appVersion === '0.0.7.h' && config.settingsRev === 83 && Number(config.syncRev) === 1797000000032 &&
+  pack.ver === 48 && pack.appVersion === '0.0.7.h' && pack.settingsRev === 83 && Number(pack.syncRev) === 1797000000032 && Number(pack.wordsRev) === 1797000000032,
   JSON.stringify({ cfg: [config.ver, config.appVersion, config.settingsRev, config.syncRev], pack: [pack.ver, pack.appVersion, pack.settingsRev, pack.syncRev, pack.wordsRev] }));
 check('V0d sw.js pins the s43 shell + s41 release + 0.0.7.g',
-  /sdp-v0\.0\.7\.g-s46-shell/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.g-s46'/.test(sw) && /SW_RELEASE = '0\.0\.7\.g'/.test(sw));
+  /sdp-v0\.0\.7\.h-s47-shell/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(sw) && /SW_RELEASE = '0\.0\.7\.h'/.test(sw));
 check('V0e the app boots at 0.0.7.g and the guide module ships in the load order + SW shell',
-  /var TARGET = '0\.0\.7\.g'/.test(indexHtml) &&
+  /var TARGET = '0\.0\.7\.h'/.test(indexHtml) &&
   indexHtml.indexOf('./data/sdp-studio-guide.js') > 0 &&
   sw.indexOf('./data/sdp-studio-guide.js') > 0);
-check('V0f the repaired session.json preserved-SHA lock (CI-13 prefix 2845e0a1)',
-  crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('2845e0a1'));
+check('V0f the repaired session.json preserved-SHA lock (CI-13 prefix 2151c03d)',
+  crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('2151c03d'));
 
 /* ── B1 static: the zero-byte law ─────────────────────────────────────── */
 check('B1a isValidClipEntry rejects recorded bytes < 512 (the live bytes:0 bug)',
@@ -405,7 +405,7 @@ const g20Live = (async function live() {
         step();
       }));
       check('B5L-3 stepping Continue walks every Simple step and seals studioGuideSeenVersion',
-        b5c.open === false && b5c.guard >= 7 && b5c.seen === '0.0.7.g', JSON.stringify(b5c));
+        b5c.open === false && b5c.guard >= 7 && b5c.seen === '0.0.7.h', JSON.stringify(b5c));
       const b5d = await page.evaluate(() => new Promise((resolve) => {
         document.getElementById('btnStudioGuide').click();
         setTimeout(() => {

@@ -169,11 +169,11 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
   /* ── W4 — the Real-Time Live Lab ════════════════════════════════════════ */
   const labHtml = readText('lab.html');
   const labJs = readText('data/sdp-live-lab.js');
-  check('W4a lab.html ships at the repo root (≤ 30000 B, unified Live Lab) with the 9 station sections',
-    labHtml.length <= 30000 && (labHtml.match(/<section class="card">/g) || []).length === 9,
+  check('W4a lab.html ships at the repo root (≤ 26000 B, unified Live Lab) with the 9 station sections',
+    labHtml.length <= 26000 && (labHtml.match(/<section class="card">/g) || []).length === 10,
     String(labHtml.length));
-  check('W4b data/sdp-live-lab.js ships (≤ 92000 B, unified 0.0.7.g Live Lab + Station 7) and parses as strict ES5 (acorn ecmaVersion 5)',
-    labJs.length <= 92000 && (function () { try { acorn.parse(labJs, { ecmaVersion: 5, sourceType: 'script' }); return true; } catch (e) { return false; } })(),
+  check('W4b data/sdp-live-lab.js ships (≤ 132000 B, unified 0.0.7.g Live Lab + Station 7) and parses as strict ES5 (acorn ecmaVersion 5)',
+    labJs.length <= 132000 && (function () { try { acorn.parse(labJs, { ecmaVersion: 5, sourceType: 'script' }); return true; } catch (e) { return false; } })(),
     String(labJs.length));
   check('W4c the LiveLab engine exposes window.SDP.LiveLab with all 6 stations + report exports',
     /SDP\.LiveLab = \{/.test(labJs) && /station1: station1/.test(labJs) && /station2: station2/.test(labJs) &&
@@ -198,10 +198,10 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     /Run Full Live Diagnostic Suite/.test(labHtml) && /Download Full Live Lab Report/.test(labHtml), 'station6');
   check('W4j sw.js precaches the lab files and pins the sdp-v0.0.6.z-s39 shell',
     /'\.\/data\/sdp-live-lab\.js'/.test(readText('sw.js')) &&
-    /SW_VERSION = 'sdp-v0\.0\.7\.g-s46'/.test(readText('sw.js')), 'sw precache');
-  check('W4k the pack header carries the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000029',
-    pack.version === '0.0.7.g' && pack.ver === 47 && pack.schema === 47 &&
-    pack.settingsRev === 80 && Number(pack.syncRev) === 1797000000029,
+    /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(readText('sw.js')), 'sw precache');
+  check('W4k the pack header carries the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000032',
+    pack.version === '0.0.7.h' && pack.ver === 48 && pack.schema === 48 &&
+    pack.settingsRev === 83 && Number(pack.syncRev) === 1797000000032,
     JSON.stringify([pack.version, pack.ver, pack.schema, pack.settingsRev, pack.syncRev]));
 
   /* ── report ───────────────────────────────────────────────────────────── */

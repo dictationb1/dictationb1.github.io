@@ -1,5 +1,5 @@
-/*! data/sdp-access-lock.js — v0.0.7.g — window.SDP.AccessLock (strict ES5).
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
+/*! data/sdp-access-lock.js — v0.0.7.h — window.SDP.AccessLock (strict ES5).
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.h
  * The Private Web App Access Lock client (Architecture D — Hybrid Smart
  * Classroom Gate). When the Lecturer arms the Master Lock the whole web app
  * stops at a bilingual full-screen Entry Lock BEFORE any student data paints:
@@ -545,7 +545,7 @@
 
   /* ── public API ──────────────────────────────────────────────────────── */
   SDP.AccessLock = {
-    version: '0.0.7.g',
+    version: '0.0.7.h',
     key: STORE_KEY,
     gate: gate,
     arm: arm,

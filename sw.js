@@ -1,4 +1,12 @@
 /*! Smart Dictation Player — service worker (v0.0.1.g)
+ * v0.0.7.h BUG-H1 FIX — the STALE SERVICE-WORKER AUTO-EVICTION law: the
+ *   critical shell files (index.html, lab.html, data.html, every shipped
+ *   data/*.js, data/version.json) are network-first with a FAST 3 s fallback
+ *   (NETWORK_TIMEOUT_FAST) so the fresh release HTML/JS is fetched the moment
+ *   a browser opens the app; skipWaiting() on install + clients.claim() on
+ *   activate mean a new release stamp takes over IMMEDIATELY, and every older
+ *   sdp-*-shell cache is deleted on activate so no stale v0.0.7.e-era UI can
+ *   ever answer a fetch again.
  * contract: docs/SYNC_AND_DATA_CONTRACT.md §R6 service worker policy
  * D2: a strict origin gate is the FIRST statement of the fetch handler — only
  * same-origin requests and dict.youdao.com dictionary audio are ever touched.
@@ -21,14 +29,16 @@
  * masked by a stale cache. */
 'use strict';
 
-var SW_VERSION = 'sdp-v0.0.7.g-s46'; /* v0.0.7.g */
-var SHELL_CACHE = 'sdp-v0.0.7.g-s46-shell'; /* v0.0.7.g */
-var SW_RELEASE = '0.0.7.g';
+var SW_VERSION = 'sdp-v0.0.7.h-s47'; /* v0.0.7.h */
+var SHELL_CACHE = 'sdp-v0.0.7.h-s47-shell'; /* v0.0.7.h */
+var SW_RELEASE = '0.0.7.h';
 var PRESERVE_CACHES = ['sdp-audio-clips', 'sdp-youdao-v1'];
 var YOUDAO_CACHE = 'sdp-youdao-v1';
 var CLIP_CACHE = 'sdp-audio-clips';
 var AUDIO_CACHE = CLIP_CACHE;
 var NETWORK_TIMEOUT = 10000; /* D3: slow classroom links get 10 s, not 4 s */
+/* v0.0.7.h BUG-H1: the CRITICAL-SHELL fast network window — 3 s, not 10 s. */
+var NETWORK_TIMEOUT_FAST = 3000;
 
 var SHELL = [
   './',
@@ -238,6 +248,58 @@ function staleWhileRevalidateDataJson(request, url) {
   });
 }
 
+/* v0.0.7.h BUG-H1: the critical shell files (HTML pages, shipped JS,
+   data/version.json) get the FAST 3 s network-first window. A slow link
+   serves the cached copy after 3 s instead of freezing 10 s on a dead
+   fetch, and the Force Update banner + the 'sdp:force-update' message
+   handle the one-tap flip to the new release. */
+function isCriticalShellUrl(url) {
+  return /\.(html|js)(\?|$)/i.test(url.pathname) ||
+    /\/data\/version\.json$/i.test(url.pathname);
+}
+function networkFirstShellFast(request, url) {
+  if (!isCriticalShellUrl(url)) return networkFirstShell(request, url);
+  var navigable = isNavigable(request);
+  var jsonish = isJsonRequest(request, url.href);
+  return caches.open(SHELL_CACHE).then(function (cache) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        cache.match(request, { ignoreSearch: true }).then(function (hit) {
+          if (hit) { resolve(hit); return; }
+          if (navigable) { resolve(cache.match('./index.html').then(function (shell) { return shell || offlineJson(); })); return; }
+          resolve(jsonish ? offlineJson() : new Response('Offline', { status: 503, statusText: 'Offline' }));
+        });
+      }, NETWORK_TIMEOUT_FAST);
+      fetch(request).then(function (res) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (res && res.ok) {
+          try { if (String(request.url).indexOf('?t=') < 0) cache.put(request, res.clone()); } catch (e) {}
+        }
+        resolve(res);
+      }).catch(function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cache.match(request, { ignoreSearch: true }).then(function (hit) {
+          if (hit) { resolve(hit); return; }
+          if (navigable) {
+            cache.match('./index.html').then(function (shell) {
+              resolve(shell || offlineJson());
+            });
+            return;
+          }
+          resolve(jsonish ? offlineJson() : new Response('Offline', { status: 503, statusText: 'Offline' }));
+        });
+      });
+    });
+  });
+}
+
 function networkFirstShell(request, url) {
   var navigable = isNavigable(request);
   var jsonish = isJsonRequest(request, url.href);
@@ -352,13 +414,24 @@ self.addEventListener('fetch', function (event) {
     return;
   }
   if (request.mode === 'navigate' || isShellRequest(url.href)) {
-    event.respondWith(networkFirstShell(request, url));
+    event.respondWith(networkFirstShellFast(request, url));
   }
 });
 
 self.addEventListener('message', function (event) {
   var data = event.data || {};
   if (data === 'sdp:skip-waiting' || data.action === 'skipWaiting') self.skipWaiting();
+  /* v0.0.7.h BUG-H1: the Force Update Now banner asks for a full shell purge.
+     Every sdp-* cache EXCEPT the preserved audio caches is deleted, then the
+     fresh worker takes over at once so the reload loads the NEW release. */
+  if (data && data.action === 'sdp:force-update') {
+    event.waitUntil(caches.keys().then(function (names) {
+      return Promise.all(names.map(function (name) {
+        if (PRESERVE_CACHES.indexOf(name) >= 0) return Promise.resolve(false);
+        return caches.delete(name);
+      }));
+    }).then(function () { return self.skipWaiting(); }));
+  }
   if (data.action === 'version' && event.ports && event.ports[0]) {
     event.ports[0].postMessage({ version: SW_VERSION, shell: SHELL_CACHE });
   }

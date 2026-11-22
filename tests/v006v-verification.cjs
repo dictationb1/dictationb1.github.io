@@ -139,8 +139,8 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
       keys.length === 76 && count(/^words\./) === 31 && count(/^num\.\d+$/) === 31 &&
       count(/^cmd\./) === 6 && count(/^guide\.en\./) === 4 && count(/^_intro_male_[1-4]$/) === 4,
       String(keys.length));
-    check('V3b the pack header stamps the unified v0.0.7.g family (ver 46 / syncRev+wordsRev 1797000000029)',
-      pack.version === '0.0.7.g' && pack.ver === 47 && Number(pack.syncRev) === 1797000000029 && Number(pack.wordsRev) === 1797000000029,
+    check('V3b the pack header stamps the unified v0.0.7.g family (ver 46 / syncRev+wordsRev 1797000000032)',
+      pack.version === '0.0.7.h' && pack.ver === 48 && Number(pack.syncRev) === 1797000000032 && Number(pack.wordsRev) === 1797000000032,
       JSON.stringify([pack.version, pack.ver, pack.syncRev, pack.wordsRev]));
     const size = fs.statSync(path.join(ROOT, 'data/elevenlabs-audio.json')).size;
     check('V3c the raw manifest stays <= 4,500,000 B', size <= 4500000, String(size));

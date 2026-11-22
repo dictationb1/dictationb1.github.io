@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 68,
+  "ver": 69,
   "session": {
     "no": "14",
     "day": "Thursday",
@@ -297,7 +297,11 @@
         "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
         "si": "ජංගම දුරකථනය",
         "s": "I called you on my mobile phone, but you did not answer.",
-        "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
+        "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
+        "pronunciationVariants": [
+          "/ˌməʊ.baɪl ˈfəʊn/",
+          "/ˈməʊ.baɪl ˈfəʊn/"
+        ]
       }
     ],
     "wordCount": 31,
@@ -307,7 +311,7 @@
     {
       "id": "list_session_8_feelings",
       "name": "Session 14 - Communications & Technology",
-      "version": "0.0.7.g",
+      "version": "0.0.7.h",
       "published": true,
       "session": "Session 14",
       "date": "2026-10-29",
@@ -590,7 +594,11 @@
           "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
           "si": "ජංගම දුරකථනය",
           "s": "I called you on my mobile phone, but you did not answer.",
-          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
+          "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
+          "pronunciationVariants": [
+            "/ˌməʊ.baɪl ˈfəʊn/",
+            "/ˈməʊ.baɪl ˈfəʊn/"
+          ]
         }
       ]
     },
@@ -896,11 +904,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "0.0.7.g",
-  "updatedAt": "2026-11-22T04:47:03.873Z",
-  "version": "0.0.7.g",
-  "buildDate": "2026-11-21",
-  "settingsRev": 82,
+  "appVersion": "0.0.7.h",
+  "updatedAt": "2026-11-22T05:30:00.000Z",
+  "version": "0.0.7.h",
+  "buildDate": "2026-11-22",
+  "settingsRev": 83,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -1209,7 +1217,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000031,
+  "syncRev": 1797000000032,
   "words": [
     {
       "w": "communications",
@@ -1488,11 +1496,15 @@
       "m": "A portable telephone that connects with the telephone network over radio wave transmission.",
       "si": "ජංගම දුරකථනය",
       "s": "I called you on my mobile phone, but you did not answer.",
-      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone"
+      "audio": "https://dict.youdao.com/dictvoice?type=1&audio=mobile%20phone",
+      "pronunciationVariants": [
+        "/ˌməʊ.baɪl ˈfəʊn/",
+        "/ˈməʊ.baɪl ˈfəʊn/"
+      ]
     }
   ],
   "versionFamily": "9.0.0",
-  "wordsRev": 1797000000029,
+  "wordsRev": 1797000000032,
   "wordCount": 31,
   "wordCountMode": "custom"
 }
