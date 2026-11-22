@@ -208,7 +208,12 @@
     try { pushTelemetryEnvelope(function () {}); } catch (ePB) {}
     /* v0.0.7.f Pillar 3: the SESSION END Telegram event (words, score, exact
        dwell time, mode + full device summary for the Lecturer's feed). */
-    try { pushEvent('session_end', { sessionNo: String(rec.sessionNo), words: rec.wordsCompleted, score: rec.score, dwellSec: rec.dwellSec, mode: String(settings().mode || ''), voice: rec.audioTierUsed, device: rec.device }); } catch (ePE) {}
+    /* v0.0.7.j FEATURE-J3: name/classId ride the session_end event so the
+       ONE daily 👤 User #N card (server-side tgCardUpdate) always shows the
+       student's identity — the card replaces the old per-session spam. */
+    var _alName = '', _alClass = '';
+    try { if (global.SDP && SDP.AccessLock && SDP.AccessLock.state) { var _als = SDP.AccessLock.state(); _alName = String(_als && _als.name || ''); _alClass = String(_als && _als.classId || ''); } } catch (eAL) {}
+    try { pushEvent('session_end', { sessionNo: String(rec.sessionNo), words: rec.wordsCompleted, score: rec.score, dwellSec: rec.dwellSec, mode: String(settings().mode || ''), voice: rec.audioTierUsed, device: rec.device, name: _alName, classId: _alClass }); } catch (ePE) {}
     return rec;
   }
 

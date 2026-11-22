@@ -117,6 +117,10 @@ jobs:
       - name: G29 · v0.0.7.i Live Lab Station 8 relay, lock & Telegram gate
         run: node tests/v007h-live-lab-station8.cjs
 
+      # v0.0.7.j: the Telegram Zero-Spam Command Center gate.
+      - name: G30 · v0.0.7.j Telegram update_id dedupe, one-card dashboard, visitor approval
+        run: node tests/v007j-telegram-ux-dedupe.cjs
+
       # v0.0.7.a: the studio-UX / unlimited-words / key-pool / reuse gate —
       # clean Words-First studio layout, 5-to-infinity word counts with full
       # lock/unlock/reload persistence, multi-key pool pre-flight + failover,
@@ -149,7 +153,7 @@ jobs:
           node -e '
             const fs=require("fs"),c=require("crypto");
             const want={
-              "data/session.json":"b579a74d","data/gas-source.txt":"5f35197b",
+              "data/session.json":"d9154e1e","data/gas-source.txt":"6de49c5f",
               "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
               "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
             let bad=0;

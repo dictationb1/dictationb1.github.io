@@ -176,7 +176,7 @@ async function launch() {
         window.__SDP_NO_LIVE__ = true;
         window.__SDP_E2E_RELAY__ = relayUrl;
         try {
-          localStorage.setItem('sdp.guide_seen', '0.0.7.i');
+          localStorage.setItem('sdp.guide_seen', '0.0.7.j');
           /* NO sdp.settings.gasUrl — the student must find the relay via
              config.json accessLock.relayUrl (the BUG-F1 student-side law). */
         } catch (e) {}
@@ -273,9 +273,12 @@ async function launch() {
       const sawSession = relayLog.events.some((e) => e.kind === 'session_end');
       const sessionSent = relayRt.urlFetchLog.some((f) => f.url.indexOf('/sendMessage') >= 0 && f.options.payload.indexOf('SESSION') >= 0);
       if (process.env.G27_DEBUG) console.log('E5a DEBUG event:', sawSession, 'sent:', sessionSent, 'sends:', JSON.stringify(relayRt.urlFetchLog.filter((f) => f.url.indexOf('/sendMessage') >= 0).map((f) => String(f.options.payload).slice(0, 44))));
-      check('E5a the session_end tg_event reached the relay AND the SESSION Telegram summary fired',
-        sawSession === true && sessionSent === true,
-        'events=' + JSON.stringify(relayLog.events.filter((e) => e.kind === 'session_end').slice(-1)) + ' sent=' + sessionSent);
+      /* v0.0.7.j FEATURE-J3: session_end no longer sends a separate SESSION
+         message — it UPDATES the ONE daily 👤 User #N card (editMessageText). */
+      const cardEdit = relayRt.urlFetchLog.filter((f) => f.url.indexOf('/editMessageText') >= 0);
+      check('E5a v0.0.7.j the session_end tg_event reached the relay AND folded into the ONE User card (no separate SESSION message)',
+        sawSession === true && (cardEdit.length >= 1 || sessionSent === true),
+        'events=' + JSON.stringify(relayLog.events.filter((e) => e.kind === 'session_end').slice(-1)) + ' edits=' + cardEdit.length + ' sent=' + sessionSent);
       await page.evaluate(() => {
         try {
           if (window.SDP && SDP.Telemetry && SDP.Telemetry.pushEvent) {
@@ -434,8 +437,8 @@ async function launch() {
       const sentRelay = [];
       const app = await createApp({
         before(w) {
-          w.localStorage.setItem('sdp.guide_seen', '0.0.7.i');
-          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.i', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
+          w.localStorage.setItem('sdp.guide_seen', '0.0.7.j');
+          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.j', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
         }
       });
       /* record every relay post the studio makes */

@@ -56,8 +56,8 @@
     "defaultsResetV001f": true,
     "appliedSettingsRev": 6
   },
-  "ver": 49,
-  "version": "0.0.7.i",
+  "ver": 50,
+  "version": "0.0.7.j",
   "buildDate": "2026-11-22",
   "credits": {
     "createdBy": "Hansana",
@@ -91,8 +91,8 @@
     "community": "https://ntfy.sh/sdp_dictationb1_comm_v8",
     "inbox": "https://ntfy.sh/sdp_dictationb1_inbox_v8"
   },
-  "appVersion": "0.0.7.i",
-  "settingsRev": 85,
+  "appVersion": "0.0.7.j",
+  "settingsRev": 86,
   "performance": {
     "mode": "paper",
     "lite": {},
@@ -419,7 +419,7 @@
   },
   "updatedAt": "2026-11-22T09:50:47.424Z",
   "updatedAtMs": 1793448000000,
-  "schema": 49,
+  "schema": 50,
   "classInfo": "CCBE Galle Branch • TUE/THU/IPET015 • Ms. Sumodya Sewmini (Lecturer in Charge)",
   "sessionTitle": "Session 14 - Communications & Technology",
   "sessionCode": "Session 14",
@@ -784,7 +784,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000034,
+  "syncRev": 1797000000035,
   "versionFamily": "10.0.0",
   "encVault": "SDP_ENC_V2:fOBE3/KSQ9HneYCRFSYQpf4d9goUY9UPO1LzraGGVszc74QAeFr+fRh7lnFZOE3Ha3EOm0Q3uAhDIX4KnYrcLfTII8AHiBRTPF/7PFqZehfeCUJzRGmieol0cl9amNkrjV05MoDteO/HWo/e+zGFiiY2X9KTH9bxbSifjKeFYEWfpX75V8aNAhN7djvj8z7O48BpAjq3jhoXbFZuHiPlLGFXO+8jWzkHM/qCTsFYPh6wbwjGFJ/VyUIf6rDBEt3j41hP3cxAg7PK8vGVzpkYjkUZGQV1kqX/z4nuUomlMwjzXA1qSh200/+MWpJkn10E4lPYO2PQ3SKqBqKTmg76Sf7++fnVZgcyQGjo0rQsrpTksdZx++PPPWOl/V2XwsyCVSUNnkcxyf9H9usnxa7LpnMjkA4i6BQ6UIahmwApVgW9sxG50jfzzzoASzO+voFRDuh494DLp6rhQUsnNpH+QVskuBZKN240NvKmSQaBSFXQmLzIqnohgHU0oYloNktpRQoRv9OBOK9IhaYL15ECKmgKsF2Ng1d7TDvcpBzSOxdme8n7UER5SGuBumXD+YMILqVQGYk7Xt0d/HFbHeGJ4rztmunI/AiQn5XG+2xLVuSrA8tQIbkOWTGn9GrV5YLwOdMMOrvkZCIfsAimxbsEC+22qnoCdCX36S4BXIRqV/g6xviV2WTw6JTiwQzqfuvRgtyRgRMZLnqWs/RMq/zbMKtHgiwHW0Ee3hektdsRzwkV0ty17G+sIrBupdXsDtbIPb+GGEqh5VNHJvhb2+sYntWHqWP1bHOfKHmQjTEil6Acj7CFRvRK+wcMKkNsLqgstI9Z7ju4HbfLXIbs/UrexKJalgqZtEsQHvzFzPHeTNAXvs2Tp5g2lWswO+ik+5tReJxZoo/ljvuCrEX+OKD+MkYH2ORy0D9AuRTfhLnzvyHap1xDsNfSZVf6iBcwvb5MQ9lgBx9vFOW14enwjIVojmAZA8ihDlEqxbpaeTtxURCiNioq0bAckm0LKbKz8qdvaHbc57ofUhXlpcagkxRkevqTIfpRLamoc5bZn7sVmXWc7uKqWPMkKDvkGlyTPMcpPkmAMEeOQ4AvZsxqtyMWu1e8KK2GYCSJ6SbkTyAd477QgtsElavaetwKt77vTiw0UxLFp1ZNhH3abU5MdW0+8xbMA8b97eIC3LU9Fc3ZhBOi/CI=",
   "classSettings": {
@@ -807,13 +807,13 @@
     "hash": "VlIxxCOF1uxtFMz5C1hPwqoe5gp5Tn/uUetPH2xCKsY="
   },
   "voicePersona": "British English female educator (Alice-class)",
-  "wordsRev": 1797000000029,
+  "wordsRev": 1797000000035,
   "accessLock": {
     "on": false,
     "mode": "approval+code",
     "graceHours": 72,
     "pollSeconds": 4,
-    "relayUrl": "https://script.google.com/macros/s/AKfycbxdedk5uegtCLIUBQUFbzog9pJxmEZHdYcdFCUBjc8IqigLWS6jYnvmdZoKh-PODkfS/exec",
+    "relayUrl": "https://script.google.com/macros/s/AKfycbyPUQ48vQca-1m4fHjz4Pa7izid1gXLpIGhYVcNVSD436eEzUzQFfaYIIVYm8w-VxSZ/exec",
     "mode_doc": "approval = phone approval only · approval+code = approval + one-time codes/password · open = Lock OFF",
     "relayActions": [
       "access_state",

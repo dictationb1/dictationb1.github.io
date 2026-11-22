@@ -198,10 +198,10 @@ function readJSON(rel) { return JSON.parse(readText(rel)); }
     /Run Full Live Diagnostic Suite/.test(labHtml) && /Download Full Live Lab Report/.test(labHtml), 'station6');
   check('W4j sw.js precaches the lab files and pins the sdp-v0.0.6.z-s39 shell',
     /'\.\/data\/sdp-live-lab\.js'/.test(readText('sw.js')) &&
-    /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(readText('sw.js')), 'sw precache');
-  check('W4k the pack header carries the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000034',
-    pack.version === '0.0.7.i' && pack.ver === 49 && pack.schema === 49 &&
-    pack.settingsRev === 85 && Number(pack.syncRev) === 1797000000034,
+    /SW_VERSION = 'sdp-v0\.0\.7\.j-s49'/.test(readText('sw.js')), 'sw precache');
+  check('W4k the pack header carries the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev 1797000000035',
+    pack.version === '0.0.7.j' && pack.ver === 50 && pack.schema === 50 &&
+    pack.settingsRev === 86 && Number(pack.syncRev) === 1797000000035,
     JSON.stringify([pack.version, pack.ver, pack.schema, pack.settingsRev, pack.syncRev]));
 
   /* ── report ───────────────────────────────────────────────────────────── */

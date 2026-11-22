@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 'use strict';
-/* G18 — the v0.0.7.g seven-pillar release verification gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g (ver 41 / schema 41 / settingsRev 71 / syncRev 1797000000020 / sw s41)
+/* G18 — the v0.0.7.j seven-pillar release verification gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.j (ver 41 / schema 41 / settingsRev 71 / syncRev 1797000000020 / sw s41)
  * Z1: Permanent Default Voice Lock + #btnRemoveClonedVoiceRestoreDefault clone revert.
  * Z2: Free-speech 1-minute cloning + auto-transcription + Credit Cost Preview + 1-word low-credit verifier.
  * Z3: Live Lab v4.0 (retitle + low-credit Station 2 verifier, ALL PASS 0-FAIL boot).
  * Z4: #studioActionAuditBanner instant verification + #dictationStudioLockOverlay engine-level lock.
  * Z5: Dynamic word count (10/15/20/25/30/custom 5–unlimited) + Session Metadata Editor + Session-14 display repair.
  * Z6: Real telemetry — finish() writes the real sessionEnd record into the five-key ledger.
- * Z7: Version pins across every surface (0.0.7.g / ver 41 / settingsRev 71 / syncRev 0020 / SW s41).
+ * Z7: Version pins across every surface (0.0.7.j / ver 41 / settingsRev 71 / syncRev 0020 / SW s41).
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -59,9 +59,9 @@ check('Z2d the Credit Cost Preview shows chars × tier before synthesis',
 
 /* ── Z3: Live Lab v4.0 ─────────────────────────────────────────────────── */
 check('Z3a lab.html is retitled to the unified Live Lab (zero independent v4.0)',
-  /Live Lab/.test(labHtml) && /v4\.0/.test(labHtml) === false && /id="labVerPill">0\.0\.7\.i</.test(labHtml));
-check('Z3b sdp-live-lab.js carries the unified 0.0.7.g version with the low-credit verifier',
-  /version: '0\.0\.7\.i'/.test(liveLab) && /lowCreditVerify/.test(liveLab));
+  /Live Lab/.test(labHtml) && /v4\.0/.test(labHtml) === false && /id="labVerPill">0\.0\.7\.j</.test(labHtml));
+check('Z3b sdp-live-lab.js carries the unified 0.0.7.j version with the low-credit verifier',
+  /version: '0\.0\.7\.j'/.test(liveLab) && /lowCreditVerify/.test(liveLab));
 check('Z3c the lab ES5-parses (strict ES5 law)', (() => { try { require('acorn').parse(liveLab, { ecmaVersion: 5 }); return true; } catch (e) { return false; } })());
 
 /* ── Z4: the strict Dictation Mode lock + audit banner ─────────────────── */
@@ -89,7 +89,7 @@ check('Z4i the banner CSS states exist (ok/bad/warn bilingual verdicts)',
   /studio-action-audit-banner\[data-state='ok'\]/.test(readText('assets/css/sdp-ui.css')) && /studio-action-audit-banner\[data-state='bad'\]/.test(readText('assets/css/sdp-ui.css')));
 
 /* ── Z5: dynamic word count + session metadata + Session-14 repair ─────── */
-check('Z5a wordCap()/setWordCap() exist with the 5-floor + 30 default (unlimited in v0.0.7.g)',
+check('Z5a wordCap()/setWordCap() exist with the 5-floor + 30 default (unlimited in v0.0.7.j)',
   /function wordCap\(\)/.test(studio) && /function setWordCap/.test(studio) && /n < 5\) n = 5;/.test(studio) && /if \(!n \|\| n < 5\) return 30;/.test(studio) && !/n > 50\) n = 50;/.test(studio));
 check('Z5b #studioWordCountSelect ships 10/15/20/25/30/custom options + #studioWordCountCustom (unlimited, preset-gated)',
   /id="studioWordCountSelect"/.test(studio) && /value="10"/.test(studio) && /value="15"/.test(studio) && /value="20"/.test(studio) && /value="25"/.test(studio) && /cap === 30 \? ' selected' \: ''/.test(studio) && /value="custom"/.test(studio) && /id="studioWordCountCustom"/.test(studio));
@@ -115,22 +115,22 @@ check('Z6c the engine tracks worstLagMs for the lag telemetry field',
   /worstLagMs/.test(engineSrc));
 
 /* ── Z7: version pins across every surface ─────────────────────────────── */
-check('Z7a version.json pins ver/schema 43/43, settingsRev 76, syncRev+wordsRev 1797000000034, 0.0.7.g',
-  version.ver === 49 && version.schema === 49 && version.settingsRev === 85 && Number(version.syncRev) === 1797000000034 && version.appVersion === '0.0.7.i' && version.version === '0.0.7.i');
-check('Z7b config.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000034, 0.0.7.g',
-  config.ver === 49 && config.schema === 49 && config.settingsRev === 85 && Number(config.syncRev) === 1797000000034 && config.appVersion === '0.0.7.i' && config.version === '0.0.7.i');
-check('Z7c session.json root pins ver 66 / settingsRev 76 / syncRev+wordsRev 0021 / 0.0.7.g + session.wordCount 31',
-  session.ver === 70 && session.settingsRev === 85 && Number(session.syncRev) === 1797000000034 && Number(session.wordsRev) === 1797000000034 && session.appVersion === '0.0.7.i' && session.session.wordCount === 31);
-check('Z7d the pack header carries ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000034',
-  pack.ver === 49 && pack.schema === 49 && pack.settingsRev === 85 && Number(pack.syncRev) === 1797000000034 && Number(pack.wordsRev) === 1797000000034);
-check('Z7e sdp-data-sync.js pins APP_VERSION 0.0.7.g + SETTINGS_REV 78 + SDP.ver 45',
-  /var APP_VERSION = '0\.0\.7\.i'/.test(syncSrc) && /var SETTINGS_REV = 85;/.test(syncSrc) && /SDP\.ver = 49;/.test(syncSrc));
-check('Z7f sw.js pins the s43 shell + s41 release',
-  /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.i-s48-shell'/.test(sw) && /var SW_RELEASE = '0\.0\.7\.i';/.test(sw));
-check('Z7g the manifest, data.html and tests/package.json all carry 0.0.7.i',
-  /0\.0\.7\.i/.test(readText('manifest.webmanifest')) && /0\.0\.7\.i/.test(readText('data.html')) && /0\.0\.7\.i/.test(readText('tests/package.json')));
-check('Z7h index.html boots at the 0.0.7.i target and lab.html shows v0.0.7.i',
-  /var TARGET = '0\.0\.7\.i'/.test(indexHtml) && /0\.0\.7\.i/.test(labHtml));
+check('Z7a version.json pins ver/schema 43/43, settingsRev 76, syncRev+wordsRev 1797000000035, 0.0.7.j',
+  version.ver === 50 && version.schema === 50 && version.settingsRev === 86 && Number(version.syncRev) === 1797000000035 && version.appVersion === '0.0.7.j' && version.version === '0.0.7.j');
+check('Z7b config.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000035, 0.0.7.j',
+  config.ver === 50 && config.schema === 50 && config.settingsRev === 86 && Number(config.syncRev) === 1797000000035 && config.appVersion === '0.0.7.j' && config.version === '0.0.7.j');
+check('Z7c session.json root pins ver 66 / settingsRev 76 / syncRev+wordsRev 0021 / 0.0.7.j + session.wordCount 31',
+  session.ver === 70 && session.settingsRev === 86 && Number(session.syncRev) === 1797000000035 && Number(session.wordsRev) === 1797000000035 && session.appVersion === '0.0.7.j' && session.session.wordCount === 31);
+check('Z7d the pack header carries ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000035',
+  pack.ver === 50 && pack.schema === 50 && pack.settingsRev === 86 && Number(pack.syncRev) === 1797000000035 && Number(pack.wordsRev) === 1797000000035);
+check('Z7e sdp-data-sync.js pins APP_VERSION 0.0.7.j + SETTINGS_REV 86 + SDP.ver 50',
+  /var APP_VERSION = '0\.0\.7\.j'/.test(syncSrc) && /var SETTINGS_REV = 86;/.test(syncSrc) && /SDP\.ver = 50;/.test(syncSrc));
+check('Z7f sw.js pins the s49 shell + j release',
+  /SW_VERSION = 'sdp-v0\.0\.7\.j-s49'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.j-s49-shell'/.test(sw) && /var SW_RELEASE = '0\.0\.7\.j';/.test(sw));
+check('Z7g the manifest, data.html and tests/package.json all carry 0.0.7.j',
+  /0\.0\.7\.j/.test(readText('manifest.webmanifest')) && /0\.0\.7\.j/.test(readText('data.html')) && /0\.0\.7\.j/.test(readText('tests/package.json')));
+check('Z7h index.html boots at the 0.0.7.j target and lab.html shows v0.0.7.j',
+  /var TARGET = '0\.0\.7\.j'/.test(indexHtml) && /0\.0\.7\.j/.test(labHtml));
 check('Z7i every gate module and data file moved off 0.0.6.y (no functional stragglers)',
   ['data/sdp-ui-views.js', 'data/sdp-dictation-engine.js', 'data/sdp-live-lab.js', 'data/sdp-audio-speech.js', 'data/studio.js', 'data/sdp-data-sync.js', 'data/sdp-telemetry.js', 'index.html', 'data/index.html'].every((f) => readText(f).indexOf('0.0.6.y') < 0));
 
@@ -335,7 +335,7 @@ check('Z7i every gate module and data file moved off 0.0.6.y (no functional stra
           const c = SDP.LiveLab.counts();
           return { pass: c.pass, fail: c.fail, warn: c.warn, badge: document.getElementById('labScoreBadge').getAttribute('data-state'), ver: document.getElementById('labVerPill').textContent };
         });
-        /* v0.0.7.g lockstep truth: on REAL hardware/GitHub CI the lab boots
+        /* v0.0.7.j lockstep truth: on REAL hardware/GitHub CI the lab boots
            ALL PASS; in THIS headless sandbox the BS.1770 loudness measurement
            reads ~20 clips outside the -23.5…-19.0 family — the IDENTICAL
            result the v0.0.6.z release shows in the same environment (verified
@@ -343,8 +343,8 @@ check('Z7i every gate module and data file moved off 0.0.6.y (no functional stra
            mono laws all hold (76/76). The one FAIL is the environment's
            measurement variance, not a shipping defect, so the gate accepts
            ALL PASS (CI) or the single headless loudness FAIL. */
-        check('Z3d live Live Lab v4.0 fresh-visit boot: ALL PASS (0 FAIL on real hardware), version pill 0.0.7.g',
-          (lab.fail === 0 || (lab.fail === 1 && lab.pass >= 6)) && lab.badge !== '' && lab.ver === '0.0.7.i' && errors.length === 0,
+        check('Z3d live Live Lab v4.0 fresh-visit boot: ALL PASS (0 FAIL on real hardware), version pill 0.0.7.j',
+          (lab.fail === 0 || (lab.fail === 1 && lab.pass >= 6)) && lab.badge !== '' && lab.ver === '0.0.7.j' && errors.length === 0,
           JSON.stringify(lab) + ' | ' + errors.slice(0, 2).join(','));
         await ctx.close();
       }

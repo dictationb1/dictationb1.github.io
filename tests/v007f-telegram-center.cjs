@@ -272,10 +272,14 @@ function tgSent(rt) { return tgCalls(rt, 'sendMessage'); }
     req.options.payload.indexOf('approve:dev-rich-1') >= 0 && req.options.payload.indexOf('reject:dev-rich-1') >= 0 && req.options.payload.indexOf('ban:dev-rich-1') >= 0);
   rt.setNow(Date.UTC(2026, 10, 21, 12) + 60 * 1000);
   post(rt, { action: 'tg_event', deviceId: 'dev-rich-1', kind: 'session_end', data: { name: 'Amaya Fernando', sessionNo: '14', words: 31, score: 87, dwellSec: 1450, mode: 'paper', voice: 'Alice' } });
-  const sess = tgSent(rt).filter((c) => c.options.payload.indexOf('SESSION #14') >= 0);
-  check('C6c the SESSION summary carries words, score, dwell time and mode',
-    sess.length >= 1 && sess[0].options.payload.indexOf('31 words') >= 0 && sess[0].options.payload.indexOf('87%') >= 0,
-    sess.length ? sess[0].options.payload.slice(0, 130) : 'not fired');
+  /* v0.0.7.j FEATURE-J3: session_end now folds into the ONE daily user card
+     (👤 User #N … Last: 31/31 (87%) · paper) — the separate SESSION #14 spam
+     message is gone by design. */
+  const cardMsg = tgSent(rt).map((c) => c.options.payload).join('\n');
+  const sessEdits = rt.urlFetchLog.filter((f) => f.url.indexOf('/editMessageText') >= 0);
+  check('C6c v0.0.7.j the session summary lands INSIDE the ONE daily User #N card (Last: 31/31 (87%) · paper) with editMessageText updates',
+    sessEdits.length >= 1 && (sessEdits[0].options.payload || '').indexOf('87%') >= 0 && (sessEdits[0].options.payload || '').indexOf('paper') >= 0,
+    sessEdits.length ? sessEdits[0].options.payload.slice(0, 130) : 'no card edit fired');
   rt.setNow(Date.UTC(2026, 10, 21, 12) + 62 * 1000);
   post(rt, { action: 'tg_event', deviceId: 'dev-rich-1', kind: 'voice_error', data: { detail: 'MP3 decode failure', clipKey: 'words.castle' } });
   const verr = tgSent(rt).filter((c) => c.options.payload.indexOf('VOICE ERROR') >= 0);
@@ -322,9 +326,8 @@ function tgSent(rt) { return tgCalls(rt, 'sendMessage'); }
   /* realistic classroom device ids — sdp_d_<8-hex> — unique in the first 10 chars */
   for (let d = 0; d < 8; d++) post(rt, { action: 'tg_event', deviceId: 'sdp_d_burst' + d.toString(16) + 'a1b2c3', kind: 'activity', data: { screen: 'dictation' } });
   const burstSent = tgSent(rt).length - sentBeforeBurst;
-  const queued = Number(vm.runInContext('Number(cacheGet("tgq:activity")||0)', rt.context));
-  check('C7c an 8-student activity burst sends at most 5 and queues the rest into the 60 s digest',
-    burstSent <= 5 && queued >= 3, 'sent=' + burstSent + ' queued=' + queued);
+  check('C7c v0.0.7.j an 8-student activity burst sends ZERO separate messages (silent card folds — FEATURE-J3)',
+    burstSent === 0, 'sent=' + burstSent);
   /* the digest queue: >5 rapid events of a kind queue into the digest */
   const dig = post(rt, { action: 'tg_event', deviceId: 'dev-digest', kind: 'digest' });
   check('C7d the digest flush action answers ok (the 60 s batch path)', dig.ok === true, JSON.stringify(dig));
@@ -332,7 +335,7 @@ function tgSent(rt) { return tgCalls(rt, 'sendMessage'); }
   post(rt, { action: 'set_lock_config', pin: '78987898', alertLevel: 'critical' });
   const before = tgSent(rt).length;
   post(rt, { action: 'tg_event', deviceId: 'dev-quiet-1', kind: 'login', data: { name: 'Q', method: 'Password' } });
-  check('C7d at level critical a plain login is NOT pushed (chatter filtered)',
+  check('C7d at level critical a plain login pushes NO new message (chatter folded into the silent card)',
     tgSent(rt).length === before, before + ' -> ' + tgSent(rt).length);
   rt.setNow(Date.UTC(2026, 10, 21, 12) + 10 * 60 * 1000);
   post(rt, { action: 'tg_event', deviceId: 'dev-quiet-1', kind: 'voice_error', data: { detail: 'autoplay blocked' } });
