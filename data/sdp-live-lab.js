@@ -1,4 +1,4 @@
-/* data/sdp-live-lab.js — unified app version 0.0.7.h — window.SDP.LiveLab (strict ES5).
+/* data/sdp-live-lab.js — unified app version 0.0.7.i — window.SDP.LiveLab (strict ES5).
  * Powers the real-time stations of lab.html through REAL browser APIs only
  * (AudioContext.decodeAudioData, <audio> playback, live fetch) — zero mocks.
  * Z3: the pack spectral/LUFS broadcast-signature consistency check
@@ -44,9 +44,9 @@
   /* v0.0.7.c (BUG-06): Station 1's last full measurement pass + the Station 7
      release-verification probes all live in this module. */
   var lastS1 = null;
-  var S7_EXPECTED_APP = '0.0.7.h';
-  var S7_EXPECTED_SW = 'sdp-v0.0.7.h-s47';
-  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.h-s47-shell';
+  var S7_EXPECTED_APP = '0.0.7.i';
+  var S7_EXPECTED_SW = 'sdp-v0.0.7.i-s48';
+  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.i-s48-shell';
 
   function record(station, name, ok, detail) {
     if (!LAB.results[station]) LAB.results[station] = [];
@@ -171,7 +171,7 @@
     var host = byId('labClipTableBody');
     if (!host) return false;
     setTxt('labPackStatus', 'Loading live /data/elevenlabs-audio.json …');
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.h', { cache: 'no-store' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.i', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack || !isObj(pack.clips)) { setTxt('labPackStatus', '✗ pack unavailable (offline?)'); record('S1', 'manifest loads', false, 'fetch failed'); return; }
@@ -244,7 +244,7 @@
   }
 
   function playKey(key) {
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.h', { cache: 'default' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.i', { cache: 'default' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack) return;
@@ -456,7 +456,7 @@
     var c = counts();
     LAB.report = {
       lab: 'SDP Real-Time Live Voice & Clone Lab',
-      labVersion: '0.0.7.h',
+      labVersion: '0.0.7.i',
       appVersion: (global.SDP && SDP.version) || '0.0.7.c',
       at: new Date().toISOString(),
       href: str(global.location && global.location.href),
@@ -607,7 +607,7 @@
     var words = [];
     try { if (global.SDP && SDP.Sync && SDP.Sync.words) words = SDP.Sync.words() || []; } catch (eW) {}
     if (words.length) { labBatchRun(words, key); return true; }
-    global.fetch('./data/session.json?v=0.0.7.h', { cache: 'no-store' })
+    global.fetch('./data/session.json?v=0.0.7.i', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (s) {
         if (s && Array.isArray(s.words) && s.words.length) labBatchRun(s.words, key);
@@ -1277,7 +1277,7 @@
     return true;
   }
   function station7() {
-    setTxt('labS7Status', '🧪 v0.0.7.h release verification running …');
+    setTxt('labS7Status', '🧪 v0.0.7.i release verification running …');
     if (byId('labS7Trace')) byId('labS7Trace').innerHTML = '';
     var pill = str(byId('labVerPill') ? byId('labVerPill').textContent : '');
     var sdVer = str(global.SDP && SDP.version);
@@ -1287,8 +1287,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var verApp = ver && str(ver.appVersion);
-        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 48 / schema 48 / settingsRev 83 / syncRev 1797000000032)',
-          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 48 && Number(ver && ver.settingsRev) === 83 && Number(ver && ver.syncRev) === 1797000000032,
+        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 49 / schema 49 / settingsRev 85 / syncRev 1797000000034)',
+          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 49 && Number(ver && ver.settingsRev) === 85 && Number(ver && ver.syncRev) === 1797000000034,
           JSON.stringify(ver || null));
         record('S7', 'version lockstep: the Lab pill (' + pill + ') == SDP.version (' + sdVer + ') == data/version.json (' + verApp + ')',
           pill === S7_EXPECTED_APP && sdVer === S7_EXPECTED_APP && verApp === S7_EXPECTED_APP,
@@ -1496,7 +1496,7 @@
   }
 
 
-  /* ══ STATION 8 — v0.0.7.h Live Apps Script Relay, Access Lock, Password
+  /* ══ STATION 8 — v0.0.7.i Live Apps Script Relay, Access Lock, Password
      & Telegram Interactive Verification Lab (8 live probes). Everything
      runs against the owner's REAL /exec URL; the Admin PIN and the test
      password live only in this page's memory. ═════════════════════════ */
@@ -1525,6 +1525,19 @@
     S8.log.push({ test: name, status: ok ? 'PASS' : (ok === false ? 'FAIL' : 'WARN'), detail: ok ? '' : str(detail).slice(0, 300) });
     record('S8', name, ok, detail);
     return ok;
+  }
+  /* v0.0.7.i FIX-I3: a Station 8 re-run must start from a CLEAN scorecard.
+     s8Record() also feeds the shared LAB.results['S8'] registry (the unified
+     scorecard, the "overall:" line and the exported JSON report), so clearing
+     only S8.log left the previous run's rows behind — a second run showed
+     inflated totals and duplicate [FAIL] 8.8 lines. Every Station 8 run now
+     drops both ledgers first: exactly 8 clean probes (8.1-8.8), zero
+     duplicates, on the 1st AND the Nth run. */
+  function s8ResetRun() {
+    S8.log = [];
+    delete LAB.results['S8'];
+    paintScorecard();
+    return true;
   }
   function s8Relay() {
     var el = byId('labS8Url');
@@ -1564,7 +1577,9 @@
        (127.0.0.1/localhost), which the e2e gates and Station 8's own local
        verification runs use to drive the REAL gas-source VM in Chromium. */
     if (/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/.test(str(url))) return true;
-    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/(gas\/)?exec\/?$/.test(str(url));
+    /* v0.0.7.i: any local /gas/exec* endpoint drives the real VM in the
+       gates (the second unconfigured-relay fixture lives at /gas/exec3). */
+    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/(gas\/)?exec\d*\/?$/.test(str(url));
   }
   function s8Classify(text, status, url) {
     var t = str(text);
@@ -1621,14 +1636,14 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var live = ver ? str(ver.appVersion) : '';
-        var match = pill === '0.0.7.h' && sd === '0.0.7.h' && live === '0.0.7.h';
+        var match = pill === '0.0.7.i' && sd === '0.0.7.i' && live === '0.0.7.i';
         s8Card('8.1', match ? 'pass' : 'fail',
-          'Probe 8.1 · Browser Version & Cache Check — lab.html + index.html match data/version.json (v0.0.7.h), no stale service worker',
+          'Probe 8.1 · Browser Version & Cache Check — lab.html + index.html match data/version.json (v0.0.7.i), no stale service worker',
           'lab pill <b>' + esc(pill) + '</b> · SDP.version <b>' + esc(sd) + '</b> · version.json <b>' + esc(live) + '</b>',
           JSON.stringify(ver || null),
-          match ? '' : 'This browser is running a STALE cached copy. Tap the red 🔄 Force Update Now banner at the top of this page (it unregisters the old service worker, clears the stale cache and reloads v0.0.7.h), then run Station 8 again.',
-          match ? '' : 'මෙම browser එක තුළ පැරණි cache කළ copy එකක් වේ. පිටුවේ ඉහළින් ඇති රතු 🔄 Force Update Now banner එක ඔබන්න — එය පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර v0.0.7.h load කරයි.');
-        s8Record('8.1 browser version & cache: lab.html + SDP.version + data/version.json all carry 0.0.7.h (no stale shell)', match, 'pill=' + pill + ' sd=' + sd + ' json=' + live);
+          match ? '' : 'This browser is running a STALE cached copy. Tap the red 🔄 Force Update Now banner at the top of this page (it unregisters the old service worker, clears the stale cache and reloads v0.0.7.i), then run Station 8 again.',
+          match ? '' : 'මෙම browser එක තුළ පැරණි cache කළ copy එකක් වේ. පිටුවේ ඉහළින් ඇති රතු 🔄 Force Update Now banner එක ඔබන්න — එය පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර v0.0.7.i load කරයි.');
+        s8Record('8.1 browser version & cache: lab.html + SDP.version + data/version.json all carry 0.0.7.i (no stale shell)', match, 'pill=' + pill + ' sd=' + sd + ' json=' + live);
         return true;
       });
   }
@@ -1684,17 +1699,32 @@
       return global.Promise.resolve(null);
     }
     s8Card('8.4', 'run', 'Probe 8.4 · Live Admin PIN Auth Check — running …');
-    return s8Post('login', { pin: str(byId('labS8Pin').value) }).then(function (r) {
-      var j = r.json;
-      var ok = !!(j && j.ok && j.token);
-      s8Card('8.4', ok ? 'pass' : 'fail',
-        'Probe 8.4 · Live Admin PIN Auth Check — the entered Admin PIN matches the Apps Script ADMIN_PIN',
-        ok ? 'login ok · token issued · relay ver <b>' + esc(j.ver) + '</b>' : 'verdict: <b>ERR_ADMIN_PIN_MISMATCH</b>',
-        JSON.stringify(j ? { ok: j.ok, err: j.err, retrySec: j.retrySec, triesLeft: j.triesLeft, ver: j.ver } : r).replace(/"token":"[^"]*"/, '"token":"[REDACTED]"'),
-        ok ? '' : 'The PIN does not match ADMIN_PIN (or the account is rate-limited after 5 wrong tries — wait 5 minutes). Check ADMIN_PIN in Apps Script → Project Settings → Script Properties. 5 වරක් වැරදි PIN එකක් ඇතුළත් කළොත් විනාඩි 5 ක් රැඳී සිටීමට සිදු වේ.',
-        ok ? '' : 'ADMIN_PIN එක Apps Script → Project Settings → Script Properties තුළ පරීක්ෂා කරන්න.');
-      s8Record('8.4 live admin PIN auth: the entered PIN authenticates against ADMIN_PIN (login token round-trip)', ok, (r.text || r.raw || '').slice(0, 200));
-      return ok;
+    return s8Post('ping', {}).then(function (pg) {
+      /* v0.0.7.i FIX-I1: the ping carries adminPinLen (the LENGTH of the
+         stored ADMIN_PIN only — never the PIN itself) so a typed PIN of the
+         wrong length is caught before the 5-try lockout can rack up. */
+      var hint = '';
+      var wantLen = Number(pg.json && pg.json.adminPinLen) || 0;
+      var gotLen = str(byId('labS8Pin').value).trim().length;
+      if (wantLen && gotLen && gotLen !== wantLen) {
+        hint = 'Your PIN has <b>' + gotLen + '</b> digits but ADMIN_PIN has <b>' + wantLen + '</b> — you are probably typing a different (older) PIN. Check Apps Script → Project Settings → Script Properties.';
+      }
+      return s8Post('login', { pin: str(byId('labS8Pin').value).trim() }).then(function (r) {
+        var j = r.json;
+        var ok = !!(j && j.ok && j.token);
+        var why = '';
+        if (!ok && j && str(j.err) === 'bad_pin' && wantLen && gotLen !== wantLen) {
+          why = 'ERR_ADMIN_PIN_MISMATCH (length ' + gotLen + ' ≠ stored ' + wantLen + ')';
+        }
+        s8Card('8.4', ok ? 'pass' : 'fail',
+          'Probe 8.4 · Live Admin PIN Auth Check — the entered Admin PIN matches the Apps Script ADMIN_PIN (whitespace auto-trimmed on both sides)',
+          ok ? 'login ok · token issued · relay ver <b>' + esc(j.ver) + '</b> · adminPinLen <b>' + wantLen + '</b>' : ('verdict: <b>' + esc(why || 'ERR_ADMIN_PIN_MISMATCH') + '</b>' + (hint ? '<br>' + hint : '')),
+          JSON.stringify(j ? { ok: j.ok, err: j.err, retrySec: j.retrySec, triesLeft: j.triesLeft, ver: j.ver, adminPinLen: wantLen } : r).replace(/"token":"[^"]*"/, '"token":"[REDACTED]"'),
+          ok ? '' : (hint ? hint + ' ' : '') + 'The PIN does not match ADMIN_PIN (or the account is rate-limited after 5 wrong tries — wait 5 minutes). Check ADMIN_PIN in Apps Script → Project Settings → Script Properties (leading/trailing spaces are now trimmed automatically on both sides). 5 වරක් වැරදි PIN එකක් ඇතුළත් කළොත් විනාඩි 5 ක් රැඳී සිටීමට සිදු වේ.',
+          ok ? '' : 'ADMIN_PIN එක Apps Script → Project Settings → Script Properties තුළ පරීක්ෂා කරන්න.');
+        s8Record('8.4 live admin PIN auth: the entered PIN authenticates against ADMIN_PIN (login token round-trip, whitespace trimmed)', ok, (r.text || r.raw || '').slice(0, 200));
+        return ok;
+      });
     });
   }
   function s8Probe5() {
@@ -1707,13 +1737,15 @@
       var mode = str(lock.mode || 'approval+code');
       var on = lock.on !== false;
       if (!pw && !hasPw) {
+        /* v0.0.7.i FIX-I4: an UNSET optional password is a friendly WARN,
+           never a false red bad-code error. */
         s8Card('8.5', 'warn',
-          'Probe 8.5 · Live Password / Break-Glass PIN Verification — password is UNSET and no test password entered',
+          'Probe 8.5 · Live Password Verification — password not set yet (WARN, not a failure)',
           'lock on=<b>' + on + '</b> · mode=<b>' + esc(mode) + '</b> · hasPassword=<b>' + hasPw + '</b>',
           st.text || st.raw || st.err,
-          'To test the live password unlock: type a test password (min 6 chars) in the optional input above, run Station 8, then set it live from the Studio Access Lock panel (or set_lock_config) and re-run — the verdict must flip to by:"password".',
-          'සජීවී password unlock පරීක්ෂා කිරීමට ඉහත input එකේ අත්හදා බැලීමේ password එකක් ඇතුළත් කර නැවත run කරන්න.');
-        s8Record('8.5 live password/PIN verification (verify_lock_secret) — password unset, no test password given (WARN, not a failure)', null, 'hasPassword=false');
+          'Password not set yet — set it in Studio → Advanced Settings → Access Lock (then re-run Station 8 with the same password typed in the optional input above to see the live by:"password" unlock verdict).',
+          'Password එකක් තවම සකසා නැත — Studio → Advanced Settings → Access Lock තුළ සකසන්න (ඉන් පසු එම password එක ඉහත input එකේ ඇතුළත් කර නැවත run කරන්න).');
+        s8Record('8.5 live password/PIN verification (verify_lock_secret) — password not set yet (WARN, not a failure): set it in Studio → Advanced Settings → Access Lock', null, 'hasPassword=false');
         return null;
       }
       if (!pw && hasPw) {
@@ -1750,7 +1782,24 @@
   }
   function s8Probe6() {
     s8Card('8.6', 'run', 'Probe 8.6 · Live Single-Use Burnable Code Round-Trip — running …');
-    return s8Post('generate_codes', { count: 1, ttlHours: 1 }).then(function (g) {
+    /* v0.0.7.i FIX-I4: the relay refuses burnable codes while the Lock is
+       OFF (Open Classroom Mode) — paint the friendly WARN instead of a false
+       red "burn FAIL", unless the temporary test-mode checkbox is ticked. */
+    return s8Post('access_state', {}).then(function (st0) {
+      var on0 = !!(st0.json && st0.json.lock && st0.json.lock.on);
+      var force0 = false;
+      try { var cb0 = byId('labS8Test'); force0 = !!(cb0 && cb0.checked); } catch (e0) { force0 = false; }
+      if (!on0 && !force0) {
+        s8Card('8.6', 'warn',
+          'Probe 8.6 · Burnable Code Round-Trip — skipped: burnable codes are disabled while the Lock is OFF (WARN, not a failure)',
+          'lock on=<b>false</b> · Open Classroom Mode',
+          st0.text || st0.raw || st0.err,
+          'Lock is currently OFF — the relay refuses one-time codes in Open Classroom Mode. Turn Master Lock ON in Studio (Advanced Settings → Access Lock) to test the single-use burn + 2nd-device rejection law, or tick the "still exercise the student flow" checkbox above.',
+          'Lock එක OFF තිබෙන විට one-time codes භාවිත කළ නොහැක — Studio (Advanced Settings → Access Lock) තුළ Master Lock ON කර නැවත run කරන්න.');
+        s8Record('8.6 burnable codes: skipped — the relay disables one-time codes while the Lock is OFF (WARN, not a failure)', null, 'lock.on=false');
+        return null;
+      }
+      return s8Post('generate_codes', { count: 1, ttlHours: 1 }).then(function (g) {
       var codes = g.json && g.json.codes;
       if (!codes || !codes.length) {
         s8Card('8.6', 'fail',
@@ -1780,23 +1829,45 @@
           });
         });
       });
+      });
     });
   }
   function s8Probe7() {
     s8Card('8.7', 'run', 'Probe 8.7 · Live Student access_request → access_decision → check_device (firstGrant) — running …');
     return s8Post('access_state', {}).then(function (st) {
       var wasOn = !!(st.json && st.json.lock && st.json.lock.on);
+      /* v0.0.7.i FIX-I4: Open Classroom Mode (lock OFF) is an OPTIONAL
+         unconfigured state — paint a friendly WARN and skip the student-flow
+         calls instead of a false red FAIL, UNLESS the temporary test-mode
+         checkbox is ticked (then the full round-trip runs for real). Probes
+         8.6 and 8.8 are never affected. */
+      var forceTest = false;
+      try { var cbEl = byId('labS8Test'); forceTest = !!(cbEl && cbEl.checked); } catch (eCB) { forceTest = false; }
+      if (!wasOn && !forceTest) {
+        s8Card('8.7', 'warn',
+          'Probe 8.7 · Live Student access_request → access_decision → check_device — skipped: the Lock is currently OFF (Open Classroom Mode, WARN not a failure)',
+          'lock on=<b>false</b> · mode=<b>' + esc(str((st.json && st.json.lock && st.json.lock.mode) || 'approval+code')) + '</b>',
+          st.text || st.raw || st.err,
+          'Lock is currently OFF — turn Master Lock ON in Studio (Advanced Settings → Access Lock) to test student gating, or tick the "still exercise the student flow" checkbox above to run the round-trip anyway.',
+          'Lock එක දැනට OFF යි — student gating පරීක්ෂා කිරීමට Studio (Advanced Settings → Access Lock) තුළ Master Lock ON කරන්න, නැතහොත් ඉහත checkbox එක සලකුණු කර ඕනෑම විටක පරීක්ෂාව run කරන්න.');
+        s8Record('8.7 student round-trip: skipped — lock is currently OFF (Open Classroom Mode, WARN not a failure): turn Master Lock ON in Studio to test student gating', null, 'lock.on=false');
+        return null;
+      }
       return s8Post('access_request', { deviceId: 'lab-dev-A', name: 'Station 8 Student Sim', classId: 'lab', note: 'station 8 live probe' }).then(function (req) {
         var reqOk = !!(req.json && req.json.ok);
         return s8Post('access_decision', { deviceId: 'lab-dev-A', decision: 'approve', hours: 72 }).then(function (dec) {
           var decOk = !!(dec.json && dec.json.ok);
           return s8Post('check_device', { deviceId: 'lab-dev-A' }).then(function (chk) {
             var j = chk.json || {};
-            var grant = !!(j.ok && j.approved && j.firstGrant && j.token);
+            /* v0.0.7.i FIX-I4: with the Lock OFF + the temporary test-mode
+               checkbox ticked, check_device answers the OPEN-MODE contract
+               { ok:true, open:true } — that IS the correct live verdict. */
+            var openGrant = !!(j.ok && j.open);
+            var grant = openGrant || !!(j.ok && j.approved && j.firstGrant && j.token);
             var state = grant ? 'pass' : 'fail';
             s8Card('8.7', state,
               'Probe 8.7 · Live Student access_request → access_decision → check_device — the 4-second auto-unlock firstGrant token handoff',
-              'request: <b>' + (reqOk ? 'ok' : 'fail') + '</b> · approve: <b>' + (decOk ? 'ok' : 'fail') + '</b> · check_device: <b>' + (grant ? 'approved + firstGrant token issued' : 'no firstGrant') + '</b>',
+              'request: <b>' + (reqOk ? 'ok' : 'fail') + '</b> · approve: <b>' + (decOk ? 'ok' : 'fail') + '</b> · check_device: <b>' + (openGrant ? 'open mode (lock OFF — every device allowed, exactly as configured)' : (grant ? 'approved + firstGrant token issued' : 'no firstGrant')) + '</b>',
               JSON.stringify({ req: req.json, dec: dec.json, chk: { ok: j.ok, approved: j.approved, firstGrant: j.firstGrant, graceHours: j.graceHours, hasToken: !!j.token } }),
               state === 'pass' ? '' : 'The student flow needs the lock ON (approval mode) and a correct Admin PIN for access_decision. Turn the Access Lock on from the Studio panel, then re-run.',
               state === 'pass' ? '' : 'Access Lock එක ON කර නිවැරදි Admin PIN එකක් ඇතුළත් කර නැවත run කරන්න.');
@@ -1838,7 +1909,10 @@
   function station8() {
     setTxt('labS8Status', '🧪 Station 8 live verification running — 8 probes against the real Apps Script relay …');
     if (byId('labS8Cards')) byId('labS8Cards').innerHTML = '';
-    S8.log = [];
+    /* v0.0.7.i FIX-I3: clear the previous Station 8 records FIRST (the S8 log
+       AND the shared unified scorecard rows) so a re-run always reports
+       exactly 8 clean probes with zero duplicated rows. */
+    s8ResetRun();
     S8.pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '').trim();
     S8.pw = str(byId('labS8Pw') ? byId('labS8Pw').value : '');
     S8.relay = s8Relay();
@@ -1874,6 +1948,9 @@
   }
   function s8AutoFix() {
     setTxt('labS8Status', '🩺 Auto-Fix Webhook running — registering the /exec webhook + sending the Telegram test alert …');
+    /* v0.0.7.i FIX-I3: the Auto-Fix pass repaints its own 8.8 card, so it
+       also starts from a clean Station 8 ledger — no stacked 8.8 rows. */
+    s8ResetRun();
     S8.pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '').trim();
     S8.relay = s8Relay();
     if (!s8IsExec(S8.relay)) {
@@ -1986,7 +2063,7 @@
 
   SDP.LiveLab = {
     /* v0.0.7.c: the Live Lab shares the app's ONE progressive version. */
-    version: '0.0.7.h',
+    version: '0.0.7.i',
     labKey: labKey,
     labBatchRepairWords: labBatchRepairWords,
     testVoiceSynthesis: testVoiceSynthesis,

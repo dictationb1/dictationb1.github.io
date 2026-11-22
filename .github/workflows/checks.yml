@@ -109,12 +109,12 @@ jobs:
       - name: G18 · v0.0.6.z seven-pillar release verification gate
         run: node tests/v006z-verification.cjs
 
-      # v0.0.7.h: the Live Lab Station 8 interactive gate — all 8 live
+      # v0.0.7.i: the Live Lab Station 8 interactive gate — all 8 live
       # probes (version/cache, /exec URL, ping + 5 Script Properties,
       # admin PIN, password unlock, burnable-code 2nd-device rejection,
       # firstGrant round-trip, Telegram webhook) against the real
       # data/gas-source.txt VM over local HTTP in headless Chromium.
-      - name: G29 · v0.0.7.h Live Lab Station 8 relay, lock & Telegram gate
+      - name: G29 · v0.0.7.i Live Lab Station 8 relay, lock & Telegram gate
         run: node tests/v007h-live-lab-station8.cjs
 
       # v0.0.7.a: the studio-UX / unlimited-words / key-pool / reuse gate —
@@ -149,7 +149,7 @@ jobs:
           node -e '
             const fs=require("fs"),c=require("crypto");
             const want={
-              "data/session.json":"2151c03d","data/gas-source.txt":"98e48ad8",
+              "data/session.json":"b579a74d","data/gas-source.txt":"5f35197b",
               "assets/fonts/NotoSansSinhala-Regular.woff2":"23f1503e",
               "assets/fonts/NotoSansSinhala-Bold.woff2":"bf59c148"};
             let bad=0;
