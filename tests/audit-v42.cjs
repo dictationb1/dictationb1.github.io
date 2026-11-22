@@ -73,7 +73,7 @@ check('G9.1f no retired CSS is merely hidden with display:none',
 // contract: docs/ARCHITECTURE_MAP.md §5 budget table
 const BUDGETS = {
   /* v0.0.2.b (W2) ceilings — identical to tests/check.cjs BUDGET. */
-  'index.html': 74000, /* v0.0.7.i: +Station 8 polish badge text */
+  'index.html': 74000, /* v0.0.7.j: +Station 8 polish badge text */
   /* v0.0.5.b: the appended Morphe material layer (glass header, layered
      shadows, spring motion, screen/modal/accordion transitions, mobile
      collision fixes) moved the ceiling in lockstep with the release. */
@@ -94,16 +94,16 @@ const BUDGETS = {
   'data/config.json': 44000,
   'data/version.json': 2000,
   'data/session.json': 72000, /* v0.0.6.x: repaired Session-14 payload */
-  'data/gas-source.txt': 64000, /* v0.0.7.i: +FIX-I1 ADMIN_PIN trim + adminPinLen */ /* v0.0.7.f: the Telegram Command Center backend */
+  'data/gas-source.txt': 80000, /* v0.0.7.j: BUG-J1 dedupe + BUG-J2 302 + J3 one-card + J4 visitor approval */
   'data/sdp-access-lock.js': 30000, /* v0.0.7.f: +mode overlay + relayUrl chain + firstGrant */
   'data/elevenlabs-audio.json': 4500000, /* v0.0.6.v: the 74-clip canonical pack */
   'assets/fonts/NotoSansSinhala-Regular.woff2': 48520,
   'assets/fonts/NotoSansSinhala-Bold.woff2': 48748,
   'data.html': 40000,
   'data/index.html': 40000,
-  'sw.js': 25000 /* v0.0.7.i s48 lockstep headroom */,
-  'lab.html': 27000 /* v0.0.7.i: +Station 8 test-mode checkbox */,
-  'data/sdp-live-lab.js': 136000 /* v0.0.7.i: +FIX-I3 reset + FIX-I4 smart WARN verdicts + 8.4 adminPinLen hint */,
+  'sw.js': 25000 /* v0.0.7.j s48 lockstep headroom */,
+  'lab.html': 27000 /* v0.0.7.j: +Station 8 test-mode checkbox */,
+  'data/sdp-live-lab.js': 136000 /* v0.0.7.j: +FIX-I3 reset + FIX-I4 smart WARN verdicts + 8.4 adminPinLen hint */,
   'manifest.webmanifest': 4000
 };
 const over = [];
@@ -229,8 +229,8 @@ check('G9.5c only the five R4 localStorage keys are named in scripts', strayKeys
  * now writes it on every publish (D-UI11), so it is budgeted and header-checked
  * instead of hash-frozen, and its clips are still never re-rendered for free. */
 const LOCKED = [
-  ['data/session.json', 'b579a74d'], /* v0.0.7.i root pin (header 70/85/…034; 31-word payload preserved) */
-  ['data/gas-source.txt', '5f35197b'], /* v0.0.7.i: FIX-I1 ADMIN_PIN trim + adminPinLen */
+  ['data/session.json', 'd9154e1e'], /* v0.0.7.j root pin (header 70/86/…035; 31-word payload preserved) */
+  ['data/gas-source.txt', '6de49c5f'], /* v0.0.7.j: BUG-J1/J2 + FEATURE-J3/J4 */
   ['assets/fonts/NotoSansSinhala-Regular.woff2', '23f1503e'],
   ['assets/fonts/NotoSansSinhala-Bold.woff2', 'bf59c148']
 ];
@@ -239,7 +239,7 @@ check('G9.6a all four preserved payloads still match their SHA-256 prefixes', lo
 const voicePack = JSON.parse(read('data/elevenlabs-audio.json'));
 check('G9.6g the voice pack stays app-writable and valid',
   voicePack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && voicePack.voiceName === 'Alice' &&
-  voicePack.version === '0.0.7.i' && voicePack.hashAlgo === 'sha1' &&
+  voicePack.version === '0.0.7.j' && voicePack.hashAlgo === 'sha1' &&
   typeof voicePack.clips === 'object' && Object.keys(voicePack.clips).length === 76, JSON.stringify([voicePack.version, voicePack.voiceId]));
 
 const session = JSON.parse(read('data/session.json'));
@@ -259,18 +259,18 @@ const missingKeys = keepKeys.filter((key) => !(key in config));
 check('G9.6e config.json keeps every preserved payload field', missingKeys.length === 0, missingKeys.join(','));
 check('G9.6f config.json pins the new release metadata',
   // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.a is ver 41 / schema 41 / settingsRev 71
-  config.ver === 49 && config.appVersion === '0.0.7.i' && config.version === '0.0.7.i' && config.schema === 49 && config.settingsRev === 85,
+  config.ver === 50 && config.appVersion === '0.0.7.j' && config.version === '0.0.7.j' && config.schema === 50 && config.settingsRev === 86,
   JSON.stringify({ ver: config.ver, appVersion: config.appVersion, schema: config.schema }));
 
 /* ── 7. PWA pins and load order ────────────────────────────────────────── */
 // contract: docs/SYNC_AND_DATA_CONTRACT.md §R6, docs/ARCHITECTURE_MAP.md §R10
 const manifest = JSON.parse(read('manifest.webmanifest'));
-check('G9.7a the manifest names 0.0.7.i in its description', /0\.0\.7\.i/.test(String(manifest.description)), manifest.description);
+check('G9.7a the manifest names 0.0.7.j in its description', /0\.0\.7\.j/.test(String(manifest.description)), manifest.description);
 check('G9.7b the manifest start_url carries the pwa source tag', /source=pwa/.test(String(manifest.start_url)), manifest.start_url);
 check('G9.7c theme and background are the 0.0.6.e daylight light', manifest.theme_color === '#F8FAFC' && manifest.background_color === '#F8FAFC', manifest.theme_color);
 
 const sw = read('sw.js');
-check('G9.7d the service worker pins the 0.0.7.i s48 cache names', sw.indexOf('sdp-v0.0.7.i-s48') >= 0 && sw.indexOf('9.0.0.4') < 0);
+check('G9.7d the service worker pins the 0.0.7.j s49 cache names', sw.indexOf('sdp-v0.0.7.j-s49') >= 0 && sw.indexOf('9.0.0.4') < 0);
 check('G9.7e the service worker preserves the audio caches', sw.indexOf('sdp-youdao-v1') >= 0 && sw.indexOf('sdp-audio-clips') >= 0);
 
 /* v0.0.5.b: sdp-morphe-hooks.js loads last so it decorates the finished DOM. */

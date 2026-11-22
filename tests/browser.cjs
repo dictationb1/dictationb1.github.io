@@ -515,6 +515,13 @@ async function bootSettings(page, settings) {
          bar (gap must be 0px) and the fixed toast (visual bottom edge) */
       const studio = await page.evaluate(() => {
         window.scrollTo(0, 320);
+        /* Gate determinism: the boot data capsule auto-hides on a 2.4 s + 0.42 s
+           timer, so on a loaded runner the measurement can land just AFTER that
+           deadline and read an empty rect (0px) even though the CSS is correct.
+           Re-show the capsule through the PUBLIC API immediately before
+           measuring — this assertion is about the fixed bottom-edge GEOMETRY
+           (bottom: 91px), never about how long the timer keeps it on screen. */
+        try { if (window.SDP && SDP.Views && SDP.Views.showToast) SDP.Views.showToast(); } catch (eToast) {}
         const bar = document.getElementById('studioSecurityBar');
         const header = document.getElementById('appHeader').getBoundingClientRect();
         const r = bar ? bar.getBoundingClientRect() : null;
@@ -582,7 +589,7 @@ async function bootSettings(page, settings) {
       const tag = flag || '(clean url)';
       const wantsBeta = flag === '?beta' || flag === '#beta';
       check('G5.13a ' + tag + ' the governed Beta channel state matches the URL',
-        main.betaActive === wantsBeta && main.betaSub === '0.0.7.i.beta',
+        main.betaActive === wantsBeta && main.betaSub === '0.0.7.j.beta',
         JSON.stringify(main));
       check('G5.13a2 ' + tag + ' the Beta channel replays the Project Briefing',
         main.briefingOpen === wantsBeta, JSON.stringify(main));
@@ -594,7 +601,7 @@ async function bootSettings(page, settings) {
         !/Beta|Creator Note|Guide|Synced|Lecturer Admin|v0\.0\.6/.test(main.headerText),
         JSON.stringify(main));
       check('G5.13c ' + tag + ' the relocated triggers live inside the About card',
-        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.i', JSON.stringify(main));
+        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.j', JSON.stringify(main));
       check('G5.13d ' + tag + ' the release fixes are live on the main UI', main.fixLive, JSON.stringify(main));
       await context.close();
     }

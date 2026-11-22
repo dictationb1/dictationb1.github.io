@@ -1,4 +1,4 @@
-/*! data/sdp-access-lock.js — v0.0.7.i — window.SDP.AccessLock (strict ES5).
+/*! data/sdp-access-lock.js — v0.0.7.j — window.SDP.AccessLock (strict ES5).
  * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.h
  * The Private Web App Access Lock client (Architecture D — Hybrid Smart
  * Classroom Gate). When the Lecturer arms the Master Lock the whole web app
@@ -327,10 +327,19 @@
     status(t('requesting'), '');
     state.pending = true;
     fingerprint(function (fp) {
+      /* v0.0.7.j FEATURE-J4: the full device/browser/network summary rides
+         the request so the owner's ONE pending Telegram card shows exactly
+         who is knocking (phone/PC, OS, browser, network) — and a repeat
+         request with the Name/Class filled updates that same card in place. */
+      var dev = null;
+      try {
+        if (global.SDP && SDP.Telemetry && SDP.Telemetry.deviceTelemetry) dev = SDP.Telemetry.deviceTelemetry();
+      } catch (eTD) { dev = null; }
       relay({
         action: 'access_request',
         name: state.name, classId: state.classId,
-        deviceId: state.deviceId, fp: fp
+        deviceId: state.deviceId, fp: fp,
+        device: dev
       }, function (err, out) {
         if (err || !out) { status(t('net'), 'bad'); return; }
         if (out.err === 'rate') { status(t('rate'), 'bad'); return; }
@@ -545,7 +554,7 @@
 
   /* ── public API ──────────────────────────────────────────────────────── */
   SDP.AccessLock = {
-    version: '0.0.7.i',
+    version: '0.0.7.j',
     key: STORE_KEY,
     gate: gate,
     arm: arm,

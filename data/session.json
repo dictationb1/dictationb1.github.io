@@ -904,11 +904,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "0.0.7.i",
+  "appVersion": "0.0.7.j",
   "updatedAt": "2026-11-22T05:30:00.000Z",
-  "version": "0.0.7.i",
+  "version": "0.0.7.j",
   "buildDate": "2026-11-22",
-  "settingsRev": 85,
+  "settingsRev": 86,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -1217,7 +1217,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000034,
+  "syncRev": 1797000000035,
   "words": [
     {
       "w": "communications",
@@ -1504,7 +1504,7 @@
     }
   ],
   "versionFamily": "9.0.0",
-  "wordsRev": 1797000000034,
+  "wordsRev": 1797000000035,
   "wordCount": 31,
   "wordCountMode": "custom"
 }

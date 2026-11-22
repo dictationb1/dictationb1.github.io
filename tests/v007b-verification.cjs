@@ -50,24 +50,24 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── V0 static version pins ───────────────────────────────────────────── */
-check('V0a version.json pins 0.0.7.g / 43 / 76 / 1797000000034',
-  version.ver === 49 && version.schema === 49 && version.appVersion === '0.0.7.i' && version.version === '0.0.7.i' && version.settingsRev === 85 && Number(version.syncRev) === 1797000000034,
+check('V0a version.json pins 0.0.7.g / 43 / 76 / 1797000000035',
+  version.ver === 50 && version.schema === 50 && version.appVersion === '0.0.7.j' && version.version === '0.0.7.j' && version.settingsRev === 86 && Number(version.syncRev) === 1797000000035,
   JSON.stringify({ ver: version.ver, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev, wordsRev: version.wordsRev }));
 check('V0b session.json pins ver 66 / 0.0.7.g / 72 / …0021 + wordCount 31',
-  session.ver === 70 && session.appVersion === '0.0.7.i' && session.settingsRev === 85 && Number(session.syncRev) === 1797000000034 && Number(session.wordsRev) === 1797000000034 && session.wordCount === 31,
+  session.ver === 70 && session.appVersion === '0.0.7.j' && session.settingsRev === 86 && Number(session.syncRev) === 1797000000035 && Number(session.wordsRev) === 1797000000035 && session.wordCount === 31,
   JSON.stringify({ ver: session.ver, appVersion: session.appVersion, settingsRev: session.settingsRev, syncRev: session.syncRev }));
 check('V0c config.json + pack headers pin 42 / 0.0.7.g / 72 / …0021',
-  config.ver === 49 && config.appVersion === '0.0.7.i' && config.settingsRev === 85 && Number(config.syncRev) === 1797000000034 &&
-  pack.ver === 49 && pack.appVersion === '0.0.7.i' && pack.settingsRev === 85 && Number(pack.syncRev) === 1797000000034 && Number(pack.wordsRev) === 1797000000034,
+  config.ver === 50 && config.appVersion === '0.0.7.j' && config.settingsRev === 86 && Number(config.syncRev) === 1797000000035 &&
+  pack.ver === 50 && pack.appVersion === '0.0.7.j' && pack.settingsRev === 86 && Number(pack.syncRev) === 1797000000035 && Number(pack.wordsRev) === 1797000000035,
   JSON.stringify({ cfg: [config.ver, config.appVersion, config.settingsRev, config.syncRev], pack: [pack.ver, pack.appVersion, pack.settingsRev, pack.syncRev, pack.wordsRev] }));
 check('V0d sw.js pins the s43 shell + s41 release + 0.0.7.g',
-  /sdp-v0\.0\.7\.i-s48-shell/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(sw) && /SW_RELEASE = '0\.0\.7\.i'/.test(sw));
+  /sdp-v0\.0\.7\.j-s49-shell/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.j-s49'/.test(sw) && /SW_RELEASE = '0\.0\.7\.j'/.test(sw));
 check('V0e the app boots at 0.0.7.g and the guide module ships in the load order + SW shell',
-  /var TARGET = '0\.0\.7\.i'/.test(indexHtml) &&
+  /var TARGET = '0\.0\.7\.j'/.test(indexHtml) &&
   indexHtml.indexOf('./data/sdp-studio-guide.js') > 0 &&
   sw.indexOf('./data/sdp-studio-guide.js') > 0);
 check('V0f the repaired session.json preserved-SHA lock (CI-13 prefix b579a74d)',
-  crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('b579a74d'));
+  crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('d9154e1e'));
 
 /* ── B1 static: the zero-byte law ─────────────────────────────────────── */
 check('B1a isValidClipEntry rejects recorded bytes < 512 (the live bytes:0 bug)',
@@ -405,7 +405,7 @@ const g20Live = (async function live() {
         step();
       }));
       check('B5L-3 stepping Continue walks every Simple step and seals studioGuideSeenVersion',
-        b5c.open === false && b5c.guard >= 7 && b5c.seen === '0.0.7.i', JSON.stringify(b5c));
+        b5c.open === false && b5c.guard >= 7 && b5c.seen === '0.0.7.j', JSON.stringify(b5c));
       const b5d = await page.evaluate(() => new Promise((resolve) => {
         document.getElementById('btnStudioGuide').click();
         setTimeout(() => {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
-/* G29 — tests/v007h-live-lab-station8.cjs — the v0.0.7.i Live Lab Station 8 gate.
- * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.i
+/* G29 — tests/v007h-live-lab-station8.cjs — the v0.0.7.j Live Lab Station 8 gate.
+ * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.j
  *
  * The interactive Live Apps Script Relay, Access Lock, Password & Telegram
  * verification lab (Station 8) must pass 100% live against the REAL
@@ -10,7 +10,7 @@
  *   H1  the backend ships tg_webhook_info (server-side Telegram
  *       getWebhookInfo — TG_BOT_TOKEN never crosses the browser) +
  *       lab_test_cleanup (synthetic lab-dev device + code removal), both
- *       admin-gated, and ping stamps gas:"v0.0.7.i" (plus the FIX-I1
+ *       admin-gated, and ping stamps gas:"v0.0.7.j" (plus the FIX-I1
  *       adminPinLen hint — LENGTH ONLY, never the PIN).
  *   H2  sw.js answers the s47 stamp with the 3 s NETWORK_TIMEOUT_FAST
  *       fast-fallback for the critical shell + the 'sdp:force-update'
@@ -71,8 +71,8 @@ check('H1b the backend ships lab_test_cleanup (revokes + deletes the synthetic l
   /function labTestCleanup\(body\)\{if\(!adminOk\(body\)\)/.test(GAS_SOURCE) &&
   /"lab_test_cleanup"===t\?labTestCleanup\(body\)/.test(GAS_SOURCE) &&
   /ids=\["lab-dev-A","lab-dev-B"\]/.test(GAS_SOURCE));
-check('H1c ping stamps the v0.0.7.i gas release',
-  /app:"sdp-gas",gas:"v0\.0\.7\.i"/.test(GAS_SOURCE));
+check('H1c ping stamps the v0.0.7.j gas release',
+  /app:"sdp-gas",gas:"v0\.0\.7\.j"/.test(GAS_SOURCE));
 check('H1d FIX-I1 adminLogin() trims BOTH the incoming pin and the stored ADMIN_PIN (String(...).trim())',
   /function adminLogin\(body\)\{var e=String\(body&&body\.pin\|\|""\)\.trim\(\),t=String\(PropertiesService\.getScriptProperties\(\)\.getProperty\("ADMIN_PIN"\)\|\|""\)\.trim\(\);/.test(GAS_SOURCE));
 check('H1e FIX-I1 adminOk() trims BOTH sides too (every admin-gated action inherits the trim)',
@@ -83,10 +83,10 @@ check('H1f FIX-I1 ping exposes adminPinLen (the LENGTH ONLY — never the PIN it
 check('H1g FIX-I1 adminPin() itself trims, so adminPinLen reports the true digit count',
   /function adminPin\(\)\{return getProp\("ADMIN_PIN"\)\.trim\(\)\}/.test(GAS_SOURCE));
 
-check('H2a sw.js pins the s48 stamp (sdp-v0.0.7.i-s48 + the s48 shell)',
-  /SW_VERSION = 'sdp-v0\.0\.7\.i-s48';/.test(swSrc) &&
-  /SHELL_CACHE = 'sdp-v0\.0\.7\.i-s48-shell';/.test(swSrc) &&
-  /SW_RELEASE = '0\.0\.7\.i';/.test(swSrc));
+check('H2a sw.js pins the s49 stamp (sdp-v0.0.7.j-s49 + the s49 shell)',
+  /SW_VERSION = 'sdp-v0\.0\.7\.j-s49';/.test(swSrc) &&
+  /SHELL_CACHE = 'sdp-v0\.0\.7\.j-s49-shell';/.test(swSrc) &&
+  /SW_RELEASE = '0\.0\.7\.j';/.test(swSrc));
 check('H2b the BUG-H1 fast-fallback law: NETWORK_TIMEOUT_FAST = 3 s and the critical shell routes through networkFirstShellFast',
   /NETWORK_TIMEOUT_FAST = 3000;/.test(swSrc) &&
   /event\.respondWith\(networkFirstShellFast\(request, url\)\);/.test(swSrc) &&
@@ -105,20 +105,20 @@ check('H3b lab.html hosts the banner div + auto-check boot, and index.html hosts
   /id="sdpForceUpdateBanner"/.test(readText('index.html')) && /bannerId: 'sdpForceUpdateBanner'/.test(readText('index.html')));
 
 check('H4 config.json pre-wires the verified public /exec relay URL in accessLock.relayUrl (BUG-H2)',
-  /"relayUrl": "https:\/\/script\.google\.com\/macros\/s\/AKfycbx[A-Za-z0-9_-]+\/exec"/.test(configSrc));
-check('H4b FIX-I2 the relayUrl is the owner\'s NEW live-verified v0.0.7.h /exec deployment',
-  /"relayUrl": "https:\/\/script\.google\.com\/macros\/s\/AKfycbxdedk5uegtCLIUBQUFbzog9pJxmEZHdYcdFCUBjc8IqigLWS6jYnvmdZoKh-PODkfS\/exec"/.test(configSrc),
+  /"relayUrl": "https:\/\/script\.google\.com\/macros\/s\/AKfycb[A-Za-z0-9_-]+\/exec"/.test(configSrc));
+check('H4b FIX-J4 the relayUrl is the owner\'s live-verified v0.0.7.j /exec deployment (the J-series URL)',
+  /"relayUrl": "https:\/\/script\.google\.com\/macros\/s\/AKfycbyPUQ48vQca-1m4fHjz4Pa7izid1gXLpIGhYVcNVSD436eEzUzQFfaYIIVYm8w-VxSZ\/exec"/.test(configSrc),
   configSrc.match(/"relayUrl": "([^"]+)"/)[1]);
 check('H4c FIX-I2 the relayUrl is a clean production URL (no /u/1/ user suffix, not /dev)',
   (function () { const u = JSON.parse(configSrc).accessLock.relayUrl;
     return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec$/.test(u) && u.indexOf('/u/') < 0 && u.indexOf('/dev') < 0; })());
 
-check('H5 the unified lockstep: SDP.version 0.0.7.i / SDP.ver 49 / SETTINGS_REV 85 / SCHEMA 49',
-  /SDP\.version = '0\.0\.7\.i';/.test(syncSrc) && /SDP\.ver = 49;/.test(syncSrc) &&
-  /var SETTINGS_REV = 85;/.test(syncSrc) && /var SCHEMA = 49;/.test(syncSrc));
-check('H5b the lockstep is MONOTONIC above the live owner state (settingsRev 85 > live 84, syncRev …034 > live …033)',
+check('H5 the unified lockstep: SDP.version 0.0.7.j / SDP.ver 50 / SETTINGS_REV 86 / SCHEMA 50',
+  /SDP\.version = '0\.0\.7\.j';/.test(syncSrc) && /SDP\.ver = 50;/.test(syncSrc) &&
+  /var SETTINGS_REV = 86;/.test(syncSrc) && /var SCHEMA = 50;/.test(syncSrc));
+check('H5b the lockstep is MONOTONIC above the live owner state (settingsRev 86 > live 85, syncRev …035 > live …034)',
   (function () { const v = JSON.parse(readText('data/version.json'));
-    return v.settingsRev === 85 && v.settingsRev > 84 && Number(v.syncRev) === 1797000000034 && Number(v.syncRev) > 1797000000033; })());
+    return v.settingsRev === 86 && v.settingsRev > 85 && Number(v.syncRev) === 1797000000035 && Number(v.syncRev) > 1797000000034; })());
 
 /* ══ the standalone GAS VM (the real gas-source.txt, G28 runtime shape) ══ */
 function makeRuntime() {
@@ -184,7 +184,7 @@ function makeRuntime() {
 const rt = makeRuntime();
 vm.runInContext(GAS_SOURCE, rt.context);
 const gasPost = (body) => JSON.parse(rt.context.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } })._t);
-/* v0.0.7.i FIX-I4 fixture: rt3 is the UNCONFIGURED relay (lock OFF, no
+/* v0.0.7.j FIX-I4 fixture: rt3 is the UNCONFIGURED relay (lock OFF, no
    password) served on /gas/exec3 for the friendly-WARN verdict proofs. */
 let rt3 = null;
 
@@ -194,7 +194,7 @@ gasPost({ action: 'set_lock_config', pin: '78987898', on: true, mode: 'approval+
 /* ══ FIX-I1 live proof: a SPACE-PADDED ADMIN_PIN can never cause bad_pin ══
    A second runtime boots with ' 78987898 ' (leading + trailing spaces) in
    Script Properties. The v0.0.7.h backend rejected the CORRECT pin against
-   that property; the v0.0.7.i backend trims both sides. */
+   that property; the v0.0.7.j backend trims both sides. */
 {
   const rt2 = makeRuntime();
   rt2.props.ADMIN_PIN = ' 78987898 ';
@@ -230,7 +230,7 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applica
       });
       return;
     }
-    /* v0.0.7.i FIX-I4: the unconfigured relay (lock OFF, no password). */
+    /* v0.0.7.j FIX-I4: the unconfigured relay (lock OFF, no password). */
     if (u.pathname === '/gas/exec3' && rt3) {
       if (req.method !== 'POST') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, pong: true })); return; }
       let body3 = '';
@@ -288,10 +288,17 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applica
       inputs.url && inputs.pin && inputs.pw && inputs.run && inputs.fix && inputs.copy, JSON.stringify(inputs));
 
     /* the relay pre-fill: the input must self-populate from config.json's
-       accessLock.relayUrl (the owner's verified /exec URL). */
+       accessLock.relayUrl (the owner's verified /exec URL). The pre-fill is an
+       async fetch, so wait for the app's own async work (bounded) instead of
+       sampling the input at 0 ms after load — the assertion is about the URL
+       that gets pre-filled, not about how many milliseconds the fetch takes. */
+    await page.waitForFunction(() => {
+      const el = document.getElementById('labS8Url');
+      return !!el && String(el.value).indexOf('http') === 0;
+    }, null, { timeout: 5000 }).catch(() => {});
     const prefill = await page.evaluate(() => document.getElementById('labS8Url').value);
     check('L1b the /exec URL input pre-fills from config.json accessLock.relayUrl (BUG-H2)',
-      /^https:\/\/script\.google\.com\/macros\/s\/AKfycbx[A-Za-z0-9_-]+\/exec$/.test(prefill), prefill.slice(0, 80));
+      /^https:\/\/script\.google\.com\/macros\/s\/AKfycb[A-Za-z0-9_-]+\/exec$/.test(prefill), prefill.slice(0, 80));
 
     /* drive the identical code path against the local gas VM */
     await page.evaluate((u) => { document.getElementById('labS8Url').value = u; }, 'http://127.0.0.1:' + port + '/gas/exec');

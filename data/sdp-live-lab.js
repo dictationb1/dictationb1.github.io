@@ -1,4 +1,4 @@
-/* data/sdp-live-lab.js — unified app version 0.0.7.i — window.SDP.LiveLab (strict ES5).
+/* data/sdp-live-lab.js — unified app version 0.0.7.j — window.SDP.LiveLab (strict ES5).
  * Powers the real-time stations of lab.html through REAL browser APIs only
  * (AudioContext.decodeAudioData, <audio> playback, live fetch) — zero mocks.
  * Z3: the pack spectral/LUFS broadcast-signature consistency check
@@ -44,9 +44,9 @@
   /* v0.0.7.c (BUG-06): Station 1's last full measurement pass + the Station 7
      release-verification probes all live in this module. */
   var lastS1 = null;
-  var S7_EXPECTED_APP = '0.0.7.i';
-  var S7_EXPECTED_SW = 'sdp-v0.0.7.i-s48';
-  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.i-s48-shell';
+  var S7_EXPECTED_APP = '0.0.7.j';
+  var S7_EXPECTED_SW = 'sdp-v0.0.7.j-s49';
+  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.j-s49-shell';
 
   function record(station, name, ok, detail) {
     if (!LAB.results[station]) LAB.results[station] = [];
@@ -171,7 +171,7 @@
     var host = byId('labClipTableBody');
     if (!host) return false;
     setTxt('labPackStatus', 'Loading live /data/elevenlabs-audio.json …');
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.i', { cache: 'no-store' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.j', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack || !isObj(pack.clips)) { setTxt('labPackStatus', '✗ pack unavailable (offline?)'); record('S1', 'manifest loads', false, 'fetch failed'); return; }
@@ -244,7 +244,7 @@
   }
 
   function playKey(key) {
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.i', { cache: 'default' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.j', { cache: 'default' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack) return;
@@ -456,7 +456,7 @@
     var c = counts();
     LAB.report = {
       lab: 'SDP Real-Time Live Voice & Clone Lab',
-      labVersion: '0.0.7.i',
+      labVersion: '0.0.7.j',
       appVersion: (global.SDP && SDP.version) || '0.0.7.c',
       at: new Date().toISOString(),
       href: str(global.location && global.location.href),
@@ -607,7 +607,7 @@
     var words = [];
     try { if (global.SDP && SDP.Sync && SDP.Sync.words) words = SDP.Sync.words() || []; } catch (eW) {}
     if (words.length) { labBatchRun(words, key); return true; }
-    global.fetch('./data/session.json?v=0.0.7.i', { cache: 'no-store' })
+    global.fetch('./data/session.json?v=0.0.7.j', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (s) {
         if (s && Array.isArray(s.words) && s.words.length) labBatchRun(s.words, key);
@@ -1277,7 +1277,7 @@
     return true;
   }
   function station7() {
-    setTxt('labS7Status', '🧪 v0.0.7.i release verification running …');
+    setTxt('labS7Status', '🧪 v0.0.7.j release verification running …');
     if (byId('labS7Trace')) byId('labS7Trace').innerHTML = '';
     var pill = str(byId('labVerPill') ? byId('labVerPill').textContent : '');
     var sdVer = str(global.SDP && SDP.version);
@@ -1287,8 +1287,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var verApp = ver && str(ver.appVersion);
-        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 49 / schema 49 / settingsRev 85 / syncRev 1797000000034)',
-          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 49 && Number(ver && ver.settingsRev) === 85 && Number(ver && ver.syncRev) === 1797000000034,
+        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 50 / schema 50 / settingsRev 86 / syncRev 1797000000035)',
+          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 50 && Number(ver && ver.settingsRev) === 86 && Number(ver && ver.syncRev) === 1797000000035,
           JSON.stringify(ver || null));
         record('S7', 'version lockstep: the Lab pill (' + pill + ') == SDP.version (' + sdVer + ') == data/version.json (' + verApp + ')',
           pill === S7_EXPECTED_APP && sdVer === S7_EXPECTED_APP && verApp === S7_EXPECTED_APP,
@@ -1496,7 +1496,7 @@
   }
 
 
-  /* ══ STATION 8 — v0.0.7.i Live Apps Script Relay, Access Lock, Password
+  /* ══ STATION 8 — v0.0.7.j Live Apps Script Relay, Access Lock, Password
      & Telegram Interactive Verification Lab (8 live probes). Everything
      runs against the owner's REAL /exec URL; the Admin PIN and the test
      password live only in this page's memory. ═════════════════════════ */
@@ -1526,7 +1526,7 @@
     record('S8', name, ok, detail);
     return ok;
   }
-  /* v0.0.7.i FIX-I3: a Station 8 re-run must start from a CLEAN scorecard.
+  /* v0.0.7.j FIX-I3: a Station 8 re-run must start from a CLEAN scorecard.
      s8Record() also feeds the shared LAB.results['S8'] registry (the unified
      scorecard, the "overall:" line and the exported JSON report), so clearing
      only S8.log left the previous run's rows behind — a second run showed
@@ -1577,7 +1577,7 @@
        (127.0.0.1/localhost), which the e2e gates and Station 8's own local
        verification runs use to drive the REAL gas-source VM in Chromium. */
     if (/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/.test(str(url))) return true;
-    /* v0.0.7.i: any local /gas/exec* endpoint drives the real VM in the
+    /* v0.0.7.j: any local /gas/exec* endpoint drives the real VM in the
        gates (the second unconfigured-relay fixture lives at /gas/exec3). */
     return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/(gas\/)?exec\d*\/?$/.test(str(url));
   }
@@ -1636,14 +1636,14 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var live = ver ? str(ver.appVersion) : '';
-        var match = pill === '0.0.7.i' && sd === '0.0.7.i' && live === '0.0.7.i';
+        var match = pill === '0.0.7.j' && sd === '0.0.7.j' && live === '0.0.7.j';
         s8Card('8.1', match ? 'pass' : 'fail',
-          'Probe 8.1 · Browser Version & Cache Check — lab.html + index.html match data/version.json (v0.0.7.i), no stale service worker',
+          'Probe 8.1 · Browser Version & Cache Check — lab.html + index.html match data/version.json (v0.0.7.j), no stale service worker',
           'lab pill <b>' + esc(pill) + '</b> · SDP.version <b>' + esc(sd) + '</b> · version.json <b>' + esc(live) + '</b>',
           JSON.stringify(ver || null),
-          match ? '' : 'This browser is running a STALE cached copy. Tap the red 🔄 Force Update Now banner at the top of this page (it unregisters the old service worker, clears the stale cache and reloads v0.0.7.i), then run Station 8 again.',
-          match ? '' : 'මෙම browser එක තුළ පැරණි cache කළ copy එකක් වේ. පිටුවේ ඉහළින් ඇති රතු 🔄 Force Update Now banner එක ඔබන්න — එය පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර v0.0.7.i load කරයි.');
-        s8Record('8.1 browser version & cache: lab.html + SDP.version + data/version.json all carry 0.0.7.i (no stale shell)', match, 'pill=' + pill + ' sd=' + sd + ' json=' + live);
+          match ? '' : 'This browser is running a STALE cached copy. Tap the red 🔄 Force Update Now banner at the top of this page (it unregisters the old service worker, clears the stale cache and reloads v0.0.7.j), then run Station 8 again.',
+          match ? '' : 'මෙම browser එක තුළ පැරණි cache කළ copy එකක් වේ. පිටුවේ ඉහළින් ඇති රතු 🔄 Force Update Now banner එක ඔබන්න — එය පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර v0.0.7.j load කරයි.');
+        s8Record('8.1 browser version & cache: lab.html + SDP.version + data/version.json all carry 0.0.7.j (no stale shell)', match, 'pill=' + pill + ' sd=' + sd + ' json=' + live);
         return true;
       });
   }
@@ -1700,7 +1700,7 @@
     }
     s8Card('8.4', 'run', 'Probe 8.4 · Live Admin PIN Auth Check — running …');
     return s8Post('ping', {}).then(function (pg) {
-      /* v0.0.7.i FIX-I1: the ping carries adminPinLen (the LENGTH of the
+      /* v0.0.7.j FIX-I1: the ping carries adminPinLen (the LENGTH of the
          stored ADMIN_PIN only — never the PIN itself) so a typed PIN of the
          wrong length is caught before the 5-try lockout can rack up. */
       var hint = '';
@@ -1737,7 +1737,7 @@
       var mode = str(lock.mode || 'approval+code');
       var on = lock.on !== false;
       if (!pw && !hasPw) {
-        /* v0.0.7.i FIX-I4: an UNSET optional password is a friendly WARN,
+        /* v0.0.7.j FIX-I4: an UNSET optional password is a friendly WARN,
            never a false red bad-code error. */
         s8Card('8.5', 'warn',
           'Probe 8.5 · Live Password Verification — password not set yet (WARN, not a failure)',
@@ -1782,7 +1782,7 @@
   }
   function s8Probe6() {
     s8Card('8.6', 'run', 'Probe 8.6 · Live Single-Use Burnable Code Round-Trip — running …');
-    /* v0.0.7.i FIX-I4: the relay refuses burnable codes while the Lock is
+    /* v0.0.7.j FIX-I4: the relay refuses burnable codes while the Lock is
        OFF (Open Classroom Mode) — paint the friendly WARN instead of a false
        red "burn FAIL", unless the temporary test-mode checkbox is ticked. */
     return s8Post('access_state', {}).then(function (st0) {
@@ -1836,7 +1836,7 @@
     s8Card('8.7', 'run', 'Probe 8.7 · Live Student access_request → access_decision → check_device (firstGrant) — running …');
     return s8Post('access_state', {}).then(function (st) {
       var wasOn = !!(st.json && st.json.lock && st.json.lock.on);
-      /* v0.0.7.i FIX-I4: Open Classroom Mode (lock OFF) is an OPTIONAL
+      /* v0.0.7.j FIX-I4: Open Classroom Mode (lock OFF) is an OPTIONAL
          unconfigured state — paint a friendly WARN and skip the student-flow
          calls instead of a false red FAIL, UNLESS the temporary test-mode
          checkbox is ticked (then the full round-trip runs for real). Probes
@@ -1859,7 +1859,7 @@
           var decOk = !!(dec.json && dec.json.ok);
           return s8Post('check_device', { deviceId: 'lab-dev-A' }).then(function (chk) {
             var j = chk.json || {};
-            /* v0.0.7.i FIX-I4: with the Lock OFF + the temporary test-mode
+            /* v0.0.7.j FIX-I4: with the Lock OFF + the temporary test-mode
                checkbox ticked, check_device answers the OPEN-MODE contract
                { ok:true, open:true } — that IS the correct live verdict. */
             var openGrant = !!(j.ok && j.open);
@@ -1886,14 +1886,24 @@
       return s8Post('tg_webhook_info', {}).then(function (wi) {
         var j = wi.json || {};
         var execOk = !!j.hasExec;
-        var noErr = !j.hasErrors;
+        /* v0.0.7.j BUG-J2 FIX: Google Apps Script Web Apps ALWAYS answer the
+           webhook POST with the normal 302 Found redirect — Telegram reports
+           it as "Wrong response from the webhook: 302 Found" even while the
+           doPost handler executed, the update_id deduplication (BUG-J1) absorbs
+           the retry, and the test alert DID land on the phone. The
+           server-side tg_webhook_info now classifies that exact shape as
+           gasRedirect302:true with verdict exec_ok_302_dedup — so Probe 8.8
+           paints PASS (exec_ok · GAS 302 deduplicated · test alert delivered)
+           instead of a false red. */
+        var gas302 = !!(j.gasRedirect302 || j.verdict === 'exec_ok_302_dedup');
+        var noErr = !j.hasErrors || gas302;
         return s8Post('tg_test', {}).then(function (tt) {
           var ttOk = !!(tt.json && tt.json.ok && tt.json.telegram);
           var state = execOk && noErr && ttOk ? 'pass' : (execOk && ttOk ? 'warn' : 'fail');
           s8Card('8.8', state,
             'Probe 8.8 · Live Telegram Webhook & Phone Alert Round-Trip — auto_setup_webhook (/exec only), getWebhookInfo 0 delivery errors, real test alert to the phone',
-            'auto-fix: <b>' + (awOk ? 'ok' : 'refused') + '</b> · webhook: <b>' + (execOk ? 'ends in /exec ✅' : 'NOT /exec ❌') + '</b> · delivery errors: <b>' + (noErr ? '0 ✅' : esc(j.lastError || 'present') + ' ❌') + '</b> · test alert: <b>' + (ttOk ? 'sent ✅ (check the Telegram app + the ✅ inline button)' : 'not sent ❌') + '</b>',
-            JSON.stringify({ auto: aw.json, info: { webhookUrl: j.webhookUrl, hasExec: j.hasExec, pendingUpdateCount: j.pendingUpdateCount, hasErrors: j.hasErrors, lastError: j.lastError }, test: tt.json }),
+            'auto-fix: <b>' + (awOk ? 'ok' : 'refused') + '</b> · webhook: <b>' + (execOk ? 'ends in /exec ✅' : 'NOT /exec ❌') + '</b> · delivery errors: <b>' + (noErr ? (gas302 ? '0 ✅ (GAS 302 redirect deduplicated)' : '0 ✅') : esc(j.lastError || 'present') + ' ❌') + '</b> · test alert: <b>' + (ttOk ? 'sent ✅ (check the Telegram app + the ✅ inline button)' : 'not sent ❌') + '</b>',
+            JSON.stringify({ auto: aw.json, info: { webhookUrl: j.webhookUrl, hasExec: j.hasExec, pendingUpdateCount: j.pendingUpdateCount, hasErrors: j.hasErrors, gasRedirect302: j.gasRedirect302, lastError: j.lastError }, test: tt.json }),
             (state === 'pass' && !autoFixMode) ? '' : (execOk && ttOk
               ? 'Webhook + alert work; Telegram reported a past delivery error — open @BotFather or re-run the Auto-Fix to reset it, then confirm the error count stays 0.'
               : 'Run the 🩺 Auto-Fix Webhook button above: it registers the /exec webhook (requires TG_BOT_TOKEN + TG_CHAT_ID in Script Properties) and fires the test alert. If the alert never arrives, verify the bot was started (/start) by the owner chat.'),
@@ -1909,7 +1919,7 @@
   function station8() {
     setTxt('labS8Status', '🧪 Station 8 live verification running — 8 probes against the real Apps Script relay …');
     if (byId('labS8Cards')) byId('labS8Cards').innerHTML = '';
-    /* v0.0.7.i FIX-I3: clear the previous Station 8 records FIRST (the S8 log
+    /* v0.0.7.j FIX-I3: clear the previous Station 8 records FIRST (the S8 log
        AND the shared unified scorecard rows) so a re-run always reports
        exactly 8 clean probes with zero duplicated rows. */
     s8ResetRun();
@@ -1948,7 +1958,7 @@
   }
   function s8AutoFix() {
     setTxt('labS8Status', '🩺 Auto-Fix Webhook running — registering the /exec webhook + sending the Telegram test alert …');
-    /* v0.0.7.i FIX-I3: the Auto-Fix pass repaints its own 8.8 card, so it
+    /* v0.0.7.j FIX-I3: the Auto-Fix pass repaints its own 8.8 card, so it
        also starts from a clean Station 8 ledger — no stacked 8.8 rows. */
     s8ResetRun();
     S8.pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '').trim();
@@ -2063,7 +2073,7 @@
 
   SDP.LiveLab = {
     /* v0.0.7.c: the Live Lab shares the app's ONE progressive version. */
-    version: '0.0.7.i',
+    version: '0.0.7.j',
     labKey: labKey,
     labBatchRepairWords: labBatchRepairWords,
     testVoiceSynthesis: testVoiceSynthesis,

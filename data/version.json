@@ -1,14 +1,14 @@
 {
-  "ver": 49,
-  "appVersion": "0.0.7.i",
-  "version": "0.0.7.i",
+  "ver": 50,
+  "appVersion": "0.0.7.j",
+  "version": "0.0.7.j",
   "buildDate": "2026-11-22",
-  "schema": 49,
-  "settingsRev": 85,
+  "schema": 50,
+  "settingsRev": 86,
   "session": "14",
   "title": "Session 14 - Communications & Technology",
   "updatedAt": "2026-11-22T09:50:47.424Z",
-  "syncRev": 1797000000034,
+  "syncRev": 1797000000035,
   "payloadFiles": [
     "data/config.json",
     "data/version.json"
