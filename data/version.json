@@ -4,15 +4,13 @@
   "version": "0.0.7.h",
   "buildDate": "2026-11-22",
   "schema": 48,
-  "settingsRev": 83,
+  "settingsRev": 84,
   "session": "14",
   "title": "Session 14 - Communications & Technology",
-  "updatedAt": "2026-11-22T04:47:03.873Z",
-  "syncRev": 1797000000032,
+  "updatedAt": "2026-11-22T09:50:47.424Z",
+  "syncRev": 1797000000033,
   "payloadFiles": [
-    "data/session.json",
     "data/config.json",
-    "data/elevenlabs-audio.json",
     "data/version.json"
   ]
 }
