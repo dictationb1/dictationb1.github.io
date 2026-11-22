@@ -1,4 +1,4 @@
-/* data/sdp-live-lab.js — unified app version 0.0.7.g — window.SDP.LiveLab (strict ES5).
+/* data/sdp-live-lab.js — unified app version 0.0.7.h — window.SDP.LiveLab (strict ES5).
  * Powers the real-time stations of lab.html through REAL browser APIs only
  * (AudioContext.decodeAudioData, <audio> playback, live fetch) — zero mocks.
  * Z3: the pack spectral/LUFS broadcast-signature consistency check
@@ -44,9 +44,9 @@
   /* v0.0.7.c (BUG-06): Station 1's last full measurement pass + the Station 7
      release-verification probes all live in this module. */
   var lastS1 = null;
-  var S7_EXPECTED_APP = '0.0.7.g';
-  var S7_EXPECTED_SW = 'sdp-v0.0.7.g-s46';
-  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.g-s46-shell';
+  var S7_EXPECTED_APP = '0.0.7.h';
+  var S7_EXPECTED_SW = 'sdp-v0.0.7.h-s47';
+  var S7_EXPECTED_SHELL = 'sdp-v0.0.7.h-s47-shell';
 
   function record(station, name, ok, detail) {
     if (!LAB.results[station]) LAB.results[station] = [];
@@ -171,7 +171,7 @@
     var host = byId('labClipTableBody');
     if (!host) return false;
     setTxt('labPackStatus', 'Loading live /data/elevenlabs-audio.json …');
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.g', { cache: 'no-store' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.h', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack || !isObj(pack.clips)) { setTxt('labPackStatus', '✗ pack unavailable (offline?)'); record('S1', 'manifest loads', false, 'fetch failed'); return; }
@@ -244,7 +244,7 @@
   }
 
   function playKey(key) {
-    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.g', { cache: 'default' })
+    global.fetch('./data/elevenlabs-audio.json?v=0.0.7.h', { cache: 'default' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (pack) {
         if (!pack) return;
@@ -456,7 +456,7 @@
     var c = counts();
     LAB.report = {
       lab: 'SDP Real-Time Live Voice & Clone Lab',
-      labVersion: '0.0.7.g',
+      labVersion: '0.0.7.h',
       appVersion: (global.SDP && SDP.version) || '0.0.7.c',
       at: new Date().toISOString(),
       href: str(global.location && global.location.href),
@@ -553,6 +553,11 @@
     bindBtn('btnLabPurge', forcePurgeAndResync);
     bindBtn('btnLabRunAll', runFullDiagnostics);
     bindBtn('btnLabRunStation7', station7);
+    /* v0.0.7.h STATION 8 wiring. */
+    bindBtn('btnLabS8Run', function () { try { s8BindExtras(); } catch (eX1) {} station8(); });
+    bindBtn('btnLabS8AutoFix', function () { try { s8BindExtras(); } catch (eX2) {} s8AutoFix(); });
+    bindBtn('btnLabS8Copy', function () { s8CopyRedactedReport(); });
+    try { s8BindExtras(); } catch (eX3) {}
     bindBtn('btnLabDownloadJson', downloadJsonReport);
     bindBtn('btnLabDownloadZip', downloadZipReport);
     /* v3.0 — Station 2B + 3B. */
@@ -602,7 +607,7 @@
     var words = [];
     try { if (global.SDP && SDP.Sync && SDP.Sync.words) words = SDP.Sync.words() || []; } catch (eW) {}
     if (words.length) { labBatchRun(words, key); return true; }
-    global.fetch('./data/session.json?v=0.0.7.g', { cache: 'no-store' })
+    global.fetch('./data/session.json?v=0.0.7.h', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
       .then(function (s) {
         if (s && Array.isArray(s.words) && s.words.length) labBatchRun(s.words, key);
@@ -1272,7 +1277,7 @@
     return true;
   }
   function station7() {
-    setTxt('labS7Status', '🧪 v0.0.7.g release verification running …');
+    setTxt('labS7Status', '🧪 v0.0.7.h release verification running …');
     if (byId('labS7Trace')) byId('labS7Trace').innerHTML = '';
     var pill = str(byId('labVerPill') ? byId('labVerPill').textContent : '');
     var sdVer = str(global.SDP && SDP.version);
@@ -1282,8 +1287,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
       .then(function (ver) {
         var verApp = ver && str(ver.appVersion);
-        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 47 / schema 47 / settingsRev 80 / syncRev 1797000000029)',
-          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 47 && Number(ver && ver.settingsRev) === 80 && Number(ver && ver.syncRev) === 1797000000029,
+        record('S7', 'version lockstep: data/version.json pins the unified ' + S7_EXPECTED_APP + ' (ver 48 / schema 48 / settingsRev 83 / syncRev 1797000000032)',
+          verApp === S7_EXPECTED_APP && Number(ver && ver.ver) === 48 && Number(ver && ver.settingsRev) === 83 && Number(ver && ver.syncRev) === 1797000000032,
           JSON.stringify(ver || null));
         record('S7', 'version lockstep: the Lab pill (' + pill + ') == SDP.version (' + sdVer + ') == data/version.json (' + verApp + ')',
           pill === S7_EXPECTED_APP && sdVer === S7_EXPECTED_APP && verApp === S7_EXPECTED_APP,
@@ -1414,9 +1419,574 @@
     return true;
   }
 
+
+  /* ══ v0.0.7.h BUG-H1 — the Instant Version Mismatch Detector + 1-Click
+     Force Update banner, shared by the Lecturer Studio and lab.html. It
+     compares the RUNNING app version against the live cache-busted
+     data/version.json pointer; when behind it offers the single tap that
+     unregisters stale service workers, purges the old shell caches (the
+     preserved audio caches are NEVER touched) and reloads onto the new
+     release cleanly. ══════════════════════════════════════════════════ */
+  var FU_LAST_SEEN = '';
+  function forceUpdatePurgeAndReload() {
+    try { global.sessionStorage.setItem('sdp_force_update_to', FU_LAST_SEEN); } catch (eS) {}
+    var finish = function () { try { global.location.reload(); } catch (eR) {} };
+    var purgeCaches = function () {
+      if (!(global.caches && global.caches.keys)) { finish(); return; }
+      try {
+        global.caches.keys().then(function (names) {
+          var keep = ['sdp-audio-clips', 'sdp-youdao-v1'];
+          var jobs = [];
+          for (var i = 0; i < names.length; i++) {
+            if (names[i].indexOf('sdp-') === 0 && keep.indexOf(names[i]) < 0) jobs.push(global.caches.delete(names[i]));
+          }
+          return Promise.all(jobs);
+        }).then(finish, finish);
+      } catch (eC) { finish(); }
+    };
+    var killWorkers = function () {
+      if (!(global.navigator && global.navigator.serviceWorker)) { purgeCaches(); return; }
+      try {
+        var sw = global.navigator.serviceWorker;
+        if (sw.controller) { try { sw.controller.postMessage({ action: 'sdp:force-update' }); } catch (eM) {} }
+        sw.getRegistrations().then(function (regs) {
+          var jobs = [];
+          for (var i = 0; i < regs.length; i++) jobs.push(regs[i].unregister());
+          return Promise.all(jobs);
+        }).then(purgeCaches, purgeCaches);
+      } catch (eG) { purgeCaches(); }
+    };
+    killWorkers();
+  }
+  function checkVersionAndOfferForceUpdate(opts) {
+    opts = opts || {};
+    var bannerId = str(opts.bannerId || 'sdpForceUpdateBanner');
+    var running = str(opts.running || (global.SDP && global.SDP.version) || '');
+    var node = byId(bannerId);
+    if (!node || !running || typeof global.fetch !== 'function') return false;
+    var paint = function (html, level) {
+      node.innerHTML = html;
+      node.hidden = false;
+      try { node.setAttribute('data-level', level || 'stale'); } catch (eA) {}
+      var btn = byId(bannerId + 'Btn');
+      if (btn) btn.onclick = function () { forceUpdatePurgeAndReload(); return false; };
+      return true;
+    };
+    global.fetch('./data/version.json?t=' + nowMs(), { cache: 'no-store' })
+      .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
+      .then(function (ver) {
+        var live = ver && str(ver.appVersion);
+        if (!live) return false;
+        FU_LAST_SEEN = live;
+        try {
+          if (str(global.sessionStorage.getItem('sdp_force_update_to')) === live) return false;
+        } catch (eSS) {}
+        if (live === running) {
+          if (opts.quietWhenCurrent !== false) return false;
+          return paint('<b>✓ Up to date</b> — running ' + esc(running) + ' · live ' + esc(live), 'ok');
+        }
+        return paint(
+          '<b>🔄 A new release is live: v' + esc(live) + '</b> — this browser is still running <b>v' + esc(running) + '</b> (a stale cached copy).' +
+          '<div class="vgb-actions"><button type="button" class="lab-btn lab-btn--go" id="' + bannerId + 'Btn">🔄 Force Update Now (Clear Old Cache)</button></div>' +
+          '<p class="vgb-detail">1 tap unregisters the old service worker, clears the stale shell cache and reloads the new release. එක් tap එකකින් පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර නව release එක load වේ.</p>',
+          'stale');
+      })
+      .catch(function () { return false; });
+    return true;
+  }
+
+
+  /* ══ STATION 8 — v0.0.7.h Live Apps Script Relay, Access Lock, Password
+     & Telegram Interactive Verification Lab (8 live probes). Everything
+     runs against the owner's REAL /exec URL; the Admin PIN and the test
+     password live only in this page's memory. ═════════════════════════ */
+  var S8 = { log: [], relay: '', pin: '', pw: '' };
+
+  function s8Card(id, state, title, bodyHtml, raw, fixEn, fixSi) {
+    var host = byId('labS8Cards');
+    if (!host) return false;
+    var old = byId('s8card-' + id);
+    if (old) old.parentNode.removeChild(old);
+    var div = doc.createElement('div');
+    div.className = 'lab-s8card';
+    div.id = 's8card-' + id;
+    div.setAttribute('data-state', state);
+    var icon = state === 'pass' ? '✅' : (state === 'fail' ? '❌' : (state === 'warn' ? '⚠️' : '⏳'));
+    var html = '<p class="lab-s8head">' + icon + ' ' + esc(title) + '</p>';
+    if (bodyHtml) html += '<div class="lab-s8props">' + bodyHtml + '</div>';
+    if (fixEn) html += '<p class="lab-s8fix"><b>Fix (EN):</b> ' + esc(fixEn) + '</p>';
+    if (fixSi) html += '<p class="lab-s8fix"><b>Fix (සිංහල):</b> ' + esc(fixSi) + '</p>';
+    if (raw) html = html + '<pre class="lab-s8raw">' + esc(str(raw).slice(0, 900)) + '</pre>';
+    div.innerHTML = html;
+    host.appendChild(div);
+    return true;
+  }
+  function s8Record(name, ok, detail) {
+    S8.log.push({ test: name, status: ok ? 'PASS' : (ok === false ? 'FAIL' : 'WARN'), detail: ok ? '' : str(detail).slice(0, 300) });
+    record('S8', name, ok, detail);
+    return ok;
+  }
+  function s8Relay() {
+    var el = byId('labS8Url');
+    var url = el ? str(el.value).trim() : '';
+    if (!url || url.indexOf('http') !== 0) {
+      try {
+        var cfg = global.SDP && SDP.Sync && SDP.Sync.config ? SDP.Sync.config() : null;
+        if (cfg && cfg.accessLock && cfg.accessLock.relayUrl) url = str(cfg.accessLock.relayUrl).trim();
+      } catch (eC) {}
+      if (!url && global.SDP_DATA_CONFIG_RELAY) url = str(global.SDP_DATA_CONFIG_RELAY);
+      if (!url) {
+        try {
+          var set = global.localStorage ? global.localStorage.getItem('sdp.settings') : null;
+          var s = set ? JSON.parse(set) : null;
+          if (s && s.gasUrl) url = str(s.gasUrl);
+        } catch (eS) {}
+      }
+      if (url && el) el.value = url;
+    }
+    return url;
+  }
+  function s8PrefillRelay() {
+    var el = byId('labS8Url');
+    if (!el || str(el.value).indexOf('http') === 0) return false;
+    try {
+      global.fetch('./data/config.json?t=' + nowMs(), { cache: 'no-store' })
+        .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
+        .then(function (cfg) {
+          var url = cfg && cfg.accessLock ? str(cfg.accessLock.relayUrl) : '';
+          if (url && el && !str(el.value)) el.value = url;
+        });
+    } catch (e) {}
+    return true;
+  }
+  function s8IsExec(url) {
+    /* v0.0.7.h: a strict production /exec URL — OR a local /exec endpoint
+       (127.0.0.1/localhost), which the e2e gates and Station 8's own local
+       verification runs use to drive the REAL gas-source VM in Chromium. */
+    if (/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/.test(str(url))) return true;
+    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/(gas\/)?exec\/?$/.test(str(url));
+  }
+  function s8Classify(text, status, url) {
+    var t = str(text);
+    if (/accounts\.google\.com|Sign in|use a supported browser/i.test(t.slice(0, 2000))) return { code: 'ERR_AUTH_NOT_ANYONE', why: 'the Web App is not deployed with access "Anyone"' };
+    if (status === 404 || /script\.google\.com\/404/.test(t)) return { code: 'ERR_BAD_URL', why: 'the deployment no longer exists (a /dev URL or a deleted deployment)' };
+    if (status >= 500) return { code: 'ERR_GAS_EXCEPTION', why: 'the Apps Script threw: ' + t.slice(0, 200) };
+    return null;
+  }
+  function s8Post(action, body, timeoutMs) {
+    var url = S8.relay || s8Relay();
+    var payload = {};
+    var k;
+    body = body || {};
+    for (k in body) if (Object.prototype.hasOwnProperty.call(body, k)) payload[k] = body[k];
+    payload.action = action;
+    if (S8.pin) payload.pin = S8.pin;
+    return new global.Promise(function (resolve) {
+      if (!url) { resolve({ err: 'no_relay' }); return; }
+      var done = false;
+      var timer = global.setTimeout(function () {
+        if (done) return; done = true;
+        resolve({ err: 'ERR_TIMEOUT', raw: 'no answer within ' + (timeoutMs || 15000) + ' s' });
+      }, timeoutMs || 15000);
+      var opts = { method: 'POST', mode: 'cors', redirect: 'follow', credentials: 'omit',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify(payload) };
+      try {
+        if (typeof global.AbortController === 'function') {
+          var ctl = new global.AbortController();
+          opts.signal = ctl.signal;
+        }
+      } catch (eAC) {}
+      global.fetch(url, opts).then(function (res) {
+        if (done) return; done = true;
+        global.clearTimeout(timer);
+        res.text().then(function (text) {
+          var json = null;
+          try { json = JSON.parse(text); } catch (eJ) {}
+          resolve({ status: res.status, text: text, json: json,
+            cls: s8Classify(text, res.status, url), redirected: !!(res.redirected || res.url !== url) });
+        }, function () { if (!done) { done = true; global.clearTimeout(timer); resolve({ err: 'ERR_BODY' }); } });
+      }).catch(function (eN) {
+        if (done) return; done = true;
+        global.clearTimeout(timer);
+        resolve({ err: 'ERR_NETWORK_OR_CORS', raw: str(eN && eN.message || eN) });
+      });
+    });
+  }
+  function s8Badge(ok, label) { return '<span>' + (ok ? '✅' : '❌') + ' ' + esc(label) + '</span>'; }
+
+  function s8Probe1() {
+    var pill = str(byId('labVerPill') ? byId('labVerPill').textContent : '');
+    var sd = str(global.SDP && SDP.version);
+    return global.fetch('./data/version.json?t=' + nowMs(), { cache: 'no-store' })
+      .then(function (r) { return r && r.ok ? r.json() : null; }, function () { return null; })
+      .then(function (ver) {
+        var live = ver ? str(ver.appVersion) : '';
+        var match = pill === '0.0.7.h' && sd === '0.0.7.h' && live === '0.0.7.h';
+        s8Card('8.1', match ? 'pass' : 'fail',
+          'Probe 8.1 · Browser Version & Cache Check — lab.html + index.html match data/version.json (v0.0.7.h), no stale service worker',
+          'lab pill <b>' + esc(pill) + '</b> · SDP.version <b>' + esc(sd) + '</b> · version.json <b>' + esc(live) + '</b>',
+          JSON.stringify(ver || null),
+          match ? '' : 'This browser is running a STALE cached copy. Tap the red 🔄 Force Update Now banner at the top of this page (it unregisters the old service worker, clears the stale cache and reloads v0.0.7.h), then run Station 8 again.',
+          match ? '' : 'මෙම browser එක තුළ පැරණි cache කළ copy එකක් වේ. පිටුවේ ඉහළින් ඇති රතු 🔄 Force Update Now banner එක ඔබන්න — එය පැරණි service worker එක ඉවත් කර cache එක පිරිසිදු කර v0.0.7.h load කරයි.');
+        s8Record('8.1 browser version & cache: lab.html + SDP.version + data/version.json all carry 0.0.7.h (no stale shell)', match, 'pill=' + pill + ' sd=' + sd + ' json=' + live);
+        return true;
+      });
+  }
+  function s8Probe2() {
+    S8.relay = s8Relay();
+    var url = S8.relay;
+    var isExec = s8IsExec(url);
+    var hasDev = /\/dev\/?$/.test(url);
+    var state = isExec ? 'pass' : (hasDev ? 'fail' : 'fail');
+    s8Card('8.2', state,
+      'Probe 8.2 · URL & Deployment Access Check — production /exec format, CORS-simple POST (text/plain, redirect follow, credentials omitted)',
+      'URL: <b>' + esc(url ? url.slice(0, 72) : '(empty)') + '</b>' + (isExec ? '' : ' — <b>NOT a production /exec URL</b>'),
+      url,
+      isExec ? '' : (hasDev
+        ? 'This is the /dev TEST URL — Google answers it with a Sign-In page, so Telegram and student phones can NEVER reach it. Click the 🔁 /exec swap button next to the URL input (or paste the /exec URL from Apps Script → Deploy → Manage deployments → Web app).'
+        : 'Paste your production Web App URL in /exec format: https://script.google.com/macros/s/…/exec (Apps Script → Deploy → Manage deployments → Web app → Copy URL, Access: Anyone).'),
+      isExec ? '' : (hasDev
+        ? 'මේක /dev TEST URL එකයි — Telegram සහ student phones වලට කිසිවිටෙක ලඟා විය නොහැක. URL input එක අසල ඇති 🔁 බොත්තමෙන් /exec URL එකට මාරු කරන්න.'
+        : 'production Web App URL එක /exec ආකාරයෙන් paste කරන්න: https://script.google.com/macros/s/…/exec (Deploy → Manage deployments → Web app, Access: Anyone).'));
+    s8Record('8.2 URL & deployment: the relay is a strict production /exec Web App URL', isExec, url);
+    return global.Promise.resolve(true);
+  }
+  function s8Probe3() {
+    s8Card('8.3', 'run', 'Probe 8.3 · Live ping & Auto-Sheet Health Check — running …');
+    return s8Post('ping', {}).then(function (r) {
+      var j = r.json;
+      var ok = !!(j && j.ok && j.pong && j.sheetBound);
+      var props = j ? [
+        s8Badge(!!j.hasAdminPin, 'ADMIN_PIN'),
+        s8Badge(!!j.hasTgBot, 'TG_BOT_TOKEN'),
+        s8Badge(!!j.hasTgChat, 'TG_CHAT_ID'),
+        s8Badge(!!j.hasTgSecret, 'TG_WEBHOOK_SECRET'),
+        s8Badge(j.sheetBound, 'Sheet bound (auto-created)')
+      ].join('') : '';
+      s8Card('8.3', ok ? 'pass' : 'fail',
+        'Probe 8.3 · Live ping & Auto-Sheet Health Check — sheetBound:true, Google Sheet status + the 5 Script Property badges',
+        (j ? 'gas <b>' + esc(j.gas) + '</b> · sheet <b>' + esc(j.sheetUrl ? 'attached' : 'none') + '</b><br>' + props : ''),
+        r.text || r.raw || r.err,
+        ok ? '' : (r.cls ? r.cls.code + ' — ' + r.cls.why + '. Redeploy the Web App with Access "Anyone", then re-run.' : 'The relay answered but not with a healthy ping. Re-paste the latest data/gas-source.txt into Apps Script (Admin PIN also lives in Script Properties), save and redeploy.'),
+        ok ? '' : 'Apps Script එකට අලුත්ම gas-source.txt කේතය paste කර save + deploy කරන්න. ADMIN_PIN, TG_BOT_TOKEN, TG_CHAT_ID, TG_WEBHOOK_SECRET සියල්ල Script Properties තුළ තිබිය යුතුය.');
+      s8Record('8.3 live ping: ok + sheetBound + the 5 Script Properties present (ADMIN_PIN, LOCK_HMAC_SECRET via codes, TG_BOT_TOKEN, TG_CHAT_ID, TG_WEBHOOK_SECRET)', ok, (r.text || r.raw || r.err || '').slice(0, 220));
+      return !!j;
+    });
+  }
+  function s8Probe4() {
+    if (!str(byId('labS8Pin') ? byId('labS8Pin').value : '')) {
+      s8Card('8.4', 'warn',
+        'Probe 8.4 · Live Admin PIN Auth Check — SKIPPED (no PIN entered)',
+        null, null,
+        'Enter the Admin PIN in the memory-only input above and re-run to verify it live against the Apps Script ADMIN_PIN.',
+        'ඉහත memory-only input එකේ Admin PIN එක ඇතුළත් කර නැවත run කරන්න.');
+      s8Record('8.4 live admin PIN auth (login round-trip) — skipped: no PIN entered', null, 'no pin');
+      return global.Promise.resolve(null);
+    }
+    s8Card('8.4', 'run', 'Probe 8.4 · Live Admin PIN Auth Check — running …');
+    return s8Post('login', { pin: str(byId('labS8Pin').value) }).then(function (r) {
+      var j = r.json;
+      var ok = !!(j && j.ok && j.token);
+      s8Card('8.4', ok ? 'pass' : 'fail',
+        'Probe 8.4 · Live Admin PIN Auth Check — the entered Admin PIN matches the Apps Script ADMIN_PIN',
+        ok ? 'login ok · token issued · relay ver <b>' + esc(j.ver) + '</b>' : 'verdict: <b>ERR_ADMIN_PIN_MISMATCH</b>',
+        JSON.stringify(j ? { ok: j.ok, err: j.err, retrySec: j.retrySec, triesLeft: j.triesLeft, ver: j.ver } : r).replace(/"token":"[^"]*"/, '"token":"[REDACTED]"'),
+        ok ? '' : 'The PIN does not match ADMIN_PIN (or the account is rate-limited after 5 wrong tries — wait 5 minutes). Check ADMIN_PIN in Apps Script → Project Settings → Script Properties. 5 වරක් වැරදි PIN එකක් ඇතුළත් කළොත් විනාඩි 5 ක් රැඳී සිටීමට සිදු වේ.',
+        ok ? '' : 'ADMIN_PIN එක Apps Script → Project Settings → Script Properties තුළ පරීක්ෂා කරන්න.');
+      s8Record('8.4 live admin PIN auth: the entered PIN authenticates against ADMIN_PIN (login token round-trip)', ok, (r.text || r.raw || '').slice(0, 200));
+      return ok;
+    });
+  }
+  function s8Probe5() {
+    var pwEl = byId('labS8Pw');
+    var pw = str(pwEl ? pwEl.value : '');
+    s8Card('8.5', 'run', 'Probe 8.5 · Live Password / Break-Glass PIN Verification Test — running …');
+    return s8Post('access_state', {}).then(function (st) {
+      var lock = st.json && st.json.lock ? st.json.lock : (st.json || {});
+      var hasPw = !!lock.hasPassword;
+      var mode = str(lock.mode || 'approval+code');
+      var on = lock.on !== false;
+      if (!pw && !hasPw) {
+        s8Card('8.5', 'warn',
+          'Probe 8.5 · Live Password / Break-Glass PIN Verification — password is UNSET and no test password entered',
+          'lock on=<b>' + on + '</b> · mode=<b>' + esc(mode) + '</b> · hasPassword=<b>' + hasPw + '</b>',
+          st.text || st.raw || st.err,
+          'To test the live password unlock: type a test password (min 6 chars) in the optional input above, run Station 8, then set it live from the Studio Access Lock panel (or set_lock_config) and re-run — the verdict must flip to by:"password".',
+          'සජීවී password unlock පරීක්ෂා කිරීමට ඉහත input එකේ අත්හදා බැලීමේ password එකක් ඇතුළත් කර නැවත run කරන්න.');
+        s8Record('8.5 live password/PIN verification (verify_lock_secret) — password unset, no test password given (WARN, not a failure)', null, 'hasPassword=false');
+        return null;
+      }
+      if (!pw && hasPw) {
+        s8Card('8.5', 'warn',
+          'Probe 8.5 · Live Password Verification — a live password EXISTS; type it in the optional input to verify',
+          'hasPassword=<b>true</b> · mode=<b>' + esc(mode) + '</b>',
+          st.text || st.raw || st.err,
+          'A lock password is already set on the relay. Type THAT password into the optional input to prove the student unlock path live.',
+          'relay එකේ දැනටමත් password එකක් සකසා ඇත — එය ඉහත input එකේ ඇතුළත් කර තහවුරු කරන්න.');
+        s8Record('8.5 live password/PIN verification — a live password exists; enter it to verify (WARN)', null, 'hasPassword=true');
+        return null;
+      }
+      return s8Post('verify_lock_secret', { deviceId: 'lab-dev-A', name: 'Station 8 Live Test', classId: 'lab', secret: pw }).then(function (r) {
+        var j = r.json;
+        var ok = !!(j && j.ok);
+        var why = '';
+        if (!ok) {
+          if (mode === 'approval' && !hasPw) why = 'the lock mode is approval-only (codes/password disabled) — switch mode to approval+code in the Studio Access Lock panel';
+          else if (j && str(j.err).indexOf('no secret given') >= 0) why = 'a password IS set on the relay but the entered value did not match it';
+          else if (j && str(j.err) === 'rate') why = 'rate-limited (8+ tries in 30 s) — wait 30 s and re-run';
+          else if (j && str(j.err).indexOf('codes disabled') >= 0) why = 'approval-only mode rejects secrets';
+          else why = (j && j.err) || 'unexpected relay answer';
+        }
+        s8Card('8.5', ok ? 'pass' : 'fail',
+          'Probe 8.5 · Live Password / Break-Glass PIN Verification (verify_lock_secret) — the real student unlock path, live',
+          ok ? 'verdict: <b>by:"' + esc(j.by) + '"</b> — the secret unlocked device lab-dev-A exactly like a student phone' : 'verdict: <b>rejected</b> — ' + esc(why),
+          JSON.stringify(j || r),
+          ok ? '' : 'Fix: ' + why + '. The entered test password must match the live lock password (set it first from the Studio Access Lock panel if none exists).',
+          ok ? '' : 'ඇතුළත් කළ password එක සජීවී lock password එකට ගැලපිය යුතුය — පළමුව Studio Access Lock panel එකෙන් password එකක් සකසන්න.');
+        s8Record('8.5 live password/PIN verification (verify_lock_secret): the entered secret unlocks live (by password) with the exact verdict + cause when rejected', ok, (r.text || r.raw || '').slice(0, 220));
+        return ok;
+      });
+    });
+  }
+  function s8Probe6() {
+    s8Card('8.6', 'run', 'Probe 8.6 · Live Single-Use Burnable Code Round-Trip — running …');
+    return s8Post('generate_codes', { count: 1, ttlHours: 1 }).then(function (g) {
+      var codes = g.json && g.json.codes;
+      if (!codes || !codes.length) {
+        s8Card('8.6', 'fail',
+          'Probe 8.6 · Burnable Code Round-Trip — generate_codes refused',
+          null, g.text || g.raw || g.err,
+          'generate_codes needs the correct Admin PIN (the relay answered unauthorised). Enter the PIN above and re-run.',
+          'නිවැරදි Admin PIN එක ඇතුළත් කර නැවත run කරන්න.');
+        s8Record('8.6 burnable code round-trip: generate_codes answered (admin-gated) — PIN required', false, (g.text || g.err || '').slice(0, 150));
+        return false;
+      }
+      var code = str(codes[0]);
+      return s8Post('burn_code', { code: code, deviceId: 'lab-dev-A', name: 'Station 8 Live Test', classId: 'lab' }).then(function (bA) {
+        var okA = !!(bA.json && bA.json.ok);
+        return s8Post('burn_code', { code: code, deviceId: 'lab-dev-B', name: 'Station 8 Impostor', classId: 'lab' }).then(function (bB) {
+          var rejB = bB.json && bB.json.ok === false && str(bB.json.err).indexOf('already burned') >= 0;
+          var state = okA && rejB ? 'pass' : 'fail';
+          return s8Post('lab_test_cleanup', {}).then(function (cl) {
+            s8Card('8.6', state,
+              'Probe 8.6 · Live Single-Use Burnable Code Round-Trip — burn on lab-dev-A, 2nd-device REJECTION, then synthetic-device cleanup',
+              'burn A: <b>' + (okA ? 'PASS (by code)' : 'FAIL') + '</b> · reuse on lab-dev-B: <b>' + (rejB ? 'REJECTED ✅ (single-use law holds)' : 'NOT rejected ❌') + '</b> · cleanup: <b>' + (cl.json && cl.json.ok ? 'done (' + cl.json.devicesRemoved + ' device row, ' + cl.json.codesRemoved + ' code row removed)' : 'failed') + '</b>',
+              'A: ' + JSON.stringify(bA.json || bA) + '\nB: ' + JSON.stringify(bB.json || bB) + '\ncleanup: ' + JSON.stringify(cl.json || cl),
+              state === 'pass' ? '' : 'The code must burn on exactly ONE device; a second device reusing it must be rejected ("code already burned on another device"). If reuse was allowed, re-paste the latest gas-source.txt and redeploy.',
+              state === 'pass' ? '' : 'එක් device එකකින් පමණක් code එක use විය යුතුය — දෙවන device එකකින් reuse කළ යුත්තේ නැත. නවතම gas-source.txt එක redeploy කරන්න.');
+            s8Record('8.6 burnable codes: generate → burn(lab-dev-A) ok → 2nd-device(lab-dev-B) reuse REJECTED → lab_test_cleanup removes the synthetic rows', state === 'pass',
+              JSON.stringify({ a: bA.json, b: bB.json, cl: cl.json }));
+            return state === 'pass';
+          });
+        });
+      });
+    });
+  }
+  function s8Probe7() {
+    s8Card('8.7', 'run', 'Probe 8.7 · Live Student access_request → access_decision → check_device (firstGrant) — running …');
+    return s8Post('access_state', {}).then(function (st) {
+      var wasOn = !!(st.json && st.json.lock && st.json.lock.on);
+      return s8Post('access_request', { deviceId: 'lab-dev-A', name: 'Station 8 Student Sim', classId: 'lab', note: 'station 8 live probe' }).then(function (req) {
+        var reqOk = !!(req.json && req.json.ok);
+        return s8Post('access_decision', { deviceId: 'lab-dev-A', decision: 'approve', hours: 72 }).then(function (dec) {
+          var decOk = !!(dec.json && dec.json.ok);
+          return s8Post('check_device', { deviceId: 'lab-dev-A' }).then(function (chk) {
+            var j = chk.json || {};
+            var grant = !!(j.ok && j.approved && j.firstGrant && j.token);
+            var state = grant ? 'pass' : 'fail';
+            s8Card('8.7', state,
+              'Probe 8.7 · Live Student access_request → access_decision → check_device — the 4-second auto-unlock firstGrant token handoff',
+              'request: <b>' + (reqOk ? 'ok' : 'fail') + '</b> · approve: <b>' + (decOk ? 'ok' : 'fail') + '</b> · check_device: <b>' + (grant ? 'approved + firstGrant token issued' : 'no firstGrant') + '</b>',
+              JSON.stringify({ req: req.json, dec: dec.json, chk: { ok: j.ok, approved: j.approved, firstGrant: j.firstGrant, graceHours: j.graceHours, hasToken: !!j.token } }),
+              state === 'pass' ? '' : 'The student flow needs the lock ON (approval mode) and a correct Admin PIN for access_decision. Turn the Access Lock on from the Studio panel, then re-run.',
+              state === 'pass' ? '' : 'Access Lock එක ON කර නිවැරදි Admin PIN එකක් ඇතුළත් කර නැවත run කරන්න.');
+            s8Record('8.7 student round-trip: access_request → access_decision(approve) → check_device answers approved + firstGrant token (the 4 s auto-unlock handoff)', state === 'pass',
+              JSON.stringify({ req: req.json, dec: dec.json, chk: { ok: j.ok, firstGrant: j.firstGrant, hasToken: !!j.token } }));
+            return state === 'pass';
+          });
+        });
+      });
+    });
+  }
+  function s8Probe8(autoFixMode) {
+    s8Card('8.8', 'run', 'Probe 8.8 · Live Telegram Webhook (tg_webhook_info → getWebhookInfo) & Phone Alert Round-Trip — running …');
+    return s8Post('auto_setup_webhook', { execUrl: S8.relay || s8Relay() }).then(function (aw) {
+      var awOk = !!(aw.json && aw.json.ok);
+      return s8Post('tg_webhook_info', {}).then(function (wi) {
+        var j = wi.json || {};
+        var execOk = !!j.hasExec;
+        var noErr = !j.hasErrors;
+        return s8Post('tg_test', {}).then(function (tt) {
+          var ttOk = !!(tt.json && tt.json.ok && tt.json.telegram);
+          var state = execOk && noErr && ttOk ? 'pass' : (execOk && ttOk ? 'warn' : 'fail');
+          s8Card('8.8', state,
+            'Probe 8.8 · Live Telegram Webhook & Phone Alert Round-Trip — auto_setup_webhook (/exec only), getWebhookInfo 0 delivery errors, real test alert to the phone',
+            'auto-fix: <b>' + (awOk ? 'ok' : 'refused') + '</b> · webhook: <b>' + (execOk ? 'ends in /exec ✅' : 'NOT /exec ❌') + '</b> · delivery errors: <b>' + (noErr ? '0 ✅' : esc(j.lastError || 'present') + ' ❌') + '</b> · test alert: <b>' + (ttOk ? 'sent ✅ (check the Telegram app + the ✅ inline button)' : 'not sent ❌') + '</b>',
+            JSON.stringify({ auto: aw.json, info: { webhookUrl: j.webhookUrl, hasExec: j.hasExec, pendingUpdateCount: j.pendingUpdateCount, hasErrors: j.hasErrors, lastError: j.lastError }, test: tt.json }),
+            (state === 'pass' && !autoFixMode) ? '' : (execOk && ttOk
+              ? 'Webhook + alert work; Telegram reported a past delivery error — open @BotFather or re-run the Auto-Fix to reset it, then confirm the error count stays 0.'
+              : 'Run the 🩺 Auto-Fix Webhook button above: it registers the /exec webhook (requires TG_BOT_TOKEN + TG_CHAT_ID in Script Properties) and fires the test alert. If the alert never arrives, verify the bot was started (/start) by the owner chat.'),
+            (state === 'pass' && !autoFixMode) ? '' : '🩺 Auto-Fix Webhook බොත්තම ඔබන්න — එය /exec webhook එක register කර test alert එකක් යවයි. Alert එක නොපැමිණේ නම් bot එකට /start දී ඇතිදැයි පරීක්ෂා කරන්න.');
+          s8Record('8.8 telegram round-trip: auto_setup_webhook registers the /exec webhook, tg_webhook_info (server getWebhookInfo) shows 0 delivery errors and ends in /exec, and tg_test delivers the real phone alert with the inline button', state === 'pass',
+            JSON.stringify({ aw: aw.json, wi: { hasExec: j.hasExec, hasErrors: j.hasErrors, url: j.webhookUrl }, tt: tt.json }));
+          return state;
+        });
+      });
+    });
+  }
+
+  function station8() {
+    setTxt('labS8Status', '🧪 Station 8 live verification running — 8 probes against the real Apps Script relay …');
+    if (byId('labS8Cards')) byId('labS8Cards').innerHTML = '';
+    S8.log = [];
+    S8.pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '').trim();
+    S8.pw = str(byId('labS8Pw') ? byId('labS8Pw').value : '');
+    S8.relay = s8Relay();
+    s8Probe1()
+      .then(function () { return s8Probe2(); })
+      .then(function () { return s8Probe3(); })
+      .then(function () { return s8Probe4(); })
+      .then(function () { return s8Probe5(); })
+      .then(function () { return s8Probe6(); })
+      .then(function () { return s8Probe7(); })
+      .then(function () { return s8Probe8(false); })
+      .then(function () {
+        /* the FINAL cleanup: probe 8.7 re-approves lab-dev-A, so the
+           synthetic device is removed once more at the very end. */
+        return s8Post('lab_test_cleanup', {});
+      })
+      .then(function () {
+        var c = counts();
+        var fails = 0, warns = 0, i;
+        for (i = 0; i < S8.log.length; i++) {
+          if (S8.log[i].status === 'FAIL') fails += 1;
+          else if (S8.log[i].status === 'WARN') warns += 1;
+        }
+        setTxt('labS8Status', (fails ? '✗ Station 8 finished with ' + fails + ' FAIL — see the red cards for the exact bilingual fix'
+          : '✓ Station 8 finished · ' + (S8.log.length - warns - fails) + ' PASS · ' + warns + ' WARN · ' + fails + ' FAIL') + ' — the report is redacted-ready (📋 Copy).');
+        try { if (global.SDP && SDP.Diagnostics) SDP.Diagnostics.log('station8_run', { fail: fails, warn: warns, pass: S8.log.length - warns - fails }); } catch (eD) {}
+      })
+      .catch(function (e) {
+        setTxt('labS8Status', '✗ Station 8 crashed — ' + str(e && e.message || e));
+        s8Record('8.x station 8 crashed', false, str(e));
+      });
+    return true;
+  }
+  function s8AutoFix() {
+    setTxt('labS8Status', '🩺 Auto-Fix Webhook running — registering the /exec webhook + sending the Telegram test alert …');
+    S8.pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '').trim();
+    S8.relay = s8Relay();
+    if (!s8IsExec(S8.relay)) {
+      s8Card('8.8', 'fail', 'Probe 8.8 · Auto-Fix — needs a production /exec URL first', null, S8.relay,
+        'Paste the /exec URL (Apps Script → Deploy → Manage deployments → Web app). A /dev URL can never receive Telegram updates.',
+        '/exec URL එක paste කරන්න — /dev URL එකකට Telegram ලබා ගත නොහැක.');
+      return false;
+    }
+    s8Probe8(true).then(function (state) {
+      setTxt('labS8Status', state === 'pass'
+        ? '✓ Auto-Fix complete — webhook registered on /exec, 0 delivery errors, test alert sent. Check the Telegram app for the 🔔 TEST ALERT + the ✅ inline button.'
+        : '⚠ Auto-Fix finished with issues — read the 8.8 card for the exact cause and bilingual fix.');
+    });
+    return true;
+  }
+  function s8Redact(text) {
+    var t = str(text);
+    t = t.replace(/(AKfycb[A-Za-z0-9_-]{10,})/g, 'AKfycb…[REDACTED]');
+    t = t.replace(/(\d{7,10}:[A-Za-z0-9_-]{20,})/g, '[BOT-TOKEN-REDACTED]');
+    t = t.replace(/("pin"\s*:\s*")[^"]*(")/g, '$1[REDACTED]$2');
+    t = t.replace(/("token"\s*:\s*")[^"]{8,}(")/g, '$1[REDACTED]$2');
+    t = t.replace(/("secret"\s*:\s*")[^"]*(")/g, '$1[REDACTED]$2');
+    var pin = str(byId('labS8Pin') ? byId('labS8Pin').value : '');
+    if (pin && pin.length >= 4) t = t.split(pin).join('[PIN-REDACTED]');
+    var pw = str(byId('labS8Pw') ? byId('labS8Pw').value : '');
+    if (pw && pw.length >= 4) t = t.split(pw).join('[PASSWORD-REDACTED]');
+    return t;
+  }
+  function s8CopyRedactedReport() {
+    var c = counts();
+    var lines = [];
+    var i;
+    lines.push('SMART DICTATION PLAYER — LIVE LAB STATION 8 REDACTED REPORT');
+    lines.push('generated: ' + new Date().toISOString());
+    lines.push('relay: ' + s8Redact(S8.relay || s8Relay()));
+    lines.push('overall: ' + c.pass + ' PASS · ' + c.warn + ' WARN · ' + c.fail + ' FAIL');
+    lines.push('');
+    for (i = 0; i < S8.log.length; i++) {
+      lines.push((S8.log[i].status === 'PASS' ? '[PASS] ' : (S8.log[i].status === 'FAIL' ? '[FAIL] ' : '[WARN] ')) + S8.log[i].test);
+      if (S8.log[i].detail) lines.push('       detail: ' + s8Redact(S8.log[i].detail));
+    }
+    lines.push('');
+    lines.push('(PINs, passwords, bot tokens and deployment IDs are automatically redacted — safe to share.)');
+    var text = lines.join('\n');
+    var done = function () { setTxt('labS8Status', '📋 Redacted Station 8 report copied to the clipboard (' + S8.log.length + ' entries) — PINs, passwords and tokens are redacted.'); };
+    try {
+      if (global.navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+        return true;
+      }
+    } catch (eC) {}
+    fallbackCopy(text);
+    done();
+    return true;
+  }
+  function fallbackCopy(text) {
+    try {
+      var ta = doc.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', 'readonly');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      doc.body.appendChild(ta);
+      ta.select();
+      doc.execCommand('copy');
+      doc.body.removeChild(ta);
+    } catch (e) {}
+  }
+
+  function s8BindExtras() {
+    var urlEl = byId('labS8Url');
+    if (urlEl && !urlEl.getAttribute('data-s8-wired')) {
+      urlEl.setAttribute('data-s8-wired', '1');
+      /* the live /dev detector + 1-click /exec swap */
+      var wrap = function () {
+        var v = str(urlEl.value).trim();
+        if (/\/dev\/?$/.test(v)) {
+          if (!byId('labS8DevSwap')) {
+            var b = doc.createElement('button');
+            b.type = 'button';
+            b.className = 'lab-btn lab-btn--warn';
+            b.id = 'labS8DevSwap';
+            b.innerHTML = '🔁 /dev detected — use the /exec URL instead';
+            b.onclick = function () {
+              urlEl.value = v.replace(/\/dev\/?$/, '/exec');
+              try { urlEl.dispatchEvent(new (global.Event || window.Event)('input', { bubbles: true })); } catch (e) {}
+              if (b.parentNode) b.parentNode.removeChild(b);
+              setTxt('labS8Status', '🔁 Swapped to the production /exec URL — re-run Station 8.');
+            };
+            urlEl.parentNode.appendChild(b);
+          }
+        } else {
+          var old = byId('labS8DevSwap');
+          if (old && old.parentNode) old.parentNode.removeChild(old);
+        }
+      };
+      urlEl.addEventListener('input', wrap, false);
+      wrap();
+    }
+    var pinEl = byId('labS8Pin');
+    if (pinEl) {
+      pinEl.setAttribute('autocomplete', 'off');
+      pinEl.setAttribute('data-s8-memory', '1');
+    }
+    var pwEl = byId('labS8Pw');
+    if (pwEl) pwEl.setAttribute('autocomplete', 'off');
+    s8PrefillRelay();
+    return true;
+  }
+
   SDP.LiveLab = {
     /* v0.0.7.c: the Live Lab shares the app's ONE progressive version. */
-    version: '0.0.7.g',
+    version: '0.0.7.h',
     labKey: labKey,
     labBatchRepairWords: labBatchRepairWords,
     testVoiceSynthesis: testVoiceSynthesis,
@@ -1441,7 +2011,18 @@
     labAnalyzeSample: labAnalyzeSample,
     labSimulateSample: labSimulateSample,
     labTestSynthEnhanced: labTestSynthEnhanced,
-    labStaleSimulator: labStaleSimulator
+    labStaleSimulator: labStaleSimulator,
+    /* v0.0.7.h BUG-H1 — the shared Force Update banner controller. */
+    checkVersionAndOfferForceUpdate: checkVersionAndOfferForceUpdate,
+    forceUpdatePurgeAndReload: forceUpdatePurgeAndReload,
+    /* v0.0.7.h STATION 8 — the live relay, lock, password & Telegram lab. */
+    station8: station8,
+    s8AutoFix: s8AutoFix,
+    s8CopyRedactedReport: s8CopyRedactedReport,
+    s8Relay: s8Relay,
+    s8Post: s8Post,
+    s8Redact: s8Redact,
+    s8BindExtras: s8BindExtras
   };
 
   try {

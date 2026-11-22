@@ -176,7 +176,7 @@ async function launch() {
         window.__SDP_NO_LIVE__ = true;
         window.__SDP_E2E_RELAY__ = relayUrl;
         try {
-          localStorage.setItem('sdp.guide_seen', '0.0.7.g');
+          localStorage.setItem('sdp.guide_seen', '0.0.7.h');
           /* NO sdp.settings.gasUrl — the student must find the relay via
              config.json accessLock.relayUrl (the BUG-F1 student-side law). */
         } catch (e) {}
@@ -434,8 +434,8 @@ async function launch() {
       const sentRelay = [];
       const app = await createApp({
         before(w) {
-          w.localStorage.setItem('sdp.guide_seen', '0.0.7.g');
-          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.g', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
+          w.localStorage.setItem('sdp.guide_seen', '0.0.7.h');
+          w.localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.h', gasUrl: 'https://script.google.com/macros/s/OLD/exec' }));
         }
       });
       /* record every relay post the studio makes */

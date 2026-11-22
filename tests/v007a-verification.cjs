@@ -2,7 +2,7 @@
 'use strict';
 /* G19 — the v0.0.7.g studio-UX / unlimited-words / key-pool / reuse release gate.
  * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.g
- * (0.0.7.g / ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000029 / SW s41) — v0.0.7.g lockstep
+ * (0.0.7.g / ver 42 / schema 42 / settingsRev 76 / syncRev+wordsRev 1797000000032 / SW s41) — v0.0.7.g lockstep
  * The seven pillars verified LIVE in headless Chromium (plus static pins):
  * A1: Unlimited custom word count (5–∞) with 100% lock/unlock/reload persistence.
  * A2: Consolidated multi-key ElevenLabs pool + pre-flight credit check + failover.
@@ -34,16 +34,16 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── A6 static pins ────────────────────────────────────────────────────── */
-check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000029, 0.0.7.g',
-  version.ver === 47 && version.schema === 47 && version.appVersion === '0.0.7.g' && version.version === '0.0.7.g' && version.settingsRev === 80 && version.syncRev === 1797000000029,
+check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000032, 0.0.7.g',
+  version.ver === 48 && version.schema === 48 && version.appVersion === '0.0.7.h' && version.version === '0.0.7.h' && version.settingsRev === 83 && version.syncRev === 1797000000032,
   JSON.stringify({ ver: version.ver, schema: version.schema, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
 check('A6b config.json + session.json pins (ver 42/66, settingsRev 76, syncRev 0021, 0.0.7.g)',
-  config.ver === 47 && config.appVersion === '0.0.7.g' && session.ver === 68 && session.settingsRev === 80 && session.syncRev === 1797000000029 && session.appVersion === '0.0.7.g',
+  config.ver === 48 && config.appVersion === '0.0.7.h' && session.ver === 69 && session.settingsRev === 83 && session.syncRev === 1797000000032 && session.appVersion === '0.0.7.h',
   JSON.stringify({ cfgVer: config.ver, sesVer: session.ver, sesRev: session.settingsRev, sync: session.syncRev }));
 check('A6c sw.js pins the s43 shell + s41 release + 0.0.7.g',
-  /sdp-v0\.0\.7\.g-s46-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.g'/.test(sw));
+  /sdp-v0\.0\.7\.h-s47-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.h'/.test(sw));
 check('A6d index.html boots at the 0.0.7.g target and every data module moved off 0.0.7.g functionally',
-  /var TARGET = '0\.0\.7\.g'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
+  /var TARGET = '0\.0\.7\.h'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
 check('A6e attribution credits preserved verbatim (Hansana / Ms. Sumodya Sewmini / Ayya01 Lesandu)',
   /Hansana/.test(readText('index.html')) && /Sumodya/.test(readText('index.html')),
   'attribution strings in index.html');

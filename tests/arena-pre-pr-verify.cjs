@@ -124,9 +124,9 @@ async function coldBriefingRun(browser, origin, sampleMs) {
     const clips = pack.clips;
     const classroom = Object.keys(clips).filter((k) => k.indexOf('_') !== 0);
     const george = ['_intro_male_1', '_intro_male_2', '_intro_male_3', '_intro_male_4'];
-    check('T3a the pack carries the v0.0.7.g header (ver 42 / schema 42 / settingsRev 76 / syncRev 1797000000029)',
-      pack.version === '0.0.7.g' && pack.ver === 47 && pack.schema === 47 &&
-      pack.settingsRev === 80 && Number(pack.syncRev) === 1797000000029,
+    check('T3a the pack carries the v0.0.7.g header (ver 42 / schema 42 / settingsRev 76 / syncRev 1797000000032)',
+      pack.version === '0.0.7.h' && pack.ver === 48 && pack.schema === 48 &&
+      pack.settingsRev === 83 && Number(pack.syncRev) === 1797000000032,
       JSON.stringify([pack.version, pack.ver, pack.schema, pack.settingsRev, pack.syncRev]));
     check('T3b the live v0.0.7.a pack ships the full 74-clip canonical set (30 words + 30 num + 6 cmd + 4 guide + 4 George beats)',
       Object.keys(clips).length === 76 &&
@@ -244,9 +244,9 @@ async function coldBriefingRun(browser, origin, sampleMs) {
       await context.addInitScript(() => {
         window.__SDP_NO_LIVE__ = true;
         try {
-          localStorage.setItem('sdp.guide_seen', '0.0.7.g');
+          localStorage.setItem('sdp.guide_seen', '0.0.7.h');
           localStorage.setItem('sdp.settings', JSON.stringify({
-            briefingSeen: '0.0.7.g', guideAutoPlay: false, appliedSettingsRev: 99,
+            briefingSeen: '0.0.7.h', guideAutoPlay: false, appliedSettingsRev: 99,
             langResetV001e: true, defaultsResetV001f: true, mode: 'paper', lang: 'en'
           }));
         } catch (e) {}

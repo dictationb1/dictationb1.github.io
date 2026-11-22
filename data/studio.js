@@ -1955,7 +1955,7 @@
    '<p id="studioFreeNoKey" class="studio-free-badge"' + (freeNoKeyVisible() ? '' : ' hidden') + '>' + T('studioFreeNoKey') + '</p>' +
    keyRowMarkup('studioAiKey', t('studioAiKey'), 'gsk_… / AIza… / sk-or-…', 'Ai') +
    '<label class="lbl" for="studioGasUrl">Apps Script relay URL</label>' + '<div class="key-row">' + '<input id="studioGasUrl" class="input" type="url" autocomplete="off" data-pristine="1" placeholder="https://script.google.com/…">' + btn('btnClearGasUrl', t('studioClear')) + '</div>' +
-   /* v0.0.7.g BUG-G3: the live /dev URL detector — a /dev TEST URL can never
+   /* v0.0.7.h BUG-G3: the live /dev URL detector — a /dev TEST URL can never
       receive Telegram updates or student posts (Google answers it with a
       Sign-In page), so warn the instant one is pasted and offer the 1-click
       swap to the SAME deployment's /exec URL. */
@@ -2415,7 +2415,7 @@
    '</select>' +
    btn('btnAlApplyMode', t('studioAlApplyMode', 'Apply Unlock Policy'), 'btn-ghost', '', 'gear') +
    '</div>' +
-   /* v0.0.7.f BUG-F1 + v0.0.7.g BUG-G4: the 1-tap relay auto-fix + the
+   /* v0.0.7.f BUG-F1 + v0.0.7.h BUG-G4: the 1-tap relay auto-fix + the
       5-step Connection Doctor, right inside the lock panel. */
    '<div class="studio-al-cell">' +
    '<label class="lbl" for="studioAlRelayProbe" data-i18n="studioAlRelayLbl">' + t('studioAlRelayLbl', 'Relay & Telegram health') + '</label>' +
@@ -2543,7 +2543,7 @@
   } catch (e3) {}
   return true;
  }
- /* v0.0.7.g BUG-G3: the live /dev URL detector on #studioGasUrl — warns
+ /* v0.0.7.h BUG-G3: the live /dev URL detector on #studioGasUrl — warns
     the instant a /dev TEST URL is pasted (Telegram + students can never
     reach it) and offers the 1-click swap to the SAME deployment's /exec
     URL. The warning node + #btnGasDevFix button live in the secrets card. */
@@ -2734,14 +2734,14 @@
   paintStudioActionAuditBanner('Access Lock panel opened', 'Advanced Settings → Private Web App Access Lock');
  }
 
- /* ══ v0.0.7.f BUG-F1/F3 + v0.0.7.g BUG-G3/G4: Save & Auto-Fix Relay +
+ /* ══ v0.0.7.f BUG-F1/F3 + v0.0.7.h BUG-G3/G4: Save & Auto-Fix Relay +
     Telegram, the 5-Step Connection Doctor & Auto-Repair, the Unlock Policy
     apply, and the 1-tap Telegram alert test — all inside the lock panel. ══ */
  function alRelayProbeMsg(text, state) {
   var node = byId('studioAlRelayProbe');
   if (node) { node.textContent = str(text); node.setAttribute('data-state', state || ''); }
  }
- /* v0.0.7.g BUG-G4: the deterministic 5-step diagnostic — every step paints
+ /* v0.0.7.h BUG-G4: the deterministic 5-step diagnostic — every step paints
     a green ✅ / red ❌ badge with the EXACT bilingual cause + fix inside the
     Access Lock card. NEVER a vague "Relay unreachable" again. */
  var AL_DOCTOR_STEPS = [
@@ -2817,7 +2817,7 @@
     si: 'මෙය /dev TEST URL එකකි — Telegram සහ සිසු දුරකථන කිසිවිටෙක එය ළඟා විය නොහැක (Google /dev සඳහා Sign-In පිටුවක් පෙන්වයි). ඉහත "🔁 Use the /exec URL instead" ඔබන්න, නැතහොත් Deploy → Manage deployments හි /exec URL එක copy කරන්න.' }, done);
    return;
   }
-  /* v0.0.7.g: local /exec relay URLs (127.0.0.1/localhost) are accepted —
+  /* v0.0.7.h: local /exec relay URLs (127.0.0.1/localhost) are accepted —
      the e2e gates drive the full doctor against an in-process relay. */
   var localExec = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/exec\/?$/.test(url);
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/.test(url) && !localExec) {
@@ -4005,7 +4005,7 @@
    onStudio('btnAlLockAllNow', 'click', function () { alLockAllNow(); });
    onStudio('btnAlNoticeJump', 'click', function () { alJumpToPanel(); });
    onStudio('btnAlNoticeDismiss', 'click', function () { dismissAccessNotice(); });
-   /* v0.0.7.f BUG-F1/F3 + v0.0.7.g BUG-G3/G4: Save & Auto-Fix Relay +
+   /* v0.0.7.f BUG-F1/F3 + v0.0.7.h BUG-G3/G4: Save & Auto-Fix Relay +
       Telegram (the 5-step Connection Doctor), the standalone Doctor button,
       the Unlock Policy apply and the 1-tap Telegram alert test — plus the
       quiet auto-save of the pasted relay URL on input/blur so the panel
