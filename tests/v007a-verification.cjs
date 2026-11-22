@@ -34,16 +34,16 @@ const config = readJSON('data/config.json');
 const pack = readJSON('data/elevenlabs-audio.json');
 
 /* ── A6 static pins ────────────────────────────────────────────────────── */
-check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000032, 0.0.7.g',
-  version.ver === 48 && version.schema === 48 && version.appVersion === '0.0.7.h' && version.version === '0.0.7.h' && version.settingsRev === 83 && version.syncRev === 1797000000032,
+check('A6a version.json pins ver/schema 43/43, settingsRev 76, syncRev 1797000000034, 0.0.7.g',
+  version.ver === 49 && version.schema === 49 && version.appVersion === '0.0.7.i' && version.version === '0.0.7.i' && version.settingsRev === 85 && version.syncRev === 1797000000034,
   JSON.stringify({ ver: version.ver, schema: version.schema, appVersion: version.appVersion, settingsRev: version.settingsRev, syncRev: version.syncRev }));
 check('A6b config.json + session.json pins (ver 42/66, settingsRev 76, syncRev 0021, 0.0.7.g)',
-  config.ver === 48 && config.appVersion === '0.0.7.h' && session.ver === 69 && session.settingsRev === 83 && session.syncRev === 1797000000032 && session.appVersion === '0.0.7.h',
+  config.ver === 49 && config.appVersion === '0.0.7.i' && session.ver === 70 && session.settingsRev === 85 && session.syncRev === 1797000000034 && session.appVersion === '0.0.7.i',
   JSON.stringify({ cfgVer: config.ver, sesVer: session.ver, sesRev: session.settingsRev, sync: session.syncRev }));
 check('A6c sw.js pins the s43 shell + s41 release + 0.0.7.g',
-  /sdp-v0\.0\.7\.h-s47-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.h'/.test(sw));
+  /sdp-v0\.0\.7\.i-s48-shell/.test(sw) && /SW_RELEASE = '0\.0\.7\.i'/.test(sw));
 check('A6d index.html boots at the 0.0.7.g target and every data module moved off 0.0.7.g functionally',
-  /var TARGET = '0\.0\.7\.h'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
+  /var TARGET = '0\.0\.7\.i'/.test(indexHtml) && !/var APP_VERSION = '0\.0\.7\.a'/.test(syncSrc));
 check('A6e attribution credits preserved verbatim (Hansana / Ms. Sumodya Sewmini / Ayya01 Lesandu)',
   /Hansana/.test(readText('index.html')) && /Sumodya/.test(readText('index.html')),
   'attribution strings in index.html');

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "ver": 69,
+  "ver": 70,
   "session": {
     "no": "14",
     "day": "Thursday",
@@ -311,7 +311,7 @@
     {
       "id": "list_session_8_feelings",
       "name": "Session 14 - Communications & Technology",
-      "version": "0.0.7.h",
+      "version": "0.0.7.i",
       "published": true,
       "session": "Session 14",
       "date": "2026-10-29",
@@ -904,11 +904,11 @@
   ],
   "announcement": null,
   "comments": [],
-  "appVersion": "0.0.7.h",
+  "appVersion": "0.0.7.i",
   "updatedAt": "2026-11-22T05:30:00.000Z",
-  "version": "0.0.7.h",
+  "version": "0.0.7.i",
   "buildDate": "2026-11-22",
-  "settingsRev": 83,
+  "settingsRev": 85,
   "keyboard": {
     "engine": "native system keyboard only (type=text, single-space IME buffer reset)",
     "suggestions": "The single-space IME sentinel reduces suggestions; keyboard behavior varies by device",
@@ -1217,7 +1217,7 @@
   "modelId": "eleven_flash_v2_5",
   "repoOwner": "dictationb1",
   "repoName": "dictationb1.github.io",
-  "syncRev": 1797000000032,
+  "syncRev": 1797000000034,
   "words": [
     {
       "w": "communications",
@@ -1504,7 +1504,7 @@
     }
   ],
   "versionFamily": "9.0.0",
-  "wordsRev": 1797000000032,
+  "wordsRev": 1797000000034,
   "wordCount": 31,
   "wordCountMode": "custom"
 }

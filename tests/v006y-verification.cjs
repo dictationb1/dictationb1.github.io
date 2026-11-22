@@ -67,8 +67,8 @@ check('Y2f the shipped pack has ZERO orphaned words.* keys (the 44-key live-repo
   Object.keys(pack.clips).filter((k) => /^words\./.test(k) && /^(num|cmd|guide)\./.test(k.replace(/^words\./, '')) && pack.clips['words.' + k.replace(/^words\./, '')] !== pack.clips[k.replace(/^words\./, '')]).length === 0);
 check('Y2g the shipped pack carries exactly the 76 canonical clips (31 words + 31 num + 6 cmd + 4 guide + 4 briefing)',
   Object.keys(pack.clips).length === 76);
-check('Y2h the pack header is the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev+wordsRev 1797000000032',
-  pack.version === '0.0.7.h' && pack.ver === 48 && pack.schema === 48 && pack.settingsRev === 83 && Number(pack.syncRev) === 1797000000032 && Number(pack.wordsRev) === 1797000000032);
+check('Y2h the pack header is the unified v0.0.7.g / ver 43 / schema 43 / settingsRev 76 / syncRev+wordsRev 1797000000034',
+  pack.version === '0.0.7.i' && pack.ver === 49 && pack.schema === 49 && pack.settingsRev === 85 && Number(pack.syncRev) === 1797000000034 && Number(pack.wordsRev) === 1797000000034);
 
 /* ── Y3: the student → lecturer alert channel ─────────────────────────── */
 check('Y3a sdp-telemetry.js ships sendLecturerAlert + pullLecturerAlerts + clearLecturerAlerts',
@@ -100,7 +100,7 @@ check('Y4e every new button id has a CLICK_ACTIONS or onStudio binding',
 check('Y5a lab.html ships Station 2B (Voice Sample AI Analyzer sandbox) and Station 3B (stale-clip simulator)',
   /STATION 2B/.test(labHtml) && /STATION 3B/.test(labHtml));
 check('Y5b sdp-live-lab.js carries the unified 0.0.7.g version with the low-credit verifier + reference simulation + stale simulator',
-  /version: '0\.0\.7\.h'/.test(liveLab) && /labSimulateSample/.test(liveLab) && /labStaleSimulator/.test(liveLab) && /lowCreditVerify/.test(liveLab));
+  /version: '0\.0\.7\.i'/.test(liveLab) && /labSimulateSample/.test(liveLab) && /labStaleSimulator/.test(liveLab) && /lowCreditVerify/.test(liveLab));
 check('Y5c the lab carries the guard banner host element',
   /id="sdpVoiceClipGuardBanner"/.test(labHtml));
 check('Y5d the lab ES5-parses (strict ES5 law)', (() => { try { require('acorn').parse(liveLab, { ecmaVersion: 5 }); return true; } catch (e) { return false; } })());
@@ -128,9 +128,9 @@ check('Y6d the four George briefing clips stay byte-for-byte identical to the v0
   return true;
 })());
 check('Y6e the service worker pins the s39 shell caches',
-  /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.h-s47-shell'/.test(sw));
-check('Y6f session.json carries the unified v0.0.7.g pins (ver 66 / settingsRev 76 / syncRev 1797000000032)',
-  session.ver === 69 && session.settingsRev === 83 && Number(session.syncRev) === 1797000000032 && session.appVersion === '0.0.7.h');
+  /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.i-s48-shell'/.test(sw));
+check('Y6f session.json carries the unified v0.0.7.g pins (ver 66 / settingsRev 76 / syncRev 1797000000034)',
+  session.ver === 70 && session.settingsRev === 85 && Number(session.syncRev) === 1797000000034 && session.appVersion === '0.0.7.i');
 
 /* ── Y2/Y3/Y5 live headless-Chromium verification (the boot law) ──────── */
 (async function live() {
@@ -244,7 +244,7 @@ check('Y6f session.json carries the unified v0.0.7.g pins (ver 66 / settingsRev 
           return { pass: c.pass, fail: c.fail, warn: c.warn, badge: document.getElementById('labScoreBadge').getAttribute('data-state'), ver: document.getElementById('labVerPill').textContent, s2b: document.getElementById('labSampleReport').innerHTML.length, s3b: document.getElementById('labStaleTrace').innerHTML.length };
         });
         check('Y5e Live Lab fresh-visit boot: simulators run, ALL PASS (0 FAIL), 76 clips decoded',
-          lab.fail === 0 && lab.warn === 0 && lab.badge === 'pass' && lab.ver === '0.0.7.h' && lab.s2b > 100 && lab.s3b > 100 && errors.length === 0,
+          lab.fail === 0 && lab.warn === 0 && lab.badge === 'pass' && lab.ver === '0.0.7.i' && lab.s2b > 100 && lab.s3b > 100 && errors.length === 0,
           JSON.stringify(lab) + ' | ' + errors.slice(0, 2).join(','));
         await ctx.close();
       }

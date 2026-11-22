@@ -582,7 +582,7 @@ async function bootSettings(page, settings) {
       const tag = flag || '(clean url)';
       const wantsBeta = flag === '?beta' || flag === '#beta';
       check('G5.13a ' + tag + ' the governed Beta channel state matches the URL',
-        main.betaActive === wantsBeta && main.betaSub === '0.0.7.h.beta',
+        main.betaActive === wantsBeta && main.betaSub === '0.0.7.i.beta',
         JSON.stringify(main));
       check('G5.13a2 ' + tag + ' the Beta channel replays the Project Briefing',
         main.briefingOpen === wantsBeta, JSON.stringify(main));
@@ -594,7 +594,7 @@ async function bootSettings(page, settings) {
         !/Beta|Creator Note|Guide|Synced|Lecturer Admin|v0\.0\.6/.test(main.headerText),
         JSON.stringify(main));
       check('G5.13c ' + tag + ' the relocated triggers live inside the About card',
-        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.h', JSON.stringify(main));
+        main.aboutTools && main.aboutRelocated && main.verPill === 'v0.0.7.i', JSON.stringify(main));
       check('G5.13d ' + tag + ' the release fixes are live on the main UI', main.fixLive, JSON.stringify(main));
       await context.close();
     }

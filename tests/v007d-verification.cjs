@@ -153,8 +153,8 @@ check('M4g zero stale 0.0.7.d LIVE pins in the shipped surfaces (the v0.0.7.g sw
     return bad.length === 0;
   })(), 'live surface sweep');
 check('M4h the sync module pins 0.0.7.g / SDP.ver 44 / SETTINGS_REV 77',
-  /SDP\.version = '0\.0\.7\.h';/.test(syncSrc) && /SDP\.ver = 48;/.test(syncSrc) &&
-  /var APP_VERSION = '0\.0\.7\.h';/.test(syncSrc) && /var SETTINGS_REV = 83;/.test(syncSrc));
+  /SDP\.version = '0\.0\.7\.i';/.test(syncSrc) && /SDP\.ver = 49;/.test(syncSrc) &&
+  /var APP_VERSION = '0\.0\.7\.i';/.test(syncSrc) && /var SETTINGS_REV = 85;/.test(syncSrc));
 check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
   indexHtml.indexOf('CREDITS GOES TO Hansana') > 0 &&
   indexHtml.indexOf('Lecturer in Charge: Ms. Sumodya Sewmini · Creator: Hansana · Concept: Ayya01 (Lesandu)') > 0 &&
@@ -182,7 +182,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
   check('M5c all 31 bilingual words keep real Sinhala meanings + complete English meanings',
     ws.length === 31 && siOk === 31, siOk + '/' + ws.length);
   check('M5d the preserved session SHA lock moved in lockstep with the intentional rename publish',
-    crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('2151c03d'));
+    crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'data/session.json'))).digest('hex').startsWith('b579a74d'));
 })();
 
 /* ── live boot proof (headless Chromium, desktop + mobile) ───────────────── */
@@ -203,7 +203,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
-      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.h'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.h', guideAutoPlay: false })); } catch (e) {} });
+      await page.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.i'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.i', guideAutoPlay: false })); } catch (e) {} });
       await page.goto(server.origin + '/', { waitUntil: 'load' });
       await page.waitForTimeout(2600);
       const boot = await page.evaluate(() => ({
@@ -217,7 +217,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         githubLink: (document.querySelector('a[href="https://github.com/dictationb1/dictationb1.github.io"]') || {}).href || '',
       }));
       check('D1 desktop boot: 0.0.7.g · Session 14 · 31 words · no offline banner · no Studio blind · zero console errors',
-        boot.ready === true && boot.version === '0.0.7.h' && boot.verPill === 'v0.0.7.h' && boot.sessionNo === '14' &&
+        boot.ready === true && boot.version === '0.0.7.i' && boot.verPill === 'v0.0.7.i' && boot.sessionNo === '14' &&
         boot.words === 31 && boot.bannerHidden === true && boot.studioBlinded === false && errors.length === 0 &&
         boot.githubLink === 'https://github.com/dictationb1/dictationb1.github.io',
         JSON.stringify(boot) + ' | ' + errors.slice(0, 2).join(','));
@@ -228,7 +228,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
       const mpage = await mctx.newPage();
       const merrors = [];
       mpage.on('pageerror', (e) => merrors.push(String(e).slice(0, 140)));
-      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.h'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.h', guideAutoPlay: false })); } catch (e) {} });
+      await mpage.addInitScript(() => { try { localStorage.setItem('sdp.guide_seen', '0.0.7.i'); localStorage.setItem('sdp.settings', JSON.stringify({ briefingSeen: '0.0.7.i', guideAutoPlay: false })); } catch (e) {} });
       await mpage.goto(server.origin + '/', { waitUntil: 'load' });
       await mpage.waitForTimeout(2200);
       const mboot = await mpage.evaluate(() => ({
@@ -238,7 +238,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
       }));
       check('D2 mobile 375×812 boot: 31 words · 0.0.7.g pill · zero overflow · zero console errors',
-        mboot.ready === true && mboot.words === 31 && mboot.verPill === 'v0.0.7.h' &&
+        mboot.ready === true && mboot.words === 31 && mboot.verPill === 'v0.0.7.i' &&
         mboot.overflow === false && merrors.length === 0,
         JSON.stringify(mboot) + ' | ' + merrors.join(','));
       await mctx.close();
@@ -256,7 +256,7 @@ check('M4i attribution invariants stay verbatim (credit pill + EN + SI lines)',
         station7: !!document.getElementById('btnLabRunStation7'),
       }));
       check('L1 the Live Lab boots unified at 0.0.7.g (zero v4.0) with Station 7 present',
-        labBoot.pill === '0.0.7.h' && labBoot.title.indexOf('v4.0') < 0 && labBoot.station7 === true, JSON.stringify(labBoot));
+        labBoot.pill === '0.0.7.i' && labBoot.title.indexOf('v4.0') < 0 && labBoot.station7 === true, JSON.stringify(labBoot));
       await lpage.evaluate(() => { const b = document.getElementById('btnLabRunAll'); if (b) b.click(); });
       await lpage.waitForTimeout(26000);
       const labRun = await lpage.evaluate(() => {

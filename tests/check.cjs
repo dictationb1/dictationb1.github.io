@@ -44,7 +44,7 @@ const BUDGET = {
      1-tap helper + session authenticity telemetry + the Studio User
      Reviews & Session Telemetry drawer, and the four committed real
      British-male briefing clips) moved the ceilings in lockstep. */
-  'index.html': 72000, /* v0.0.7.h: +Force Update banner (BUG-H1) */
+  'index.html': 74000, /* v0.0.7.i: +Station 8 polish badge text */
   /* v0.0.5.b: the appended Morphe material layer (glass header, layered
      shadows, spring motion, screen/modal/accordion transitions, mobile
      collision fixes) moved the ceiling in lockstep with the release. */
@@ -63,10 +63,10 @@ const BUDGET = {
   /* v0.0.5.b: ES5 transition hooks (lit cards, theme fade, accordion
      measurement, scroll reveals) - class toggles + custom properties only. */
   'data/sdp-morphe-hooks.js': 8000,
-  'data/session.json': 63086, /* v0.0.7.h root pin (exact: the live 31-word Session 14 payload, header advanced to ver 47) */
-  'data/config.json': 44000, /* v0.0.7.f: +accessLock.relayUrl + mode */
+  'data/session.json': 63086, /* v0.0.7.i root pin (exact: the 31-word Session 14 payload preserved; header advanced to ver 70 / 85 / …034) */
+  'data/config.json': 44000, /* v0.0.7.i: new live /exec relayUrl (FIX-I2) */
   'data/version.json': 2000,
-  'data/gas-source.txt': 56645, /* v0.0.7.h: +tg_webhook_info +lab_test_cleanup (auto-creating ss(), JSON gas_exception envelope, enriched ping, auto_setup_webhook, /dev refusal) */
+  'data/gas-source.txt': 56717, /* v0.0.7.i: +FIX-I1 ADMIN_PIN trim + adminPinLen (exact root pin) */
   'data/sdp-access-lock.js': 30000, /* v0.0.7.f: +mode-aware overlay + relayUrl chain + firstGrant token handoff */
   /* v0.0.6.q: the pack carries the 131 authentic Alice clips PLUS the four
      committed real British-male George Project-Overview beats
@@ -83,9 +83,9 @@ const BUDGET = {
   'data/sdp-telemetry.js': 30000, /* v0.0.7.f: +pushEvent relay + rich deviceTelemetry */ /* v0.0.6.y */ /* v0.0.6.v: cross-device telemetry ledger */
   'data/sdp-selfheal.js': 24000, /* v0.0.7.f: +troubleshoot telemetry */ /* v0.0.7.e: +B7 Student Troubleshooting Guide */ /* v0.0.6.v: student self-heal assistant T1-T7 */
   'data/sdp-studio-guide.js': 28000, /* v0.0.7.e B5: interactive spotlight tour engine */
-  'sw.js': 24000, /* v0.0.7.h s47: +3 s fast-fallback +force-update message */ /* v0.0.6.x: +sdp-live-lab precache */
-  'lab.html': 26000, /* v0.0.7.h: +Station 8 card +Force Update banner */
-  'data/sdp-live-lab.js': 132000, /* v0.0.7.e: unified Live Lab (+Station 7 release verification) */
+  'sw.js': 25000, /* v0.0.7.i s48 lockstep headroom */ /* v0.0.6.x: +sdp-live-lab precache */
+  'lab.html': 27000, /* v0.0.7.i: +Station 8 test-mode checkbox */
+  'data/sdp-live-lab.js': 136000, /* v0.0.7.i: +FIX-I3 reset + FIX-I4 smart WARN verdicts + 8.4 adminPinLen hint */
   'manifest.webmanifest': 4000,
   'docs/ARCHITECTURE_MAP.md': 56000,
   'docs/UI_COMPONENT_GUIDE.md': 52000,
@@ -113,8 +113,8 @@ const PRESERVED_SHA = {
       intentional GitHub owner/repository metadata update. */
     /* v0.0.6.v: the intentional Session-12 RP repair publish + the GAS
        telemetry actions moved both pins in lockstep. */
-    'data/session.json': '2151c03df8aaf4c28f573da6243b3a25e9115e5233c05bcbfd89f39c5f620145', /* v0.0.7.h: 31-word Session 14 + restored mobile-phone variants */
-  'data/gas-source.txt': '98e48ad824029b747587218e507d51b111d296ac112a9812f8cd3a74e9e40e35', /* v0.0.7.h: the Station 8 backend (tg_webhook_info + lab_test_cleanup) */
+    'data/session.json': 'b579a74d5faffec124d93abce838662f4f2f66ebf5384f505b6336c3a760987b', /* v0.0.7.i: header advanced to ver 70 / 85 / …034 (31-word Session 14 payload preserved) */
+  'data/gas-source.txt': '5f35197b9ed28bfbc6146d20923857599855fe9643ba44712012b682f5a084fe', /* v0.0.7.i: FIX-I1 ADMIN_PIN whitespace trim + adminPinLen ping hint */
   'assets/fonts/NotoSansSinhala-Regular.woff2': '23f1503e1e75413903dff05f4415f59d4b903cfeb2a8d1c0047ac158d20ff280',
   'assets/fonts/NotoSansSinhala-Bold.woff2': 'bf59c1487b0a88a07a678190fd7a6e93aa01c5ec3f3f2f9e349922ac944a643e'
 };
@@ -311,10 +311,10 @@ function pending(p) {
   if (exists('data/version.json')) {
     const v = JSON.parse(readText('data/version.json'));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.6.m ships ver 27 / schema 26 / settingsRev 42
-    const ok = v.ver === 48 && v.appVersion === '0.0.7.h' && v.version === '0.0.7.h' &&
-      v.schema === 48 && v.settingsRev === 83 && String(v.session) === '14';
-    record('version.json carries the v0.0.7.h schema', ok, JSON.stringify(v).slice(0, 220));
-    record('version.json pins syncRev 1797000000032', Number(v.syncRev) === 1797000000032, JSON.stringify(v).slice(0, 200));
+    const ok = v.ver === 49 && v.appVersion === '0.0.7.i' && v.version === '0.0.7.i' &&
+      v.schema === 49 && v.settingsRev === 85 && String(v.session) === '14';
+    record('version.json carries the v0.0.7.i schema', ok, JSON.stringify(v).slice(0, 220));
+    record('version.json pins syncRev 1797000000034', Number(v.syncRev) === 1797000000034, JSON.stringify(v).slice(0, 200));
     /* contract: docs/SYNC_AND_DATA_CONTRACT.md §R14.1 — the module constant and the
        shipped pointer must never disagree, or a device re-adopts stale classSettings. */
     const syncSrc = exists('data/sdp-data-sync.js') ? readText('data/sdp-data-sync.js') : '';
@@ -335,7 +335,7 @@ function pending(p) {
     record('config.json exposes the SDP_ENC_V2 vault slot', c.encVault === 'SDP_ENC_V2:AAA=' || /^SDP_ENC_V2:/.test(String(c.encVault)), String(c.encVault));
     // contract: docs/CHANGELOG_LEDGER.md §Release ledger — config.json header follows the v0.0.5.c bump set
     record('config.json carries v0.0.7.g version fields',
-      c.ver === 48 && c.appVersion === '0.0.7.h' && c.version === '0.0.7.h' && c.schema === 48 && c.settingsRev === 83,
+      c.ver === 49 && c.appVersion === '0.0.7.i' && c.version === '0.0.7.i' && c.schema === 49 && c.settingsRev === 85,
       JSON.stringify([c.ver, c.appVersion, c.schema, c.settingsRev]));
     record('config.json keeps the credits block verbatim',
       c.credits.en === 'Created by Hansana · Idea given by Ayya01 (Lesandu) · Lecturer in Charge: Sumodya Sewmini' &&
@@ -485,7 +485,7 @@ function pending(p) {
   record('index.html loads the nine modules in the fixed R10 order', ordered, JSON.stringify(positions));
   record('index.html ships the single sdp-ui.css stylesheet', html.indexOf('./assets/css/sdp-ui.css') > 0);
   // contract: docs/ARCHITECTURE_MAP.md §R1 boot target is a single TARGET constant
-  record('index.html declares the v0.0.7.h boot target', html.indexOf("'0.0.7.h'") > 0 || html.indexOf('"0.0.7.h"') > 0);
+  record('index.html declares the v0.0.7.i boot target', html.indexOf("'0.0.7.i'") > 0 || html.indexOf('"0.0.7.i"') > 0);
   const tabs = ['tab-home', 'tab-player', 'tab-practice', 'tab-dict', 'tab-settings', 'tab-studio'];
   record('index.html contains the six tab ids', tabs.every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), tabs.filter(function (id) { return html.indexOf('id="' + id + '"') < 0; }).join(','));
   const screens = ['screen-home', 'screen-player', 'screen-practice', 'screen-dict', 'screen-settings', 'screen-studio'];
@@ -570,9 +570,9 @@ function pending(p) {
     record('index.html ships exactly the two spotlight buttons (start / exit)',
       /id="btnGuideSkipStart"/.test(html) && /id="btnGuideClose"/.test(html) &&
       !/guideNextStep/.test(html) && !/guideReplayStep/.test(html) && !/guidePauseVoice/.test(html));
-    record('index.html boots at the v0.0.7.h target', /var TARGET = '0\.0\.7\.h'/.test(html));
-    record('service worker pins the v0.0.7.h s47 shell caches',
-      /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.h-s47-shell'/.test(sw));
+    record('index.html boots at the v0.0.7.i target', /var TARGET = '0\.0\.7\.i'/.test(html));
+    record('service worker pins the v0.0.7.i s48 shell caches',
+      /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(sw) && /SHELL_CACHE = 'sdp-v0\.0\.7\.i-s48-shell'/.test(sw));
     /* W7: the studio must stamp whatever SDP.version says — never a frozen literal. */
     var studioCode = readText('data/studio.js').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     record('studio.js never hardcodes a release literal (reads SDP.version)',
@@ -592,28 +592,28 @@ function pending(p) {
     }
     var man = exists('manifest.webmanifest') ? readText('manifest.webmanifest') : '';
     record('manifest start_url carries the PWA source tag', /source=pwa/.test(man));
-    record('manifest start_url and shortcuts carry v0.0.7.h',
-      /"start_url":"\.\/\?v=0.0.7.h/.test(man) &&
-      (man.match(/v=0.0.7.h/g) || []).length >= 3, (man.match(/v=0.0.7.h/g) || []).length);
+    record('manifest start_url and shortcuts carry v0.0.7.i',
+      /"start_url":"\.\/\?v=0.0.7.i/.test(man) &&
+      (man.match(/v=0.0.7.i/g) || []).length >= 3, (man.match(/v=0.0.7.i/g) || []).length);
     /* D15 (v0.0.2.b): every versioned surface must agree, byte for byte, on the
        release literal and on ver 9 — no file may drift on its own. */
-    var app = '0.0.7.h';
+    var app = '0.0.7.i';
     var agree = {
       'index.html': html.indexOf(app) > 0,
       'data.html': exists('data.html') ? readText('data.html').indexOf(app) > 0 : false,
-      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 48;/.test(sync),
+      'data/sdp-data-sync.js': sync.indexOf("'" + app + "'") > 0 && /SDP\.ver = 49;/.test(sync),
       'sw.js': sw.indexOf('sdp-v' + app) > 0,
       'manifest.webmanifest': man.indexOf(app) > 0,
-      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 48,
-      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 48
+      'data/config.json': JSON.parse(readText('data/config.json')).appVersion === app && JSON.parse(readText('data/config.json')).ver === 49,
+      'data/version.json': JSON.parse(readText('data/version.json')).appVersion === app && JSON.parse(readText('data/version.json')).ver === 49
     };
     var drifted = Object.keys(agree).filter(function (k) { return !agree[k]; });
-    record('D15 all seven versioned surfaces agree on 0.0.7.h / ver 48',
+    record('D15 all seven versioned surfaces agree on 0.0.7.i / ver 49',
       drifted.length === 0, drifted.join(', ') + ' ' + JSON.stringify(agree));
     var pack = JSON.parse(readText('data/elevenlabs-audio.json'));
-    record('voice pack carries the v0.0.7.h header',
-      pack.version === '0.0.7.h' && pack.appVersion === '0.0.7.h' && pack.ver === 48 && pack.schema === 48 &&
-      pack.settingsRev === 83 && Number(pack.syncRev) === 1797000000032 &&
+    record('voice pack carries the v0.0.7.i header',
+      pack.version === '0.0.7.i' && pack.appVersion === '0.0.7.i' && pack.ver === 49 && pack.schema === 49 &&
+      pack.settingsRev === 85 && Number(pack.syncRev) === 1797000000034 &&
       pack.voiceId === 'Xb7hH8MSUJpSbSDYk0k2' && pack.hashAlgo === 'sha1',
       JSON.stringify([pack.version, pack.ver, pack.settingsRev, pack.syncRev]));
     /* v0.0.6.q PILLAR 2 law: the shipped pack carries EXACTLY the 135
@@ -755,7 +755,7 @@ function pending(p) {
     record('A6c the floating Beta stamp and Beta pill are gone for good',
       !/id="sdpBetaStamp"/.test(html) && !/id="sdpBetaPill"/.test(html) &&
       !/\.beta-stamp/.test(css) && !/\.beta-pill/.test(css) &&
-      /BETA_SUBVERSION = '0\.0\.7\.h\.beta'/.test(views) &&
+      /BETA_SUBVERSION = '0\.0\.7\.i\.beta'/.test(views) &&
       /function betaActive/.test(views) && /function applyBetaChannel/.test(views));
   })();
 
@@ -845,9 +845,9 @@ function pending(p) {
         return c(/^num\.\d+$/) === 31 && c(/^cmd\./) === 6 && c(/^guide\.en\./) === 4 && c(/^_intro_male_[1-4]$/) === 4 && c(/^words\./) === 31 && pk.length === 76;
       })());
     var swText1 = readText('sw.js');
-    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s46 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
-      /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(swText1) &&
-      /var SW_RELEASE = '0\.0\.7\.h';/.test(swText1) &&
+    record('P1c the service worker serves the boot data JSONs STALE-WHILE-REVALIDATE from the s48 shell (instant <30ms cache hit, then a non-blocking background revalidation on an unchanged release)',
+      /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(swText1) &&
+      /var SW_RELEASE = '0\.0\.7\.i';/.test(swText1) &&
       /function staleWhileRevalidateDataJson/.test(swText1) &&
       /x-sdp-release/.test(swText1) &&
       /isPointer = \/\\\/data\\\/version\\\.json\$\/i\.test\(url\.pathname\)/.test(swText1) &&

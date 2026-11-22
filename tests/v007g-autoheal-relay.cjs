@@ -149,8 +149,8 @@ function gasPost(rt, body) {
 {
   const rt = bootStandalone({});
   const ping = gasPost(rt, { action: 'ping' });
-  check('H1a standalone ping answers ok with the enriched v0.0.7.h health report',
-    ping.ok === true && ping.pong === true && ping.gas === 'v0.0.7.h' && ping.app === 'sdp-gas',
+  check('H1a standalone ping answers ok with the enriched v0.0.7.i health report',
+    ping.ok === true && ping.pong === true && ping.gas === 'v0.0.7.i' && ping.app === 'sdp-gas',
     JSON.stringify(ping));
   check('H1b ping reports sheetBound:true + a real sheetUrl + every Script Property flag',
     ping.sheetBound === true && String(ping.sheetUrl).indexOf('https://docs.google.com/spreadsheets/d/') === 0 &&
@@ -263,7 +263,7 @@ function gasPost(rt, body) {
 async function partR() {
   const { createApp } = require('./app-harness.cjs');
   const RELAY = 'https://script.google.com/macros/s/RELAYTEST/exec';
-  const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.7.h'); } });
+  const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.7.i'); } });
   const relayCalls = [];
   const origFetch = app.w.fetch;
   function serve(body, status, contentType) {
@@ -275,7 +275,7 @@ async function partR() {
   }
   let mode = 'healthy';
   const SCENARIOS = {
-    healthy: () => serve(JSON.stringify({ ok: true, pong: true, ver: 47, gas: 'v0.0.7.h', sheetBound: true, sheetUrl: 'https://docs.google.com/spreadsheets/d/X/edit', hasTgBot: true, hasTgChat: true, hasTgSecret: true, hasAdminPin: true, webhookUrl: '' })),
+    healthy: () => serve(JSON.stringify({ ok: true, pong: true, ver: 47, gas: 'v0.0.7.i', sheetBound: true, sheetUrl: 'https://docs.google.com/spreadsheets/d/X/edit', hasTgBot: true, hasTgChat: true, hasTgSecret: true, hasAdminPin: true, webhookUrl: '' })),
     signin: () => serve('<!DOCTYPE html><html><head><title>Sign in - Google Accounts</title></head><body>continue to <a href="https://accounts.google.com/ServiceLogin">sign in</a></body></html>', 200, 'text/html'),
     gaserr: () => serve('<!DOCTYPE html><html><head><title>Apps Script Error</title></head><body><p>TypeError: Cannot read properties of null (reading \'getSheetByName\')</p></body></html>', 200, 'text/html'),
     notfound: () => serve('404. That’s an error.', 404, 'text/plain'),
@@ -400,12 +400,12 @@ async function partR() {
 async function partD() {
   const { createApp } = require('./app-harness.cjs');
   const RELAY = 'https://script.google.com/macros/s/DOCTOR1/exec';
-  const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.7.h'); } });
+  const app = await createApp({ before(w) { w.localStorage.setItem('sdp.guide_seen', '0.0.7.i'); } });
   const origFetch = app.w.fetch;
   let mode = 'healthy';
   const calls = [];
   const HEALTHY = {
-    ping: { ok: true, pong: true, ver: 47, app: 'sdp-gas', gas: 'v0.0.7.h', sheetBound: true, sheetUrl: 'https://docs.google.com/spreadsheets/d/DOC1/edit', hasTgBot: true, hasTgChat: true, hasTgSecret: true, hasAdminPin: true, webhookUrl: 'https://script.google.com/macros/s/DOCTOR1/exec' },
+    ping: { ok: true, pong: true, ver: 47, app: 'sdp-gas', gas: 'v0.0.7.i', sheetBound: true, sheetUrl: 'https://docs.google.com/spreadsheets/d/DOC1/edit', hasTgBot: true, hasTgChat: true, hasTgSecret: true, hasAdminPin: true, webhookUrl: 'https://script.google.com/macros/s/DOCTOR1/exec' },
     access_state: { ok: true, lock: { on: true, mode: 'approval+code', hasPassword: false, hasPin: false, graceHours: 72 } },
     access_roster: { ok: true, pending: [], approved: [] },
     auto_setup_webhook: { ok: true, webhookOk: true, webhookUrl: 'https://script.google.com/macros/s/DOCTOR1/exec', telegramDesc: 'Webhook was set' },
@@ -667,8 +667,8 @@ async function partB() {
     const good = await page.evaluate((relay) => new Promise((resolve) => {
       SDP.Data.postRelay(relay, JSON.stringify({ action: 'ping' }), (err, data) => resolve({ errCode: err && err.code, ok: data && data.ok, pong: data && data.pong, gas: data && data.gas, sheetBound: data && data.sheetBound, sheetUrl: data && data.sheetUrl }));
     }), RELAY);
-    check('B2a real Chromium: the healthy relay answers the enriched v0.0.7.h ping (pong + sheetBound + sheetUrl)',
-      (good.errCode === null || good.errCode === undefined) && good.ok === true && good.pong === true && good.gas === 'v0.0.7.h' && good.sheetBound === true && String(good.sheetUrl).indexOf('docs.google.com') >= 0,
+    check('B2a real Chromium: the healthy relay answers the enriched v0.0.7.i ping (pong + sheetBound + sheetUrl)',
+      (good.errCode === null || good.errCode === undefined) && good.ok === true && good.pong === true && good.gas === 'v0.0.7.i' && good.sheetBound === true && String(good.sheetUrl).indexOf('docs.google.com') >= 0,
       JSON.stringify(good));
 
     /* B3 — an admin action against the real GAS relay round-trips cleanly */

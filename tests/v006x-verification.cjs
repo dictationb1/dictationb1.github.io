@@ -141,8 +141,8 @@ function mp3Signature(buf) {
     /caches\.open\('sdp-audio-clips'\)/.test(studio) &&
     /generateClips\(\{ force: true, keys: wk \}/.test(studio),
     'force regen');
-  check('X4d the pack header advances wordsRev (1797000000032) so older packs purge their stale words',
-    Number(pack.wordsRev) === 1797000000032 && Number(pack.syncRev) === 1797000000032,
+  check('X4d the pack header advances wordsRev (1797000000034) so older packs purge their stale words',
+    Number(pack.wordsRev) === 1797000000034 && Number(pack.syncRev) === 1797000000034,
     String(pack.wordsRev));
 
   /* ── X5 — the unified Voice & Clone Control Center ───────────────────── */
@@ -183,7 +183,7 @@ function mp3Signature(buf) {
   }
 
   /* ── X6 — Live Lab v2.0 ──────────────────────────────────────────────── */
-  check('X6a lab.html ships 10 stations (unified 0.0.7.h: +Station 2B +Station 3B +Station 7 +Station 8) + the 1-click batch word repair tool',
+  check('X6a lab.html ships 10 stations (unified 0.0.7.i: +Station 2B +Station 3B +Station 7 +Station 8) + the 1-click batch word repair tool',
     (labHtml.match(/<section class="card">/g) || []).length === 10 && /STATION 2B/.test(labHtml) && /STATION 3B/.test(labHtml) && /STATION 8/.test(labHtml) &&
     /btnLabBatchRepairWords/.test(labHtml) && /labBatchStatus/.test(labHtml) && /STATION 7/.test(labHtml) &&
     /v4\.0/.test(labHtml) === false && /0\.0\.6\.z/.test(labHtml) === false,
@@ -205,11 +205,11 @@ function mp3Signature(buf) {
     /raw offline is informational/.test(labJs),
     'station5');
   check('X6e SDP.LiveLab exports the unified 0.0.7.g with the low-credit verifier + batch repair + the no-key legs are informational (never a fresh-visit FAIL)',
-    /version: '0\.0\.7\.h'/.test(labJs) && /lowCreditVerify: lowCreditVerify/.test(labJs) && /labBatchRepairWords: labBatchRepairWords/.test(labJs) && /labStaleSimulator: labStaleSimulator/.test(labJs) && /labSimulateSample: labSimulateSample/.test(labJs) &&
+    /version: '0\.0\.7\.i'/.test(labJs) && /lowCreditVerify: lowCreditVerify/.test(labJs) && /labBatchRepairWords: labBatchRepairWords/.test(labJs) && /labStaleSimulator: labStaleSimulator/.test(labJs) && /labSimulateSample: labSimulateSample/.test(labJs) &&
     /no key on this device — the live \/v1\/voices leg stays informational/.test(labJs),
     'exports');
   check('X6f sw.js precaches the lab files and pins the sdp-v0.0.6.z-s39 shell',
-    /'\.\/data\/sdp-live-lab\.js'/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.h-s47'/.test(sw),
+    /'\.\/data\/sdp-live-lab\.js'/.test(sw) && /SW_VERSION = 'sdp-v0\.0\.7\.i-s48'/.test(sw),
     'sw pin');
 
   /* X6g — the real-Chromium boot: lab.html opens ✓ ALL PASS (0 FAIL) */

@@ -1,4 +1,4 @@
-/*! data/sdp-access-lock.js — v0.0.7.h — window.SDP.AccessLock (strict ES5).
+/*! data/sdp-access-lock.js — v0.0.7.i — window.SDP.AccessLock (strict ES5).
  * contract: docs/CHANGELOG_LEDGER.md §Release ledger — v0.0.7.h
  * The Private Web App Access Lock client (Architecture D — Hybrid Smart
  * Classroom Gate). When the Lecturer arms the Master Lock the whole web app
@@ -545,7 +545,7 @@
 
   /* ── public API ──────────────────────────────────────────────────────── */
   SDP.AccessLock = {
-    version: '0.0.7.h',
+    version: '0.0.7.i',
     key: STORE_KEY,
     gate: gate,
     arm: arm,
